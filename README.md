@@ -11,6 +11,7 @@ This now supports a **ChatGPT Plus ($20/mo) friendly Codex workflow**:
 - Generate a structured prompt packet from your local project context.
 - Paste it into ChatGPT/Codex.
 - Log the assistant output back into Mythic tracking.
+- Configure packet sizing + auto-compaction with global/local config files.
 
 No API key is required for this copy/paste flow.
 
@@ -61,6 +62,37 @@ Custom destination:
 
 ```bash
 mythic-vibe import-md --target docs/reference/mythic
+```
+
+
+## Configuration (inspired by OpenCode-style layering)
+
+`mythic-vibe` resolves config from these files (low → high precedence):
+- `~/.mythic-vibe.json`
+- `$XDG_CONFIG_HOME/mythic-vibe/config.json`
+- `<project>/.mythic-vibe.json`
+
+Environment variables override file values:
+- `MYTHIC_EXCERPT_LIMIT`
+- `MYTHIC_PACKET_CHAR_BUDGET`
+- `MYTHIC_AUTO_COMPACT`
+
+Inspect the effective config:
+
+```bash
+mythic-vibe config --path .
+```
+
+Example config file:
+
+```json
+{
+  "codex": {
+    "excerpt_limit": 2200,
+    "packet_char_budget": 14000,
+    "auto_compact": true
+  }
+}
 ```
 
 ## ChatGPT Plus / Codex bridge flow
