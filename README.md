@@ -94,6 +94,16 @@ mythic-vibe status
 mythic-vibe checkin --phase intent --update "Defined user outcome and anti-goals"
 ```
 
+## Project health diagnostics
+
+Run a quick structural + status validation:
+
+```bash
+mythic-vibe doctor
+```
+
+This checks required Mythic files, validates `mythic/status.json`, and reports any missing/invalid state.
+
 ## Method sync commands
 
 Sync latest method notes from GitHub:
