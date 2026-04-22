@@ -69,14 +69,14 @@ class MythicWorkflow:
         devlog_path = self.docs_dir / "DEVLOG.md"
         self.docs_dir.mkdir(parents=True, exist_ok=True)
 
-        if status_path.exists():
-            state = json.loads(status_path.read_text(encoding="utf-8"))
-        else:
-            state = json.loads(self._status_template("unspecified goal"))
+        state = self._load_status(status_path)
 
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ")
         state["current_phase"] = normalized
-        state["completed_phases"] = sorted(set(state.get("completed_phases", []) + [normalized]))
+        completed = [p for p in state.get("completed_phases", []) if p in PHASES]
+        if normalized not in completed:
+            completed.append(normalized)
+        state["completed_phases"] = completed
         state["last_update"] = timestamp
         history = state.setdefault("history", [])
         history.append({"time": timestamp, "phase": normalized, "update": update})
@@ -95,8 +95,8 @@ class MythicWorkflow:
         if not status_path.exists():
             return "No Mythic status found. Run `mythic-vibe init --goal \"...\"` first."
 
-        state = json.loads(status_path.read_text(encoding="utf-8"))
-        completed = state.get("completed_phases", [])
+        state = self._load_status(status_path)
+        completed = [phase for phase in state.get("completed_phases", []) if phase in PHASES]
         progress = int((len(completed) / len(PHASES)) * 100)
         return textwrap.dedent(
             f"""
@@ -107,6 +107,69 @@ class MythicWorkflow:
             Next suggested phase: {self._next_phase(completed)}
             """
         ).strip()
+
+    def doctor(self) -> tuple[list[str], list[str]]:
+        errors: list[str] = []
+        warnings: list[str] = []
+
+        required = [
+            self.root / "MYTHIC_ENGINEERING.md",
+            self.docs_dir / "PHILOSOPHY.md",
+            self.docs_dir / "ARCHITECTURE.md",
+            self.docs_dir / "DOMAIN_MAP.md",
+            self.docs_dir / "DATA_FLOW.md",
+            self.docs_dir / "DEVLOG.md",
+            self.tasks_dir / "current_GOALS.md",
+            self.mythic_dir / "plan.md",
+            self.mythic_dir / "loop.md",
+            self.mythic_dir / "status.json",
+        ]
+
+        for path in required:
+            if not path.exists():
+                errors.append(f"Missing required file: {path.relative_to(self.root)}")
+
+        status_path = self.mythic_dir / "status.json"
+        if status_path.exists():
+            try:
+                state = json.loads(status_path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                errors.append("Invalid JSON in mythic/status.json")
+                state = None
+
+            if state:
+                current = state.get("current_phase")
+                if current and current not in PHASES:
+                    errors.append(f"Invalid current_phase in status.json: {current}")
+
+                completed = state.get("completed_phases", [])
+                invalid = [phase for phase in completed if phase not in PHASES]
+                if invalid:
+                    errors.append(f"Invalid completed_phases values: {', '.join(invalid)}")
+
+                if not state.get("history"):
+                    warnings.append("No check-in history yet. Run `mythic-vibe checkin` after your next milestone.")
+
+        return errors, warnings
+
+    def _load_status(self, status_path: Path) -> dict:
+        if not status_path.exists():
+            return json.loads(self._status_template("unspecified goal"))
+
+        try:
+            state = json.loads(status_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return json.loads(self._status_template("unspecified goal"))
+
+        if not isinstance(state, dict):
+            return json.loads(self._status_template("unspecified goal"))
+
+        state.setdefault("goal", "unspecified goal")
+        state.setdefault("current_phase", "intent")
+        state.setdefault("completed_phases", [])
+        state.setdefault("last_update", None)
+        state.setdefault("history", [])
+        return state
 
     def _next_phase(self, completed: list[str]) -> str:
         for phase in PHASES:
@@ -260,33 +323,14 @@ class MythicWorkflow:
             """
             # Data Flow
 
-            ## Input -> Processing -> Output
-            - Input source:
-            - Validation:
-            - Transformation:
-            - Storage / output:
+            ## Inputs
+            List external and internal inputs.
 
-            ## Side effects
-            Document external effects (I/O, network, file writes).
-            """
-        ).strip() + "\n"
+            ## Transformations
+            Document processing steps and ownership.
 
-    def _goals_template(self, goal: str) -> str:
-        return textwrap.dedent(
-            f"""
-            # Current Goals
-
-            ## Outcome
-            {goal}
-
-            ## Acceptance criteria
-            - [ ] Criterion 1
-            - [ ] Criterion 2
-            - [ ] Criterion 3
-
-            ## Risks
-            - Risk 1
-            - Risk 2
+            ## Outputs
+            Define side effects, storage, and user-facing results.
             """
         ).strip() + "\n"
 
@@ -295,6 +339,21 @@ class MythicWorkflow:
             """
             # Devlog
 
-            Chronological change notes and reasons.
+            Chronological updates from the Mythic loop.
+            """
+        ).strip() + "\n"
+
+    def _goals_template(self, goal: str) -> str:
+        return textwrap.dedent(
+            f"""
+            # Current Goals
+
+            Primary goal:
+            - {goal}
+
+            Success criteria:
+            - [ ] Users can complete the key workflow.
+            - [ ] Architecture boundaries are documented.
+            - [ ] Verification commands are documented and passing.
             """
         ).strip() + "\n"

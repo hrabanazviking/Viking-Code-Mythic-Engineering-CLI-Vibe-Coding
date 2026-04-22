@@ -66,6 +66,9 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("sync", help="Sync Mythic Engineering method notes from GitHub")
     sub.add_parser("method", help="Print active Mythic method notes")
 
+    doctor = sub.add_parser("doctor", help="Validate Mythic project structure and status")
+    doctor.add_argument("--path", default=".", help="Project directory (default: current directory)")
+
     return parser
 
 
@@ -145,7 +148,11 @@ def cmd_codex_pack(args: argparse.Namespace) -> int:
 def cmd_codex_log(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
     workflow = MythicWorkflow(root)
-    status_file, devlog_file = workflow.check_in(phase=args.phase, update=args.response)
+    try:
+        status_file, devlog_file = workflow.check_in(phase=args.phase, update=args.response)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
     print("Codex response logged into Mythic workflow.")
     print(f"- Status: {status_file}")
     print(f"- Devlog: {devlog_file}")
@@ -157,6 +164,31 @@ def cmd_status(args: argparse.Namespace) -> int:
     workflow = MythicWorkflow(root)
     print(workflow.status_summary())
     return 0
+
+
+def cmd_doctor(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    workflow = MythicWorkflow(root)
+    errors, warnings = workflow.doctor()
+
+    print("Mythic project diagnostics")
+    print(f"- Path: {root}")
+
+    if errors:
+        print("- Errors:")
+        for item in errors:
+            print(f"  - {item}")
+    else:
+        print("- Errors: none")
+
+    if warnings:
+        print("- Warnings:")
+        for item in warnings:
+            print(f"  - {item}")
+    else:
+        print("- Warnings: none")
+
+    return 1 if errors else 0
 
 
 def cmd_sync() -> int:
@@ -202,6 +234,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_sync()
     if args.command == "method":
         return cmd_method()
+    if args.command == "doctor":
+        return cmd_doctor(args)
 
     parser.error("Unknown command")
     return 2
