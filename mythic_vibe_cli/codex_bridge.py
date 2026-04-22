@@ -41,7 +41,11 @@ class CodexBridge:
         path = self.mythic_dir / "status.json"
         if not path.exists():
             return "No status.json found."
-        state = json.loads(path.read_text(encoding="utf-8"))
+        try:
+            state = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return "status.json exists but contains invalid JSON."
+
         return json.dumps(
             {
                 "goal": state.get("goal"),
