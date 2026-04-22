@@ -7,6 +7,7 @@ import sys
 
 from . import __version__
 from .codex_bridge import CodexBridge, CodexPacketRequest
+from .config import ConfigStore
 from .mythic_data import MethodStore
 from .workflow import MythicRunConfig, MythicWorkflow, PHASES
 
@@ -66,6 +67,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("sync", help="Sync Mythic Engineering method notes from GitHub")
     sub.add_parser("method", help="Print active Mythic method notes")
+
+
+    config_cmd = sub.add_parser("config", help="Show resolved mythic-vibe configuration")
+    config_cmd.add_argument("--path", default=".", help="Project directory used for local overrides")
 
     doctor = sub.add_parser("doctor", help="Validate Mythic project structure and status")
     doctor.add_argument("--path", default=".", help="Project directory (default: current directory)")
@@ -213,6 +218,26 @@ def cmd_status(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
     workflow = MythicWorkflow(root)
     print(workflow.status_summary())
+    return 0
+
+
+def cmd_config(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    loaded = ConfigStore(root).load()
+
+    print("Resolved mythic-vibe configuration")
+    print(f"- Project path: {root}")
+    if loaded.sources:
+        print("- Loaded sources (low -> high precedence):")
+        for src in loaded.sources:
+            print(f"  - {src}")
+    else:
+        print("- Loaded sources: none (using defaults + env vars)")
+
+    print("- Effective values:")
+    print(f"  - codex.excerpt_limit: {loaded.config.excerpt_limit}")
+    print(f"  - codex.packet_char_budget: {loaded.config.packet_char_budget}")
+    print(f"  - codex.auto_compact: {str(loaded.config.auto_compact).lower()}")
     return 0
 
 
@@ -388,6 +413,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_sync()
     if args.command == "method":
         return cmd_method()
+    if args.command == "config":
+        return cmd_config(args)
     if args.command == "doctor":
         return cmd_doctor(args)
     if args.command == "evoke":
