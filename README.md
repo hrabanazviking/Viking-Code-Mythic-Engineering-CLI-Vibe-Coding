@@ -118,6 +118,21 @@ Print currently loaded method notes:
 mythic-vibe method
 ```
 
+## Ritual command aliases from the Mythic design doc
+
+The CLI now supports the design-doc style ritual commands in addition to existing commands:
+
+- `mythic imbue` (alias of `init`)
+- `mythic evoke` (alias of `codex-pack`)
+- `mythic scry` (alias of `doctor`)
+- `mythic weave`
+- `mythic prune`
+- `mythic heal`
+- `mythic oath`
+- `mythic grimoire add|list`
+- `mythic config set`
+- `mythic db migrate`
+
 ## License
 
 MIT

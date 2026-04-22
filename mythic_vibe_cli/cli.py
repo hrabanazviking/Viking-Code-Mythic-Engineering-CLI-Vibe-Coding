@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import sqlite3
 from pathlib import Path
 import sys
 
@@ -68,6 +69,55 @@ def build_parser() -> argparse.ArgumentParser:
 
     doctor = sub.add_parser("doctor", help="Validate Mythic project structure and status")
     doctor.add_argument("--path", default=".", help="Project directory (default: current directory)")
+
+    # Mythic ritual aliases from design doc.
+    imbue = sub.add_parser("imbue", help="Initialize project vision and Mythic scaffolding")
+    imbue.add_argument("--goal", required=True, help="Plain language product goal")
+    imbue.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    imbue.add_argument("--noob", action="store_true", help="Enable beginner-friendly guidance")
+
+    evoke = sub.add_parser("evoke", help="Generate a Codex packet from an architecture-aware prompt")
+    evoke.add_argument("--task", required=True, help="Specific coding task for Codex")
+    evoke.add_argument("--phase", default="plan", choices=PHASES, help="Current Mythic phase (default: plan)")
+    evoke.add_argument("--audience", default="beginner", help="Audience level: beginner/intermediate/advanced")
+    evoke.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    evoke.add_argument("--out", default=None, help="Output file path (default: <project>/mythic/codex_prompt.md)")
+
+    scry = sub.add_parser("scry", help="Analyze project health and diagnostics")
+    scry.add_argument("--path", default=".", help="Project directory (default: current directory)")
+
+    weave = sub.add_parser("weave", help="Record documentation synchronization checkpoint")
+    weave.add_argument("--path", default=".", help="Project directory (default: current directory)")
+
+    prune = sub.add_parser("prune", help="Suggest dead-code pruning workflow")
+    prune.add_argument("--path", default=".", help="Project directory (default: current directory)")
+
+    heal = sub.add_parser("heal", help="Guide a test-healing workflow")
+    heal.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    heal.add_argument("--failing-test", default="", help="Optional failing test identifier")
+
+    oath = sub.add_parser("oath", help="Display responsible AI usage oath")
+    oath.add_argument("--yes", action="store_true", help="Echo acceptance message after displaying the oath")
+
+    grimoire = sub.add_parser("grimoire", help="Manage plugins")
+    grimoire_sub = grimoire.add_subparsers(dest="grimoire_command", required=True)
+    grimoire_add = grimoire_sub.add_parser("add", help="Register a plugin entrypoint string")
+    grimoire_add.add_argument("plugin", help="Plugin entrypoint, e.g. package.module:Plugin")
+    grimoire_add.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    grimoire_list = grimoire_sub.add_parser("list", help="List registered plugins")
+    grimoire_list.add_argument("--path", default=".", help="Project directory (default: current directory)")
+
+    config = sub.add_parser("config", help="Manage configuration values")
+    config_sub = config.add_subparsers(dest="config_command", required=True)
+    config_set = config_sub.add_parser("set", help="Set a dotted configuration value")
+    config_set.add_argument("key", help="Dotted key, e.g. core.default_model")
+    config_set.add_argument("value", help="String value")
+    config_set.add_argument("--path", default=".", help="Project directory (default: current directory)")
+
+    db = sub.add_parser("db", help="Database maintenance tasks")
+    db_sub = db.add_subparsers(dest="db_command", required=True)
+    db_migrate = db_sub.add_parser("migrate", help="Create/upgrade local weave database")
+    db_migrate.add_argument("--path", default=".", help="Project directory (default: current directory)")
 
     return parser
 
@@ -214,11 +264,115 @@ def cmd_method() -> int:
     return 0
 
 
+def cmd_oath(args: argparse.Namespace) -> int:
+    oath = "I understand that AI may generate incorrect or insecure code. I will review all changes before committing to the Sacred Grove."
+    print(oath)
+    if args.yes:
+        print("Oath accepted.")
+    return 0
+
+
+def cmd_grimoire(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    store_file = root / "mythic" / "plugins.json"
+    store_file.parent.mkdir(parents=True, exist_ok=True)
+    if store_file.exists():
+        import json
+
+        data = json.loads(store_file.read_text(encoding="utf-8"))
+    else:
+        data = {"plugins": []}
+
+    if args.grimoire_command == "add":
+        if args.plugin not in data["plugins"]:
+            data["plugins"].append(args.plugin)
+            import json
+
+            store_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
+            print(f"Registered plugin: {args.plugin}")
+        else:
+            print(f"Plugin already registered: {args.plugin}")
+        print(f"Registry: {store_file}")
+        return 0
+
+    plugins = data.get("plugins", [])
+    if not plugins:
+        print("No plugins registered.")
+        return 0
+    print("Registered plugins:")
+    for plugin in plugins:
+        print(f"- {plugin}")
+    return 0
+
+
+def cmd_config(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    config_file = root / "mythic" / "config.toml"
+    config_file.parent.mkdir(parents=True, exist_ok=True)
+    with config_file.open("a", encoding="utf-8") as fh:
+        fh.write(f'{args.key} = "{args.value}"\n')
+    print(f"Updated config: {config_file}")
+    print(f"- {args.key} = {args.value}")
+    return 0
+
+
+def cmd_db_migrate(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    db_path = root / "mythic" / "weave.db"
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS rituals (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ritual TEXT NOT NULL,
+                status TEXT NOT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        conn.commit()
+    print(f"Database migrated: {db_path}")
+    return 0
+
+
+def cmd_weave(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    workflow = MythicWorkflow(root)
+    try:
+        status_file, devlog_file = workflow.check_in(phase="reflect", update="Ran mythic weave doc synchronization checkpoint.")
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print("Weave synchronization checkpoint recorded.")
+    print(f"- Status: {status_file}")
+    print(f"- Devlog: {devlog_file}")
+    return 0
+
+
+def cmd_prune(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    print("Prune ritual scaffold ready.")
+    print(f"- Project: {root}")
+    print("Next: run your linter/dead-code tool and remove one safe item at a time.")
+    return 0
+
+
+def cmd_heal(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    print("Heal ritual scaffold ready.")
+    print(f"- Project: {root}")
+    if args.failing_test:
+        print(f"- Target failing test: {args.failing_test}")
+    print("Next: reproduce the failure, patch minimally, then rerun tests.")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
-    if args.command in {"init", "start"}:
+    if args.command in {"init", "start", "imbue"}:
         return cmd_init(args)
     if args.command == "checkin":
         return cmd_checkin(args)
@@ -236,6 +390,24 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_method()
     if args.command == "doctor":
         return cmd_doctor(args)
+    if args.command == "evoke":
+        return cmd_codex_pack(args)
+    if args.command == "scry":
+        return cmd_doctor(args)
+    if args.command == "weave":
+        return cmd_weave(args)
+    if args.command == "prune":
+        return cmd_prune(args)
+    if args.command == "heal":
+        return cmd_heal(args)
+    if args.command == "oath":
+        return cmd_oath(args)
+    if args.command == "grimoire":
+        return cmd_grimoire(args)
+    if args.command == "config":
+        return cmd_config(args)
+    if args.command == "db":
+        return cmd_db_migrate(args)
 
     parser.error("Unknown command")
     return 2
