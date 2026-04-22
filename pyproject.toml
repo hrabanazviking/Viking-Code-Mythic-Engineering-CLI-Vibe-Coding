@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mythic-vibe-cli"
+version = "0.1.0"
+description = "Beginner-friendly CLI that enforces Mythic Engineering vibe-coding workflow"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name = "Mythic Vibe Contributors" }
+]
+keywords = ["cli", "vibe-coding", "mythic-engineering", "developer-tools"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent"
+]
+
+[project.urls]
+Homepage = "https://github.com/hrabanazviking/Mythic-Engineering"
+
+[project.scripts]
+mythic-vibe = "mythic_vibe_cli.cli:main"
+
+[tool.setuptools]
+packages = ["mythic_vibe_cli"]
+
