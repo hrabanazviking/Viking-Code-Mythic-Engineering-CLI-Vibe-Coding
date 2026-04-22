@@ -24,7 +24,7 @@ Homepage = "https://github.com/hrabanazviking/Mythic-Engineering"
 
 [project.scripts]
 mythic-vibe = "mythic_vibe_cli.cli:main"
+mythic = "mythic_vibe_cli.cli:main"
 
 [tool.setuptools]
 packages = ["mythic_vibe_cli"]
-
