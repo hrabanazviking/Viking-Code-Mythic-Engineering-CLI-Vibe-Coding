@@ -1,6 +1,7 @@
 # Legal Notice and Distribution Position
 
 **Project:** Viking Code Mystic Engineering CLI 
+
 **Author:** Volmarr Wyrd
 
 This project is licensed under the Apache License, Version 2.0. Nothing in this notice modifies, replaces, narrows, or overrides that license.
