@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 import textwrap
 
+from .config import AppConfig, ConfigStore
+
 
 @dataclass
 class CodexPacketRequest:
@@ -14,11 +16,12 @@ class CodexPacketRequest:
 
 
 class CodexBridge:
-    def __init__(self, root: Path):
+    def __init__(self, root: Path, config: AppConfig | None = None):
         self.root = root
         self.docs_dir = root / "docs"
         self.tasks_dir = root / "tasks"
         self.mythic_dir = root / "mythic"
+        self.config = config or ConfigStore(root).load().config
 
     def create_packet(self, request: CodexPacketRequest, out_file: Path | None = None) -> Path:
         out = out_file or (self.mythic_dir / "codex_prompt.md")
@@ -31,11 +34,12 @@ class CodexBridge:
             return fallback
         return path.read_text(encoding="utf-8")
 
-    def _safe_excerpt(self, text: str, limit: int = 1800) -> str:
+    def _safe_excerpt(self, text: str, limit: int | None = None) -> str:
+        effective_limit = limit or self.config.excerpt_limit
         compact = text.strip()
-        if len(compact) <= limit:
+        if len(compact) <= effective_limit:
             return compact
-        return compact[:limit] + "\n... [truncated by mythic-vibe]"
+        return compact[:effective_limit] + "\n... [truncated by mythic-vibe]"
 
     def _status_snapshot(self) -> str:
         path = self.mythic_dir / "status.json"
@@ -56,12 +60,36 @@ class CodexBridge:
             indent=2,
         )
 
+    def _compact_sections(self, sections: dict[str, str], budget: int) -> dict[str, str]:
+        total = sum(len(value) for value in sections.values())
+        if total <= budget:
+            return sections
+
+        keys = list(sections.keys())
+        share = max(200, budget // max(1, len(keys)))
+
+        compacted: dict[str, str] = {}
+        for key in keys:
+            compacted[key] = self._safe_excerpt(sections[key], limit=share)
+
+        return compacted
+
     def _render_packet(self, request: CodexPacketRequest) -> str:
-        goals = self._safe_excerpt(self._read_optional(self.tasks_dir / "current_GOALS.md"))
-        architecture = self._safe_excerpt(self._read_optional(self.docs_dir / "ARCHITECTURE.md"))
-        plan = self._safe_excerpt(self._read_optional(self.mythic_dir / "plan.md"))
-        loop = self._safe_excerpt(self._read_optional(self.mythic_dir / "loop.md"))
+        sections = {
+            "goals": self._safe_excerpt(self._read_optional(self.tasks_dir / "current_GOALS.md")),
+            "architecture": self._safe_excerpt(self._read_optional(self.docs_dir / "ARCHITECTURE.md")),
+            "plan": self._safe_excerpt(self._read_optional(self.mythic_dir / "plan.md")),
+            "loop": self._safe_excerpt(self._read_optional(self.mythic_dir / "loop.md")),
+        }
         status = self._status_snapshot()
+
+        if self.config.auto_compact:
+            sections = self._compact_sections(sections, self.config.packet_char_budget)
+
+        goals = sections["goals"]
+        architecture = sections["architecture"]
+        plan = sections["plan"]
+        loop = sections["loop"]
 
         return textwrap.dedent(
             f"""
