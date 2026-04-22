@@ -39,6 +39,7 @@ class MythicWorkflow:
 
         files: dict[Path, str] = {
             self.root / "MYTHIC_ENGINEERING.md": self._mythic_engineering_note(method_source),
+            self.root / "SYSTEM_VISION.md": self._vision_template(config.goal),
             self.docs_dir / "PHILOSOPHY.md": self._philosophy_template(config.goal),
             self.docs_dir / "ARCHITECTURE.md": self._architecture_template(),
             self.docs_dir / "DOMAIN_MAP.md": self._domain_map_template(),
@@ -114,6 +115,7 @@ class MythicWorkflow:
 
         required = [
             self.root / "MYTHIC_ENGINEERING.md",
+            self.root / "SYSTEM_VISION.md",
             self.docs_dir / "PHILOSOPHY.md",
             self.docs_dir / "ARCHITECTURE.md",
             self.docs_dir / "DOMAIN_MAP.md",
@@ -194,6 +196,28 @@ class MythicWorkflow:
             5. Build
             6. Verify
             7. Reflect
+            """
+        ).strip() + "\n"
+
+    def _vision_template(self, goal: str) -> str:
+        return textwrap.dedent(
+            f"""
+            # SYSTEM_VISION
+
+            ## Why this system exists
+            {goal}
+
+            ## Core entities
+            - Entity 1:
+            - Entity 2:
+
+            ## Non-goals
+            - Out of scope 1:
+            - Out of scope 2:
+
+            ## Invariants
+            - Invariant 1:
+            - Invariant 2:
             """
         ).strip() + "\n"
 
