@@ -1,70 +1,77 @@
-# MindSpark: ThoughtForge
+# Mythic Vibe CLI Documentation Hub
 
-**Universal cognitive enhancement layer for AI models of any size.**
+Welcome to the canonical documentation hub for **Mythic Vibe CLI**, a method-driven command-line tool for building software through explicit engineering phases.
 
-From a 1B TinyLlama on a Pi Zero to a 70B LLaMA on a server — ThoughtForge
-gives any model depth, presence, consistency, and verifiable knowledge grounding.
-
-It is not a model. It is the forge that makes any model sharper.
+> If you are new, start with **Quickstart**. If you are contributing, read **Architecture** and **Domain Map** next.
 
 ---
 
-## Core Pillars
+## What this project is
 
-| Pillar | What It Does |
-|---|---|
-| **Sovereign Local RAG** | Full offline knowledge base — Wikidata, ConceptNet, GeoNames, built-in reference. Zero internet at runtime. |
-| **TurboQuant Inference** | Universal hardware scaling: 2-bit phone → fp16 server. Auto-detects hardware profile. |
-| **Cognition Scaffolds** | Deterministic YAML steering objects: goal, tone, focus, avoid, depth, fact block. |
-| **Fragment Salvage** | Multi-draft generation → sentence-level scoring → intelligent reassembly. No judge model required. |
-| **Memory-Enforced Loop** | Cite-or-explain mandatory enforcement. Every response grounded in retrieved knowledge. |
+Mythic Vibe CLI helps you move from idea to implementation with a repeatable workflow:
+
+`intent -> constraints -> architecture -> plan -> build -> verify -> reflect`
+
+Instead of relying on implicit memory, the CLI writes decisions into durable artifacts so you can pause, resume, and collaborate with less confusion.
 
 ---
 
-## Hardware Support
+## Documentation map
 
-| Profile | RAM | Model Size | Use Case |
-|---|---|---|---|
-| `phone_low` | 2 GB | 1B (TinyLlama) | Android/Termux, low-power |
-| `pi_zero` | 512 MB | 1B subset | Raspberry Pi Zero 2W |
-| `pi_5` | 4 GB | 1B–3B | Raspberry Pi 4/5 |
-| `desktop_cpu` | 8 GB+ | 3B–7B | Desktop/laptop, CPU only |
-| `desktop_gpu` | 8–16 GB VRAM | 7B–13B | Gaming GPU, workstation |
-| `server_gpu` | 24 GB+ VRAM | 30B–70B | Server, cloud GPU |
+### Start here
 
----
+1. **[Quickstart](quickstart.md)**
+   Install, initialize, and run your first project loop.
+2. **[System Vision](SYSTEM_VISION.md)**
+   Product intent, quality bar, and long-term direction.
+3. **[Architecture](ARCHITECTURE.md)**
+   Active runtime boundaries and dependency direction.
 
-## Quickstart
+### Governance and boundaries
 
-```bash
-git clone https://github.com/hrabanazviking/MindSpark_ThoughtForge
-cd MindSpark_ThoughtForge
-
-# Linux/macOS
-chmod +x scripts/install_linux.sh && ./scripts/install_linux.sh
-
-# Windows (PowerShell)
-.\scripts\install_windows.ps1
-
-# Activate and build reference knowledge
-source .venv/bin/activate
-python forge_memory.py reference
-
-# Run (knowledge-only mode, no model required)
-python run_thoughtforge.py
-```
+- **[Domain Map](DOMAIN_MAP.md)** — source-of-truth ownership map for active vs dormant domains.
+- **[API Reference](api.md)** — public Python and CLI integration surfaces.
+- **[Hardware Profiles](hardware_profiles.md)** — deployment guidance for constrained and high-end machines.
 
 ---
 
-## Design Philosophy
+## Who this is for
 
-ThoughtForge is built on three principles:
+- **Solo builders** who need a reliable workflow, not just command sprawl.
+- **Small teams** who want traceable decisions and better handoffs.
+- **AI-assisted developers** who need structured context packets and method continuity.
 
-**Sovereignty** — No API keys. No cloud. No surveillance. Every component
-operates fully offline. Your knowledge, your compute, your data.
+---
 
-**Universality** — The same codebase runs on a phone and a server cluster.
-Hardware profiles adapt token budgets, quantization, and draft counts automatically.
+## Recommended reading paths
 
-**Verifiability** — Every response is grounded in retrieved knowledge with
-QID citations. The enforcement gate ensures nothing slips through unchecked.
+### Path A: New user (10–15 minutes)
+
+1. Read [Quickstart](quickstart.md)
+2. Run one full CLI loop
+3. Scan [System Vision](SYSTEM_VISION.md)
+
+### Path B: Contributor / maintainer (20–30 minutes)
+
+1. Read [Architecture](ARCHITECTURE.md)
+2. Read [Domain Map](DOMAIN_MAP.md)
+3. Review [API Reference](api.md)
+4. Verify boundaries before opening a PR
+
+---
+
+## Documentation standards
+
+When you update runtime behavior, update docs in the same PR:
+
+- **Behavior change** -> `api.md` and/or `quickstart.md`
+- **Boundary/ownership change** -> `ARCHITECTURE.md` and `DOMAIN_MAP.md`
+- **Product direction change** -> `SYSTEM_VISION.md`
+
+If docs and behavior diverge, treat it as a bug.
+
+---
+
+## Project status note
+
+This repository is a multi-project monorepo. The active product path is **`mythic_vibe_cli/`**. Other trees include research, vendor mirrors, and historical/runtime experiments that are not primary CLI execution paths.

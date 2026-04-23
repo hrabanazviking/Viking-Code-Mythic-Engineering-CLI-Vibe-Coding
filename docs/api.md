@@ -1,178 +1,143 @@
 # API Reference
 
-Core public API for integrating ThoughtForge into your application.
+This document describes the primary integration surfaces for the active **Mythic Vibe CLI** product path.
+
+> Note: This repository contains historical and research artifacts. Treat this file as authoritative only for active CLI-facing APIs/workflows.
 
 ---
 
-## ThoughtForgeCore
+## 1) CLI entrypoint
 
-The main entry point. Handles the full `think()` pipeline.
+### Module execution
+
+```bash
+python -m mythic_vibe_cli.cli --help
+```
+
+### Installed command (environment-dependent)
+
+```bash
+mythic --help
+```
+
+If both are available, prefer the installed command for daily use and module execution for debugging.
+
+---
+
+## 2) Core modules and contracts
+
+### `mythic_vibe_cli.cli`
+
+Responsibility:
+- command surface,
+- argument parsing,
+- dispatch to workflow/config/data subsystems.
+
+Contract guidance:
+- Keep command names and flags stable once published.
+- Add aliases only when they do not create ambiguity.
+
+### `mythic_vibe_cli.workflow`
+
+Responsibility:
+- orchestrates phase loop,
+- manages artifact creation/updates,
+- supports status/check-in behavior.
+
+Contract guidance:
+- Preserve deterministic phase ordering unless explicitly versioned.
+- Emit actionable errors with remediation hints.
+
+### `mythic_vibe_cli.config`
+
+Responsibility:
+- resolve layered configuration from defaults + files + env.
+
+Contract guidance:
+- Document precedence in code comments and user docs.
+- Avoid side effects during parse/load.
+
+### `mythic_vibe_cli.codex_bridge`
+
+Responsibility:
+- compose prompt/context packets,
+- apply compaction and budget logic.
+
+Contract guidance:
+- Prefer explicit section boundaries.
+- Keep packet outputs inspectable and reproducible.
+
+### `mythic_vibe_cli.mythic_data`
+
+Responsibility:
+- sync/import/cache method data from supported providers.
+
+Contract guidance:
+- Isolate network concerns here.
+- Avoid absorbing orchestration responsibilities.
+
+---
+
+## 3) Artifact interface (filesystem contract)
+
+CLI workflows interact with project artifacts such as:
+
+- `docs/` (governance and architecture notes)
+- `tasks/` (execution plans/checklists)
+- `mythic/` (method/runtime state)
+- `DEVLOG.md` and related operational logs
+- local cache/state files (for example `weave.db` where applicable)
+
+These are part of the product contract: if you rename or relocate them, update docs and migration behavior together.
+
+---
+
+## 4) Backward compatibility guidance
+
+When changing CLI/API behavior:
+
+1. Prefer additive changes over breaking renames.
+2. If breaking, provide migration notes in the same PR.
+3. Update `docs/quickstart.md` and architecture docs concurrently.
+4. Include verification commands proving new behavior.
+
+---
+
+## 5) Example integration pattern (subprocess)
 
 ```python
-from thoughtforge.cognition.core import ThoughtForgeCore
-from pathlib import Path
+import subprocess
 
-core = ThoughtForgeCore(
-    model_path=Path("/models/mistral-7b-q4.gguf"),   # optional
-    memory_dir=Path("~/.local/share/thoughtforge/memory"),
-    db_path=Path("~/.local/share/thoughtforge/knowledge/thoughtforge.db"),
+result = subprocess.run(
+    ["python", "-m", "mythic_vibe_cli.cli", "--help"],
+    check=True,
+    capture_output=True,
+    text=True,
 )
-
-result = core.think("What is Yggdrasil?")
-print(result.text)
-print(result.citations)     # ["Q42240"]
-print(result.enforcement_passed)   # True/False
+print(result.stdout)
 ```
 
-### `ThoughtForgeCore(model_path, memory_dir, db_path)`
-
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `model_path` | `Path \| None` | `None` | Path to GGUF model. `None` = knowledge-only mode. |
-| `memory_dir` | `Path \| None` | Auto | Directory for episodic memory, preferences, etc. |
-| `db_path` | `Path \| None` | Auto | Path to SQLite knowledge DB. |
-
-### `think(user_text, retrieval_path=None, num_drafts=None) → FinalResponseRecord`
-
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `user_text` | `str` | — | User query text. |
-| `retrieval_path` | `"sql" \| "vector" \| "hybrid" \| None` | Auto | Override retrieval path. |
-| `num_drafts` | `int \| None` | Profile default | Override draft count. |
+Use subprocess execution when integrating from external tooling to keep process boundaries explicit.
 
 ---
 
-## FinalResponseRecord
-
-Returned by `think()`. All fields are always populated.
+## 6) Example integration pattern (in-repo module import)
 
 ```python
-@dataclass
-class FinalResponseRecord:
-    turn_id: str               # UUID for this turn
-    text: str                  # final response text
-    citations: list[str]       # QID strings cited in text (e.g. ["Q42240"])
-    scores: CandidateScores    # composite, quality_tier, etc.
-    token_count: int           # estimated tokens in response
-    enforcement_passed: bool   # True if EnforcementGate passed
-    enforcement_notes: str     # notes if enforcement review needed
-    salvage_path: str          # "best_draft" | "refine_pass_1" | "knowledge_only"
-    retrieval_confidence: float
-    mode: str                  # generation mode used
+# Pseudocode pattern: import only stable module surfaces.
+from mythic_vibe_cli import cli, workflow, config
+
+# Build your wrapper around documented commands/workflows
+# rather than reaching into private helper internals.
 ```
 
-### Quality Tiers (`scores.quality_tier`)
-
-| Tier | Composite Score | Meaning |
-|---|---|---|
-| `excellent` | ≥ 0.85 | Strong citations + adequate length |
-| `good` | ≥ 0.65 | Solid response with some citations |
-| `adequate` | ≥ 0.45 | Acceptable but could improve |
-| `poor` | < 0.45 | Weak — enforcement likely flagged |
+Prefer public, stable functions and avoid coupling to private helpers.
 
 ---
 
-## FragmentSalvage
+## 7) Change checklist for API-affecting PRs
 
-```python
-from thoughtforge.refinement.salvage import FragmentSalvage
-
-salvage = FragmentSalvage()
-result = salvage.forge(candidates, bundle)
-
-# result.salvage_path: "best_draft" | "refine_pass_1" | "empty"
-# result.confidence: 0.0 – 1.0
-# result.citations: list of QID strings
-```
-
----
-
-## EnforcementGate
-
-```python
-from thoughtforge.refinement.enforcement import EnforcementGate
-
-gate = EnforcementGate()
-result = gate.check(text, citations, retrieved_qids)
-
-# result.passed: bool
-# result.status: "pass" | "review"
-# result.citation_check, result.length_check, result.genericness_check: bool
-# result.notes: str (empty if all pass)
-```
-
----
-
-## EdgeSubsetBuilder
-
-```python
-from thoughtforge.etl.subset import EdgeSubsetBuilder
-from pathlib import Path
-
-builder = EdgeSubsetBuilder()
-result = builder.build(
-    source_db=Path("data/thoughtforge.db"),
-    output_path=Path("data/thoughtforge_pi_zero.db"),
-    profile_id="pi_zero",       # uses 50K entity limit
-    max_entities=30_000,        # optional override
-)
-
-print(result.entities_copied)
-print(result.size_mb)
-print(result.success)
-```
-
----
-
-## OnnxExporter / ONNXEmbedder
-
-```python
-from thoughtforge.inference.onnx_export import OnnxExporter, ONNXEmbedder
-from pathlib import Path
-
-# Export (requires optimum or torch)
-exporter = OnnxExporter()
-result = exporter.export_embedder(
-    model_name="sentence-transformers/all-MiniLM-L6-v2",
-    output_dir=Path("models/onnx/all-MiniLM-L6-v2"),
-    quantize=True,   # produce int8 model
-)
-
-# Embed at runtime (requires onnxruntime)
-embedder = ONNXEmbedder(result.output_dir)
-vectors = embedder.encode(["Yggdrasil", "Midgard"])
-# vectors.shape == (2, 384)
-```
-
----
-
-## ProfileBenchmark
-
-```python
-from benchmarks.benchmark_profiles import ProfileBenchmark
-
-result = ProfileBenchmark().run("desktop_cpu")
-print(result.summary())
-print(result.citation_accuracy)       # 0.0–1.0
-print(result.enforcement_pass_rate)   # 0.0–1.0
-print(result.avg_latency_ms)          # milliseconds
-```
-
----
-
-## PersonaConsistencyScorer
-
-```python
-from benchmarks.persona_consistency import PersonaConsistencyScorer
-
-responses = [r.text for r in turn_results]
-scorer = PersonaConsistencyScorer()
-result = scorer.score(responses)
-
-print(result.consistency_score)   # 0.0–1.0 (target ≥ 0.75)
-print(result.passes)              # bool
-print(result.summary())
-
-# Generate markdown report
-report = PersonaConsistencyScorer.generate_report(result, "persona_report.md")
-```
+- [ ] CLI help/output updated where relevant
+- [ ] Docs updated (`quickstart`, `api`, and architecture/domain docs as needed)
+- [ ] Tests/checks run and recorded
+- [ ] Boundary rules validated (no forbidden cross-island imports)

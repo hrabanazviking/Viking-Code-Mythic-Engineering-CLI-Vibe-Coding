@@ -1,96 +1,121 @@
-# SYSTEM VISION
+# System Vision
 
 ## Purpose
 
-Mythic Vibe CLI exists to make disciplined software creation accessible to ordinary builders by turning architectural intent into repeatable execution loops.
+Mythic Vibe CLI exists to make disciplined software creation accessible to ordinary builders by turning intent into repeatable execution loops.
 
-The system should feel like a trusted co-navigator: structured enough to prevent drift, flexible enough to preserve creativity, and explicit enough to keep teams aligned over time.
+The system should feel like a dependable co-navigator: structured enough to prevent drift, flexible enough to preserve creativity, and explicit enough to maintain team alignment over time.
+
+---
 
 ## North Star
 
-Enable any individual or small team to move from idea to resilient implementation through a clear, phase-based method:
+Enable individuals and small teams to move from idea to resilient implementation through a transparent phase method:
 
 `intent -> constraints -> architecture -> plan -> build -> verify -> reflect`
 
-Success means users can repeatedly ship coherent work with less confusion, fewer rewrites, and better documentation continuity.
+Success means users can repeatedly ship coherent outcomes with fewer rewrites, clearer decisions, and better continuity across sessions.
 
-## Product Promises
+---
 
-1. **Architecture-first by default**  
-   The CLI should always steer users to define goals, constraints, and design decisions before coding.
+## Product promises
 
-2. **Beginner-friendly, expert-capable**  
-   Core workflows must remain understandable for new users while still supporting advanced users who want speed and depth.
+1. **Architecture-first by default**
+   Encourage goal/constraint/design clarity before implementation.
 
-3. **Traceable progress**  
-   Every major action should leave a durable artifact (docs, plans, logs, status updates) so decisions can be audited and continued.
+2. **Beginner-friendly, expert-capable**
+   Keep the default loop understandable while supporting advanced depth.
 
-4. **Low-friction human + AI collaboration**  
-   The system should support practical copy/paste collaboration with LLMs and preserve context through structured prompt packets.
+3. **Traceable progress**
+   Each meaningful action leaves durable artifacts for future recovery.
 
-5. **Method fidelity without rigidity**  
-   The CLI should enforce healthy defaults while allowing intentional adaptation for project-specific realities.
+4. **Practical human + AI collaboration**
+   Structured prompt packets should improve quality without obscuring method.
 
-## Scope of the System
+5. **Method fidelity without rigidity**
+   Enforce healthy defaults while permitting intentional adaptation.
+
+---
+
+## Scope
 
 ### In scope
-- Project initialization with Mythic-aligned structure.
+
+- Project initialization and method-aligned scaffolding.
 - Workflow commands for planning, check-ins, diagnostics, and status.
-- Documentation scaffolding and method reinforcement.
-- Prompt packet generation and response logging for AI-assisted development.
+- Documentation scaffolding and process reinforcement.
+- Prompt packet generation and response logging for AI collaboration.
 
 ### Out of scope
+
 - Replacing engineering judgment.
-- Fully autonomous code generation without human review.
-- Locking users into one model provider or one coding style.
+- Fully autonomous implementation without review.
+- Vendor lock-in to a single model/service/provider.
 
-## System Design Principles
+---
 
-- **Clarity over cleverness:** command behavior should be legible and predictable.
-- **Artifacts over memory:** decisions belong in files, not in private context.
-- **Small loops, fast feedback:** prefer incremental progress with verification checkpoints.
-- **Stable defaults, configurable edges:** beginner-safe defaults with layered config for power users.
-- **Transparency over magic:** users should understand why the tool suggests or enforces a step.
+## Design principles
 
-## User Experience Vision
+- **Clarity over cleverness:** command behavior should be legible.
+- **Artifacts over memory:** key decisions belong in files.
+- **Small loops, fast feedback:** favor incremental progress + verification.
+- **Stable defaults, configurable edges:** safe defaults with power-user control.
+- **Transparency over magic:** explain why the tool guides/enforces steps.
+
+---
+
+## UX expectations
 
 A user should be able to:
-1. Initialize or adopt a project rapidly.
-2. See what phase they are in and what “done” means for that phase.
-3. Generate AI collaboration context without leaking method structure.
-4. Record progress in seconds and return days later without losing thread.
-5. Diagnose project health quickly when momentum drops.
 
-## Quality Bar
+1. Initialize or adopt a project quickly.
+2. See current phase and phase-completion criteria.
+3. Generate high-signal AI context without losing method structure.
+4. Resume work days later using durable artifacts.
+5. Diagnose project health rapidly when momentum stalls.
+
+---
+
+## Quality bar
 
 A high-quality Mythic Vibe CLI interaction is:
-- **Coherent:** commands reinforce a single mental model.
+
+- **Coherent:** behavior reinforces one mental model.
 - **Recoverable:** state can be inspected and repaired.
-- **Documented:** decisions and outcomes are captured.
+- **Documented:** rationale and outcomes are captured.
 - **Composable:** workflows chain cleanly across phases.
-- **Trustworthy:** diagnostics and status reflect reality.
+- **Trustworthy:** diagnostics reflect actual project state.
 
-## Evolution Path
+---
 
-Near-term evolution should prioritize:
-1. Better phase guidance and error messages.
-2. Stronger diagnostics and remediation hints.
+## Evolution path
+
+### Near-term priorities
+
+1. Clearer phase guidance and error messaging.
+2. Better diagnostics with concrete remediation.
 3. Higher-signal prompt packet composition.
-4. Clearer project-level governance docs and templates.
+4. Stronger governance templates and contributor onboarding.
 
-Long-term evolution may include:
+### Long-term opportunities
+
 - Multi-agent orchestration patterns.
-- Richer retrieval and memory integrations.
-- Extended ritual command ecosystem with explicit safety rails.
+- Richer memory/retrieval integrations.
+- Expanded ritual command ecosystem with explicit guardrails.
 
-## Anti-Goals (Guardrails)
+---
+
+## Anti-goals
 
 The system should not become:
-- A black-box agent that hides decisions.
-- A brittle bureaucracy that blocks momentum.
-- A style-policing engine detached from project outcomes.
-- A vendor-locked workflow tied to one external service.
 
-## Final Vision Statement
+- A black-box agent that hides decisions,
+- A process bureaucracy that blocks delivery,
+- A style-policing layer detached from outcomes,
+- A workflow hard-locked to one external vendor.
 
-Mythic Vibe CLI is a practical engineering compass: a toolchain that helps humans and AI build software with stronger intent, clearer structure, and durable continuity from first idea to maintained system.
+---
+
+## Final vision statement
+
+Mythic Vibe CLI is an engineering compass: a toolchain that helps humans and AI build software with stronger intent, clearer structure, and durable continuity from first idea to maintained system.
