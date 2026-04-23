@@ -130,3 +130,37 @@ This entry marks the beginning of explicit dual-record discipline:
 The two records should now evolve together when meaningful behavior or governance changes occur.
 
 _May the record hold._
+
+---
+
+## 2026-04-23 — Scribe Invocation: Continuity Charter and Handoff Ritual
+
+**Session:** Focused documentation-governance hardening pass.
+**Status:** Markdown-only updates; repository runtime code untouched.
+**Hands on the wheel:** Eirwyn Rúnblóm, responding to a direct Scribe invocation, polished and expanded the active documentation layer with an emphasis on continuity under interruption.
+
+### What was changed in this pass
+
+- `docs/DOCUMENTATION_STANDARDS.md` was created as a formal charter for writing quality, update obligations, drift detection, and archival discipline.
+- `docs/SESSION_HANDOFF_TEMPLATE.md` was created as a pragmatic close-out template to preserve rationale and next actions between sessions.
+- `docs/INDEX.md` was expanded into a true canonical map with role-based pathways, update matrices, quality gates, and cadence guidance.
+- `docs/index.md` was transformed into a compatibility redirect to prevent duplicate authority and future drift.
+- `README.md` was updated with a dedicated governance section linking the continuity documents.
+- `CHANGELOG.md` was synchronized with this session so user-facing records remain aligned with contributor-facing memory.
+
+### Why this matters now
+
+The earlier documentation sweep made the docs richer; this pass made them more **self-healing**. The project now has explicit rules for how docs remain trustworthy when features, priorities, and maintainers change.
+
+In practical terms, this reduces three recurring failure patterns:
+
+1. **Silent divergence** between command behavior and docs.
+2. **Lost intent** after long pauses or handoffs.
+3. **Navigation decay** caused by duplicated index surfaces.
+
+### Continuity threads left deliberately open
+
+- The broader monorepo still contains a large volume of historical/reference documentation outside the active CLI spine. A future archival curation pass can classify those files as canonical, reference-only, or frozen history.
+- If command surfaces evolve significantly, the next maintainer should validate that `docs/api.md` still matches runtime semantics before release tagging.
+
+_May the memory remain legible when the fire burns low._
