@@ -1,0 +1,107 @@
+# Vast Idea Bank (High-Volume)
+
+## Build (50)
+- Build a faction economics simulator.
+- Build region weather impact on quest availability.
+- Build travel risk prediction system.
+- Build rumor propagation model.
+- Build dynamic mythology generator.
+- Build alliance tension index.
+- Build oath/debt contract tracker.
+- Build stealth reputation mechanic.
+- Build grief/revenge behavior arcs.
+- Build multi-agent planning mediator.
+- Build campaign energy monitor.
+- Build probabilistic omen interpreter.
+- Build relic provenance ledger.
+- Build artifact corruption pipeline.
+- Build diplomacy treaty generator.
+- Build war logistics planner.
+- Build weather-aware battle simulator.
+- Build moral consequence heatmap.
+- Build deity favor and wrath engine.
+- Build bloodline inheritance tracker.
+- Build city growth simulator.
+- Build migration and scarcity engine.
+- Build ritual failure risk model.
+- Build memory tampering detector.
+- Build betrayal prediction model.
+- Build reconciliation quest designer.
+- Build prophecy uncertainty calculator.
+- Build in-world newspaper generator.
+- Build intelligence network simulator.
+- Build territory claim conflict engine.
+- Build trade caravan event generator.
+- Build siege readiness estimator.
+- Build seasonal festival planner.
+- Build spycraft mini-system.
+- Build honor-duel adjudicator.
+- Build longship expedition planner.
+- Build language drift and dialect module.
+- Build cultural taboo impact mapper.
+- Build sacred site danger estimator.
+- Build celestial omen timeline.
+- Build tactical encounter previsualizer.
+- Build social hierarchy pressure model.
+- Build debt-collection quest engine.
+- Build apprentice/master progression system.
+- Build black-market influence network.
+- Build judicial tribunal simulator.
+- Build regional law variance engine.
+- Build peace summit orchestration assistant.
+- Build succession crisis simulator.
+- Build campaign endgame predictor.
+
+## Modify (30)
+- Modify memory schema for contradiction lineage.
+- Modify event bus to support causal links.
+- Modify personality traits to include volatility.
+- Modify stress model for recovery context.
+- Modify prompt budgeting for narrative priority tiers.
+- Modify runic resonance for combo cooldowns.
+- Modify crash reports with anonymized breadcrumbs.
+- Modify RAG thresholds per scenario class.
+- Modify retry policies with circuit breakers.
+- Modify logs for correlation IDs.
+- Modify lore docs to enforce source citations.
+- Modify onboarding docs with quickstart scripts.
+- Modify diagnostics with machine-readable outputs.
+- Modify storyteller prompts for continuity anchors.
+- Modify world model files for temporal tags.
+- Modify emotional engine to support blended states.
+- Modify memory retrieval for confidence penalties.
+- Modify event dispatching for replay dedupe.
+- Modify data system with validation hooks.
+- Modify user services to capture preference signals.
+- Modify religion system with faction doctrine maps.
+- Modify romance system with boundary flags.
+- Modify dice system with fairness audits.
+- Modify prompt templates with style contracts.
+- Modify tests for deterministic seed control.
+- Modify build scripts for faster smoke checks.
+- Modify CI to include lore-lint gate.
+- Modify release notes format for risks.
+- Modify API docs with example payloads.
+- Modify architecture diagrams monthly.
+
+## Fix (20)
+- Fix stale cache invalidation in retrieval path.
+- Fix duplicate event processing under retries.
+- Fix null-safe handling of missing mood data.
+- Fix timezone parsing inconsistencies.
+- Fix markdown export encoding edge cases.
+- Fix score normalization in planning ranker.
+- Fix race conditions in session save path.
+- Fix retry storms during dependency outages.
+- Fix memory pruning over-aggressiveness.
+- Fix missing diagnostic context in failures.
+- Fix inconsistent lore tag capitalization.
+- Fix narrative repetition in recap outputs.
+- Fix poor fallback when retrieval misses.
+- Fix error reporting granularity.
+- Fix data migration backward compatibility.
+- Fix fixture drift in regression suites.
+- Fix path assumptions in local scripts.
+- Fix edge-case overflow in threat index.
+- Fix session cleanup leaks.
+- Fix dead links in docs.
