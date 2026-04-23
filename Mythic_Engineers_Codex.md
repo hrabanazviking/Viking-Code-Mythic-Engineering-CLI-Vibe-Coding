@@ -1,12 +1,4 @@
-| [Mythic Engineering](https://github.com/hrabanazviking/Mythic-Engineering/blob/main/README.md) | [The Mythic Engineer's Codex: Vibe Coding 101](https://github.com/hrabanazviking/Mythic-Engineering/blob/main/Mythic_Engineers_Codex.md) | [Quick Guide to Mythic Engineering Vibe Coding](https://github.com/hrabanazviking/Mythic-Engineering/blob/main/Quick_Guide_to_Mythic_Engineering_Vibe_Coding.md) | [Practical Mythic Engineering Guide](https://github.com/hrabanazviking/Mythic-Engineering/blob/main/practical_mythic_engineering_step_by_step.md) | [Ada Lovelace Explains Mythic Engineering](https://github.com/hrabanazviking/Mythic-Engineering/blob/main/Ada_Lovelace_Explains_Mythic_Engineering.md) |
-
----
-
 # The Mythic Engineer's Codex: Vibe Coding 101
-
----
-
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/34838nhfnr73a93.png](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/34838nhfnr73a93.png)
 
 ---
 
@@ -33,10 +25,6 @@ Mythic Engineering is not a new set of technical commands. It is an ancient way 
 This Codex is your guide. It is a complete map for the absolute beginner. It will not teach you a single line of machine code. Instead, it will teach you how to *think*, how to *communicate*, and how to *architect* worlds that will stand the test of time.
 
 The craftsman awaits. Your journey begins now.
-
----
-
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/Mystic_Engineerrs_Codex_Vibe_Coding_101.png](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/Mystic_Engineerrs_Codex_Vibe_Coding_101.png)
 
 ---
 
@@ -861,39 +849,3 @@ You are the Architect. The Master Craftsman awaits your clear, vibrant, and soul
 The garden is empty, and the sun is rising. Begin.
 
 ---
-
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/Viking_Apache_V2_1.jpg](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/Viking_Apache_V2_1.jpg)
-
-## License
-
-Copyright (c) 2026 Volmarr Wyrd
-
-Mythic Engineering is licensed under the Apache License, Version 2.0.
-See the [LICENSE](LICENSE) file for details.
-
-Unless required by applicable law or agreed to in writing, this project is distributed on an "AS IS" BASIS, without warranties or conditions of any kind.
-
----
-
-## Distribution and Privacy Position
-
-Mythic-Engineering is published here as source code and project material.
-
-The author does not require users to provide age, identity, government ID, biometric data, or similar personal information in order to access or use the source code in this repository.
-
-The author may decline to provide official binaries, installers, hosted services, app-store releases, or other official distribution channels where doing so would require age verification, identity verification, or similar personal-data collection.
-
-Any third party who forks, packages, redistributes, deploys, hosts, or otherwise makes this software available does so independently and is solely responsible for compliance with applicable law, platform policy, and distribution requirements in their own jurisdiction and context.
-
-See [LEGAL-NOTICE.md](LEGAL-NOTICE.md) for details.
-
----
-
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0407.jpeg](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0407.jpeg)
-
----
-
-[Back to main](https://github.com/hrabanazviking/Mythic-Engineering)
-
----
-
