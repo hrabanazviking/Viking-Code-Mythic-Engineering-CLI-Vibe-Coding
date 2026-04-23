@@ -1,0 +1,284 @@
+[
+    {
+        "Stave_Name": "\u00c6gishj\u00e1lmur (Helm of Awe)",
+        "Intent": "To strike terror into the hearts of enemies and conquer them.",
+        "Ritual_Action": "Wash the stave in lead, print it on thy forehead between thy brows with spittle or blood.",
+        "The_Incantation": "I bear the Helm of Awe / Between my brows! / Let all who look upon me / Quake with fear! / I am the serpent, / I am the bear! / My gaze is iron, / My will is stone!"
+    },
+    {
+        "Stave_Name": "Vegv\u00edsir (Wayfinder)",
+        "Intent": "To find one's way through rough weather and unknown paths.",
+        "Ritual_Action": "Carve this sign on a piece of wood, or trace it in blood upon thy forehead.",
+        "The_Incantation": "Through storm and sleet, / Through fog and fear, / The Wayfinder guides, / The path is clear! / Though the sky be dark, / And the land be strange, / My steps are sure, / My home is near!"
+    },
+    {
+        "Stave_Name": "\u00dej\u00f3fastafur (Thief-Finder)",
+        "Intent": "To discover a thief who has stolen from thee.",
+        "Ritual_Action": "Carve this on the bottom of a wooden bowl. Fill it with clear water and gaze into it until the face of the thief appears.",
+        "The_Incantation": "Water clear, / Show me here! / Who took my goods? / Who stole my gear? / Face of the thief, / Rise from the deep! / Secrets revealed, / No more to keep!"
+    },
+    {
+        "Stave_Name": "\u00c1stastafur (Love-Charm)",
+        "Intent": "To win the love of a woman.",
+        "Ritual_Action": "Carve this sign on a piece of cheese or bread and give it to the woman to eat without her knowing.",
+        "The_Incantation": "Love me, love me, / As I love thee! / Heart to heart, / Bound to be! / By Freya's grace, / By Odin's might, / Be mine forever, / Day and night!"
+    },
+    {
+        "Stave_Name": "Varnarstafur (Protection-Stave)",
+        "Intent": "To protect a house from evil spirits and thieves.",
+        "Ritual_Action": "Carve this sign on the doorpost of thy house using consecrated wood.",
+        "The_Incantation": "Door be strong, / Wall be stout! / Evil enter not, / Keep it out! / Spirits dark, / Flee this place! / Safety and peace, / Fill this space!"
+    },
+    {
+        "Stave_Name": "D\u00f3msstafur (Judgment-Stave)",
+        "Intent": "To win a lawsuit or legal dispute.",
+        "Ritual_Action": "Carry this stave in thy pocket or sewn into thy clothes when going to the Thing.",
+        "The_Incantation": "Tyr, give me justice! / Forseti, give me peace! / My words be true, / My cause be right! / Judges listen, / To my plea! / Victory is mine, / So mote it be!"
+    },
+    {
+        "Stave_Name": "Feingur (Fertility-Charm)",
+        "Intent": "To make a woman pregnant.",
+        "Ritual_Action": "Carve this sign on a piece of cheese and give it to the woman.",
+        "The_Incantation": "Seed be sown, / Life be grown! / Womb be fruitful, / Child be known! / Freyr bless thee, / With life anew! / Mother's joy, / Come to you!"
+    },
+    {
+        "Stave_Name": "L\u00e1sabrj\u00f3tur (Lock-Breaker)",
+        "Intent": "To open a lock without a key.",
+        "Ritual_Action": "Place the stave against the lock and blow into the keyhole.",
+        "The_Incantation": "Iron yield, / Brass give way! / Lock spring open, / Without delay! / By dwarf's craft, / And giant's might, / Open wide, / To my sight!"
+    },
+    {
+        "Stave_Name": "Drepr\u00fan (Killing-Rune)",
+        "Intent": "To kill an enemy's cattle.",
+        "Ritual_Action": "Carve on a piece of horse bone and throw it into the enemy's field.",
+        "The_Incantation": "Cattle fall, / Sickness call! / Wither and die, / One and all! / Enemy's wealth, / Turn to dust! / Ruin and rot, / As it must!"
+    },
+    {
+        "Stave_Name": "Angurgapi (Barrel-Stave)",
+        "Intent": "To prevent barrels from leaking.",
+        "Ritual_Action": "Carve on the top and bottom of the barrel.",
+        "The_Incantation": "Wood be tight, / Hoops be strong! / Ale stay in, / Where you belong! / Leak no drop, / Waste no more! / Full to the brim, / Forevermore!"
+    },
+    {
+        "Stave_Name": "Gapaldur (Victory in Wrestling)",
+        "Intent": "To ensure victory in Gl\u00edma wrestling.",
+        "Ritual_Action": "Keep Gapaldur under the heel of the right foot.",
+        "The_Incantation": "Gapaldur below, / Ginfaxi above! / Strength of the bear, / Grip of the wolf! / Throw my foe, / To the ground! / Victory is mine, / Renown is found!"
+    },
+    {
+        "Stave_Name": "Ginfaxi (Victory in Wrestling)",
+        "Intent": "To ensure victory in Gl\u00edma wrestling.",
+        "Ritual_Action": "Keep Ginfaxi under the toes of the left foot.",
+        "The_Incantation": "Ginfaxi guide, / My steps be true! / Balance and power, / See me through! / Opponent falls, / I stand tall! / Champion of all, / In the hall!"
+    },
+    {
+        "Stave_Name": "Kaupaloki (Trade-Luck)",
+        "Intent": "To prosper in trade and business.",
+        "Ritual_Action": "Carve on a piece of beech wood and carry it in thy purse.",
+        "The_Incantation": "Gold come in, / Silver flow! / Wealth and riches, / Let them grow! / Fair trade made, / Profit gained! / Fortune smiles, / Unrestrained!"
+    },
+    {
+        "Stave_Name": "H\u00f3lastafur (Hill-Stave)",
+        "Intent": "To open hills and find hidden treasure.",
+        "Ritual_Action": "Carve on a wand of rowan wood and tap the hill three times.",
+        "The_Incantation": "Hill open wide, / Treasure show! / Gold and silver, / Wait below! / Ancient secrets, / Come to light! / Riches vast, / Shine so bright!"
+    },
+    {
+        "Stave_Name": "Svefn\u00feorn (Sleep-Thorn)",
+        "Intent": "To put someone into a deep sleep.",
+        "Ritual_Action": "Place under the pillow of the person you wish to sleep.",
+        "The_Incantation": "Sleep deep, / Sleep long! / Wake not up, / To bird's song! / Heavy eyes, / Weary head! / Slumber bound, / Like the dead!"
+    },
+    {
+        "Stave_Name": "Vatnahl\u00edfir (Water-Protection)",
+        "Intent": "To protect against drowning.",
+        "Ritual_Action": "Carve on the oar or the side of the boat.",
+        "The_Incantation": "Ran, stay back! / Aegir, be kind! / Safe passage home, / Let me find! / Waves be still, / Waters calm! / Protect my life, / From all harm!"
+    },
+    {
+        "Stave_Name": "Eldhl\u00edfir (Fire-Protection)",
+        "Intent": "To protect a house from fire.",
+        "Ritual_Action": "Carve on the hearthstone or above the fireplace.",
+        "The_Incantation": "Fire burn bright, / But burn not here! / Hearth be safe, / Have no fear! / Logi's hunger, / Stay away! / Warmth and light, / Let them stay!"
+    },
+    {
+        "Stave_Name": "M\u00e1lr\u00fan (Speech-Rune)",
+        "Intent": "To speak well and be persuasive.",
+        "Ritual_Action": "Carve on the tongue of an eagle or a raven and carry it.",
+        "The_Incantation": "Words flow free, / Tongue be wise! / Persuade all, / With no lies! / Eloquence grant, / Speech be bold! / Listeners captive, / Stories told!"
+    },
+    {
+        "Stave_Name": "Herzlustafir (Courage-Stave)",
+        "Intent": "To harden one's heart and gain courage.",
+        "Ritual_Action": "Draw on the left breast with blood.",
+        "The_Incantation": "Heart of steel, / Will of stone! / Fear no man, / Stand alone! / Courage rise, / Terror flee! / Brave and strong, / I shall be!"
+    },
+    {
+        "Stave_Name": "\u00d3ttastafur (Fear-Stave)",
+        "Intent": "To cause fear in an enemy.",
+        "Ritual_Action": "Carve on an oak tablet and throw it at the enemy's feet.",
+        "The_Incantation": "Panic strike, / Terror bind! / Fear consume, / Heart and mind! / Flee in dread, / Run away! / Coward's fate, / Yours today!"
+    },
+    {
+        "Stave_Name": "Rosahringur (Protection-Circle)",
+        "Intent": "To create a circle of protection around oneself.",
+        "Ritual_Action": "Draw a circle on the ground with a staff of hazel.",
+        "The_Incantation": "Circle round, / Safe and sound! / Evil spirits, / Be not found! / Holy ground, / Sacred space! / Protection strong, / In this place!"
+    },
+    {
+        "Stave_Name": "Smj\u00f6rhn\u00fatur (Butter-Knot)",
+        "Intent": "To ensure butter churns quickly and well.",
+        "Ritual_Action": "Carve on the bottom of the churn.",
+        "The_Incantation": "Cream turn thick, / Butter come! / Churning stick, / Beat the drum! / Golden fat, / Rise to top! / Dairy magic, / Never stop!"
+    },
+    {
+        "Stave_Name": "Tjol-Runes (Troll-Runes)",
+        "Intent": "To protect against trolls and giants.",
+        "Ritual_Action": "Carve on a stone and bury it near the house.",
+        "The_Incantation": "Trolls stay back, / Giants flee! / Stone protects, / This I see! / Mountain folk, / Leave us be! / Safe from harm, / We shall be!"
+    },
+    {
+        "Stave_Name": "Valdemar's Protection Stave",
+        "Intent": "To protect against all evil and harm.",
+        "Ritual_Action": "Write on parchment and carry in a pouch.",
+        "The_Incantation": "Valdemar's sign, / Power divine! / Shield from evil, / Guard this line! / No harm come, / No ill befall! / Protected safe, / Within this wall!"
+    },
+    {
+        "Stave_Name": "Thief-Return Stave",
+        "Intent": "To force a thief to return stolen goods.",
+        "Ritual_Action": "Carve on a wooden tablet and place it where the goods were stolen.",
+        "The_Incantation": "Thief return, / What you took! / Guilty conscience, / Like a hook! / Drag you back, / To this spot! / Give it up, / Before you rot!"
+    },
+    {
+        "Stave_Name": "Confusion-Stave",
+        "Intent": "To confuse an enemy and make them lose their way.",
+        "Ritual_Action": "Draw on the path the enemy will take.",
+        "The_Incantation": "Path be twisted, / Way be lost! / Mind be clouded, / At great cost! / Wander aimless, / Round and round! / Never knowing, / Where you're bound!"
+    },
+    {
+        "Stave_Name": "Headache-Cure Stave",
+        "Intent": "To cure a headache.",
+        "Ritual_Action": "Place the stave on the forehead.",
+        "The_Incantation": "Pain be gone, / Head be clear! / Ache depart, / Disappear! / Healing touch, / Soothing balm! / Restful peace, / Quiet calm!"
+    },
+    {
+        "Stave_Name": "Insanity-Cure Stave",
+        "Intent": "To cure insanity or madness.",
+        "Ritual_Action": "Carve on lead and hang around the neck.",
+        "The_Incantation": "Mind be whole, / Thoughts be sane! / Madness flee, / Leave this brain! / Clarity return, / Reason reign! / Peace of mind, / Once again!"
+    },
+    {
+        "Stave_Name": "Ghost-Banish Stave",
+        "Intent": "To banish ghosts and restless spirits.",
+        "Ritual_Action": "Hold the stave towards the ghost and command it to leave.",
+        "The_Incantation": "Spirit leave, / Go away! / Find your rest, / Don't you stay! / To the grave, / Or beyond! / Break the tie, / Cut the bond!"
+    },
+    {
+        "Stave_Name": "Dead-Summon Stave",
+        "Intent": "To summon the dead to speak.",
+        "Ritual_Action": "Draw on the grave of the deceased.",
+        "The_Incantation": "Rise from grave, / Speak to me! / Secrets tell, / Set them free! / Voice from past, / Come to light! / Answer questions, / In the night!"
+    },
+    {
+        "Stave_Name": "Cattle-Protection Stave",
+        "Intent": "To protect cattle from disease and predators.",
+        "Ritual_Action": "Carve on the barn door.",
+        "The_Incantation": "Cattle safe, / Cows be well! / Sickness flee, / Cast a spell! / Wolf stay back, / Bear go 'way! / Herd protect, / Night and day!"
+    },
+    {
+        "Stave_Name": "Sheep-Twin Stave",
+        "Intent": "To make sheep bear twins.",
+        "Ritual_Action": "Carve on the ram's horn.",
+        "The_Incantation": "Ram be strong, / Ewe be lush! / Lambs be two, / In a rush! / Flock increase, / Wool abound! / Shepherd's joy, / All around!"
+    },
+    {
+        "Stave_Name": "Seal-Catch Stave",
+        "Intent": "To catch a seal.",
+        "Ritual_Action": "Carve on the harpoon or club.",
+        "The_Incantation": "Seal come near, / Don't be shy! / Hunter waits, / Don't ask why! / Skin and meat, / Fat and bone! / Provide for us, / In our home!"
+    },
+    {
+        "Stave_Name": "Ship-Protection Stave",
+        "Intent": "To protect a ship from storms and sinking.",
+        "Ritual_Action": "Carve on the mast or the rudder.",
+        "The_Incantation": "Hull be strong, / Sail be true! / Wind be fair, / Skies be blue! / Safe harbor reach, / Journey's end! / Ship protect, / Round the bend!"
+    },
+    {
+        "Stave_Name": "Washing-Stave",
+        "Intent": "To cleanse oneself of evil and bad luck.",
+        "Ritual_Action": "Draw in water and wash thy face and hands.",
+        "The_Incantation": "Water wash, / Cleanse my soul! / Evil go, / Make me whole! / Bad luck fade, / Good luck come! / Fresh start now, / For this one!"
+    },
+    {
+        "Stave_Name": "Fox-Trap Stave",
+        "Intent": "To catch a fox.",
+        "Ritual_Action": "Carve on the trap or snare.",
+        "The_Incantation": "Fox be tricked, / Snare be tight! / Fur be mine, / Before the night! / Cunning beast, / Meet your end! / Hunter's prize, / Round the bend!"
+    },
+    {
+        "Stave_Name": "Fish-Lure Stave",
+        "Intent": "To attract fish to the hook or net.",
+        "Ritual_Action": "Carve on the sinker or the float.",
+        "The_Incantation": "Fish come here, / Bite the hook! / Fill the net, / Take a look! / Cod and haddock, / Salmon too! / Plenty catch, / For me and you!"
+    },
+    {
+        "Stave_Name": "Bleeding-Stop Stave",
+        "Intent": "To stop bleeding from a wound.",
+        "Ritual_Action": "Press the stave against the wound.",
+        "The_Incantation": "Blood stay in, / Flow no more! / Wound be closed, / Like a door! / Healing start, / Pain subside! / Life preserve, / Turn the tide!"
+    },
+    {
+        "Stave_Name": "Butter-Thief Stave",
+        "Intent": "To steal butter from a neighbor's churn.",
+        "Ritual_Action": "Carve on a stick and point it at the neighbor's house while churning.",
+        "The_Incantation": "Butter fly, / From their churn! / Into mine, / Twist and turn! / Theirs be thin, / Mine be fat! / Cream be stolen, / Just like that!"
+    },
+    {
+        "Stave_Name": "Milk-Steal Stave",
+        "Intent": "To steal milk from a neighbor's cow.",
+        "Ritual_Action": "Draw on the milking pail.",
+        "The_Incantation": "Milk flow here, / From their cow! / Fill my pail, / Here and now! / Theirs go dry, / Mine run o'er! / Plenty milk, / More and more!"
+    },
+    {
+        "Stave_Name": "Weather-Change Stave",
+        "Intent": "To change the weather.",
+        "Ritual_Action": "Raise the stave to the sky and command the elements.",
+        "The_Incantation": "Wind shift round, / Clouds depart! / Sun shine down, / Warm my heart! / Or rain come down, / Water ground! / Weather change, / All around!"
+    },
+    {
+        "Stave_Name": "Curse-Reversal Stave",
+        "Intent": "To reverse a curse sent against thee.",
+        "Ritual_Action": "Carve on a mirror or reflective surface and face it towards the sender.",
+        "The_Incantation": "Curse return, / To sender go! / Back on them, / Let it flow! / Evil wish, / Bounce right back! / Harm them now, / In attack!"
+    },
+    {
+        "Stave_Name": "Invisibility-Stave",
+        "Intent": "To become invisible or unnoticed.",
+        "Ritual_Action": "Carry the stave in a pouch made of black cat skin.",
+        "The_Incantation": "Seen by none, / Hidden well! / Shadow cloak, / Cast a spell! / Walk unseen, / Pass on by! / Invisible, / To the eye!"
+    },
+    {
+        "Stave_Name": "Strength-Stave",
+        "Intent": "To gain physical strength.",
+        "Ritual_Action": "Draw on the muscles of the arms.",
+        "The_Incantation": "Muscles swell, / Power grow! / Strength of giant, / Let it show! / Lift the heavy, / Break the strong! / Mighty force, / All along!"
+    },
+    {
+        "Stave_Name": "Speed-Stave",
+        "Intent": "To run fast and tireless.",
+        "Ritual_Action": "Draw on the soles of the feet.",
+        "The_Incantation": "Feet be swift, / Wind be fast! / Run like deer, / First to last! / Tire not, / Speed increase! / Race be won, / Find release!"
+    },
+    {
+        "Stave_Name": "Sight-Stave",
+        "Intent": "To see things far away or hidden.",
+        "Ritual_Action": "Draw on a piece of glass and look through it.",
+        "The_Incantation": "Eyes be sharp, / Vision clear! / Far away, / Bring it near! / Hidden things, / Now revealed! / Secrets shown, / Unconcealed!"
+    },
+    {
+        "Stave_Name": "Hearing-Stave",
+        "Intent": "To hear whispers and distant sounds.",
+        "Ritual_Action": "Draw behind the ear.",
+        "The_Incantation": "Ears be keen, / Sounds be loud! / Whispers catch, / In the crowd! / Distant noise, / Bring it close! / Secrets heard, / Friends and foes!"
+    }
+]

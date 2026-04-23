@@ -1,0 +1,61 @@
+# MindSpark: ThoughtForge — Default Runtime Configuration
+# Override any value by creating configs/local_config.yaml (gitignored)
+
+# ── Hardware ───────────────────────────────────────────────────────────────────
+hardware:
+  profile: auto          # auto | phone_low | pi_zero | pi_5 | desktop_cpu | desktop_gpu | server_gpu
+  profiles_dir: hardware_profiles/
+
+# ── Knowledge database ─────────────────────────────────────────────────────────
+knowledge:
+  db_path: data/knowledge.db
+  embeddings_dir: data/embeddings/
+  embedding_model: all-MiniLM-L6-v2
+  reference_data_dir: data/knowledge_reference/
+
+# ── Retrieval ──────────────────────────────────────────────────────────────────
+retrieval:
+  scoring_weights:
+    semantic_similarity: 0.35
+    tone_match: 0.20
+    user_preference: 0.20
+    recency: 0.10
+    importance: 0.15
+
+# ── Memory lifecycle ───────────────────────────────────────────────────────────
+memory:
+  default_pruning_mode: routine    # light | routine | heavy | emergency
+  pruning_score_weights:
+    staleness: 0.25
+    redundancy: 0.20
+    low_confidence: 0.15
+    low_importance: 0.15
+    low_quality: 0.10
+    low_future_relevance: 0.10
+    low_reinforcement: 0.05
+  survival_score_weights:
+    importance: 0.25
+    confidence: 0.20
+    quality: 0.15
+    future_relevance: 0.20
+    recency: 0.10
+    reinforcement_strength: 0.10
+
+# ── Cognition scaffolds ────────────────────────────────────────────────────────
+cognition:
+  personality_core_path: configs/personality_core.yaml
+  scaffold_depth: medium           # light | medium | expert
+
+# ── Refinement ─────────────────────────────────────────────────────────────────
+refinement:
+  fragment_scoring_weights:
+    length_score: 0.45
+    citation_score: 0.55
+  citation_confidence_threshold: 0.70
+
+# ── Logging ────────────────────────────────────────────────────────────────────
+logging:
+  level: INFO                      # DEBUG | INFO | WARNING | ERROR
+  log_dir: logs/
+  log_to_file: true
+  log_to_console: true

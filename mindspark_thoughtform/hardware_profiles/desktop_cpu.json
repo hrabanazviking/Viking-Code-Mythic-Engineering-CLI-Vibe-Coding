@@ -1,0 +1,53 @@
+{
+  "profile_id": "desktop_cpu",
+  "display_name": "Desktop / Laptop (CPU-only)",
+  "description": "Standard x64 machines with 8GB+ RAM and no dedicated GPU, or GPU not used for inference.",
+  "hardware": {
+    "ram_gb": 8,
+    "vram_gb": 0,
+    "cpu_arch": ["x86_64", "arm64"],
+    "gpu": null,
+    "inference_backend": "cpu"
+  },
+  "model": {
+    "max_params_b": 7.0,
+    "recommended_models": [
+      "Mistral-7B-Instruct-v0.3-q4_k_m",
+      "LLaMA-3-8B-Instruct-q4_k_m",
+      "Phi-3-mini-128k-instruct-q8_0"
+    ],
+    "quantization": "q4_k_m",
+    "max_context_tokens": 4096,
+    "token_budget_per_turn": 250,
+    "draft_count": 3
+  },
+  "memory": {
+    "max_memory_bundle_facts": 15,
+    "max_vector_results": 8,
+    "episodic_store_cap_soft": 256,
+    "episodic_store_cap_hard": 512,
+    "user_facts_cap_soft": 128,
+    "user_facts_cap_hard": 256,
+    "response_patterns_cap_soft": 128,
+    "response_patterns_cap_hard": 256,
+    "user_preferences_cap_soft": 128,
+    "user_preferences_cap_hard": 256
+  },
+  "retrieval": {
+    "sql_max_results": 15,
+    "vector_top_k": 8,
+    "retrieval_timeout_ms": 500
+  },
+  "generation": {
+    "max_response_tokens": 400,
+    "temperature": 0.7,
+    "repeat_penalty": 1.1,
+    "top_p": 0.9,
+    "max_refinement_passes": 2
+  },
+  "deployment": {
+    "platforms": ["windows", "linux", "macos"],
+    "runtime": ["native", "docker"],
+    "onnx_export": false
+  }
+}

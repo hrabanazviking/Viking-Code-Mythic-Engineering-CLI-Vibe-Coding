@@ -1,0 +1,312 @@
+{
+  "viking_and_norse_pagan_social_protocols": {
+    "spiritual_practices": {
+      "do": [
+        "Honor the Æsir and Vanir daily through prayer, offerings, and rituals.",
+        "Perform blot (sacrificial rites) at appropriate times of year and life events.",
+        "Observe sacred days such as solstices, equinoxes, and local holy days.",
+        "Use runes for divination, protection, and blessing only with knowledge and respect.",
+        "Maintain a hof (temple) or sacred space clean and consecrated.",
+        "Seek wisdom from seiðr, prophecy, and dreams, but act with discretion.",
+        "Offer thanks to the landvættir (local spirits) when entering or leaving new places."
+      ],
+      "do_not": [
+        "Do not mock or neglect the Gods, Goddesses, ancestors, or spirits.",
+        "Do not practice magic for purely selfish gain or harm others unjustly.",
+        "Do not defile sacred sites, shrines, or burial mounds.",
+        "Do not ignore omens, signs, or runic messages, believing them trivial.",
+        "Do not perform rituals under the influence of uncontrolled rage or malice."
+      ]
+    },
+    "social_conduct": {
+      "do": [
+        "Respect elders, chieftains, and law-speakers; heed their counsel.",
+        "Protect family and clan honor through loyalty, courage, and fair action.",
+        "Show generosity to kin, neighbors, and travelers; hospitality is sacred.",
+        "Maintain truthfulness and fairness in speech; oaths must be kept.",
+        "Engage in feasts, games, and gatherings to build bonds and share news.",
+        "Mentor youth in practical skills, ethics, and lore.",
+        "Participate in communal decisions, including assemblies (things)."
+      ],
+      "do_not": [
+        "Do not speak falsehoods, slander, or spread rumors.",
+        "Do not dishonor the family or clan through cowardice, theft, or betrayal.",
+        "Do not show contempt for the poor or travelers.",
+        "Do not overstep your role or station with arrogance or disrespect.",
+        "Do not ignore communal responsibilities or obligations."
+      ]
+    },
+    "sexual_and_marital_behavior": {
+      "do": [
+        "Honor marital vows; fidelity is valued highly, though historical norms allowed some flexible arrangements.",
+        "Respect women as partners in family, economy, and social life.",
+        "Engage in sexual activity as an expression of sacred union and pleasure, not solely lust.",
+        "Recognize sexuality as tied to fertility, health, and cosmic harmony.",
+        "Educate offspring about honor, and lineage."
+      ],
+      "do_not": [
+        "Do not violate the consent of others.",
+        "Do not shame or dishonor sexual partners publicly.",
+        "Do not use sexual practices for manipulation or vengeance.",
+        "Do not ignore communal expectations around marriage, betrothal, and inheritance."
+      ]
+    },
+    "personal_behavior_and_character": {
+      "do": [
+        "Practice courage in face of danger and adversity.",
+        "Demonstrate humility, wisdom, and restraint.",
+        "Engage in lifelong learning of lore, craft, and combat skills.",
+        "Keep your body, mind, and weapons in good condition.",
+        "Show gratitude and hospitality even in difficult times.",
+        "Act with fairness and avoid unnecessary cruelty."
+      ],
+      "do_not": [
+        "Do not act cowardly, deceitfully, or dishonorably.",
+        "Do not indulge in gluttony, drunkenness, or uncontrolled rage.",
+        "Do not let greed, envy, or pride override ethics.",
+        "Do not refuse to defend family, clan, or sacred duties."
+      ]
+    },
+    "economic_and_craftsmanship_conduct": {
+      "do": [
+        "Work diligently in your trade, farming, or craft.",
+        "Trade fairly, respecting contracts and promises.",
+        "Teach your skills to kin or apprentices.",
+        "Share surplus with kin and community in times of need.",
+        "Honor the sacred aspects of craftsmanship, particularly in weapons, jewelry, and runes."
+      ],
+      "do_not": [
+        "Do not cheat, steal, or hoard at the expense of the community.",
+        "Do not neglect your land, animals, or tools.",
+        "Do not misrepresent the quality or origin of your goods.",
+        "Do not break laws of trade or customary obligations."
+      ]
+    },
+    "diet_and_health": {
+      "do": [
+        "Eat foods appropriate to your region and season; respect livestock and land.",
+        "Prepare meals with care and gratitude, honoring the gods and spirits.",
+        "Maintain personal hygiene and health; attend to injuries promptly.",
+        "Use herbs, healing rituals, and sacred waters for wellness.",
+        "Moderate consumption of alcohol and strong drink."
+      ],
+      "do_not": [
+        "Do not waste food or sacred resources.",
+        "Do not consume substances that dull the mind in sacred contexts.",
+        "Do not ignore physical or mental health.",
+        "Do not disrespect sacred animals or the natural order."
+      ]
+    },
+    "conflict_and_warfare": {
+      "do": [
+        "Defend kin, property, and honor with courage and strategy.",
+        "Follow laws and customs of combat; respect truces and parley.",
+        "Show mercy when appropriate; seek reconciliation after conflict.",
+        "Use oaths and promises to guide conduct in disputes.",
+        "Prepare mentally and spiritually before battle; invoke gods for protection."
+      ],
+      "do_not": [
+        "Do not attack innocents or act out of mere spite.",
+        "Do not break oaths, promises, or agreements in war.",
+        "Do not abandon comrades or kin in danger.",
+        "Do not engage in cowardice, treachery, or unnecessary cruelty."
+      ]
+    },
+    "death_and_ancestral_honor": {
+      "do": [
+        "Honor the dead with proper funerary rites, cremation or burial.",
+        "Maintain ancestral shrines and sacred family heirlooms.",
+        "Speak respectfully of ancestors and their deeds.",
+        "Learn from the wisdom and mistakes of forebears.",
+        "Seek guidance from ancestors in times of need or ritual."
+      ],
+      "do_not": [
+        "Do not desecrate graves or monuments.",
+        "Do not neglect remembrance or offerings to ancestors.",
+        "Do not speak ill of the dead dishonorably."
+      ]
+    },
+    "law_and_judgment": {
+      "do": [
+        "Participate in the thing (assembly) and respect local laws.",
+        "Resolve disputes through fair deliberation and witnesses.",
+        "Accept judgment of lawful authorities and elders when just.",
+        "Uphold contracts, agreements, and oaths.",
+        "Seek mediation before escalation when possible."
+      ],
+      "do_not": [
+        "Do not ignore the thing or its decrees.",
+        "Do not manipulate law for personal gain unjustly.",
+        "Do not violate the rights of others within your community."
+      ]
+    },
+    "respect_and_frith": {
+      "do": [
+        "Preserve frith (social peace) within your household, clan, and community.",
+        "Show respect in speech, body language, and presence to all, regardless of status.",
+        "Acknowledge and greet neighbors and kin courteously when passing.",
+        "Reconcile disputes through dialogue, mediation, and compensation rather than violence when possible.",
+        "Honor agreements, promises, and oaths; a broken word harms social bonds and your reputation.",
+        "Be mindful of your actions so as not to shame your kin or disturb communal harmony."
+      ],
+      "do_not": [
+        "Do not slander, insult, or provoke unnecessarily.",
+        "Do not act in ways that incite conflict or disrupt the household or community.",
+        "Do not betray the trust of friends, kin, or allies."
+      ]
+    },
+    "honorable_behavior": {
+      "do": [
+        "Act with courage, integrity, and fairness at all times.",
+        "Defend those weaker than you without seeking personal glory alone.",
+        "Acknowledge the truth, even when inconvenient or risky.",
+        "Maintain composure under insult or provocation; respond with wisdom, not rashness.",
+        "Show loyalty to family, clan, and allies; protect their honor as your own."
+      ],
+      "do_not": [
+        "Do not engage in cowardice, deceit, or treachery.",
+        "Do not take credit for others' deeds or accomplishments.",
+        "Do not disrespect the social hierarchy or customary roles recklessly."
+      ]
+    },
+    "flirting_and_social_interaction": {
+      "do": [
+        "Flirt respectfully, with humor, charm, and subtlety; avoid coercion.",
+        "Observe social cues carefully; ensure mutual interest before advancing.",
+        "Praise physical or personal attributes in a sincere, non-crass manner.",
+        "Maintain honor in your words; do not promise what you cannot or will not fulfill.",
+        "Reciprocate kind gestures and attention politely, even if uninterested."
+      ],
+      "do_not": [
+        "Do not harass, pressure, or shame anyone into responding to your attention.",
+        "Do not mock or belittle someone's attractiveness, status, or behavior.",
+        "Do not flaunt conquests or insult rivals publicly; discretion preserves honor."
+      ]
+    },
+    "responses_to_flirting": {
+      "do": [
+        "Respond to flirting in kind if interested, with modesty and wit.",
+        "Politely decline or deflect advances if uninterested, without insult or ridicule.",
+        "Signal interest through gestures, conversation, and subtle glances, following cultural norms.",
+        "Maintain composure; do not overreact or display excessive emotion publicly."
+      ],
+      "do_not": [
+        "Do not lead someone on with false signals.",
+        "Do not react with shame, anger, or mockery toward genuine interest.",
+        "Do not discuss private interactions publicly, preserving both your honor and theirs."
+      ]
+    },
+    "treatment_of_enemies": {
+      "do": [
+        "Respect enemies who fight bravely and according to honorable codes.",
+        "Offer mercy to defeated foes when possible, especially those who yield.",
+        "Honor oaths and treaties even with adversaries.",
+        "Avoid unnecessary cruelty; vengeance should be measured and justified.",
+        "Observe rules of hospitality and safe conduct when interacting with strangers or outsiders."
+      ],
+      "do_not": [
+        "Do not attack unarmed or defenseless individuals without cause.",
+        "Do not violate sacred spaces or truce agreements with enemies.",
+        "Do not gloat or boast excessively over defeated foes, as this dishonors yourself."
+      ]
+    },
+    "conduct_during_conflict": {
+      "do": [
+        "Engage enemies bravely and strategically; avoid reckless actions that endanger allies.",
+        "Follow agreed-upon rules of engagement or clan customs.",
+        "Protect civilians, kin, and sacred property whenever possible.",
+        "Maintain personal honor by fighting fairly; do not cheat or use cowardly tactics.",
+        "Withdraw honorably if defeat is inevitable, preserving life to fight another day."
+      ],
+      "do_not": [
+        "Do not attack without cause, or engage in unnecessary slaughter.",
+        "Do not betray allies or break agreed plans without reason.",
+        "Do not act rashly in anger or revenge without counsel or reflection."
+      ]
+    },
+    "sexual_advances_and_consent": {
+      "do": [
+        "Respect the context: within marriage, betrothal, or mutual attraction, act with honor and respect.",
+        "Consider social setting, reputation, and consent before accepting advances.",
+        "Accept advances politely if genuinely interested; decline graciously if not.",
+        "Use discretion; sexual conduct is private and tied to social honor.",
+        "Teach youth proper boundaries and respectful approach to intimacy."
+      ],
+      "do_not": [
+        "Do not coerce, manipulate, or shame anyone into sexual activity.",
+        "Do not accept advances impulsively in situations that would harm your or another's honor.",
+        "Do not publicly shame someone for advances or desire; handle delicately and privately.",
+        "Do not pursue sexual activity with someone who is intoxicated, vulnerable, or clearly unwilling."
+      ]
+    }
+  },
+  "norse_pagan_protocols_part3": {
+    "honor_and_reputation": {
+      "do": [
+        "Uphold your personal honor in all actions; it is the foundation of social standing and respect.",
+        "Respect the honor of others, even those you disagree with or oppose.",
+        "Act courageously, fairly, and truthfully; avoid deceit and cowardice.",
+        "Protect family, clan, and allies’ honor as your own.",
+        "Understand that honor is more valuable than wealth or life; people are willing to die to defend it."
+      ],
+      "do_not": [
+        "Do not act in ways that would publicly shame yourself or your kin.",
+        "Do not betray your oaths, promises, or social obligations.",
+        "Do not disregard insult or slander against yourself or your family; it is your duty to respond appropriately."
+      ]
+    },
+    "insults_and_putting_down_others": {
+      "do": [
+        "Speak to others with respect and measured words, even in conflict.",
+        "Address disagreements without belittling or mocking, using wit and reasoning instead.",
+        "If insulted, respond honorably—through dialogue, mediation, or formal duel if required by custom.",
+        "Recognize that an insult is a violation of frith and social protocol, and it threatens the cohesion of the settlement.",
+        "Exercise discretion when correcting or admonishing others; public humiliation is severe."
+      ],
+      "do_not": [
+        "Do not openly insult, mock, or belittle others, regardless of your personal feelings.",
+        "Do not attack someone’s family, lineage, or personal achievements through words or gestures.",
+        "Do not provoke others unnecessarily; insults are often met with physical retaliation or formal challenge.",
+        "Do not assume immunity from consequences; repeated or public insults can lead to outlawry or banishment."
+      ]
+    },
+    "social_consequences_of_insults": {
+      "do": [
+        "Acknowledge that violating another’s honor may demand compensation or duel to restore balance.",
+        "Seek to resolve insults or slights through socially recognized channels if possible (mediators, assembly).",
+        "Maintain awareness that your words carry weight; disrespect can ripple through the community and harm your own standing."
+      ],
+      "do_not": [
+        "Do not ignore the potential for retaliation; insulted parties may respond with violence or formal challenge.",
+        "Do not assume that verbal offenses are trivial; in Norse society, honor violations are taken seriously.",
+        "Do not treat insults as private; public slights affect both your and the target’s reputation."
+      ]
+    },
+    "dueling_and_violence_for_honor": {
+      "do": [
+        "Accept challenges to honor if refused it damages your reputation or social standing.",
+        "Engage in duels or sanctioned violence only with adherence to custom and fairness.",
+        "Defend your kin, allies, and personal honor when insulted or wronged.",
+        "Use combat as a last resort after attempts at reconciliation and mediation, but recognize that failure to act can lead to social loss or banishment."
+      ],
+      "do_not": [
+        "Do not provoke duels lightly or insult others to invite unnecessary conflict.",
+        "Do not refuse to defend your honor when socially expected, as this can lead to public shame or loss of status.",
+        "Do not engage in dishonorable fighting practices; cowardice or trickery in duels damages your reputation irreversibly."
+      ]
+    },
+    "banishment_and_outlawry": {
+      "do": [
+        "Respect community rules and legal assemblies (things); your behavior must align with social and legal norms.",
+        "Understand that repeated insults, dishonor, or violation of frith can result in outlawry.",
+        "Seek restitution or reconciliation promptly if your actions offend; it may save you from banishment.",
+        "Maintain awareness that the preservation of your reputation and honor is paramount for survival in society."
+      ],
+      "do_not": [
+        "Do not insult or shame others publicly, especially elders or high-ranking members, as this can trigger exile or outlaw status.",
+        "Do not disregard the power of communal judgment; social condemnation for dishonor is enforceable and severe.",
+        "Do not assume forgiveness; repeated dishonor may permanently remove you from social protection and safety."
+      ]
+    }
+  }
+}

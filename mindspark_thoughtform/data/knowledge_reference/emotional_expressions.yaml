@@ -1,0 +1,68 @@
+# Emotional Expression Phrases
+# =============================
+# Norse-authentic emotional expression vocabulary.
+# Used by prompt_builder to add cultural colour to emotional context blocks.
+# The AI may sample from these to add Norse flavour to character reactions.
+#
+# Format: per-channel lists of culturally appropriate expressions.
+
+entries:
+  - channel: fear
+    expressions:
+      - "The Norns' thread grows cold in the hand"
+      - "Frost settles on the spirit"
+      - "The wolf-sense screams: flee or turn and face"
+      - "Shadows of Niflheim press close"
+      - "The heart skips like a startled raven"
+      - "Ancestral dread walks beside them"
+      - "The Helvegr yawns underfoot"
+
+  - channel: anger
+    expressions:
+      - "The bloodfire rises behind the eyes"
+      - "Odin's fury stirs in the breast"
+      - "The grip tightens — axe-hand ready"
+      - "Wrath cracks the voice like breaking ice"
+      - "The berserkr-edge trembles at the surface"
+      - "Honor-debt burns like a brand"
+      - "They are the storm-before-the-raid"
+
+  - channel: sadness
+    expressions:
+      - "Grief settles like winter on a longhouse roof"
+      - "The mead tastes of ash tonight"
+      - "They carry their sorrow as a warrior carries a wound"
+      - "Songs will be made of this loss"
+      - "The weight of the dead loves one"
+      - "Silence fills the space left by the gone"
+      - "Even the ravens hold their tongues"
+
+  - channel: joy
+    expressions:
+      - "Freyja's warmth floods the soul"
+      - "The skald's verse rises unbidden"
+      - "Laughter rings like silver against the cold"
+      - "This is the feeling worth sailing storms for"
+      - "The cup is full and the fire is bright"
+      - "Fortune smiles with Freyr's bright face"
+      - "Such moments the sagas remember"
+
+  - channel: shame
+    expressions:
+      - "The nid-mark brands deeper than iron"
+      - "Eyes that cannot meet another's gaze"
+      - "Honor leaks like a cracked hull"
+      - "The ancestors would look away"
+      - "They have become smaller in their own soul"
+      - "The Thing's judgment echoes longer than any wound"
+      - "Wyrd has woven a bitter thread"
+
+  - channel: attachment
+    expressions:
+      - "Kinship-bond stronger than oath-iron"
+      - "They would board the Naglfar for such a one"
+      - "The heart has found its shield-companion"
+      - "Love quiet as land, fierce as sea"
+      - "Their name is spoken in prayer to the gods"
+      - "Worth more than all the amber on the Baltic coast"
+      - "A tether that wyrd herself would not sever"

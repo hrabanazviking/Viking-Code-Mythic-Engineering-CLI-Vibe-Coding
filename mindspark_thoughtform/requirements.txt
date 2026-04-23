@@ -1,0 +1,33 @@
+# ── Core dependencies ─────────────────────────────────────────────────────────
+sqlalchemy>=2.0           # ORM + SQL toolkit for SQLite knowledge DB
+sentence-transformers>=2.7 # Embeddings (all-MiniLM-L6-v2) for vector search
+ijson>=3.2                 # Streaming JSON parser for Wikidata full dump
+numpy>=1.26                # Numerical ops for scoring and embeddings
+tqdm>=4.66                 # Progress bars for ETL pipelines
+pyyaml>=6.0                # YAML parsing (cognition scaffolds, personality core)
+click>=8.1                 # CLI framework
+rich>=13.0                 # Terminal output formatting
+platformdirs>=4.0          # Cross-platform data/config directory paths
+
+# ── Inference (optional — install for running local models) ───────────────────
+llama-cpp-python>=0.2.50   # llama.cpp Python bindings (CPU + GPU inference)
+
+# ── Quantization (optional — install for quantized model support) ─────────────
+bitsandbytes>=0.43         # 4-bit / 8-bit quantization
+auto-gptq>=0.7             # GPTQ quantization support
+
+# ── GPU acceleration (optional — install for CUDA/ROCm support) ──────────────
+# torch>=2.2               # Uncomment for GPU-accelerated inference
+# accelerate>=0.27         # Uncomment for HuggingFace accelerate
+
+# ── Development ───────────────────────────────────────────────────────────────
+pytest>=8.0
+pytest-cov>=5.0
+ruff>=0.4
+mypy>=1.9
+locust>=2.24               # Load / performance testing
+
+# ── Documentation ─────────────────────────────────────────────────────────────
+mkdocs>=1.5
+mkdocs-material>=9.5
+mkdocstrings[python]>=0.24

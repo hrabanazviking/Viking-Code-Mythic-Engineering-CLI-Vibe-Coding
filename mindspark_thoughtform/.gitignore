@@ -1,0 +1,85 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.whl
+
+# ── Virtual environments ───────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+.env
+ENV/
+
+# ── Testing & coverage ────────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+
+# ── Type checking ─────────────────────────────────────────────────────────────
+.mypy_cache/
+.dmypy.json
+
+# ── Ruff / linters ────────────────────────────────────────────────────────────
+.ruff_cache/
+
+# ── IDE ───────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Knowledge databases (generated — do not commit large files) ───────────────
+data/knowledge.db
+data/knowledge.db-shm
+data/knowledge.db-wal
+data/embeddings/
+data/wikidata_cache/
+data/dbpedia_cache/
+data/yago_cache/
+data/conceptnet_cache/
+data/geonames_cache/
+*.db
+*.db-shm
+*.db-wal
+
+# ── Model files (too large for git) ───────────────────────────────────────────
+models/
+*.gguf
+*.ggml
+*.bin
+*.safetensors
+*.pt
+*.pth
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+logs/
+*.log
+
+# ── Configs with secrets ──────────────────────────────────────────────────────
+configs/local_*.yaml
+configs/local_*.json
+.env.local
+secrets.yaml
+
+# ── MkDocs build output ───────────────────────────────────────────────────────
+site/
+
+# ── Jupyter ───────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb

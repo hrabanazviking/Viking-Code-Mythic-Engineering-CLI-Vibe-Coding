@@ -1,0 +1,3051 @@
+{
+  "metadata": {
+    "title": "The Poetic Edda",
+    "translator": "Jules (AI) for Rune Forge AI",
+    "style": "Authentic 9th Century Viking Values, Alliterative Verse",
+    "source": "Composite of Codex Regius and other manuscripts",
+    "date": "2026",
+    "description": "A comprehensive translation of the Poetic Edda, focusing on archaic beauty, Germanic roots, and traditional structure."
+  },
+  "poems": [
+    {
+      "title": "Völuspá",
+      "translation_title": "The Prophecy of the Seeress",
+      "introduction": " The Völuspá is the first and most famous poem of the Poetic Edda. It tells the story of the creation of the world and its coming end, related by a völva or seeress addressing Odin.",
+      "stanzas": [
+        {
+          "id": 1,
+          "text": "Hearing I ask | of the hallowed kin,\nHigh and low | of Heimdall's breed;\nThou wilt, Valfather, | that I well recount\nOld tales of men, | from time's first dawn."
+        },
+        {
+          "id": 2,
+          "text": "I remember giants | of yore born,\nWho in days of old | did foster me;\nNine worlds I knew, | the nine in the tree,\nWith mighty roots | beneath the mold."
+        },
+        {
+          "id": 3,
+          "text": "Early in time | Ymir made his home,\nWas no sand nor sea | nor cooling waves;\nEarth was nowhere | nor heaven above,\nA yawning gap, | and grass nowhere."
+        },
+        {
+          "id": 4,
+          "text": "Then Bur's sons lifted | the level land,\nMithgarth the mighty | there they made;\nThe sun from the south | warmed the stones of earth,\nAnd green was the ground | with growing leeks."
+        },
+        {
+          "id": 5,
+          "text": "The sun, the sister | of the moon, from the south\nHer right hand cast | over heaven's rim;\nNo knowledge she had | where her home should be,\nThe moon knew not | what might was his,\nThe stars knew not | where their stations were."
+        },
+        {
+          "id": 6,
+          "text": "Then sought the gods | their assembly-seats,\nThe holy ones, | and council held;\nNames then gave they | to noon and twilight,\nMorning they named, | and the waning moon,\nNight and evening, | the years to number."
+        },
+        {
+          "id": 7,
+          "text": "At Ithavoll met | the mighty gods,\nShrines and temples | they timbered high;\nForges they set, | and they smithied ore,\nTongs they fashioned, | and tools they made."
+        },
+        {
+          "id": 8,
+          "text": "In their dwellings at peace | they played at tables,\nOf gold no lack | did the gods then know,\nTill thither came | up giant-maids three,\nHuge of might, | out of Jotunheim."
+        },
+        {
+          "id": 9,
+          "text": "Then sought the gods | their assembly-seats,\nThe holy ones, | and council held;\nWho should raise the race | of dwarfs from earth,\nFrom the blood of Brimir | and Blain's limbs."
+        },
+        {
+          "id": 10,
+          "text": "Motsognir rose, | mightiest ruler\nOf the kin of dwarfs, | and Durin next;\nMany a likeness | of men they made,\nThe dwarfs in the earth, | as Durin said."
+        },
+        {
+          "id": 11,
+          "text": "Nyi and Nithi, | Northri and Suthri,\nAustri and Vestri, | Althjof, Dvalin,\nNar and Nain, | Niping, Dain,\nBifur, Bofur, | Bombur, Nori,\nAn and Onar, | Ai, Mjothvitnir."
+        },
+        {
+          "id": 12,
+          "text": "Vigg and Gandalf, | Vindalf, Thrain,\nThekk and Thorin, | Thror, Vit and Lit,\nNyr and Nyrath, | now have I told--\nRegin and Rathsvith-- | the list aright."
+        },
+        {
+          "id": 13,
+          "text": "Fili, Kili, | Fundin, Nali,\nHeptifili, | Hannar, Sviur,\nFrar, Hornbori, | Fræg and Loni,\nAurvang, Jari, | Eikinskjaldi."
+        },
+        {
+          "id": 14,
+          "text": "The race of the dwarfs | in Dvalin's throng\nDown to Lofar | the list must I tell;\nThe rocks they left, | and through wet lands\nThey sought a home | in the fields of sand."
+        },
+        {
+          "id": 15,
+          "text": "There were Draupnir | and Dolgthrasir,\nHor, Haugspori, | Hlevang, Gloin,\nDori, Ori, | Duf, Andvari,\nSkirfir, Virfir, | Skafith, Ai."
+        },
+        {
+          "id": 16,
+          "text": "Alf and Yngvi, | Eikinskjaldi,\nFjalar and Frosti, | Finn and Ginnar;\nSo for all time | shall the tale be known,\nThe list of all | the forbears of Lofar."
+        },
+        {
+          "id": 17,
+          "text": "Then from the throng | did three come forth,\nFrom the home of the gods, | the mighty and gracious;\nTwo without fate | on the land they found,\nAsk and Embla, | empty of strength."
+        },
+        {
+          "id": 18,
+          "text": "Soul they had not, | sense they had not,\nHeat nor motion, | nor goodly hue;\nSoul gave Othin, | sense gave Hönir,\nHeat gave Lothur | and goodly hue."
+        },
+        {
+          "id": 19,
+          "text": "An ash I know, | Yggdrasil its name,\nWith water white | is the great tree wet;\nThence come the dews | that fall in the dales,\nGreen by Urth's well | does it ever grow."
+        },
+        {
+          "id": 20,
+          "text": "Thence come the maidens | mighty in wisdom,\nThree from the dwelling | down 'neath the tree;\nUrth is one named, | Verthandi the next--\nOn the wood they scored,-- | and Skuld the third.\nLaws they made there, | and life allotted\nTo the sons of men, | and set their fates."
+        },
+        {
+          "id": 21,
+          "text": "The war I remember, | the first in the world,\nWhen the gods with spears | had smitten Gollveig,\nAnd in the hall | of Hor had burned her,\nThree times burned, | and three times born,\nOft and again, | yet ever she lives."
+        },
+        {
+          "id": 22,
+          "text": "Heith they named her | who sought their home,\nThe wide-seeing witch, | in magic wise;\nMinds she bewitched | that were moved by her magic,\nTo evil women | a joy she was."
+        },
+        {
+          "id": 23,
+          "text": "Then sought the gods | their assembly-seats,\nThe holy ones, | and council held;\nWhether the gods | should tribute give,\nOr to all alike | should worship belong."
+        },
+        {
+          "id": 24,
+          "text": "Othin hurls his spear, | and sends it into the host;\nThis was the first war | to befall the world;\nThe wall is broken | of the stronghold of the gods,\nThe Vanir tread the field | with battle-magic."
+        },
+        {
+          "id": 25,
+          "text": "Then sought the gods | their assembly-seats,\nThe holy ones, | and council held;\nWho had filled the air | with venom and blood,\nOr given Oth's bride | to the giants' brood."
+        },
+        {
+          "id": 26,
+          "text": "Thor alone was there, | throbbing with wrath,\nHe seldom sits | when such he hears;\nOaths were broken, | words and bonds,\nThe mighty pledges | between them made."
+        },
+        {
+          "id": 27,
+          "text": "She knows that Heimdall's | horn is hidden\nUnder the heaven-bright | holy tree;\nA river she sees flow, | with foamy fall,\nFrom Valfather's pledge. | Would you know yet more?"
+        },
+        {
+          "id": 28,
+          "text": "Alone I sat | when the Old One sought me,\nThe terror of gods, | and gazed in mine eyes:\n'What hast thou to ask? | why comest thou hither?\nOthin, I know | where thine eye is hidden.'"
+        },
+        {
+          "id": 29,
+          "text": "I know where Othin's | eye is hidden,\nDeep in the wide-famed | well of Mimir;\nMead from the pledge | of Othin each morn\nDoes Mimir drink: | Would you know yet more?"
+        },
+        {
+          "id": 30,
+          "text": "Necklaces had I | and rings from Herjan,\nWise was my speech | and my magic wisdom;\nWidely I saw | over all the worlds."
+        },
+        {
+          "id": 31,
+          "text": "On all sides saw I | Valkyries assemble,\nReady to ride | to the ranks of the gods;\nSkuld bore the shield, | and Skogul rode next,\nGunn, Hild, Gondul, | and Geirskogul.\nOf Herjan's maidens | the list have I heard,\nValkyries ready | to ride o'er the earth."
+        },
+        {
+          "id": 32,
+          "text": "I saw for Baldr, | the bleeding god,\nThe son of Othin, | his destiny set:\nFamous and fair | in the lofty fields,\nFull grown in strength | the mistletoe stood."
+        },
+        {
+          "id": 33,
+          "text": "From the branch which seemed | so slender and fair\nCame a harmful shaft | that Hoth should hurl;\nBut the brother of Baldr | was born ere long,\nAnd one night old | fought Othin's son."
+        },
+        {
+          "id": 34,
+          "text": "His hands he washed not, | his hair he combed not,\nTill he bore to the bale-blaze | Baldr's foe.\nBut in Fensalir | did Frigg weep sore\nFor Valhall's need: | would you know yet more?"
+        },
+        {
+          "id": 35,
+          "text": "One did I see | in the wet woods bound,\nA lover of ill, | and to Loki like;\nBy his side does Sigyn | sit, nor is glad\nTo see her mate: | would you know yet more?"
+        },
+        {
+          "id": 36,
+          "text": "From the east there pours | through poisoned vales\nWith swords and daggers | the river Slith."
+        },
+        {
+          "id": 37,
+          "text": "Northward a hall | in Nithavellir\nOf gold there rose | for Sindri's race;\nAnd in Okolnir | another stood,\nWhere the giant Brimir | his beer-hall had."
+        },
+        {
+          "id": 38,
+          "text": "A hall I saw, | far from the sun,\nOn Nastrond it stands, | and the doors face north,\nVenom drops | through the smoke-vent down,\nFor around the walls | do serpents wind."
+        },
+        {
+          "id": 39,
+          "text": "I saw there wading | through rivers wild\nTreacherous men | and murderers too,\nAnd workers of ill | with the wives of men;\nThere Nithhogg sucked | the blood of the slain,\nAnd the wolf tore men; | would you know yet more?"
+        },
+        {
+          "id": 40,
+          "text": "The giantess old | in Ironwood sat,\nIn the east, and bore | the brood of Fenrir;\nAmong these one | in monster's guise\nWas soon to steal | the sun from the sky."
+        },
+        {
+          "id": 41,
+          "text": "There feeds he full | on the flesh of the dead,\nAnd the home of the gods | he reddens with gore;\nDark grows the sun, | and in summer soon\nCome mighty storms: | would you know yet more?"
+        },
+        {
+          "id": 42,
+          "text": "On a hill there sat, | and smote on his harp,\nEggther the joyous, | the giants' warder;\nAbove him the cock | in the bird-wood crowed,\nFair and red | did Fjalar stand."
+        },
+        {
+          "id": 43,
+          "text": "Then to the gods | crowed Gollinkambi,\nHe wakes the heroes | in Othin's hall;\nAnd beneath the earth | does another crow,\nThe rust-red bird | at the bars of Hel."
+        },
+        {
+          "id": 44,
+          "text": "Now Garm howls loud | before Gnipahellir,\nThe fetters will burst, | and the wolf run free;\nMuch do I know, | and more can see\nOf the fate of the gods, | the mighty in fight."
+        },
+        {
+          "id": 45,
+          "text": "Brothers shall fight | and fell each other,\nAnd sisters' sons | shall kinship stain;\nHard is it on earth, | with mighty whoredom;\nAxe-time, sword-time, | shields are sundered,\nWind-time, wolf-time, | ere the world falls;\nNor ever shall men | each other spare."
+        },
+        {
+          "id": 46,
+          "text": "Fast move the sons | of Mim, and fate\nIs heard in the note | of the Gjallarhorn;\nLoud blows Heimdall, | the horn is aloft,\nIn fear quake all | who on Hel-roads are."
+        },
+        {
+          "id": 47,
+          "text": "Yggdrasil shakes, | and shiver on high\nThe ancient limbs, | and the giant is loose;\nTo the head of Mim | does Othin give heed,\nBut the kinsman of Surt | shall kill him soon."
+        },
+        {
+          "id": 48,
+          "text": "How fare the gods? | how fare the elves?\nAll Jotunheim groans, | the gods are at council;\nLoud roar the dwarfs | by the doors of stone,\nThe masters of the rocks: | would you know yet more?"
+        },
+        {
+          "id": 49,
+          "text": "Now Garm howls loud | before Gnipahellir,\nThe fetters will burst, | and the wolf run free;\nMuch do I know, | and more can see\nOf the fate of the gods, | the mighty in fight."
+        },
+        {
+          "id": 50,
+          "text": "Hrym drives from the east, | his shield he holds high;\nIn giant-wrath | does the serpent writhe;\nO'er the waves he twists, | and the tawny eagle\nGnaws corpses screaming; | Naglfar is loose."
+        },
+        {
+          "id": 51,
+          "text": "O'er the sea from the north | there sails a ship\nWith the people of Hel, | at the helm stands Loki;\nAfter the wolf | do wild men follow,\nAnd with them the brother | of Byleist goes."
+        },
+        {
+          "id": 52,
+          "text": "Surt fares from the south | with the scourge of branches,\nThe sun of the battle-gods | shone from his sword;\nThe crags are sundered, | the giant-women sink,\nThe dead throng Hel-way, | and heaven is cloven."
+        },
+        {
+          "id": 53,
+          "text": "Now comes to Hlin | yet another hurt,\nWhen Othin fares | to fight with the wolf,\nAnd Beli's fair slayer | seeks out Surt,\nFor there must fall | the joy of Frigg."
+        },
+        {
+          "id": 54,
+          "text": "Then comes Sigfather's | mighty son,\nVithar, to fight | with the foaming wolf;\nIn the giant's son | does he thrust his sword\nFull to the heart: | his father is avenged."
+        },
+        {
+          "id": 55,
+          "text": "Hither there comes | the son of Hlothyn,\nThe bright snake gapes | to heaven above;\nAgainst the serpent | goes Othin's son."
+        },
+        {
+          "id": 56,
+          "text": "In anger smites | the warder of earth,--\nForth from their homes | must all men flee;--\nNine paces fares | the son of Fjorgyn,\nAnd, slain by the serpent, | fearless sinks."
+        },
+        {
+          "id": 57,
+          "text": "The sun turns black, | earth sinks in the sea,\nThe hot stars down | from heaven are whirled;\nFierce grows the steam | and the life-feeding flame,\nTill fire leaps high | about heaven itself."
+        },
+        {
+          "id": 58,
+          "text": "Now Garm howls loud | before Gnipahellir,\nThe fetters will burst, | and the wolf run free;\nMuch do I know, | and more can see\nOf the fate of the gods, | the mighty in fight."
+        },
+        {
+          "id": 59,
+          "text": "Now do I see | the earth anew\nRise all green | from the waves again;\nThe cataracts fall, | and the eagle flies,\nAnd fish he catches | beneath the cliffs."
+        },
+        {
+          "id": 60,
+          "text": "The gods in Ithavoll | meet together,\nOf the terrible girdler | of earth they talk,\nAnd the mighty past | they call to mind,\nAnd the ancient runes | of the Ruler of Gods."
+        },
+        {
+          "id": 61,
+          "text": "In wondrous beauty | once again\nShall the golden tables | stand in the grass,\nWhich the gods had owned | in the days of old."
+        },
+        {
+          "id": 62,
+          "text": "Then fields unsowed | bear ripened fruit,\nAll ills grow better, | and Baldr comes back;\nBaldr and Hoth dwell | in Hropt's battle-hall,\nAnd the mighty gods: | would you know yet more?"
+        },
+        {
+          "id": 63,
+          "text": "Then Hönir wins | the prophetic wand,\nAnd the sons of the two brothers | abide in Vindheim."
+        },
+        {
+          "id": 64,
+          "text": "More fair than the sun, | a hall I see,\nRoofed with gold, | on Gimle it stands;\nThere shall the righteous | rulers dwell,\nAnd happiness ever | there shall they have."
+        },
+        {
+          "id": 65,
+          "text": "There comes on high, | all power to hold,\nA mighty lord, | all lands he rules."
+        },
+        {
+          "id": 66,
+          "text": "From below the dragon | dark comes forth,\nNithhogg flying | from Nithafjoll;\nThe bodies of men on | his wings he bears,\nThe serpent bright: | but now must I sink."
+        }
+      ]
+    },
+    {
+      "title": "Hávamál",
+      "translation_title": "The Sayings of the High One",
+      "introduction": "A collection of advice for living, magic charms, and the story of how Odin won the runes.",
+      "stanzas": [
+        {
+          "id": 1,
+          "text": "Within the gates | ere a man shall go,\n(Full wearily wayworn he stands,)\nThat he spy out the place, | that he pry through the place;\nFor hard it is to know | where hatred is hid,\nOr where foes may sit on the floor."
+        },
+        {
+          "id": 2,
+          "text": "Hail to the giver! | a guest has come;\nWhere shall the stranger sit?\nSwift shall he be | who with swords shall try\nThe proof of his might to make."
+        },
+        {
+          "id": 3,
+          "text": "Fire he needs | who with frozen knees\nHas come from the cold without;\nFood and clothes | the wanderer craves,\nThe man who has toiled o'er the fell."
+        },
+        {
+          "id": 4,
+          "text": "Water and towels | and welcoming speech\nShould he find who comes to the feast;\nIf renown he would get, | and again be greeted,\nWisely and well must he act."
+        },
+        {
+          "id": 5,
+          "text": "Wits must he have | who wanders wide,\nBut all is easy at home;\nAt the stone-blind man | who sits with the wise\nShall others wink and mock."
+        },
+        {
+          "id": 6,
+          "text": "A man should not boast | of his brilliant mind,\nBut keep a watch o'er his wits;\nThe wise and silent | come seldom to grief,\n(When he fares to a stranger's floor;)\nNo better burden | can a man bear on the way\nThan a store of common sense."
+        },
+        {
+          "id": 7,
+          "text": "The wary guest | who comes to the feast\nKeeps silence and listeth to all;\nWith his ears he hears, | with his eyes he watches,\nSo spies out the wise man's wits."
+        },
+        {
+          "id": 8,
+          "text": "Happy is he | who wins for himself\nFair fame and kindly speech;\nBut little is his | who must look to others\nFor help and counsel and care."
+        },
+        {
+          "id": 9,
+          "text": "Happy is he | who has while he lives\nHis life and his wits his own;\nFor evil counsel | has oft been had\nFrom the heart of another man."
+        },
+        {
+          "id": 10,
+          "text": "A better burden | can no man bear\nOn the way than his mother-wit;\n'Tis the refuge of the poor, | and richer it seems\nThan wealth in a world unknown."
+        },
+        {
+          "id": 11,
+          "text": "A better burden | can no man bear\nOn the way than his mother-wit;\nAnd no worse provision | can he carry with him\nThan too deep a draught of ale."
+        },
+        {
+          "id": 12,
+          "text": "Less good there lies | than most believe\nIn ale for the sons of men;\nFor the more he drinks | the less does man\nOf his mind the master remain."
+        },
+        {
+          "id": 13,
+          "text": "The heron of heedlessness | hovers o'er the feast,\nAnd steals the minds of men;\nWith the feathers of that bird | was I fettered once\nIn the garth of Gunnloth below."
+        },
+        {
+          "id": 14,
+          "text": "Drunk was I then, | I was drunk indeed,\nIn the hall of wise Fjalar;\nMost welcome is ale | if a man can keep\nHis wits when the feast is o'er."
+        },
+        {
+          "id": 15,
+          "text": "A king's son should be | silent and wise,\nAnd bold in the battle-fray;\nBravely and gladly | a man should go,\nTill the day of his death is come."
+        },
+        {
+          "id": 16,
+          "text": "The sluggard believes | he shall live forever,\nIf the fight he faces not;\nBut age shall not grant him | the gift of peace,\nThough spears may spare his life."
+        },
+        {
+          "id": 17,
+          "text": "The fool is gaping | when he goes to the house,\nHe mutters or meditates;\nIf he gets a drink, | then his mind is displayed,\nAnd the folly of the fool is felt."
+        },
+        {
+          "id": 18,
+          "text": "He alone is aware | who has wandered wide,\nAnd far has fared on the way,\nWhat manner of mind | a man doth own\nWho is wise of head and heart."
+        },
+        {
+          "id": 19,
+          "text": "Keep not the mead cup, | but drink thy measure;\nSpeak needful words or none;\nNone shall upbraid thee | for lack of breeding\nIf soon thou seek'st thy rest."
+        },
+        {
+          "id": 20,
+          "text": "A greedy man, | if he be not mindful,\nEats to his own life's hurt;\nOft the belly of the fool | brings him to scorn\nWhen he seeks the circle of the wise."
+        },
+        {
+          "id": 21,
+          "text": "Herds know the hour | of their homecoming,\nAnd turn them from the grass;\nBut never is known | to the foolish man\nThe measure of his maw."
+        },
+        {
+          "id": 22,
+          "text": "The miserable man, | and evil minded,\nMocks at everything;\nOne thing he knows not, | which he ought to know,\nThat he is not free from faults."
+        },
+        {
+          "id": 23,
+          "text": "The foolish man | is awake all night,\nAnd worries o'er everything;\nWhen morning comes | he is worn and weary,\nAnd his trouble is just as it was."
+        },
+        {
+          "id": 24,
+          "text": "The foolish man | thinks all who speak him fair\nTo be his faithful friends;\nHe thinks it not | though they talk of him ill\nWhen he sits with the wise."
+        },
+        {
+          "id": 25,
+          "text": "The foolish man | thinks all who speak him fair\nTo be his faithful friends;\nBut soon he finds, | when he comes to the Thing,\nThat few will speak in his favor."
+        },
+        {
+          "id": 26,
+          "text": "The foolish man | thinks he knows everything\nIf placed in unexpected peril;\nBut he knows not what | to answer back,\nIf men should ask him aught."
+        },
+        {
+          "id": 27,
+          "text": "The foolish man, | who sits among the folk,\nShould keep his mouth shut tight;\nNo one knows | that he knows nothing,\nUnless he talks too much.\n(But he who knows nothing | knows not this:\nWhen he talks too much.)"
+        },
+        {
+          "id": 28,
+          "text": "Wise shall he seem | who can question well,\nAnd also answer well;\nThe sons of men | can no secret make\nOf the tidings told in their midst."
+        },
+        {
+          "id": 29,
+          "text": "He who speaks | and is never still\nOft utters words of ill;\nThe unruly tongue | that no rein holdeth\nSpeaks to its own undoing."
+        },
+        {
+          "id": 30,
+          "text": "In mockery no one | a man should hold,\nAlthough he fares to the feast;\nWise seems one oft, | if nothing is asked,\nAnd safely he sits dry-skinned."
+        },
+        {
+          "id": 31,
+          "text": "Wise a guest holds him | who mocks a guest,\nFor the others he leaves alone;\nBut no one knows | who laughs at the feast,\nThough he mocks in the midst of his foes."
+        },
+        {
+          "id": 32,
+          "text": "Friendly of mind | are many men,\nTill at table they begin to fight;\nEver is it thus, | and ever will be,\nThat guest will quarrel with guest."
+        },
+        {
+          "id": 33,
+          "text": "Oft should a man | take his meat betimes,\nOr ever he visits a friend;\nElse he sits and stares, | and is stealing hungry,\nAnd can talk but little withal."
+        },
+        {
+          "id": 34,
+          "text": "It is a long way | to a false friend's house,\nThough he dwell by the side of the road;\nBut to a true friend's | the path is straight,\nThough he be far away."
+        },
+        {
+          "id": 35,
+          "text": "A guest should depart, | not always stay\nIn one place evermore;\nThe loved one is loathed | if he sits too long\nIn the house of another man."
+        },
+        {
+          "id": 36,
+          "text": "Better a house, | though a hut it be,\nA man is master at home;\nA pair of goats | and a patched-up roof\nAre better far than begging."
+        },
+        {
+          "id": 37,
+          "text": "Better a house, | though a hut it be,\nA man is master at home;\nHis heart is bleeding | who needs must beg\nWhen food for every meal."
+        },
+        {
+          "id": 38,
+          "text": "Away from his arms | in the open field\nA man should move not a foot;\nFor no one knows | when the need may come\nFor a spear in the struggle of life."
+        },
+        {
+          "id": 39,
+          "text": "I found none so noble | or free with his food,\nThat was not glad to take;\nNor e'er saw I one | so open-handed\nBut that reward he wished."
+        },
+        {
+          "id": 40,
+          "text": "The wealth that a man | has won for himself\nHe should not suffer to sleep;\nOft he saves for a foe | what he plans for a friend,\nFor much goes worse than we wish."
+        },
+        {
+          "id": 41,
+          "text": "With weapons and clothes | should friends be won,\nAs is seen in their own selves;\nThose who give and take | have the longest friendship,\nIf all goes well with the twain."
+        },
+        {
+          "id": 42,
+          "text": "To his friend a man | a friend shall be,\nAnd mix with him gift for gift;\nBut with mockery | mock the mocker,\nAnd pay back leasing with lies."
+        },
+        {
+          "id": 43,
+          "text": "To his friend a man | a friend shall be,\nTo him and to his friend;\nBut of his foe | no man shall be\nThe friend's friend evermore."
+        },
+        {
+          "id": 44,
+          "text": "If a friend thou hast | whom thou fully wilt trust,\nAnd good from him wouldst get,\nThy thoughts with his | mingle, and gifts shalt thou make,\nAnd fare to find him oft."
+        },
+        {
+          "id": 45,
+          "text": "If another thou hast | whom thou hardly wilt trust,\nYet good from him wouldst get,\nThou shalt speak him fair, | but falsely think,\nAnd with leasing pay him back lies."
+        },
+        {
+          "id": 46,
+          "text": "But of him yet further | whom thou hardly wilt trust,\nAnd whose mind thou mayst not know;\nThou shalt laugh with him, | but withhold thy thought,\nFor gift with like gift should be paid."
+        },
+        {
+          "id": 47,
+          "text": "Young was I once, | and wandered alone,\nAnd nought of the road I knew;\nRich did I feel | when a comrade I found,\nFor man is man's delight."
+        },
+        {
+          "id": 48,
+          "text": "The lives of the brave | and noble are best,\nSorrows they seldom feed;\nBut the coward fear | of all things feels,\nAnd even of gifts is afraid."
+        },
+        {
+          "id": 49,
+          "text": "My garments once | in a field I gave\nTo a pair of carven poles;\nHeroes they seemed | when clothes they had,\nBut the naked man is nought."
+        },
+        {
+          "id": 50,
+          "text": "The fir-tree withers | that stands on the field,\nNeither bark nor needles shield it;\nSo is the man | whom no one loves,\nWhy should he longer live?"
+        },
+        {
+          "id": 51,
+          "text": "Hotter than fire | love for five days burns\nBetween false friends;\nBut when the sixth day | comes, it cools,\nAnd friendship all is flown."
+        },
+        {
+          "id": 52,
+          "text": "No great thing needs | a man to give,\nOft little will purchase praise;\nWith half a loaf | and a half-filled cup\nA friend full fast I made."
+        },
+        {
+          "id": 53,
+          "text": "A little sand | has a little sea,\nAnd small are the minds of men;\nThe wise are not | to be found everywhere,\nFor there are two kinds of men."
+        },
+        {
+          "id": 54,
+          "text": "Middling wise | should every man be,\nNever too wise indeed;\nFor the life of those | is the fairest lived\nWho know not more than enough."
+        },
+        {
+          "id": 55,
+          "text": "Middling wise | should every man be,\nNever too wise indeed;\nFor the heart of the wise | is seldom happy,\nIf too great wisdom he wins."
+        },
+        {
+          "id": 56,
+          "text": "Middling wise | should every man be,\nNever too wise indeed;\nNo man should know | his fate beforehand,\nThen his mind is freest from care."
+        },
+        {
+          "id": 57,
+          "text": "Brand kindles from brand | until it be burned,\nSpark is kindled from spark,\nMan is known to man | by his speech,\nBut a fool by his sullen silence."
+        },
+        {
+          "id": 58,
+          "text": "He should rise betimes | who would take from another\nHis life or his wealth;\nSeldom a sleeping wolf | gets a sheep,\nOr a sleeping man victory."
+        },
+        {
+          "id": 59,
+          "text": "He should rise betimes | who has few to serve him,\nAnd see to his work himself;\nWho sleeps at morning | is hindered much,\nFor wealth is half won by the active."
+        },
+        {
+          "id": 60,
+          "text": "Of dry shingles | and roof-birch wood\nA man knows the measure;\nAnd of firewood too | which can last\nFor a quarter or half a year."
+        },
+        {
+          "id": 61,
+          "text": "Clean and fed | let a man ride to the Thing,\nAlthough his clothes be not new;\nOf his shoes and breeks | let no one be ashamed,\nNor of his horse, though he have not a good one."
+        },
+        {
+          "id": 62,
+          "text": "Wait,"
+        },
+        {
+          "id": 76,
+          "text": "Cattle die, | and kinsmen die,\nAnd so one dies one's self;\nBut a noble name | will never die,\nIf good renown one gets."
+        },
+        {
+          "id": 77,
+          "text": "Cattle die, | and kinsmen die,\nAnd so one dies one's self;\nOne thing I know | that never dies,\nThe fame of a dead man's deeds."
+        },
+        {
+          "id": 138,
+          "text": "I know that I hung | on a windy tree\nNine long nights,\nWounded with a spear, | dedicated to Odin,\nMyself to myself,\nOn that tree | of which no man knows\nFrom where its roots run."
+        },
+        {
+          "id": 139,
+          "text": "No bread did they give me | nor a drink from a horn,\nDownwards I peered;\nI took up the runes, | screaming I took them,\nThen I fell back from there."
+        }
+      ]
+    },
+    {
+      "title": "Vafþrúðnismál",
+      "translation_title": "The Lay of Vafthrudnir",
+      "introduction": "A contest of wisdom between Odin and the giant Vafthrudnir.",
+      "stanzas": [
+        {
+          "id": 1,
+          "text": "Odin spake:\n'Counsel me, Frigg, | for I long to fare,\nAnd Vafthruthnir fain would find;\nfit wisdom I wish | to seek from him,\nAnd answer his ancient lore.'"
+        },
+        {
+          "id": 2,
+          "text": "Frigg spake:\n'At home let Herjan | in safety hold,\nAnd dwell in the courts of the gods;\nFor no giant I know | has might so great\nAs Vafthruthnir has, I ween.'"
+        },
+        {
+          "id": 3,
+          "text": "Odin spake:\n'Much have I fared, | much have I found,\nMuch have I got from the gods;\nAnd fain would I know | how Vafthruthnir now\nLives in his lofty hall.'"
+        },
+        {
+          "id": 4,
+          "text": "Frigg spake:\n'Safe mayst thou go, | safe come again,\nAnd safe be the way thou wendest!\nFather of Men, | let thy mind be keen\nWhen speech with the giant thou seekest.'"
+        },
+        {
+          "id": 5,
+          "text": "Then went he forth | to the giants' home,\nTo try the wisdom of Vafthruthnir;\nIm followed him | to the giants' hall,\nAnd into the dwelling he went."
+        },
+        {
+          "id": 6,
+          "text": "Odin spake:\n'Hail to thee, Vafthruthnir! | to thy hall I am come,\nThyself I fain would see;\nFirst I would know | if knowledge thou hast,\nAnd if, giant, thou knowest all.'"
+        },
+        {
+          "id": 7,
+          "text": "Vafthruthnir spake:\n'Who is the man | that speaks to me,\nAnd here in my hall is come?\nThou shalt not go | from our dwellings forth,\nIf thou art not wiser than I.'"
+        },
+        {
+          "id": 8,
+          "text": "Odin spake:\n'Gagnrath they call me, | from the road I come,\nThirsty to thy hall,\nHungry and cold | I have come to thee,\nGiant, and greeting I seek.'"
+        },
+        {
+          "id": 9,
+          "text": "Vafthruthnir spake:\n'Why standest thou there | on the floor to speak?\nTake thy seat in the hall;\nThen soon shall we know | whose knowledge is more,\nThe guest's or the sage's old.'"
+        },
+        {
+          "id": 10,
+          "text": "Odin spake:\n'If a poor man comes | to a rich man's house,\nLet him speak needful words or be still;\nGreat talk brings grief, | if he gets too gay,\nWhen the cold-ribbed one he comes to.'"
+        },
+        {
+          "id": 11,
+          "text": "Vafthruthnir spake:\n'Tell me, Gagnrath, | since there on the floor\nThou wouldst try thy luck with talk,\nWhat is the name | of the horse that drags\nDay to the sons of men?'"
+        },
+        {
+          "id": 12,
+          "text": "Odin spake:\n'Skinfaxi is he, | the horse that drags\nDay to the sons of men;\nThe best of horses | to heroes he seems,\nAnd brightly burns his mane.'"
+        },
+        {
+          "id": 13,
+          "text": "Vafthruthnir spake:\n'Tell me, Gagnrath, | since there on the floor\nThou wouldst try thy luck with talk,\nWhat is the name | of the horse that drags\nNight from the north to men?'"
+        },
+        {
+          "id": 14,
+          "text": "Odin spake:\n'Hrimfaxi is he, | the horse that drags\nNight to the noble gods;\nBit-foam drops | every morn from his mouth,\nThence comes the dew in the dales.'"
+        },
+        {
+          "id": 15,
+          "text": "Vafthruthnir spake:\n'Tell me, Gagnrath, | since there on the floor\nThou wouldst try thy luck with talk,\nWhat is the name | of the river that runs\n'Twixt the gods' and the giants' realms?'"
+        },
+        {
+          "id": 16,
+          "text": "Odin spake:\n'Ifing is the river | that runs 'twixt the realms\nOf the gods and the giant race;\nOpen shall it run | while the world remains,\nAnd ice shall not be on it.'"
+        },
+        {
+          "id": 17,
+          "text": "Vafthruthnir spake:\n'Tell me, Gagnrath, | since there on the floor\nThou wouldst try thy luck with talk,\nWhat is the name | of the field where the fight\nSurt and the sweet gods seek?'"
+        },
+        {
+          "id": 18,
+          "text": "Odin spake:\n'Vigrith is the field | where the fight shall be\n'Twixt Surt and the sweet gods;\nA hundred miles | each way does it measure,\nAnd so are its boundaries set.'"
+        },
+        {
+          "id": 19,
+          "text": "Vafthruthnir spake:\n'Wise art thou, guest! | To the giant's bench\nCome, and we speak together;\nOur heads we shall wager | in the hall,\nGuest, on our wisdom's worth.'"
+        },
+        {
+          "id": 20,
+          "text": "Odin spake:\n'First answer me well, | if thy wisdom avails,\nAnd thou knowest it, Vafthruthnir, now:\nWhence came the earth | and the sky above,\nFirst, O giant so wise?'"
+        },
+        {
+          "id": 21,
+          "text": "Vafthruthnir spake:\n'Out of Ymir's flesh | was fashioned the earth,\nAnd the mountains were made of his bones;\nThe sky from the frost-cold | giant's skull,\nAnd the ocean out of his blood.'"
+        },
+        {
+          "id": 22,
+          "text": "Odin spake:\n'Next answer me well, | if thy wisdom avails,\nAnd thou knowest it, Vafthruthnir, now:\nWhence came the moon, | o'er the world of men\nThat fares, and the flaming sun?'"
+        },
+        {
+          "id": 23,
+          "text": "Vafthruthnir spake:\n'Mundilfari is he | who the moon's father is,\nAnd eke of the flaming sun;\nThe round of the sky | every day shall they run,\nTo tell the time for men.'"
+        },
+        {
+          "id": 24,
+          "text": "Odin spake:\n'Third answer me well, | if thy wisdom avails,\nAnd thou knowest it, Vafthruthnir, now:\nWhence came the day, | o'er the world of men\nThat fares, and the waning night?'"
+        },
+        {
+          "id": 25,
+          "text": "Vafthruthnir spake:\n'Delling he is called, | the day's father is,\nBut Night was of Norvi born;\nThe new and waning moons | the wise ones made,\nTo tell the time for men.'"
+        },
+        {
+          "id": 26,
+          "text": "Odin spake:\n'Fourth answer me well, | if thy wisdom avails,\nAnd thou knowest it, Vafthruthnir, now:\nWhence did winter come, | and the warmth of summer,\nFirst to the wise ones fram? '"
+        },
+        {
+          "id": 27,
+          "text": "Vafthruthnir spake:\n'Vindsval is he | who was winter's father,\nAnd Svasuth summer's sire;\nAnd both of these | shall ever be,\nTill the gods to destruction go.'"
+        },
+        {
+          "id": 28,
+          "text": "Odin spake:\n'Fifth answer me well, | if thy wisdom avails,\nAnd thou knowest it, Vafthruthnir, now:\nWho was the oldest | of the kin of the Aser,\nOr the giants of olden days?'"
+        },
+        {
+          "id": 29,
+          "text": "Vafthruthnir spake:\n'Countless winters | ere the earth was made,\nWas Bergelmir born;\nThruthgelmir was | his father's name,\nAnd Aurgelmir's grandson he was.'"
+        },
+        {
+          "id": 30,
+          "text": "Odin spake:\n'Sixth answer me well, | if thy wisdom avails,\nAnd thou knowest it, Vafthruthnir, now:\nWhence did Aurgelmir come | with the giants' kin,\nFirst, thou giant so wise?'"
+        },
+        {
+          "id": 31,
+          "text": "Vafthruthnir spake:\n'Down from Elivagar | did venom drop,\nAnd waxed till a giant it was;\nAnd thence arose | our giants' race,\nAnd thus so fierce are we found.'"
+        },
+        {
+          "id": 32,
+          "text": "Odin spake:\n'Seventh answer me well, | if thy wisdom avails,\nAnd thou knowest it, Vafthruthnir, now:\nHow begat he children, | the giant grim,\nWho never a giantess knew?'"
+        },
+        {
+          "id": 33,
+          "text": "Vafthruthnir spake:\n'They say that under | the frost-giant's arm\nGrew a maiden and boy together;\nFoot with foot begat, | of the wise giant,\nA son with six heads soon.'"
+        },
+        {
+          "id": 34,
+          "text": "Odin spake:\n'Eighth answer me well, | if thy wisdom avails,\nAnd thou knowest it, Vafthruthnir, now:\nWhat is the earliest | memory thou hast,\nThou giant, that knowest all?'"
+        },
+        {
+          "id": 35,
+          "text": "Vafthruthnir spake:\n'Countless winters | ere the earth was made,\nWas Bergelmir born;\nThe earliest thing | I know was this,\nWhen he was laid in the boat.'"
+        },
+        {
+          "id": 36,
+          "text": "Odin spake:\n'Ninth answer me well, | if thy wisdom avails,\nAnd thou knowest it, Vafthruthnir, now:\nWhence comes the wind | that fares o'er the waves,\nYet never itself is seen?'"
+        },
+        {
+          "id": 37,
+          "text": "Vafthruthnir spake:\n'Hræsvelg he is called, | who sits at heaven's end,\nA giant in eagle's guise;\nFrom his wings, they say, | the wind comes forth,\nTo move o'er the world of men.'"
+        },
+        {
+          "id": 38,
+          "text": "Odin spake:\n'Tenth answer me well, | if thy wisdom avails,\nAnd thou knowest it, Vafthruthnir, now:\nWhence comes Njorth | to the Noatun home,\n(Rich in temples | and shrines he rules,)\nThough he was not bred by the gods?'"
+        },
+        {
+          "id": 39,
+          "text": "Vafthruthnir spake:\n'In the home of the Wanes | did the wise ones create him,\nAnd gave him as pledge to the gods;\nAt the fall of the world | shall he fare once more\nHome to the Wanes so wise.'"
+        },
+        {
+          "id": 40,
+          "text": "Odin spake:\n'Eleventh answer me well, | if thy wisdom avails,\nAnd thou knowest it, Vafthruthnir, now:\nWhat men in the home | of Othin are found,\nWho speak every day together?'"
+        },
+        {
+          "id": 41,
+          "text": "Vafthruthnir spake:\n'The heroes all | in Othin's hall\nSpeak every day together;\nThey choose the slain | and ride from the fight,\nThen sit they in peace together.'"
+        },
+        {
+          "id": 42,
+          "text": "Odin spake:\n'Twelfth answer me well, | if thy wisdom avails,\nAnd thou knowest it, Vafthruthnir, now:\nOf the secrets of giants | and of all the gods,\nTruth, giant, to me must thou tell.'"
+        },
+        {
+          "id": 43,
+          "text": "Vafthruthnir spake:\n'Of the secrets of giants | and of all the gods,\nTruth, I can tell thee now;\nFor all the worlds | have I seen myself,\nThe nine worlds I know | to Niflhel deep,\nWhere die the men from Hel.'"
+        },
+        {
+          "id": 44,
+          "text": "Odin spake:\n'Much have I fared, | much have I found,\nMuch have I got from the gods;\nWhat shall live of mankind | when at last there comes\nThe mighty winter to men?'"
+        },
+        {
+          "id": 45,
+          "text": "Vafthruthnir spake:\n'In Hoddmimir's wood | shall hide themselves\nLif and Lifthrasir then;\nThe morning dews | for meat shall they have,\nSuch food shall men then find.'"
+        },
+        {
+          "id": 46,
+          "text": "Odin spake:\n'Much have I fared, | much have I found,\nMuch have I got from the gods;\nWhence comes the sun | to the smooth sky back,\nWhen Fenrir has snatched it forth?'"
+        },
+        {
+          "id": 47,
+          "text": "Vafthruthnir spake:\n'A daughter bright | Alfrothul bears\nEre Fenrir snatches her forth;\nHer mother's paths | shall the maiden tread\nWhen the gods to death have gone.'"
+        },
+        {
+          "id": 48,
+          "text": "Odin spake:\n'Much have I fared, | much have I found,\nMuch have I got from the gods;\nWho are the maidens | that go o'er the sea,\nWise of spirit, to wayfare?'"
+        },
+        {
+          "id": 49,
+          "text": "Vafthruthnir spake:\n'Three throngs of maidens | over Mogthrasir's village\nFly, and their guardian spirits are they;\nBirth-runes they own, | though of giants' kin,\nThese maidens, their mothers were.'"
+        },
+        {
+          "id": 50,
+          "text": "Odin spake:\n'Much have I fared, | much have I found,\nMuch have I got from the gods;\nWho shall rule the realm | of the gods when the fire\nOf Surt is slaked at last?'"
+        },
+        {
+          "id": 51,
+          "text": "Vafthruthnir spake:\n'Vithar and Vali | shall dwell in the dwellings\nOf the gods, when Surt's fire is slaked;\nMothi and Magni | shall Mjolnir have\nWhen Thor his strength has lost.'"
+        },
+        {
+          "id": 52,
+          "text": "Odin spake:\n'Much have I fared, | much have I found,\nMuch have I got from the gods;\nWhat shall bring the doom | of death to Othin,\nWhen the gods to destruction go?'"
+        },
+        {
+          "id": 53,
+          "text": "Vafthruthnir spake:\n'The wolf shall fell | the father of men,\nBut Vithar vengeance shall seek;\nThe terrible jaws | of the wolf shall he tear,\nAnd so the wolf shall slay.'"
+        },
+        {
+          "id": 54,
+          "text": "Odin spake:\n'Much have I fared, | much have I found,\nMuch have I got from the gods;\nWhat spake Othin himself | in the ears of his son,\nEre in the bale-fire he burned?'"
+        },
+        {
+          "id": 55,
+          "text": "Vafthruthnir spake:\n'No man can tell | what in olden time\nThou spak'st in the ears of thy son;\nWith fated mouth | the fall of the gods\nAnd mine own deeds have I told;\nWith Othin in knowledge | now have I striven,\nAnd the wisest of all art thou.'"
+        }
+      ]
+    },
+    {
+      "title": "Grímnismál",
+      "translation_title": "The Lay of Grimnir",
+      "introduction": "Odin, disguised as Grimnir, is tortured by King Geirroth, and reveals cosmic wisdom to the king's son Agnar.",
+      "stanzas": [
+        {
+          "id": 1,
+          "text": "Hot art thou, fire! | too fierce by far;\nGet ye gone, ye flames!\nThe coat is burnt, | though I cast it aloft,\nAnd the fur scorches before me."
+        },
+        {
+          "id": 2,
+          "text": "Eight nights have I | sat between fires here,\nAnd no man meat has offered;\nSave Agnar alone, | and alone shall he own,\nThe son of Geirroth, the Goths' land."
+        },
+        {
+          "id": 3,
+          "text": "Hail to thee, Agnar! | for hailed thou art\nBy the voice of Veratyr;\nFor a single drink | shalt thou soon receive\nA greater gift than any."
+        },
+        {
+          "id": 4,
+          "text": "Holy is the land | which I see lying\nNear to the gods and the elves;\nBut in Thruthheim | shall Thor remain\nTill the gods to destruction go."
+        },
+        {
+          "id": 5,
+          "text": "Ydalir call they | the place where Ull\nA hall for himself hath set;\nAnd Alfheim the gods | to Frey once gave\nAs a tooth-gift in ancient times."
+        },
+        {
+          "id": 6,
+          "text": "The third home is that | where the silver thatch\nWith the hand of the gods was thatched;\nValaskjalf is it named, | which was set by the god\nIn the days of old for himself."
+        },
+        {
+          "id": 7,
+          "text": "Sokkvabek is the fourth, | where cool waves flow,\nAnd amid their murmur it stands;\nThere Othin and Saga | drink every day\nGladly from golden cups."
+        },
+        {
+          "id": 8,
+          "text": "Glathsheim is the fifth, | there the gold-bright hall\nOf Valhall stretches wide;\nThere does Othin | choose every day\nThe men who have died by weapons."
+        },
+        {
+          "id": 9,
+          "text": "Easily known | is the Aser's hall\nTo him who sees it himself;\nThe rafters are spears, | with shields it is roofed,\nOn the benches are byrnies strewn."
+        },
+        {
+          "id": 10,
+          "text": "Easily known | is the Aser's hall\nTo him who sees it himself;\nA wolf hangs | by the western door,\nAnd o'er it an eagle hovers."
+        },
+        {
+          "id": 11,
+          "text": "Thrymheim is the sixth, | where Thjazi dwelt,\nThe giant of gruesome might;\nNow Skathi abides, | the god's fair bride,\nIn the home that her father had."
+        },
+        {
+          "id": 12,
+          "text": "Breithablik is the seventh, | where Baldr has\nA hall for himself on high;\nIn that land I know | lies the fewest of loathsome\nDeeds of baleful doom."
+        },
+        {
+          "id": 13,
+          "text": "Himinbjorg is the eighth, | and Heimdall there\nO'er men holds sway, it is said;\nIn his well-built house | does the warder of heaven\nThe good mead gladly drink."
+        },
+        {
+          "id": 14,
+          "text": "Folkvang is the ninth, | and Freyja there\nDetermines the choice of seats;\nThe half of the dead | she chooses each day,\nAnd half to Othin she gives."
+        },
+        {
+          "id": 15,
+          "text": "Glitnir is the tenth; | with gold it is pillared,\nAnd silver thatched is the roof;\nThere Forseti dwells | the whole day long,\nAnd settles all strife of laws."
+        },
+        {
+          "id": 16,
+          "text": "Noatun is the eleventh, | and Njorth there has\nA hall for himself on high;\nThe ruler of men | is without a mark,\nIn his high-timbered temple he sits."
+        },
+        {
+          "id": 17,
+          "text": "Vithi is the twelfth, | and the brushwood grows\nAnd the tall grass, Vithar's land;\nAnd there shall the son | from his steed leap down,\nTo avenge his father's death."
+        },
+        {
+          "id": 18,
+          "text": "Andhrimnir cooks | in Eldhrimnir\nSæhrimnir's seething flesh,--\nThe best of food, | but few men know\nOn what fare the warriors feast."
+        },
+        {
+          "id": 19,
+          "text": "Geri and Freki | the war-god feeds,\nThe father of hosts so famed;\nBut on wine alone | does the weapon-decked god,\nOthin, forever live."
+        },
+        {
+          "id": 20,
+          "text": "Huginn and Muninn | fly every day\nO'er the wide world, earth to see;\nI fear for Huginn | lest he fare not home,\nBut for Muninn my care is more."
+        },
+        {
+          "id": 21,
+          "text": "Thund roars loud, | and Thjothvitnir's fish\nJoyously fares in the flood;\nThe stream seems hard | to the host of the slain\nTo wade through the wild water."
+        },
+        {
+          "id": 22,
+          "text": "Valgrind is the gate | that stands on the plain,\nHoly before the holy doors;\nOld is the gate, | but few there are\nWho can tell how it is closed."
+        },
+        {
+          "id": 23,
+          "text": "Five hundred doors | and forty more\nMethinks are in Valhall found;\nEight hundred heroes | through each door fare\nWhen to fight with the wolf they go."
+        },
+        {
+          "id": 24,
+          "text": "Five hundred doors | and forty more\nMethinks has Bilskirnir built;\nOf all the halls | that the roofs behold,\nMy son's is the greatest I say."
+        },
+        {
+          "id": 25,
+          "text": "Heithrun is the goat | who stands by Herjan's hall,\nAnd bites from Lærath's branches;\nA vessel she fills | with the fair, clear mead,\nThe drink that never dies."
+        },
+        {
+          "id": 26,
+          "text": "Eikthyrnir is the hart | who stands by Herjan's hall,\nAnd bites from Lærath's branches;\nFrom his horns a stream | into Hvergelmir drops,\nThence all the rivers run."
+        },
+        {
+          "id": 27,
+          "text": "Sith and Vith, | Sækin and Ekin,\nSvol and Gunnthro,\nFjorm and Fimbulthul,\nRin and Rennandi,\nGipul and Gopul,\nGomul and Geirvimul,\nThat flow through the fields of the gods;\nThyn and Vin,\nTholl and Holl,\nGrath and Gunnthorin."
+        },
+        {
+          "id": 28,
+          "text": "Vina is one, | Vegsvinn another,\nAnd Thjothnuma the third;\nNyt and Not,\nNon and Hron,\nSlith and Hrith,\nSylg and Ylg,\nVith and Van,\nVond and Strond,\nGjoll and Leipt,\nThese flow to the dwellings of men,\nAnd flow thence down to Hel."
+        },
+        {
+          "id": 29,
+          "text": "Kormt and Ormt | and the Kerlaugs twain\nShall Thor each day wade through,\n(When to doom he fares | at the ash Yggdrasil,)\nFor the bridge of the gods | is all ablaze,\nAnd the holy waters are hot."
+        },
+        {
+          "id": 30,
+          "text": "Glath and Gyllir, | Gler and Skeithbrimir,\nSilfrintopp and Sinir,\nGisl and Falhofnir, | Golltopp and Lettfeti,\nOn these steeds the Aser ride\nEach day to the doom | at the ash Yggdrasil."
+        },
+        {
+          "id": 31,
+          "text": "Three roots there are | that three ways run\n'Neath the ash-tree Yggdrasil;\n'Neath the first lives Hel, | 'neath the second the frost-giants,\n'Neath the last are the lands of men."
+        },
+        {
+          "id": 32,
+          "text": "Ratatosk is the squirrel | who there shall run\nOn the ash-tree Yggdrasil;\nFrom above the words | of the eagle he bears,\nAnd tells them to Nithhogg beneath."
+        },
+        {
+          "id": 33,
+          "text": "Four harts there are, | that the high branches\nNibble with heads thrown back;\nDain and Dvalin, | Duneyr and Durathror."
+        },
+        {
+          "id": 34,
+          "text": "More serpents there are | beneath the ash\nThan an unwise ape would think;\nGoin and Moin, | Grafvitnir's sons,\nGrabak and Grafvolluth,\nOfnir and Svafnir | shall ever, methinks,\nGnaw at the twigs of the tree."
+        },
+        {
+          "id": 35,
+          "text": "Yggdrasil's ash | great evil suffers,\nFar more than men do know;\nThe hart bites its top, | its trunk is rotting,\nAnd Nithhogg gnaws beneath."
+        },
+        {
+          "id": 36,
+          "text": "Hrist and Mist | bring the horn at my will,\nSkeggjold and Skogul;\nHild and Thruth, | Hlokk and Herfjotur,\nGoll and Geironul,\nRandgrith and Rathgrith | and Reginleif\nBear beer to the Einherjar."
+        },
+        {
+          "id": 37,
+          "text": "Arvak and Alsvith | up shall drag\nWeary the weight of the sun;\nBut a cool iron | the gods have hid\nTo shield the skins of the steeds."
+        },
+        {
+          "id": 38,
+          "text": "Svalin is he | who stands before the sun,\nThe shield for the shining god;\nMountains and sea | would certainly burn\nIf it fell from before the sun."
+        },
+        {
+          "id": 39,
+          "text": "Skoll is the wolf | that to Ironwood\nFollows the glittering god,\nAnd the son of Hrothvitnir, | Hati, awaits\nThe burning bride of heaven."
+        },
+        {
+          "id": 40,
+          "text": "Out of Ymir's flesh | was fashioned the earth,\nAnd the ocean out of his blood;\nOf his bones the hills, | of his hair the trees,\nOf his skull the heavens high."
+        },
+        {
+          "id": 41,
+          "text": "Mithgarth the gods | from his eyebrows made,\nAnd set for the sons of men;\nAnd out of his brain | the baleful clouds\nThey made to move on high."
+        },
+        {
+          "id": 42,
+          "text": "His favor Uller | and all the gods\nTo him who first touches the fire;\nFor the house can be seen | by the sons of the gods,\nIf the kettle is taken away."
+        },
+        {
+          "id": 43,
+          "text": "In Ivaldi's sons | in days of old\nWent to fashion Skidbladnir,\nThe best of ships, | for the bright Frey,\nThe noble son of Njorth."
+        },
+        {
+          "id": 44,
+          "text": "The ash Yggdrasil | is the best of trees,\nSkidbladnir the best of ships,\nOthin of gods, | Sleipnir of steeds,\nBifrost of bridges, | Bragi of skalds,\nHabrok of hawks, | and Garm of hounds."
+        },
+        {
+          "id": 45,
+          "text": "Now my face have I shown | to the sons of the gods,\nAnd near is my help to wake;\nTo all the Aser | it shall be known\nThat I was at Geirroth's board."
+        },
+        {
+          "id": 46,
+          "text": "Grim is my name, | Gangleri am I,\nHerjan and Hjalmberi,\nThekk and Thrithi, | Thuth and Uth,\nHelblindi and Hor;"
+        },
+        {
+          "id": 47,
+          "text": "Sath and Svipal | and Sanngetall,\nHerteit and Hnikar,\nBileyg, Baleyg, | Bolverk, Fjolnir,\nGrim and Grimnir, | Glapsvith, Fjolsvith;"
+        },
+        {
+          "id": 48,
+          "text": "Sithhott, Sithskegg, | Sigfather, Hnikuth,\nAllfather, Valfather, | Atrith, Farmatyr;\nBy one name | I was never known,\nSince I went among the folk."
+        },
+        {
+          "id": 49,
+          "text": "Grimnir they called me | at Geirroth's hall,\nAnd Jalk at Asmund's home;\nKjalar I was | when in sled I went,\nAnd Thror at the Thing,\nVithur in battle, | Oski and Omi,\nJafnhar and Biflindi, | Gondlir and Harbarth."
+        },
+        {
+          "id": 50,
+          "text": "Swithur and Swithrir | was I at Sokkmimir's,\nAnd tricked the giant old;\nWhen I was the slayer | of the son of Mithvitnir,\nThe mighty in magic famed."
+        },
+        {
+          "id": 51,
+          "text": "Drunken art thou, Geirroth, | too much didst thou drink,\nMuch hast thou lost, | for help thou lackest,\nThe help of the Einherjar | and Othin's favor."
+        },
+        {
+          "id": 52,
+          "text": "Many things told I, | but few hast thou minded,\nThy friends play thee false;\nMy friend's sword | lying I see,\nThe blade all covered with blood."
+        },
+        {
+          "id": 53,
+          "text": "The fallen by the sword | Ygg shall now have,\nThy life is now run out;\nWroth with thee are the disir, | Othin thou seest,\nDraw near to me if thou dare!"
+        },
+        {
+          "id": 54,
+          "text": "Othin I am now, | Ygg I was then,\nBefore that Thuth I was called,\nVak and Skilfing, | Vafuth and Hroptatyr,\nGaut and Jalk, | Ofnir and Svafnir,\nAnd all, methinks, are one."
+        }
+      ]
+    },
+    {
+      "title": "Skírnismál",
+      "translation_title": "The Lay of Skirnir",
+      "introduction": "Frey falls in love with the giantess Gerth, and sends his servant Skirnir to woo her for him.",
+      "stanzas": [
+        {
+          "id": 1,
+          "text": "Frey spake:\n'Why sits thou alone, | in the long day,\nThou servant so dear to me?'"
+        },
+        {
+          "id": 2,
+          "text": "Skirnir spake:\n'Ill days are here, | and I am ill content,\nMy heart is heavy with woe.'"
+        },
+        {
+          "id": 3,
+          "text": "Frey spake:\n'Tell me, Skirnir, | thou shield-bearer mine,\nWhy so silent thou sittest?'"
+        },
+        {
+          "id": 4,
+          "text": "Skirnir spake:\n'Of thy heart's grief | I would hear thee tell,\nFor I am thy servant true.'"
+        },
+        {
+          "id": 5,
+          "text": "Frey spake:\n'In Gymir's courts | I saw walking\nA maid, for whom I must mourn;\nHer arms gave light | to the air and the sea,\nAnd all the worlds were bright.'"
+        },
+        {
+          "id": 6,
+          "text": "Skirnir spake:\n'Give me the horse | that goes through the dark,\nAnd the magic sword | that fights of itself\nAgainst the giants grim.'"
+        },
+        {
+          "id": 7,
+          "text": "Frey spake:\n'The horse will I give | that goes through the dark,\nAnd the magic sword | that fights of itself,\nIf thou art brave enough.'"
+        },
+        {
+          "id": 8,
+          "text": "Skirnir spake to the horse:\n'Dark is it without, | and I deem it time\nTo fare o'er the misty fells;\nWe both shall come back, | or the giant takes both,\nThe terrible troll, to-night.'"
+        },
+        {
+          "id": 9,
+          "text": "Skirnir rode into Jotunheim to Gymir's house. There were fierce dogs tied before the gate of the wooden fence which was around Gerth's hall. He rode to where a herdsman sat on a mound, and spoke to him:"
+        },
+        {
+          "id": 10,
+          "text": "Skirnir spake:\n'Tell me, herdsman, | sitting on the mound,\nAnd watching all the ways,\nHow may I win | to talk with the maid,\nPast the hounds of Gymir here?'"
+        },
+        {
+          "id": 11,
+          "text": "The Herdsman spake:\n'Art thou doomed to die | or already dead,\nThou horseman that ridest hither?\nBarred from speech | shalt thou ever be\nWith Gymir's daughter good.'"
+        },
+        {
+          "id": 12,
+          "text": "Skirnir spake:\n'Boldness is better | than baseless fear,\nFor him who must fare afar;\nTo a day is my life | by destiny shaped,\nAnd all my days are doomed.'"
+        },
+        {
+          "id": 13,
+          "text": "Gerth spake:\n'What noise is that | which now I hear\nWithin our house so high?\nThe earth shakes, | and the home of Gymir\nTrembles around us all.'"
+        },
+        {
+          "id": 14,
+          "text": "The Serving-Maid spake:\n'A man is without, | from his horse he leaps,\nAnd lets his steed graze on the grass.'"
+        },
+        {
+          "id": 15,
+          "text": "Gerth spake:\n'Bid him come in | to our hall, and drink\nOf the famous mead so fine;\nThough I fear that without | is my brother's slayer,\nWho stands and waits by the wall.'"
+        },
+        {
+          "id": 16,
+          "text": "Gerth spake:\n'Who art thou, stranger, | of the elves or the gods,\nOr the wise Wanes art thou come?\nWhy didst thou fare | through the flickering fire\nTo visit our home so high?'"
+        },
+        {
+          "id": 17,
+          "text": "Skirnir spake:\n'I am not of the elves, | nor the offspring of gods,\nNor the wise Wanes am I come;\nYet I dared to fare | through the flickering fire\nTo visit your home so high.'"
+        },
+        {
+          "id": 18,
+          "text": "Skirnir spake:\n'Eleven apples, | all of gold,\nHere will I give thee, Gerth,\nTo buy thy peace, | that Frey thou callest\nThe dearest of living lives.'"
+        },
+        {
+          "id": 19,
+          "text": "Gerth spake:\n'I will not take | eleven apples,\nFor the love of any man;\nNor ever will Frey | and I be friends\nWhile our lives shall last.'"
+        },
+        {
+          "id": 20,
+          "text": "Skirnir spake:\n'Then do I offer | the ring that was burned\nWith the young son of Othin;\nEight of weight | will it drop every ninth night,\nIf thou art mine.'"
+        },
+        {
+          "id": 21,
+          "text": "Gerth spake:\n'I will not take | the ring that was burned\nWith the young son of Othin;\nGold I lack not | in Gymir's house,\nSharing my father's wealth.'"
+        },
+        {
+          "id": 22,
+          "text": "Skirnir spake:\n'Look at this sword, | maiden, slender and sharp,\nThat I hold in my hand here;\nYour head will I hew | from your neck, if you\nRefuse to do my will.'"
+        },
+        {
+          "id": 23,
+          "text": "Gerth spake:\n'I will not be | by force compelled\nTo love any man;\nBut if Gymir finds thee, | the giant fierce,\nA fight ye soon shall find.'"
+        },
+        {
+          "id": 24,
+          "text": "Skirnir spake:\n'I strike thee, maid, | with my magic wand,\nTo tame thee to my will;\nThou shalt go where | the sons of men\nShall see thee never more.'"
+        },
+        {
+          "id": 25,
+          "text": "Skirnir spake:\n'On the eagle's hill | shalt thou ever sit,\nAnd look towards Hel from the house;\nMeat shall be loathsome | to thee as to men\nIs the venom of the snake.'"
+        },
+        {
+          "id": 26,
+          "text": "Skirnir spake:\n'Hrimgrimnir is he, | the giant hateful,\nWho shall have thee in Hel's barred gate;\nTo the roots of the tree | shall trolls take thee,\nThere goat's water give thee to drink.'"
+        },
+        {
+          "id": 27,
+          "text": "Skirnir spake:\n'Hear me, giants! | hear me, frost-giants!\nSons of Suttung, | and sir gods, too!\nHow I forbid, | how I ban\nThe meeting of men with the maid,\n(The joy of men with the maid.)'"
+        },
+        {
+          "id": 28,
+          "text": "Skirnir spake:\n'Hrimthurs is he, | the giant who has thee\nIn the east, by the gates of Hel;\nTo the frost-giants' halls | shall thy food be brought,\nAnd little choice shalt thou have.'"
+        },
+        {
+          "id": 29,
+          "text": "Gerth spake:\n'Hail to thee, boy! | and take the crystal cup,\nFilled with the ancient mead;\nThough I thought not ever | to love one of\nThe race of the Wanes.'"
+        },
+        {
+          "id": 30,
+          "text": "Skirnir spake:\n'My errand all | must I know ere I ride\nMy way on the steed to the woods;\nWhen wilt thou come | to the son of Njorth,\nAnd give him the love he longs for?'"
+        },
+        {
+          "id": 31,
+          "text": "Gerth spake:\n'Barri is the grove, | which we both know well,\nThe forest quiet and calm;\nAfter nine nights | to the son of Njorth\nWill Gerth give freely her love.'"
+        },
+        {
+          "id": 32,
+          "text": "Then Skirnir rode home. Frey stood without and spoke to him, and asked for tidings:"
+        },
+        {
+          "id": 33,
+          "text": "Frey spake:\n'Tell me, Skirnir, | ere thou takest off saddle,\nOr farest forward a step:\nWhat hast thou done | in the giants' home\nTo make glad thee or me?'"
+        },
+        {
+          "id": 34,
+          "text": "Skirnir spake:\n'Barri is the grove, | which we both know well,\nThe forest quiet and calm;\nAfter nine nights | to the son of Njorth\nWill Gerth give freely her love.'"
+        },
+        {
+          "id": 35,
+          "text": "Frey spake:\n'Long is one night, | long are two;\nHow shall I bear three?\nOften a month | has seemed less to me\nThan half a night of waiting.'"
+        }
+      ]
+    },
+    {
+      "title": "Hárbarðsljóð",
+      "translation_title": "The Lay of Harbarth",
+      "introduction": "A flyting (insult match) between Thor and Odin, who is disguised as a ferryman named Harbarth.",
+      "stanzas": [
+        {
+          "id": 1,
+          "text": "Thor spake:\n'Who is the knave | of the knaves on the knoll,\nWho stands and shouts o'er the straits?'"
+        },
+        {
+          "id": 2,
+          "text": "Harbarth spake:\n'Who is the churl | of the churls in the channel,\nThat calls across the corn?'"
+        },
+        {
+          "id": 3,
+          "text": "Thor spake:\n'Ferry me o'er | and I'll feed thee well,\nMy basket I bear | on my back;' (I think\nThou hast never eaten | better food.)"
+        },
+        {
+          "id": 4,
+          "text": "Harbarth spake:\n'Thou art barefoot, | thy breeks are worn,\nThou hast not even | hose to thy heels;\nWhat is thy name, | thou churl?'"
+        },
+        {
+          "id": 5,
+          "text": "Thor spake:\n'Othin's son | am I, Meili's brother,\nAnd Magni's father; | the mightiest of gods;\nWith Thor thou speakest! | I will ask thee now\nWhat is thy name, | thou knave?'"
+        },
+        {
+          "id": 6,
+          "text": "Harbarth spake:\n'Harbarth am I, | and I hide it seldom.'"
+        },
+        {
+          "id": 7,
+          "text": "Thor spake:\n'Why shouldst thou hide it, | if thou hast no crime\nTo keep from the ken of men?'"
+        },
+        {
+          "id": 8,
+          "text": "Harbarth spake:\n'Although I had crimes, | I would keep myself\nFrom such as thou art, | unless I were doomed.'"
+        },
+        {
+          "id": 9,
+          "text": "Thor spake:\n'I am wet and weary, | and I wish to cross;\nWhy dost thou hinder me, Harbarth?'"
+        },
+        {
+          "id": 10,
+          "text": "Harbarth spake:\n'I shall stay thee here, | for I started from home\nWith orders from him | who owns the boat;\nHildolf is he, | the hero of Ratatosk,\nHe bade me no robbers | to row o'er the firth.'"
+        },
+        {
+          "id": 11,
+          "text": "Thor spake:\n'Thou wouldst call me robber, | but I rue it ill\nThat I bear my burden | on my back;\nIf I could but reach thee, | I would row thy boat\nTill it sank with thee, | thou sot!'"
+        },
+        {
+          "id": 12,
+          "text": "Harbarth spake:\n'Here shall I stand | and await thee here,\nThou hast found no fiercer | foe since Hrungnir died.'"
+        },
+        {
+          "id": 13,
+          "text": "Thor spake:\n'Thou mindest me now | of my meeting with Hrungnir,\nThe giant of stone, | who stood so stout;\nYet I laid him low, | and I let him fall;\nWhat didst thou the while, Harbarth?'"
+        },
+        {
+          "id": 14,
+          "text": "Harbarth spake:\n'With Fjolvar five | full winters through\nI dwelt in the island | called Algron;\nThere could we fight, | and fell the slain,\nMuch could we dare, | and maids could steal.'"
+        },
+        {
+          "id": 15,
+          "text": "Thor spake:\n'How did ye win | the women's love?'"
+        },
+        {
+          "id": 16,
+          "text": "Harbarth spake:\n'Sparkling women | had we, if they were but wise,\nFair women had we, | if they were but kind;\nFor a rope of sand | they would seek to wind,\nAnd the bottom to dig | from the deepest dale.'"
+        },
+        {
+          "id": 17,
+          "text": "Thor spake:\n'I slew Thjazi, | the giant threatening,\nUp I cast the eyes | of Alvaldi's son\nInto the heaven bright; | they are signs greatest\nOf my deeds, which all men see.\nWhat didst thou the while, Harbarth?'"
+        },
+        {
+          "id": 18,
+          "text": "Harbarth spake:\n'Great love-ventures | I had with the giant-maids,\nWhen I won them from the wise giants;\nA son I begat | with the daughter of Hlebarth,\nA witch she was, | but I won her love.'"
+        },
+        {
+          "id": 19,
+          "text": "Thor spake:\n'I slew the giant-women | in Hlessey,\nThey had done the worst, | they had deceived the folk;\nWhat didst thou the while, Harbarth?'"
+        },
+        {
+          "id": 20,
+          "text": "Harbarth spake:\n'I was in Valland, | and wars I followed,\nPrinces I angered, | and peace I brought never;\nTo Othin belongs | the earls that fall,\nBut Thor has the race of thralls.'"
+        },
+        {
+          "id": 21,
+          "text": "Thor spake:\n'Unequal gifts | wouldst thou give to the gods,\nIf thou mightest wield the world.'"
+        },
+        {
+          "id": 22,
+          "text": "Harbarth spake:\n'Thor has strength enough, | but no heart;\nIn fear and cowardice | wast thou crammed in a glove,\nAnd thou seemedst no son of Thor.'"
+        },
+        {
+          "id": 23,
+          "text": "Thor spake:\n'Thou craven cur! | I would kill thee now,\nIf I could but reach across.'"
+        },
+        {
+          "id": 24,
+          "text": "Harbarth spake:\n'Why shouldst thou reach? | We have no reason for wrath;\nWhat didst thou the while, Thor?'"
+        },
+        {
+          "id": 25,
+          "text": "Thor spake:\n'In the east I was, | and the river I guarded,\nWhen the sons of Svarang | sought me there;\nStones did they cast, | but they won no steep,\nFor to ask for peace | were they first to pray.'"
+        },
+        {
+          "id": 26,
+          "text": "Harbarth spake:\n'East was I too, | and with one I talked,\nPlayed with the linen-white, | and met her long;\nI gladdened the gold-bright one, | and game I had.'"
+        },
+        {
+          "id": 27,
+          "text": "Thor spake:\n'Well for thee, then, | was the woman found?'"
+        },
+        {
+          "id": 28,
+          "text": "Harbarth spake:\n'Thy help I needed, | Thor, to hold\nThe white maid fast in my arms.'"
+        },
+        {
+          "id": 29,
+          "text": "Thor spake:\n'I would have helped thee, | if the chance I had.'"
+        },
+        {
+          "id": 30,
+          "text": "Harbarth spake:\n'I would have trusted thee, | if thou hadst not betrayed\nThy troth to me before.'"
+        },
+        {
+          "id": 31,
+          "text": "Thor spake:\n'No heel-biter am I, | like an old hide-shoe\nIn spring, that is worn away.'"
+        },
+        {
+          "id": 32,
+          "text": "Harbarth spake:\n'What didst thou the while, Thor?'"
+        },
+        {
+          "id": 33,
+          "text": "Thor spake:\n'The brides of Berserkir | I beat in Hlessey,\nThey were mad, and everything | meant to overturn.'"
+        },
+        {
+          "id": 34,
+          "text": "Harbarth spake:\n'Shame didst thou win, | that women thou foughtest,\nThor, on the island there.'"
+        },
+        {
+          "id": 35,
+          "text": "Thor spake:\n'She-wolves they were, | and women no-wise,\nThey smashed my ship | which I shored on the strand,\nAnd threatened me with iron clubs;\nWhat didst thou the while, Harbarth?'"
+        },
+        {
+          "id": 36,
+          "text": "Harbarth spake:\n'I was in the host | which hither fared,\nThe banners to raise, | and the spear to redden.'"
+        },
+        {
+          "id": 37,
+          "text": "Thor spake:\n'Evil is thy speech, | for thou sayest thou soughtest\nTo bring us hatred and harm.'"
+        },
+        {
+          "id": 38,
+          "text": "Harbarth spake:\n'I shall make it up with thee | with a magic ring,\nIf the judge who judges | all things so wills.'"
+        },
+        {
+          "id": 39,
+          "text": "Thor spake:\n'Where didst thou find | such speech so foul?\nMore foul I have never heard.'"
+        },
+        {
+          "id": 40,
+          "text": "Harbarth spake:\n'I learned it from men, | the ancient ones,\nWho dwell in the hills of home.'"
+        },
+        {
+          "id": 41,
+          "text": "Thor spake:\n'A name full good | thou givest to cairns,\nWhen thou callest them hills of home.'"
+        },
+        {
+          "id": 42,
+          "text": "Harbarth spake:\n'Of such things speak I | as so I see.'"
+        },
+        {
+          "id": 43,
+          "text": "Thor spake:\n'Thy glibness of tongue | will get thee grief\nIf I start to wade the stream;\nLouder than wolf | shalt thou howl, I ween,\nIf I hit thee with the hammer.'"
+        },
+        {
+          "id": 44,
+          "text": "Harbarth spake:\n'Sif has a lover | at home in the hall,\nHe is the one | thou shouldst seek to hit;\nThat were a trial | more true for thy strength.'"
+        },
+        {
+          "id": 45,
+          "text": "Thor spake:\n'Thy tongue still chatters, | to tease me thou choosest,\nThou lying man of lips!\nMe methinks thou art lying | as much as thou mayst.'"
+        },
+        {
+          "id": 46,
+          "text": "Harbarth spake:\n'Truth do I tell, | but slow is thy way,\nFar hadst thou gone | if my boat I had given.'"
+        },
+        {
+          "id": 47,
+          "text": "Thor spake:\n'Why dost thou hinder me? | Who incites thee thus?'"
+        },
+        {
+          "id": 48,
+          "text": "Harbarth spake:\n'It is the witch-mother, | who eggs me on.'"
+        },
+        {
+          "id": 49,
+          "text": "Thor spake:\n'Thou liest now.'\nHarbarth spake:\n'I lie not now.'\nThor spake:\n'Get hence with thy boat! | to the trolls with thee now!'"
+        },
+        {
+          "id": 50,
+          "text": "Harbarth spake:\n'Go thou to where | all the fiends shall get thee!'"
+        }
+      ]
+    },
+    {
+      "title": "Hymiskviða",
+      "translation_title": "The Lay of Hymir",
+      "introduction": "Thor and Tyr journey to the giant Hymir to retrieve a massive cauldron for brewing ale.",
+      "stanzas": [
+        {
+          "id": 1,
+          "text": "Of old the gods | of game were eager,\nTogether they met | and mead would drink;\nThey shook the twigs | and blood they tried,\nRich was the feast | in Ægir's hall."
+        },
+        {
+          "id": 2,
+          "text": "The mountain-dweller | sat merry as boy,\nLike to the son | of Miskorblindi;\nHe looked in the eye | of Ygg's son then:\n'Thou shalt for the Aser | oft make a feast.'"
+        },
+        {
+          "id": 3,
+          "text": "The word-wielding giant | weary was made,\nAnd vengeance on the gods | he vowed to get;\nThe husband of Ran | he asked to find\nA cauldron where | he could brew the ale."
+        },
+        {
+          "id": 4,
+          "text": "The gods so great | could get it nowhere,\nNor could the blest ones | find it out;\nTill Tyr the faithful | to Thor did speak,\nAnd friendly counsel | to Hlorrithi gave."
+        },
+        {
+          "id": 5,
+          "text": "'There dwells to the east | of Elivagar\nHymir the wise | at the heaven's end;\nA kettle my father, | the fierce one, owns,\nA caldron huge, | a mile in depth.'"
+        },
+        {
+          "id": 6,
+          "text": "Thor spake:\n'Thinkest thou we can | the water-boiler get?'"
+        },
+        {
+          "id": 7,
+          "text": "Tyr spake:\n'If, friend, we use | but a few of wiles.'"
+        },
+        {
+          "id": 8,
+          "text": "They drove that day | a long way forth,\nAt last to the house | of Egil they came;\nThe goats with horns | were halted there;\nThen to the hall | of Hymir they went."
+        },
+        {
+          "id": 9,
+          "text": "The youth found the grandmother, | loathsome to see,\nAnd heads nine hundred | she had, methinks;\nBut another came | all golden forth,\nBright-browed, bearing | beer to her son."
+        },
+        {
+          "id": 10,
+          "text": "The Mother of Tyr spake:\n'Kinsman of giants, | beneath the kettle\nWill I set ye both, | ye bold of heart;\nFor many a time | my mate is fierce,\nAnd wroth with guests | is the giant old.'"
+        },
+        {
+          "id": 11,
+          "text": "Late home came | the misshapen Hymir,\nThe harsh-minded giant, | from hunting he came;\nThe icicles rattled | on his chin-forest rimmed,\nAs the fellow came in, | and frost was on his cheek."
+        },
+        {
+          "id": 12,
+          "text": "The Mother of Tyr spake:\n'Hail to thee, Hymir! | be of good heart,\nNow is thy son | to thy hall come home,\nFor whom we have waited, | this long way wending;\nWith him is the foe, | the friend of man,\nVeor is his name, | tell him welcome!'"
+        },
+        {
+          "id": 13,
+          "text": "'See where they sit, | at the gable-end,\nBehind the beam | to hide themselves.'"
+        },
+        {
+          "id": 14,
+          "text": "At the pillar he looked, | and the plank was burst,\nAsunder was broken | the heavy beam;\nEight kettles fell, | but only one\nOf the hard-hammered caldrons | whole was found."
+        },
+        {
+          "id": 15,
+          "text": "Forth came they then, | but the old giant\nHis eyes on the foe | with fear did cast;\nTo him it seemed | an evil thing\nWhen the sorrow-bringer | he saw in his hall."
+        },
+        {
+          "id": 16,
+          "text": "Three oxen then | were taken there,\nAnd soon the giant | bade seethe them all;\nHeadless they made them, | and then they cast\nInto the cooking-pit | all the three."
+        },
+        {
+          "id": 17,
+          "text": "Sif's mate, ere to sleep | he went, alone\nAte oxen two, | and all of the fish;\nTo the hoary giant | well it seemed\nThat Hlorrithi's meal | was mighty indeed."
+        },
+        {
+          "id": 18,
+          "text": "Hymir spake:\n'Next time at eve | we three must eat\nThe food we catch | as we hunt the game.'"
+        },
+        {
+          "id": 19,
+          "text": "Veor said he would row | on the sea if the giant\nA bait would give him | to banish his hunger."
+        },
+        {
+          "id": 20,
+          "text": "Hymir spake:\n'Go to the herd, | if thou hast the heart,\nThe crusher of giants, | and seek a bait;\nFor there, methinks, | thou soon mayst find\nA bait from the ox | that is easy to get.'"
+        },
+        {
+          "id": 21,
+          "text": "Swift to the wood | the hero went,\nTill before him he saw | an ox all black;\nFrom the beast the head | broke Thor off,\nThe high stronghold | of the heavy horns."
+        },
+        {
+          "id": 22,
+          "text": "Hymir spake:\n'Thy work, methinks, | is worse by far\nThan when thou sittest | and sayest nought.'"
+        },
+        {
+          "id": 23,
+          "text": "The lord of goats | bade the ape-begotten\nFarther to steer | the steed of the sea;\nBut the giant said | that his will, forsooth,\nLonger to row | was little enough."
+        },
+        {
+          "id": 24,
+          "text": "Two whales on his hook | did the mighty Hymir\nSoon pull up | on a single cast;\nAft in the boat | sat Othin's son,\nAnd Veor with cunning | his line cast out."
+        },
+        {
+          "id": 25,
+          "text": "The protector of men, | the serpent's slayer,\nThe head of the ox | on his hook did place;\nAgainst the bait | the jaw did gape\nOf the serpent who girdles | all the earth."
+        },
+        {
+          "id": 26,
+          "text": "Drag did the doughty | Thor on the line,\nAnd up with the venomous | wolf he pulled;\nWith his hammer he hit | the hair-hill high\nOf the brother of the wolf | while he roared from below."
+        },
+        {
+          "id": 27,
+          "text": "The rocks were rent, | the earth howled loud,\nThe ancient earth | all shrank together;\nThen sank the fish | in the sea forthwith."
+        },
+        {
+          "id": 28,
+          "text": "Gloomy was the giant | as they rowed back,\nNo word he spake | as he turned the rudder;\nOf the boat and the oars | he thought apart."
+        },
+        {
+          "id": 29,
+          "text": "Hymir spake:\n'Half of the work | wilt thou do with me,\nEither the whales | to the house bring home,\nOr bind the boat? | thou must do thy best.'"
+        },
+        {
+          "id": 30,
+          "text": "Hlorrithi went, | and the boat he gripped,\nUp he swung it, | with bilge-water, benches and all;\nAnd home to the hall | of the giant he bore\nThe sea-pig through rock-rifts | and deep ravines."
+        },
+        {
+          "id": 31,
+          "text": "But the giant still | with stubborn mind,\nBold in his strength, | with the stranger strove;\nNo man, he said, | was mighty in strength,\nSave he could break | the goblet of glass."
+        },
+        {
+          "id": 32,
+          "text": "Hlorrithi took | the glass in his hand,\nAnd dashed it against | a pillar of stone;\nThe pillar broke, | but the glass was whole,\nTo the giant again | was the goblet brought."
+        },
+        {
+          "id": 33,
+          "text": "Then the fair leman | friendly counsel\nGave to the god: | 'Hit Hymir's skull!\nHarder is it | than the heavy cup,\nThe brain-pan | of the breaker of food.'"
+        },
+        {
+          "id": 34,
+          "text": "Powerful Thor, | the goat-lord, rose,\nAnd with all his god-strength | smote the giant;\nSafe was the helmed-one, | but shivered the cup,\nThe wine-vessel rounded | was rent in twain."
+        },
+        {
+          "id": 35,
+          "text": "Hymir spake:\n'Fair treasure is gone, | since the cup is broken,\nFrom my knees, I say;' | and so he spake:\n'I can say no more | in days to come,\n\"Thou art brewed, mine ale!\" | for the cup is broken.'"
+        },
+        {
+          "id": 36,
+          "text": "'Enough shall it be | if ye bring the kettle\nOut of the hall, | if ye hold the strength.'"
+        },
+        {
+          "id": 37,
+          "text": "Tyr twice essayed | to move the kettle,\nBut the kettle twice | stood still as stone;\nThen Hlorrithi grasped | the handle grim,\nAnd earth gave way | 'neath the feet of the god."
+        },
+        {
+          "id": 38,
+          "text": "Up on his head | Sif's husband raised\nThe kettle huge, | and the handles clattered;\nAbout his heels | the rings of it hung."
+        },
+        {
+          "id": 39,
+          "text": "They had fared not far | when back he looked,\nAnd Othin's son | saw giants many;\nFrom their caves in the east | coming with Hymir,\nA host of many-headed | monsters he saw."
+        },
+        {
+          "id": 40,
+          "text": "He lifted the kettle | from his shoulders down,\nAnd Mjolnir, the hammer | murderous, swung;\nAnd all the whales | of the waste he killed."
+        },
+        {
+          "id": 41,
+          "text": "Not long had they fared | ere Hlorrithi's goat,\nHalf-dead, on the ground | was lying down;\nOn its leg the beast | was lame, they say;\nAnd the doer of this | was the decent Loki."
+        },
+        {
+          "id": 42,
+          "text": "But ye have heard,-- | for who of the gods\nMore fully can tell | the fate of the goat?--\nWhat treasure he got | from the giant then,\nWhen he paid for the beast | with his children both."
+        },
+        {
+          "id": 43,
+          "text": "Possessing the kettle | of Hymir the strong,\nTo the council of gods | the strong one came;\nAnd the gods so great | could drink at the feast,\nIn Ægir's hall, | their ale at will."
+        }
+      ]
+    },
+    {
+      "title": "Lokasenna",
+      "translation_title": "The Flyting of Loki",
+      "introduction": "Loki crashes a feast of the gods and insults them one by one until Thor arrives and threatens him.",
+      "stanzas": [
+        {
+          "id": 1,
+          "text": "Ægir, who is also called Gymir, had made ale for the gods, after he had got the great kettle, as has been told. To this feast came Othin and Frigg, his wife. Thor came not, for he was on a journey in the east. Sif, Thor's wife, was there, and Bragi with Ithun, his wife. Tyr, who had but one hand, was there; the wolf Fenrir had bitten off the other. There was Njorth and his wife Skathi, Frey and Freyja, and Vithar, the son of Othin. Loki was there, and Frey's servants Byggvir and Beyla. Many were there of the gods and elves.\nÆgir had two serving-men, Fimafeng and Eldir. Glittering gold was there used instead of firelight; the ale came in of itself; and great was the peace of the holy place. The guests praised much the ability of Ægir's serving-men. Loki might not endure that, and he slew Fimafeng. Then the gods shook their shields and howled at Loki, and drove him away to the forest, and thereafter began to drink. Loki came again, and met Eldir without, and spoke to him:"
+        },
+        {
+          "id": 2,
+          "text": "Loki spake:\n'Speak now, Eldir, | for not one step\nFarther shalt thou fare;\nWhat ale-talk here | do they have within,\nThe sons of the glorious gods?'"
+        },
+        {
+          "id": 3,
+          "text": "Eldir spake:\n'Of their weapons they talk, | and their might in war,\nThe sons of the glorious gods;\nFrom the gods and elves | who are gathered here\nNo friend in words shalt thou find.'"
+        },
+        {
+          "id": 4,
+          "text": "Loki spake:\n'In shall I go | into Ægir's hall,\nFor the feast I fain would see;\nBale and hatred | I bring to the gods,\nAnd their mead with venom I mix.'"
+        },
+        {
+          "id": 5,
+          "text": "Eldir spake:\n'If in thou goest | to Ægir's hall,\nAnd fain the feast wouldst see,\nIf with slander and lies | thou besprinklest the gods,\nThink well lest they wipe it on thee.'"
+        },
+        {
+          "id": 6,
+          "text": "Loki spake:\n'Thinkest thou, Eldir, | that if we two\nShall strive with slanderous speech,\nI am rich in words | which I well can speak\nIf thou speakest too much to me?'"
+        },
+        {
+          "id": 7,
+          "text": "Then Loki went into the hall, but when those who were there saw who had come in, they all became silent."
+        },
+        {
+          "id": 8,
+          "text": "Loki spake:\n'Thirsty I come | into this thine hall,\nI, Lopt, from a journey long,\nTo ask of the gods | that one should give\nFair mead for a drink to me.'"
+        },
+        {
+          "id": 9,
+          "text": "'Why sit ye silent, | ye gods so sullen,\nAnd never a word have ye?\nChoose me a seat | and a place at the feast,\nOr bid me fare forth from hence!'"
+        },
+        {
+          "id": 10,
+          "text": "Bragi spake:\n'A seat and a place | will the gods not choose\nFor thee at the feast to have;\nFor well the gods know | to whom they should give\nTheir mead and a place at the board.'"
+        },
+        {
+          "id": 11,
+          "text": "Loki spake:\n'Remember, Othin, | in olden days\nThat we both our blood have mixed;\nThen didst thou promise | no ale to pour,\nUnless it were brought for us both.'"
+        },
+        {
+          "id": 12,
+          "text": "Othin spake:\n'Stand forth then, Vithar, | and let the wolf's father\nFind a seat at our feast;\nLest evil should Loki | speak aloud\nHere in Ægir's hall.'"
+        },
+        {
+          "id": 13,
+          "text": "Then Vithar rose and poured drink for Loki; but before he drank he spoke to the gods:"
+        },
+        {
+          "id": 14,
+          "text": "'Hail to you, gods! | ye goddesses, hail!\nHail to the holy throng!\nSave for the god | who yonder sits,\nBragi, on the bench.'"
+        },
+        {
+          "id": 15,
+          "text": "Bragi spake:\n'A horse and a sword | from my hoard will I give,\nAnd a ring gives Bragi to boot,\nThat hatred thou mak'st not | among the gods;\nSo rouse not the great ones to wrath.'"
+        },
+        {
+          "id": 16,
+          "text": "Loki spake:\n'In horses and rings | thou shalt never be rich,\nBragi, but lack them both;\nOf the gods and elves | here together met\nLeast brave in battle art thou,\n(And shyest thou art of the shot.)'"
+        },
+        {
+          "id": 17,
+          "text": "Bragi spake:\n'Now were I without | as I am within,\nAnd here in Ægir's hall,\nThy head would I bear | in my hand away,\nAnd pay thee the price of thy lie.'"
+        },
+        {
+          "id": 18,
+          "text": "Loki spake:\n'In thy seat art thou bold, | not so are thy deeds,\nBragi, thou adorner of benches!\nGo out and fight, | if angered thou feelest,\nNo hero such forethought has.'"
+        },
+        {
+          "id": 19,
+          "text": "Ithun spake:\n'Well, prithee, Bragi, | his kinship weigh,\nSince chosen as wish-son he was;\nAnd speak not to Loki | such words of spite\nHere in Ægir's hall.'"
+        },
+        {
+          "id": 20,
+          "text": "Loki spake:\n'Be silent, Ithun! | thou art, I say,\nThe most man-mad of women;\nSince thou thy washing | arms didst wind\nAbout thy brother's slayer.'"
+        },
+        {
+          "id": 21,
+          "text": "Ithun spake:\n'To Loki I speak not | with spiteful words\nHere in Ægir's hall;\nAnd Bragi I calm, | who is hot with beer,\nFor I wish not that fierce they should fight.'"
+        },
+        {
+          "id": 22,
+          "text": "Gefjun spake:\n'Why will ye, gods, | with bitter words\nStrive in the hall together?\nLopt knows not | that he is mocked,\nAnd the dwellers in heaven hate him.'"
+        },
+        {
+          "id": 23,
+          "text": "Loki spake:\n'Be silent, Gefjun! | for now shall I say\nWho led thee to evil life;\nThe boy so fair | gave a necklace bright,\nAnd about him thy legs were laid.'"
+        },
+        {
+          "id": 24,
+          "text": "Othin spake:\n'Mad art thou, Loki, | and little of wit,\nThe wrath of Gefjun to rouse;\nFor the fate that is set | for all she sees,\nEven as I, methinks.'"
+        },
+        {
+          "id": 25,
+          "text": "Loki spake:\n'Be silent, Othin! | thou never couldst set\nThe strife 'twixt men aright;\nOft hast thou given | to those whom thou oughtest not,--\nThe craven,--victory.'"
+        },
+        {
+          "id": 26,
+          "text": "Othin spake:\n'Though I gave to those | whom I ought not to give,\nThe craven, victory,\nEight winters together | wast thou underground,\nMilking the cows as a maid,\n(And there children didst thou bear;\nAnd that methinks was a woman's way.)'"
+        },
+        {
+          "id": 27,
+          "text": "Loki spake:\n'In Samsey once | didst thou sew spells,\nAnd like to a Vala thou wast;\nIn the likeness of a witch | didst thou wander wide,\nAnd that methinks was a woman's way.'"
+        },
+        {
+          "id": 28,
+          "text": "Frigg spake:\n'Of the deeds of old | ye should never speak\nHere in Ægir's hall,\nWhat ye two did | in days gone by;\nOld tales should never be told.'"
+        },
+        {
+          "id": 29,
+          "text": "Loki spake:\n'Be silent, Frigg! | thou art Fjorgyn's daughter,\nBut ever mad for men;\nVe and Vili, | it is said, thou hast,\nBoth, in thy bosom lain.'"
+        },
+        {
+          "id": 30,
+          "text": "Frigg spake:\n'If a son like Baldr | were by me now,\nHere in Ægir's hall,\nFrom the sons of the gods | thou shouldst go not forth\nTill thy fierceness in fight were tried.'"
+        },
+        {
+          "id": 31,
+          "text": "Loki spake:\n'Thou wilt then, Frigg, | that further I tell\nOf the ill that now I know;\nMine is the blame | that Baldr no more\nThou seest ride home to the hall.'"
+        },
+        {
+          "id": 32,
+          "text": "Freyja spake:\n'Mad art thou, Loki, | that known thou makest\nThe wrong and shame thou hast wrought;\nThe fate of all | does Frigg know well,\nThough herself she says it not.'"
+        },
+        {
+          "id": 33,
+          "text": "Loki spake:\n'Be silent, Freyja! | for fully I know thee,\nSinless thou art not thyself;\nOf the gods and elves | who are gathered here,\nEach one as thy lover has lain.'"
+        },
+        {
+          "id": 34,
+          "text": "Freyja spake:\n'False is thy tongue, | and soon shalt thou find\nThat it sings thee an evil song;\nThe gods are wroth, | and the goddesses all,\nAnd in grief shalt thou go from the hall.'"
+        },
+        {
+          "id": 35,
+          "text": "Loki spake:\n'Be silent, Freyja! | thou foulest witch,\nAnd steeped full sore in sin;\nIn the arms of thy brother | the bright gods caught thee\nWhen Freyja her wind set free.'"
+        },
+        {
+          "id": 36,
+          "text": "Njorth spake:\n'It is little ill | though a woman love\nA lover or husband or both;\nBut a wonder it is | that this womanish god\nComes hither, who children has borne.'"
+        },
+        {
+          "id": 37,
+          "text": "Loki spake:\n'Be silent, Njorth! | thou wast eastward sent,\nTo the gods as a hostage given;\nAnd the daughters of Hymir | their privy had\nWhen use did they make of thy mouth.'"
+        },
+        {
+          "id": 38,
+          "text": "Njorth spake:\n'Great was my gain, | though long was I gone,\nTo the gods as a hostage given;\nThe son did I have | whom no one hates,\nAnd foremost of gods is he found.'"
+        },
+        {
+          "id": 39,
+          "text": "Loki spake:\n'Give heed now, Njorth, | nor boast too high,\nNo longer I keep it hid;\nWith thy sister hadst thou | so fair a son,\nThus hadst thou no worse a hope.'"
+        },
+        {
+          "id": 40,
+          "text": "Tyr spake:\n'Of the heroes brave | is Frey the best\nHere in the courts of the gods;\nHe harms not maids | nor men's wives ever,\nAnd the bound from their fetters he frees.'"
+        },
+        {
+          "id": 41,
+          "text": "Loki spake:\n'Be silent, Tyr! | for between two men\nFriendship thou ne'er couldst fashion;\nFain would I tell | how thy right hand fared\nOnce by the wolf was it rent.'"
+        },
+        {
+          "id": 42,
+          "text": "Tyr spake:\n'I lack a hand, | but thou lackest Hrothvitnir,\nA loss it is to us both;\nIll fares the wolf | who must ever await\nIn chains the fall of the gods.'"
+        },
+        {
+          "id": 43,
+          "text": "Loki spake:\n'Be silent, Tyr! | for a son did thy wife\nOnce to me, the wily one, bear;\nAnd never a penny, | thou poor one, hadst thou\nFor the hurt to pay thee back.'"
+        },
+        {
+          "id": 44,
+          "text": "Frey spake:\n'The wolf I see lie | at the mouth of the river,\nUntil the gods to destruction go;\nAnd thou, if thou holdest not | thy tongue, shall be bound,\nThou forger of evil, as well.'"
+        },
+        {
+          "id": 45,
+          "text": "Loki spake:\n'With gold didst thou buy | Gymir's daughter,\nAnd so gavest away thy sword;\nBut when Muspell's sons | through Myrkwood ride,\nThou shalt have no weapon to wield,\n(And sore will thy need be then.)'"
+        },
+        {
+          "id": 46,
+          "text": "Byggvir spake:\n'Had I the birth | of Ingunar-Frey,\nAnd sat in so lofty a seat,\nI would crush to marrow | this crow of ill,\nAnd beat all his body to bits.'"
+        },
+        {
+          "id": 47,
+          "text": "Loki spake:\n'What little creature | goes crawling there,\nSnuffling and snapping about?\nAt the ears of Frey | thou art ever found,\nOr under the millstone chattering.'"
+        },
+        {
+          "id": 48,
+          "text": "Byggvir spake:\n'Byggvir my name, | and brisk am I called\nBy gods and by men so great;\nHere am I proud | that the children of Hropt\nDrink ale all together.'"
+        },
+        {
+          "id": 49,
+          "text": "Loki spake:\n'Be silent, Byggvir! | thou never couldst set\nThe shares of the meat for men;\nHid in straw on the floor, | they found thee not\nWhen heroes were fain to fight.'"
+        },
+        {
+          "id": 50,
+          "text": "Heimdall spake:\n'Loki, thou art drunk, | and witless art thou,\nWhy dost thou not leave off, Loki?\nFor drink too much | to every man\nHis wits will steal away.'"
+        },
+        {
+          "id": 51,
+          "text": "Loki spake:\n'Be silent, Heimdall! | in days of old\nWas an evil fate for thee set;\nWith back held stiff | must thou ever stand,\nAs warder of the gods.'"
+        },
+        {
+          "id": 52,
+          "text": "Skathi spake:\n'Light art thou, Loki, | but longer thou mayst not\nIn freedom flourish thy tail;\nOn the rocks the gods | bind thee with bowels\nTorn from thy frost-cold son.'"
+        },
+        {
+          "id": 53,
+          "text": "Loki spake:\n'Though on rocks the gods bind me | with bowels torn\nFrom my frost-cold son,\nYet first was I | and last was I\nAt the killing of Thjazi caught.'"
+        },
+        {
+          "id": 54,
+          "text": "Skathi spake:\n'If first thou wast | and last thou wast\nAt the killing of Thjazi caught,\nFrom my dwellings and fields | shall ever come forth\nA counsel cold for thee.'"
+        },
+        {
+          "id": 55,
+          "text": "Loki spake:\n'More light was thy speech | with Laufey's son,\nWhen thou badest me come to thy bed;\nSuch things must be mentioned, | if we two shall seek\nTo tell our sins of old.'"
+        },
+        {
+          "id": 56,
+          "text": "Then Sif came forward and poured mead for Loki in a crystal cup and said:\n'Welcome, Loki, | and take the crystal cup,\nFilled with the ancient mead;\nSo shalt thou admit, | of the children of the gods,\nThat I alone am blameless.'"
+        },
+        {
+          "id": 57,
+          "text": "He took the horn and drank therefrom:\n'Alone thou wert, | if truly thou wouldst\nAll men so shyly shun;\nBut one do I know, | and I know him well,\nWho made the harlot of Hlorrithi's wife,\nAnd that was the wily Loki.'"
+        },
+        {
+          "id": 58,
+          "text": "Beyla spake:\n'The mountains shake, | and fare from the home\nDoes Hlorrithi hither come;\nAnd he will silence | the one who slanders\nAll gods and men in the hall.'"
+        },
+        {
+          "id": 59,
+          "text": "Loki spake:\n'Be silent, Beyla! | thou art Byggvir's wife,\nAnd deep art thou steeped in sin;\nA greater shame | to the gods came ne'er,\nThou art filth, and a milking-maid.'"
+        },
+        {
+          "id": 60,
+          "text": "Then came Thor forth, and spake:\n'Unmanly one, cease, | or the hammer of Miollnir,\nThe heavy one, close thy mouth;\nThe shoulder-cliff | shall I cleave from thy neck,\nAnd so shall thy life be lost.'"
+        },
+        {
+          "id": 61,
+          "text": "Loki spake:\n'Lo, the son of Earth | has sought the hall,\nWhy dost thou bluster, Thor?\nBut little thou'lt dare | to do with the wolf\nWhen he swallows Sigfather up.'"
+        },
+        {
+          "id": 62,
+          "text": "Thor spake:\n'Unmanly one, cease, | or the hammer of Miollnir,\nThe heavy one, close thy mouth;\nUp I will hurl thee | to the east,\nAnd no one shall see thee more.'"
+        },
+        {
+          "id": 63,
+          "text": "Loki spake:\n'Of thy journeys east | thou shouldst never tell\nTo the people here, methinks;\nIn a thumb of a glove | didst thou hide, thou great one,\nAnd there thou wast no god.'"
+        },
+        {
+          "id": 64,
+          "text": "Thor spake:\n'Unmanly one, cease, | or the hammer of Miollnir,\nThe heavy one, close thy mouth;\nMy right hand shall smite thee | with Hrungnir's slayer,\nTill all thy bones are broken.'"
+        },
+        {
+          "id": 65,
+          "text": "Loki spake:\n'Alive I intend | a long while to be\nThough thou threatenest me with thy hammer;\nRough seemed the straps | of Skrymir's wallet,\nWhen thy meat thou mightest not get,\n(And faint from hunger thou felt.)'"
+        },
+        {
+          "id": 66,
+          "text": "Thor spake:\n'Unmanly one, cease, | or the hammer of Miollnir,\nThe heavy one, close thy mouth;\nThe slayer of Hrungnir | shall send thee to Hel,\nAnd down to the gate of death.'"
+        },
+        {
+          "id": 67,
+          "text": "Loki spake:\n'I have said to the gods | and the sons of the gods\nThe things that my spirit urged;\nBut for thee alone | do I now go forth,\nFor I know that thou strikest well.'"
+        },
+        {
+          "id": 68,
+          "text": "'Ale hast thou brewed, | but, Ægir, now\nSuch feasts shalt thou make no more;\nO'er all that thou hast | which is here within\nShall play the flickering fire,\n(And thy back shall be burnt with it.)'"
+        },
+        {
+          "id": 69,
+          "text": "And after that Loki hid himself in Franang's waterfall in the guise of a salmon, and there the gods took him. He was bound with the bowels of his son Nari, but his son Narfi was changed to a wolf. Skathi took a poison-snake and fastened it up over Loki's face, and the poison dropped thereon. Sigyn, Loki's wife, sat there and held a shell under the poison, but when the shell was full she poured out the poison, and in the meanwhile it dropped on Loki. Then he struggled so hard that the whole earth shook therewith; and now that is called an earthquake."
+        }
+      ]
+    },
+    {
+      "title": "Þrymskviða",
+      "translation_title": "The Lay of Thrym",
+      "introduction": "Thor's hammer is stolen by the giant Thrym, and Thor must disguise himself as Freyja to retrieve it.",
+      "stanzas": [
+        {
+          "id": 1,
+          "text": "Wild was Vingthor | when he awoke,\nAnd when his mighty | hammer he missed;\nHe shook his beard, | his hair was bristling,\nAs the son of Jorth | about him sought."
+        },
+        {
+          "id": 2,
+          "text": "Hear now the speech | that first he spake:\n'Harken, Loki, | and heed my words,\nNowhere on earth | is it known to man,\nNor in heaven above: | our hammer is stolen.'"
+        },
+        {
+          "id": 3,
+          "text": "To the dwelling fair | of Freyja they went,\nHear now the speech | that first he spake:\n'Wilt thou, Freyja, | thy feather-dress lend me,\nThat so my hammer | I may seek?'"
+        },
+        {
+          "id": 4,
+          "text": "Freyja spake:\n'Thine should it be | though of silver bright,\nAnd I would give it | though 'twere of gold.'"
+        },
+        {
+          "id": 5,
+          "text": "Then Loki flew, | and the feather-dress whirred,\nTill he left behind him | the home of the gods,\nAnd reached at last | the realm of the giants."
+        },
+        {
+          "id": 6,
+          "text": "Thrym sat on a mound, | the giants' master,\nLeashes of gold | he laid for his dogs,\nAnd stroked and smoothed | the manes of his steeds."
+        },
+        {
+          "id": 7,
+          "text": "Thrym spake:\n'How fare the gods, | how fare the elves?\nWhy comst thou alone | to the giants' land?'"
+        },
+        {
+          "id": 8,
+          "text": "Loki spake:\n'Ill fare the gods, | ill fare the elves!\nHast thou hidden | Hlorrithi's hammer?'"
+        },
+        {
+          "id": 9,
+          "text": "Thrym spake:\n'I have hidden | Hlorrithi's hammer,\nEight miles down | deep in the earth;\nAnd back no man | shall bring it to thee\nSave he bring me Freyja | to be my bride.'"
+        },
+        {
+          "id": 10,
+          "text": "Then Loki flew, | and the feather-dress whirred,\nTill he left behind him | the home of the giants,\nAnd reached at last | the realm of the gods.\nThere in the court | Thor met him coming;\nHear now the speech | that first he spake:"
+        },
+        {
+          "id": 11,
+          "text": "Thor spake:\n'Hast thou reward | for thy wagging tongue?\nTell me the news | ere thou takest off;\nOft does sitting | the story fail,\nAnd lies he tells | who lays himself down.'"
+        },
+        {
+          "id": 12,
+          "text": "Loki spake:\n'I have reward | and a wagging tongue;\nThrym has thy hammer, | the giants' master;\nAnd back no man | shall bring it to thee\nSave he bring him Freyja | to be his bride.'"
+        },
+        {
+          "id": 13,
+          "text": "To the dwelling fair | of Freyja they went,\nHear now the speech | that first he spake:\n'Bind on, Freyja, | the bridal veil,\nWe two must drive | to the giants' home.'"
+        },
+        {
+          "id": 14,
+          "text": "Wrathful was Freyja, | and fiercely she snorted,\nAnd the dwelling great | of the gods was shaken,\nAnd burst was the mighty | Brisings' necklace:\n'Most lustful indeed | should I look to all\nIf I journeyed with thee | to the giants' home.'"
+        },
+        {
+          "id": 15,
+          "text": "Then were the gods | together met,\nAnd the goddesses came | and council held,\nAnd the far-famed ones | a plan would find,\nHow they might Hlorrithi's | hammer win."
+        },
+        {
+          "id": 16,
+          "text": "Then Heimdall spake, | whitest of the gods,\nLike the Wanes he knew | the future well:\n'Bind we on Thor | the bridal veil,\nLet him bear the mighty | Brisings' necklace;'"
+        },
+        {
+          "id": 17,
+          "text": "'Keys around him | let there rattle,\nAnd down to his knees | hang women's dress;\nWith gems full broad | upon his breast,\nAnd a pretty cap | to crown his head.'"
+        },
+        {
+          "id": 18,
+          "text": "Then Thor the mighty | his answer made:\n'Me would the gods | unmanly call\nIf I let bind | the bridal veil.'"
+        },
+        {
+          "id": 19,
+          "text": "Then Loki spake, | the son of Laufey:\n'Be silent, Thor, | and speak not thus;\nElse will the giants | in Asgarth dwell\nIf thy hammer is brought not | home to thee.'"
+        },
+        {
+          "id": 20,
+          "text": "Then they bound on Thor | the bridal veil,\nAnd next the mighty | Brisings' necklace."
+        },
+        {
+          "id": 21,
+          "text": "Keys around him | let they rattle,\nAnd down to his knees | hung women's dress;\nWith gems full broad | upon his breast,\nAnd a pretty cap | to crown his head."
+        },
+        {
+          "id": 22,
+          "text": "Then Loki spake, | the son of Laufey:\n'As thy maid-servant thither | I go with thee;\nWe two shall drive | to the giants' home.'"
+        },
+        {
+          "id": 23,
+          "text": "Then home the goats | to the hall were driven,\nThey wrenched at the halters, | swift were they to run;\nThe mountains burst, | earth burned with fire,\nAnd Othin's son | sought Jotunheim."
+        },
+        {
+          "id": 24,
+          "text": "Then loud spake Thrym, | the giants' master:\n'Bestir thee, giants, | put straw on the benches;\nNow Freyja they bring | to be my bride,\nThe daughter of Njorth | out of Noatun.'"
+        },
+        {
+          "id": 25,
+          "text": "'Gold-horned cattle | go to my stables,\nJet-black oxen, | the giant's joy;\nMany my gems, | and many my jewels,\nFreyja alone | did I lack, methinks.'"
+        },
+        {
+          "id": 26,
+          "text": "Early it was | to evening come,\nAnd forth was borne | the beer for the giants;\nThor alone ate an ox, | and eight salmon,\nAll the dainties as well | that were set for the women;\nAnd drank Sif's mate | three tuns of mead."
+        },
+        {
+          "id": 27,
+          "text": "Then loud spake Thrym, | the giants' master:\n'Who ever saw bride | more keenly bite?\nI saw never bride | with a broader bite,\nNor a maiden who drank | more mead than this!'"
+        },
+        {
+          "id": 28,
+          "text": "Hard by there sat | the serving-maid wise,\nSo well she answered | the giant's words:\n'From food has Freyja | eight nights fasted,\nSo hot was her longing | for Jotunheim.'"
+        },
+        {
+          "id": 29,
+          "text": "Thrym looked 'neath the veil, | for he longed to kiss,\nBut back he leaped | the length of the hall:\n'Why are so fearful | the eyes of Freyja?\nFire, methinks, | from her eyes burns forth.'"
+        },
+        {
+          "id": 30,
+          "text": "Hard by there sat | the serving-maid wise,\nSo well she answered | the giant's words:\n'No sleep has Freyja | for eight nights found,\nSo hot was her longing | for Jotunheim.'"
+        },
+        {
+          "id": 31,
+          "text": "Soon came the giant's | luckless sister,\nWho feared not to ask | the bridal fee:\n'From thy hands the rings | of red gold take,\nIf thou wouldst win | my willing love,\n(My willing love | and welcome glad.)'"
+        },
+        {
+          "id": 32,
+          "text": "Then loud spake Thrym, | the giants' master:\n'Bring in the hammer | to hallow the bride;\nOn the maiden's knees | let Mjolnir lie,\nThat us both the hand | of Vor may bless.'"
+        },
+        {
+          "id": 33,
+          "text": "The heart in the breast | of Hlorrithi laughed\nWhen the hard-souled one | his hammer beheld;\nFirst Thrym, the king | of the giants, he killed,\nThen all the folk | of the giants he felled."
+        },
+        {
+          "id": 34,
+          "text": "The giant's sister | old he slew,\nShe who had asked | the bridal fee;\nA stroke she got | in the stead of shillings,\nAnd a hammer's stroke | for a host of rings."
+        },
+        {
+          "id": 35,
+          "text": "So came Othin's son | by his hammer again."
+        }
+      ]
+    },
+    {
+      "title": "Völundarkviða",
+      "translation_title": "The Lay of Volund",
+      "introduction": "The tragic story of the master smith Volund, his capture by King Nithuth, and his terrible revenge.",
+      "stanzas": [
+        {
+          "id": 1,
+          "text": "Maids flew from the south | through Mirkwood forth,\nFair and young, | their fate to follow;\nOn the shore of the sea | to rest them they sat,\nThe maids of the south, | and flax they spun."
+        },
+        {
+          "id": 2,
+          "text": "Hlathguth and Hervor | were Hlothver's children,\nAnd Olrun the Wise | was Kjar's daughter;\nOne in her arms | took Egil to hold,\nThe woman fair, | in the wood of gold."
+        },
+        {
+          "id": 3,
+          "text": "Another was | with Slagfinn set,\n(Swans were they, | with feathers of snow;)\nAnd the third their sister, | the white neck clasped\nOf Volund then, | the Vernian's son."
+        },
+        {
+          "id": 4,
+          "text": "So they sat | for seven winters,\nBut the eighth was come, | and their home they craved;\n(The ninth was come, | and needs must they part.)\nThe maidens yearned | for the murky wood,\nThe fair young sisters, | their fate to follow."
+        },
+        {
+          "id": 5,
+          "text": "From the hunt came | the weather-eyed hunter,\nSlagfinn and Egil, | their hall to see,\nOut and in | went they everywhere,\nEast and West, | but the women were gone."
+        },
+        {
+          "id": 6,
+          "text": "East rode Egil | to seek for Olrun,\nAnd south went Slagfinn | to seek for Swanwhite;\nBut Volund sat | in Wolfdale still,\nHe forged red gold | with gems full fair."
+        },
+        {
+          "id": 7,
+          "text": "And rings he strung | on ropes of bast,\nWait did he thus | for his wife to return,\nIf the fair one ever | should come to him."
+        },
+        {
+          "id": 8,
+          "text": "This Nithuth learned, | the lord of Njars,\nThat Volund sat | in Wolfdale still;\nBy night went men, | their mail-coats studded,\nTheir shields in the waning | moon did shine."
+        },
+        {
+          "id": 9,
+          "text": "From their saddles the gable | wall they sought,\nAnd in they went | at the end of the hall;\nRings they saw there | on ropes of bast,\nSeven hundred | the hero had."
+        },
+        {
+          "id": 10,
+          "text": "And them they took, | and them they put back,\nSave one alone | which they bore away."
+        },
+        {
+          "id": 11,
+          "text": "Home from the hunt | came the weather-eyed hunter,\nVolund, faring | on the long way;\nThe brown bear's flesh | would he roast with fire,\nSoon the wood-dry | pine burned well,\n(The wind-dried wood, | before Volund.)"
+        },
+        {
+          "id": 12,
+          "text": "On the bearskin he sat, | and his rings he counted,\nThe master of elves, | but one he missed;\nThat Hlothver's daughter | had it he thought,\nAnd the all-wise maid | had come once more."
+        },
+        {
+          "id": 13,
+          "text": "So long he sat | that he fell asleep,\nAnd waking, joyless | his chains he found;\nUpon his hands | were heavy shackles,\nAnd fetters firmly | his feet did bind."
+        },
+        {
+          "id": 14,
+          "text": "Volund spake:\n'Who are the men | that laid the ropes,\nAnd bound me thus | with bast and chains?'"
+        },
+        {
+          "id": 15,
+          "text": "Then Nithuth called, | the lord of Njars:\n'How gottest thou, Volund, | great of the elves,\nThese treasures of ours | in Wolfdale?'"
+        },
+        {
+          "id": 16,
+          "text": "Volund spake:\n'The gold was not | on Grani's path,\nFar, methinks, is our land | from the hills of the Rhine;\nI mind me that we | more treasures possessed\nWhen whole we were | at home in our hall.'"
+        },
+        {
+          "id": 17,
+          "text": "Without stood the wife | of Nithuth wise,\nAnd in she came | from the end of the hall;\nOn the floor she stood, | and softly spoke:\n'Not kind are his eyes | who comes from the wood.'"
+        },
+        {
+          "id": 18,
+          "text": "King Nithuth gave to his daughter Bothvild the ring of gold which he had taken from the bast rope in Volund's house, and he himself wore the sword which Volund had made. The queen said:\n'His teeth he shows, | when the sword he sees,\nAnd Bodvild's ring | he recognizes;\nHis eyes are like | a glistening snake;\nCut now his hamstrings, | and set him in Sævarstath.'"
+        },
+        {
+          "id": 19,
+          "text": "So was it done; his hamstrings were cut, and he was set on an island which was near the mainland, and was called Sævarstath. There he smithied for the king all kinds of precious things. No man dared to go to him, save only the king himself. Volund spake:\n'At Nithuth's belt | the sword I see\nThat I whetted well | and with cunning made,\nAnd the bright blade | from me was borne away;\n(I shall see it never | borne to my smithy;)\nNow Bodvild wears | my bride's red ring,\n(For which I wait, | and the worst I know.)'"
+        },
+        {
+          "id": 20,
+          "text": "He sat and slept not, | and his hammer he swung,\nFast for Nithuth | new wonders he made;\nThe two young sons | of Nithuth came,\nTo the doors of the hall | on Sævarstath."
+        },
+        {
+          "id": 21,
+          "text": "They came to the chest, | and the keys they asked,\nThe evil was open | when in they looked;\nTo the boys it seemed | that gems they saw,\nAnd gold in plenty | was there to have."
+        },
+        {
+          "id": 22,
+          "text": "Volund spake:\n'Come ye alone, | the next day come,\nAnd gold to you both | shall I give for this;\nTell it to none | of the maidens or men,\nTo no one say | that me ye have sought.'"
+        },
+        {
+          "id": 23,
+          "text": "Early did brother | to brother call:\n'Swift let us go | the rings to see!'\nThey came to the chest, | and the keys they asked,\nThe evil was open | when in they looked."
+        },
+        {
+          "id": 24,
+          "text": "He hewed off the heads | of the heavy boys,\nAnd their feet he hid | in the fen's foul muck;\nBut their skulls he broke | from the hair-bound flesh,\nAnd set them in silver | for Nithuth to see."
+        },
+        {
+          "id": 25,
+          "text": "And of their eyes | the gems he made,\nAnd sent them to | the wife of Nithuth wise;\nAnd of the teeth | of the two he wrought\nA breast-pin | for Bothvild to have."
+        },
+        {
+          "id": 26,
+          "text": "Bothvild then | of her ring did boast,\n(Which she had broken, | she brought it to Volund;)\n'I dare not say it | save to thee.'"
+        },
+        {
+          "id": 27,
+          "text": "Volund spake:\n'I shall weld the break | in the gold so well\nThat fairer than ever | thy father shall find it,\nAnd better much | thy mother shall think it,\nAnd thou thyself | shall see it the same.'"
+        },
+        {
+          "id": 28,
+          "text": "Beer he brought, | for he cunning was,\nUntil in her seat | the maiden slept.\n'Now have I avenged | my hurts all,\nSave one alone, | on the evil woman.'"
+        },
+        {
+          "id": 29,
+          "text": "Volund spake:\n'Well is it, Volund, | wing-taken now\nOn thy feet to fly, | from Nithuth's men!'\nLaughing Volund | rose aloft,\nWeeping Bothvild | went from the isle,\nFor her lover's flight | and her father's wrath."
+        },
+        {
+          "id": 30,
+          "text": "Without stood the wife | of Nithuth wise,\nAnd in she came | from the end of the hall;\nBut he by the wall | to rest him went:\n'Wakest thou, Nithuth, | lord of Njars?'"
+        },
+        {
+          "id": 31,
+          "text": "Nithuth spake:\n'Always I wake, | and ever joyless,\nLittle I sleep | since my sons were slain;\nCold is my head, | cold was thy counsel,\nOne thing, with Volund, | I wish to speak.'"
+        },
+        {
+          "id": 32,
+          "text": "'Tell me, Volund, | great of the elves,\nWhat of my boys | so brave has become?'"
+        },
+        {
+          "id": 33,
+          "text": "Volund spake:\n'Oaths shalt thou swear me, | ere ever I speak,\nBy the side of the ship, | and the rim of the shield,\nBy the shoulder of steed, | and the edge of the sword,\nThat thou wilt not slay | the wife of Volund,\nNor to my bride | wilt bring an ill,\nThough a wife I have | whom well thou knowest,\nOr a child I have | within thy hall.'"
+        },
+        {
+          "id": 34,
+          "text": "'Go to the smithy | that thou didst build,\nThere shalt thou find | the bellows sprinkled\nWith blood of the boys; | I hewed off their heads,\nAnd their feet I hid | in the fen's foul muck.'"
+        },
+        {
+          "id": 35,
+          "text": "'But their skulls I broke | from the hair-bound flesh,\nAnd set them in silver | for Nithuth to see;\nAnd of their eyes | the gems I made,\nAnd sent them to | the wife of Nithuth wise.'"
+        },
+        {
+          "id": 36,
+          "text": "'And of the teeth | of the two I wrought\nA breast-pin | for Bothvild to have;\nNow Bothvild goes | big with child,\nThe only daughter | of you two.'"
+        },
+        {
+          "id": 37,
+          "text": "Nithuth spake:\n'Never spakest thou word | that worsened me more,\nNor that made me, Volund, | more bitter for vengeance;\nThere is no man so high | that from horse he can take thee,\nOr so strong an archer | as to shoot thee down,\nWhile high in the clouds | thy course thou takest.'"
+        },
+        {
+          "id": 38,
+          "text": "Laughing Volund | rose aloft,\nBut left in sadness | Nithuth sat."
+        },
+        {
+          "id": 39,
+          "text": "Nithuth spake:\n'Rise up, Thakkrath, | best of my thralls,\nBid Bothvild come, | the bright-browed maid,\nFor with her father | fair must she speak.'"
+        },
+        {
+          "id": 40,
+          "text": "'Is it true, Bothvild, | that which was told me,\nThat thou and Volund | were together in the isle?'"
+        },
+        {
+          "id": 41,
+          "text": "Bothvild spake:\n'True is it, Nithuth, | that which was told thee,\nThat I and Volund | were together in the isle,\nAn hour of unlucky | joy it was;\nI had not the strength | to strive against him,\nI had not the power | to save myself.'"
+        }
+      ]
+    },
+    {
+      "title": "Alvíssmál",
+      "translation_title": "The Lay of Alvis",
+      "introduction": "The dwarf Alvis claims Thor's daughter as his bride, but Thor tricks him into reciting the names of things in all the worlds until the sun turns him to stone.",
+      "stanzas": [
+        {
+          "id": 1,
+          "text": "Alvis spake:\n'The benches are spread, | the bride shall come,\nAnd home to my hall I shall haste;\nToo great a hurry | to the gods will it seem,\nBut home shall I take her at last.'"
+        },
+        {
+          "id": 2,
+          "text": "Thor spake:\n'What monster art thou? | why so pale round the nose?\nHast thou slept with the dead in the dust?\nLike a giant to look on | methinks thou art,\nThou wert not born for the bride.'"
+        },
+        {
+          "id": 3,
+          "text": "Alvis spake:\n'Alvis am I, | and under the earth\nIs my home in the hollow rock;\nI am come for the arms | of the waggoner's daughter,\nLet the gods not break their word.'"
+        },
+        {
+          "id": 4,
+          "text": "Thor spake:\n'I shall break it, | for the bride's father\nHas the right to say who shall wed;\nI was not at home | when the promise was made,\nAnd I give her alone of the gods.'"
+        },
+        {
+          "id": 5,
+          "text": "Alvis spake:\n'What hero is this | who claims the right\nTo say who the maiden shall wed?\nFew will know thee, | thou wandering knave,\nWho has bought thee with rings so bright?'"
+        },
+        {
+          "id": 6,
+          "text": "Thor spake:\n'Vingthor am I, | the wanderer wide,\nAnd I am Sithgrani's son;\nAgainst my will | shalt thou get the maid,\nAnd so will I settle the strife.'"
+        },
+        {
+          "id": 7,
+          "text": "Alvis spake:\n'Thy good will now | shall I seek to get,\nAnd to gain the bride for my own;\nI would rather have her | than lack the maid,\nThough she be snow-white as snow.'"
+        },
+        {
+          "id": 8,
+          "text": "Thor spake:\n'The love of the maid | I may not let thee,\nThou guest so wise, from the walls,\nIf thou canst tell me | all that I ask\nOf the worlds that are everywhere.'"
+        },
+        {
+          "id": 9,
+          "text": "'Tell me, Alvis, | for all men's speech,\nDwarf, I deem that thou knowest:\nHow is the earth | called that lies before men,\nIn all the worlds that are?'"
+        },
+        {
+          "id": 10,
+          "text": "Alvis spake:\n'\"Earth\" to men, | \"Field\" to the Aser,\n\"The Ways\" is it called by the Wanes;\n\"Ever-Green\" by the giants, | \"The Grower\" by elves,\n\"The Moist\" by the holy gods.'"
+        },
+        {
+          "id": 11,
+          "text": "Thor spake:\n'Tell me, Alvis, | for all men's speech,\nDwarf, I deem that thou knowest:\nHow is the heaven | called that is known to men,\nIn all the worlds that are?'"
+        },
+        {
+          "id": 12,
+          "text": "Alvis spake:\n'\"Heaven\" to men, | \"The High One\" to gods,\n\"The Wind-Weaver\" call it the Wanes;\n\"The Up-World\" giants, | \"The Fair-Roof\" elves,\n\"The Dripping Hall\" dwarfs.'"
+        },
+        {
+          "id": 13,
+          "text": "Thor spake:\n'Tell me, Alvis, | for all men's speech,\nDwarf, I deem that thou knowest:\nHow is the moon | called that men see,\nIn all the worlds that are?'"
+        },
+        {
+          "id": 14,
+          "text": "Alvis spake:\n'\"Moon\" to men, | \" The Fiery One\" to gods,\n\"The Whirling Wheel\" in Hel;\n\"The Speeder\" giants, | \"The Shiner\" dwarfs,\n\"The Teller of Time\" elves.'"
+        },
+        {
+          "id": 15,
+          "text": "Thor spake:\n'Tell me, Alvis, | for all men's speech,\nDwarf, I deem that thou knowest:\nHow is the sun | called that men see,\nIn all the worlds that are?'"
+        },
+        {
+          "id": 16,
+          "text": "Alvis spake:\n'\"Sun\" to men, | \"Day-Star\" to gods,\n\"The Deceiver of Dvalin\" to dwarfs;\n\"The Ever-Bright\" giants, | \"The Fair-Wheel\" elves,\n\"All-Glowing\" sons of the Aser.'"
+        },
+        {
+          "id": 17,
+          "text": "Thor spake:\n'Tell me, Alvis, | for all men's speech,\nDwarf, I deem that thou knowest:\nHow are clouds | called that mingle with showers,\nIn all the worlds that are?'"
+        },
+        {
+          "id": 18,
+          "text": "Alvis spake:\n'\"Clouds\" to men, | \"Shower-Hope\" to gods,\n\"The Wind-Floaters\" call them the Wanes;\n\"The Rain-Hope\" giants, | \"The Weather-Might\" elves,\n\" The Helmet of Secrets\" in Hel.'"
+        },
+        {
+          "id": 19,
+          "text": "Thor spake:\n'Tell me, Alvis, | for all men's speech,\nDwarf, I deem that thou knowest:\nHow is the wind | called that fares so wide,\nIn all the worlds that are?'"
+        },
+        {
+          "id": 20,
+          "text": "Alvis spake:\n'\"Wind\" to men, | \"The Waverer\" to gods,\n\"The Neigher\" to holy powers;\n\"The Wailer\" to giants, | \"The Roaring Traveler\" to elves,\n\"The Whistling One\" in Hel.'"
+        },
+        {
+          "id": 21,
+          "text": "Thor spake:\n'Tell me, Alvis, | for all men's speech,\nDwarf, I deem that thou knowest:\nHow is the calm | called that shall come,\nIn all the worlds that are?'"
+        },
+        {
+          "id": 22,
+          "text": "Alvis spake:\n'\"Calm\" to men, | \"The Quiet\" to gods,\n\"The Wind-Hush\" call it the Wanes;\n\"The Sultry\" giants, | \"The Day-Quiet\" elves,\n\" The Shelter\" to dwarfs.'"
+        },
+        {
+          "id": 23,
+          "text": "Thor spake:\n'Tell me, Alvis, | for all men's speech,\nDwarf, I deem that thou knowest:\nHow is the sea | called that men sail,\nIn all the worlds that are?'"
+        },
+        {
+          "id": 24,
+          "text": "Alvis spake:\n'\"Sea\" to men, | \"The Smooth-Lying\" to gods,\n\"The Wave\" call it the Wanes;\n\"Eel-Home\" giants, | \"Drink-Stuff\" elves,\n\"The Deep\" dwarfs call it.'"
+        },
+        {
+          "id": 25,
+          "text": "Thor spake:\n'Tell me, Alvis, | for all men's speech,\nDwarf, I deem that thou knowest:\nHow is the fire | called that burns before men,\nIn all the worlds that are?'"
+        },
+        {
+          "id": 26,
+          "text": "Alvis spake:\n'\"Fire\" to men, | \"Flame\" to the Aser,\n\"The Wild\" by the Wanes is it called;\n\" The Ravenous\" by giants, | \"The Burner\" by dwarfs,\n\"The Swift\" in Hel.'"
+        },
+        {
+          "id": 27,
+          "text": "Thor spake:\n'Tell me, Alvis, | for all men's speech,\nDwarf, I deem that thou knowest:\nHow is the wood | called that grows for men,\nIn all the worlds that are?'"
+        },
+        {
+          "id": 28,
+          "text": "Alvis spake:\n'\"Wood\" to men, | \"Mane of the Field\" to gods,\n\"Seaweed of Hills\" to heroes;\n\"Fuel\" to giants, | \"The Fair-Limbed\" to elves,\n\"The Wand\" call it the Wanes.'"
+        },
+        {
+          "id": 29,
+          "text": "Thor spake:\n'Tell me, Alvis, | for all men's speech,\nDwarf, I deem that thou knowest:\nHow is the night | called, the daughter of Norvi,\nIn all the worlds that are?'"
+        },
+        {
+          "id": 30,
+          "text": "Alvis spake:\n'\"Night\" to men, | \"Darkness\" to gods,\n\"The Hood\" to the holy powers;\n\"Unlight\" to giants, | \"Sleep-Joy\" to elves,\n\"The Dream-Goddess\" to dwarfs.'"
+        },
+        {
+          "id": 31,
+          "text": "Thor spake:\n'Tell me, Alvis, | for all men's speech,\nDwarf, I deem that thou knowest:\nHow is the seed | called that is sown by men,\nIn all the worlds that are?'"
+        },
+        {
+          "id": 32,
+          "text": "Alvis spake:\n'\"Barley\" to men, | \"Grain\" to gods,\n\"Growth\" call it the Wanes;\n\"Food\" to giants, | \"Drink-Stuff\" to elves,\n\"The Slender-Stalk\" in Hel.'"
+        },
+        {
+          "id": 33,
+          "text": "Thor spake:\n'Tell me, Alvis, | for all men's speech,\nDwarf, I deem that thou knowest:\nHow is the ale | called that is quaffed by men,\nIn all the worlds that are?'"
+        },
+        {
+          "id": 34,
+          "text": "Alvis spake:\n'\"Ale\" to men, | \"Beer\" to the Aser,\n\"The Foaming\" call it the Wanes;\n\"Clear-Draught\" giants, | \"Mead\" in Hel,\n\"The Feast-Draught\" Suttung's sons.'"
+        },
+        {
+          "id": 35,
+          "text": "Thor spake:\n'In a single breast | I never have seen\nMore wealth of wisdom old;\nBut with great guile | I have tricked thee, dwarf;\nThe day has caught thee here!\nThe sun, Alvis, | shines in the hall.'"
+        }
+      ]
+    },
+    {
+      "title": "Helgakviða Hundingsbana I",
+      "translation_title": "The First Lay of Helgi Hundingsbane",
+      "introduction": "The birth and early exploits of Helgi, his love for the Valkyrie Sigrun, and his battles.",
+      "stanzas": [
+        {
+          "id": 1,
+          "text": "In olden days, | when eagles screamed,\nAnd holy streams | from heaven fell,\nBorghild the Fair | in Bralund bore\nA son to the king, | the high-souled Helgi."
+        },
+        {
+          "id": 2,
+          "text": "Night was in the house, | and Norns there came,\nWho shaped the life | of the heavy-born;\nThey bade him be | of princes best,\nAnd famous most | of the free-born men."
+        },
+        {
+          "id": 3,
+          "text": "Mightily wove they | the web of fate,\nWhile Bralund's towns | were trembling all;\nAnd there the golden | threads they wove,\nAnd in the moon's hall | fast they made them."
+        },
+        {
+          "id": 4,
+          "text": "One raven said | to the raven other,\n'I know something. | A young king is born\nTo Sigmund and Borghild; | his byrnie is green,\nHis eyes are bright, | he is born for a hero.'"
+        },
+        {
+          "id": 5,
+          "text": "The king's heart was glad | when he heard the news,\nHe gave the boy | a leek for a gift;\n'Helgi' he named him, | and Hringstath gave,\nSolfjall and Snæfjall, | and Sigarsvoll,\nHringstath and Hatom, | and Himinvangar,\nThe sword of Sinfjotli | to Sigmund's son."
+        },
+        {
+          "id": 6,
+          "text": "Then grew the prince | in the garden of kings,\nLike the elm-tree high | in the light of day;\nBut the Norns decreed | a heavy doom,\nThat the king should die | by the dog's son's hand."
+        },
+        {
+          "id": 7,
+          "text": "Fifteen winters | old he was\nWhen Hunding he slew, | the hardy king,\nWho long had ruled | o'er lands and men."
+        },
+        {
+          "id": 8,
+          "text": "Then gathered the sons | of Hunding soon,\nThey craved for vengeance | and rings to win;\nThey thought to pay | the prince for the loss\nOf their father's life | and their lands as well."
+        },
+        {
+          "id": 9,
+          "text": "The prince let not | the peace-terms stand,\nNor red gold gave he | for the rings they sought;\nHe said that the spear | should settle the score,\nAnd the sword should judge | 'twixt the sons of kings."
+        },
+        {
+          "id": 10,
+          "text": "Then Helgi sought | the host of the foe,\nAnd under the Eagle-Rock | he slew Alf and Eyjolf,\nHjorvard and Havard, | Hunding's sons;\nAnd the kin of the king | were crushed in war."
+        },
+        {
+          "id": 11,
+          "text": "Then a light shone forth | from the lightning-hills,\nAnd from the light | the lightning leapt;\nHigh in the air | a helmed maid rode,\nAnd the field was flooded | with the flash of spears."
+        },
+        {
+          "id": 12,
+          "text": "Sigrun spake:\n'My father has promised | the maid to Hothbrodd,\nBut I have answered | that I would not have him;\nUnless, O Helgi, | thou help me now,\nWith the edge of the sword | and the speed of the steed.'"
+        },
+        {
+          "id": 13,
+          "text": "Helgi spake:\n'Fear not, Sigrun! | for first shall fall\nThe host of Hothbrodd | and Hothbrodd himself,\nEre the maid I love | to another is given;\nThe dead shall lie deep | ere the doom is fulfilled.'"
+        },
+        {
+          "id": 14,
+          "text": "Then Helgi gathered | a host of men,\nAnd ships he sought | on the sea to sail;\nThe wind blew fair | from the west and south,\nAnd the foam-flecked waves | flew high in the air."
+        },
+        {
+          "id": 15,
+          "text": "They met in the midst | of the murky sea,\nThe fleet of Hothbrodd | and Helgi's men;\nThe storm-birds screamed, | and the shields were cloven,\nAnd the sea was red | with the reek of blood."
+        },
+        {
+          "id": 16,
+          "text": "Then Helgi stood | on the highest deck,\nAnd the sword in his hand | he swung on high;\nHe cleft the skull | of the king's son there,\nAnd Hothbrodd fell | to the floor of the deep."
+        },
+        {
+          "id": 17,
+          "text": "Sigrun spake:\n'Hail to thee, Helgi! | thou hero of men,\nNow safe is the maid | from the sons of Granmar;\nThe kingdom is thine, | and the king's daughter,\nAnd all the wealth | of the world is thine.'"
+        }
+      ]
+    },
+    {
+      "title": "Reginsmál",
+      "translation_title": "The Lay of Regin",
+      "introduction": "Regin the smith tells Sigurd of the gold of Andvari and the dragon Fafnir.",
+      "stanzas": [
+        {
+          "id": 1,
+          "text": "Regin spake:\n'Hreidmar was my father's name, | a mighty man and rich;\nThree sons he had, | and I was the third,\nFafnir the first, | and Otr the second.'"
+        },
+        {
+          "id": 2,
+          "text": "'Otr in the likeness | of an otter swam,\nAnd salmon he caught | in the sounding stream;\nBut Loki passed by | with the loaded gods,\nAnd with a stone | the otter he slew.'"
+        },
+        {
+          "id": 3,
+          "text": "'Then skinned they the otter | and scatheless thought\nTo bear the skin | to my father's hall;\nBut Hreidmar bound them, | the blessed gods,\nAnd bade them fill | the skin with gold.'"
+        },
+        {
+          "id": 4,
+          "text": "'Loki was sent | to the land of the black elves,\nTo find the gold | of the fish of the flood;\nHe caught the dwarf | Andvari there,\nWho dwelt in the stream | in the shape of a pike.'"
+        },
+        {
+          "id": 5,
+          "text": "'Loki took the gold, | and the ring as well,\nWhich the dwarf possessed, | the doom of men;\nAndvari cursed it, | and all who owned it,\nThat death it should bring | to the bearer thereof.'"
+        },
+        {
+          "id": 6,
+          "text": "'The gods gave the gold | to the greedy king,\nBut the ring they kept | for the ransom of Othin;\nBut Hreidmar saw it, | and said he would have it,\nOr else the gods | in bonds should abide.'"
+        },
+        {
+          "id": 7,
+          "text": "'Then gave they the ring, | and the gold he had,\nBut Loki spoke | the spell of the dwarf:\n\"The gold shall be | the bane of brothers,\nAnd death to the sons | of men it shall deal.\"\n\nSo Fafnir slew | his father for gold,\nAnd Regin he drove | from the dwellings of men;\nNow lies he on Gnitaheith, | guarding the hoard,\nIn the shape of a dragon, | dread to behold.'"
+        }
+      ]
+    },
+    {
+      "title": "Fáfnismál",
+      "translation_title": "The Lay of Fafnir",
+      "introduction": "Sigurd slays the dragon Fafnir and converses with him before he dies.",
+      "stanzas": [
+        {
+          "id": 1,
+          "text": "Sigurd dug a trench | in the dragon's path,\nAnd lay therein | with his sword in hand;\nWhen Fafnir crawled | o'er the hollowed earth,\nHe thrust the sword | to the heart of the snake."
+        },
+        {
+          "id": 2,
+          "text": "Fafnir spake:\n'Who art thou, boy? | and who is thy father?\nAnd what is the name of thy kin?\nThat thou dared to thrust | thy sword in me,\nAnd redden the earth | with the reek of my blood?'"
+        },
+        {
+          "id": 3,
+          "text": "Sigurd spake:\n'Sigurd my name, | and Sigmund's son,\nA hero of Hunding's | race am I;\nI have reddened the earth | with the reek of thy blood,\nAnd thy death, O dragon, | is done by me.'"
+        },
+        {
+          "id": 4,
+          "text": "Fafnir spake:\n'A hero thou art, | and hardy thy kin,\nBut thou shalt not hold | the hoard I kept;\nFor the gold I guarded | shall give thee death,\nAnd the ring shall be | the bane of thy life.'"
+        },
+        {
+          "id": 5,
+          "text": "Sigurd spake:\n'I would hold the hoard | if life I might have,\nBut every man | must die at last;\n'Tis better to die | with the gold in my hand\nThan to live a coward | and lack it all.'"
+        },
+        {
+          "id": 6,
+          "text": "Fafnir spake:\n'Regin betrayed me, | and thee will betray,\nHe lied to us both, | the brother of mine;\nTake thou the gold, | but go thou hence,\nFor the ring shall be | the bane of thy life.'"
+        },
+        {
+          "id": 7,
+          "text": "Then Fafnir died. Sigurd cut out the heart of the dragon, and cooked it on a spit. When he thought the heart was roasted, he tried it with his finger to see if it was soft. He burned his finger, and put it in his mouth. But when the dragon's heart-blood touched his tongue, he understood the voice of birds."
+        },
+        {
+          "id": 8,
+          "text": "A Nut-Hatch said:\n'There sits Sigurd, | sprinkled with blood,\nAnd Fafnir's heart | with fire he cooks;\nWise were the ring-breaker | if he should eat\nThe muscle bright | of the life-blood meat.'"
+        },
+        {
+          "id": 9,
+          "text": "A Second said:\n'There lies Regin, | and plans he lays\nTo betray the boy | who trusts him well;\nThinks he of lying | accusations,\nThe smith of ill, | for his brother's sake.'"
+        },
+        {
+          "id": 10,
+          "text": "A Third said:\n'Let him cut the head | from the cold-heart smith,\nAnd go to his home | with the gold he has won;\nThen the rings and the red gold | all shall be his,\nAnd the hoard of Fafnir | he shall hold alone.'"
+        },
+        {
+          "id": 11,
+          "text": "Sigurd spake:\n'Fate shall not rule | that Regin shall be\nThe banesman of me, | the brother of kings;\nFor the brothers two | shall go to Hel,\nAnd hence shall I go | with the gold alone.'"
+        },
+        {
+          "id": 12,
+          "text": "Sigurd hewed off the head of Regin, and then he ate Fafnir's heart, and drank the blood of both Regin and Fafnir. Then Sigurd heard what the birds said."
+        }
+      ]
+    },
+    {
+      "title": "Sigrdrífumál",
+      "translation_title": "The Lay of Sigrdrifa",
+      "introduction": "Sigurd wakes the Valkyrie Sigrdrifa, who teaches him runes and wisdom.",
+      "stanzas": [
+        {
+          "id": 1,
+          "text": "Sigurd rode up on Hindarfjall, and went south towards the land of the Franks. On the mountain he saw a great light, as if fire were burning, which blazed up to the sky. And when he came thither, there stood a shield-tower, and within it lay a man sleeping, completely armed. He took the helm from his head, and then he saw that it was a woman. She was clad in a byrnie so tight that it seemed as if grown to the flesh. Then he rent the byrnie from the neck-opening downwards, and then through both sleeves, and the byrnie fell from her as if it were cloth. She awoke, and sat up, and looked at Sigurd, and said:\n\n'What bit the byrnie? | why breaks my sleep?\nWho has unbound | the pale-washed bonds?'"
+        },
+        {
+          "id": 2,
+          "text": "Sigurd spake:\n'Sigmund's son, | with sword so sharp,\nThat lately with ravens | the wood hath fed.'"
+        },
+        {
+          "id": 3,
+          "text": "She spake:\n'Hail to the day! | hail to the sons of day!\nHail to the night and her daughter!\nWith eyes of love | look on us two,\nAnd give to the sitting ones speed!'"
+        },
+        {
+          "id": 4,
+          "text": "'Hail to the gods! | hail to the goddesses!\nHail to the earth that gives all!\nGoodly spells | and speech give to us,\nAnd healing hands, while we live.'"
+        },
+        {
+          "id": 5,
+          "text": "Sigrdrifa spake:\n'Beer I bring thee, | thou battle-oak,\nBlended with might | and with brightest honor;\nFull of songs | and soothing charms,\nOf goodly spells | and hopeful runes.'"
+        },
+        {
+          "id": 6,
+          "text": "'Winning-runes learn, | if thou longest to win,\nAnd cut them on thy sword-hilt;\nSome on the furrow, | and some on the flat,\nAnd twice shalt thou call on Tyr.'"
+        },
+        {
+          "id": 7,
+          "text": "'Ale-runes learn, | that with lies the wife\nOf another betray not thy trust;\nOn the horn thou shalt write, | and the backs of thy hands,\nAnd Nauth on thy nail shalt thou mark.'"
+        },
+        {
+          "id": 8,
+          "text": "'Birth-runes learn, | if help thou wilt lend,\nThe babe from the mother to bring;\nOn thy palms shalt thou write them, | and round thy joints,\nAnd ask the disir to aid.'"
+        },
+        {
+          "id": 9,
+          "text": "'Wave-runes learn, | if well thou wouldst shelter\nThe sail-steeds out on the sea;\nOn the stem shalt thou write, | and the steering blade,\nAnd burn them into the oars;\nThough high be the breakers, | and black the waves,\nThou shalt safe the harbor seek.'"
+        },
+        {
+          "id": 10,
+          "text": "'Branch-runes learn, | if a healer wouldst be,\nAnd cure for wounds wouldst know;\nOn the bark shalt thou write, | and on trees that be\nWith boughs to the eastward bent.'"
+        },
+        {
+          "id": 11,
+          "text": "'Speech-runes learn, | that none may seek\nTo answer harm with hate;\nWell he winds them, | well he weaves them,\nWell he gathers them all,\nAt the Thing when the folk | to judgment fare.'"
+        },
+        {
+          "id": 12,
+          "text": "'Mind-runes learn, | if thou longer wouldst be\nThan any man in wisdom;\nHropt arranged them, | and Hropt cut them,\nHropt thought them out,\nFrom the liquid | that leaked from the skull\nOf Heithdraupnir, | and from Hoddrofnir's horn.'"
+        }
+      ]
+    },
+    {
+      "title": "Brot af Sigurðarkviðu",
+      "translation_title": "Fragment of a Sigurd Lay",
+      "introduction": "A fragment describing the plot to kill Sigurd.",
+      "stanzas": [
+        {
+          "id": 1,
+          "text": "Hogni spake:\n'What evil deed | has Sigurd done,\nThat the hero's life | thou fain wouldst have?'"
+        },
+        {
+          "id": 2,
+          "text": "Gunnar spake:\n'Sigurd oaths | to me has sworn,\nOaths has he sworn, | and all has he broken;\nHe betrayed me there | where truest all\nHis oaths methinks | he ought to have kept.'"
+        },
+        {
+          "id": 3,
+          "text": "Hogni spake:\n'Brynhild has thee | to bitterness urged,\nEvil to work | and grief to win;\nShe grudges the honor | that Gudrun has,\nAnd that, to her joy, | herself she lacks.'"
+        },
+        {
+          "id": 4,
+          "text": "They cooked a wolf, | they cut him up,\nAnd gave the entrails | to Guttorm to eat;\nFor the hero brave | to handle was hard,\nUnless he was wild | with the wood-beast's rage."
+        },
+        {
+          "id": 5,
+          "text": "Slain was Sigurd, | south of the Rhine,\nFrom a limb the raven | called full loud:\n'Your blood shall redden | Atli's blade,\nAnd your oaths shall bind | you both in chains.'"
+        },
+        {
+          "id": 6,
+          "text": "Without stood Gudrun, | Giuki's daughter,\nAnd the first word | she found to speak was this:\n'Where is Sigurd now, | the lord of men,\nSince my kinsmen ride | before the rest?'"
+        },
+        {
+          "id": 7,
+          "text": "Hogni alone | the answer gave:\n'By the sword has Sigurd | been sent to his death,\nAnd the gray horse mourns | by his master dead.'"
+        },
+        {
+          "id": 8,
+          "text": "Then Brynhild laughed, | the daughter of Buthli,\nAnd the whole house rang | with the sound of her mirth:\n'Long shall ye joy | in the lands and men,\nSince the hero bold | ye have brought to his death.'"
+        },
+        {
+          "id": 9,
+          "text": "Then Gudrun said, | the daughter of Giuki:\n'Thou speakest infinite ill, | accursed woman!\nMay giants take thee!'"
+        }
+      ]
+    },
+    {
+      "title": "Guðrúnarkviða I",
+      "translation_title": "The First Lay of Gudrun",
+      "introduction": "Gudrun's grief over Sigurd's death.",
+      "stanzas": [
+        {
+          "id": 1,
+          "text": "Gudrun of old | for death was yearning,\nWhen she sat in sorrow | o'er Sigurd dead;\nShe wept not, | nor wrung her hands,\nNor wailed she loud, | like other women."
+        },
+        {
+          "id": 2,
+          "text": "To her came earls | of wisdom all,\nTo try and win her | from her woe;\nBut the tears she could not | call to her eyes,\nSo heavy her heart | that it almost broke."
+        },
+        {
+          "id": 3,
+          "text": "Then Gullrond spake, | Giuki's daughter:\n'Little wisdom | in this I see,\nThat thou hidest the face | of the hero dead\nFrom his wife who loved him | well in life.'"
+        },
+        {
+          "id": 4,
+          "text": "The sheet she lifted | from Sigurd's face,\nAnd turned his cheek | to his wife's cold chin:\n'Look on thy love, | and lay thy lips\nTo his as if life | were in him still.'"
+        },
+        {
+          "id": 5,
+          "text": "Gudrun looked | on him she loved,\nShe saw the blood | on his yellow hair,\nThe bright eyes dull | in the hero dead,\nAnd the king's breast pierced | by the sword's keen point."
+        },
+        {
+          "id": 6,
+          "text": "Then Gudrun sank | back on the pillow,\nHer hair was loosened, | her cheeks were hot,\nAnd the tears like rain | ran down to her knees."
+        }
+      ]
+    },
+    {
+      "title": "Sigurðarkviða hin skamma",
+      "translation_title": "The Short Lay of Sigurd",
+      "introduction": "The story of Brynhild's jealousy and Sigurd's death.",
+      "stanzas": [
+        {
+          "id": 1,
+          "text": "Of old did Sigurd | seek Gjuki's home,\nThe young Volsung, | after the battle;\nTroth he pledged | to the two brothers,\nAnd oaths were sworn | by the bold ones three."
+        },
+        {
+          "id": 2,
+          "text": "A maid they gave him, | and jewels many,\nGudrun the young, | Gjuki's daughter;\nExample for days | they drank and spake,\nThe young Sigurd | and Gjuki's sons."
+        },
+        {
+          "id": 3,
+          "text": "Until they went | to woo Brynhild,\nAnd with them Sigurd, | the young Volsung,\nRode in the troop, | and well he knew\nThe way for them | if he had wished."
+        },
+        {
+          "id": 4,
+          "text": "He got the maid, | if get he might,\nThe warrior young, | but he touched her not;\nHe laid his sword, | with gold adorned,\nBetween them both, | the king and the bride."
+        },
+        {
+          "id": 5,
+          "text": "No kiss he gave | to the glorious maid,\nWait did the Hunnish king | in his arms to hold her;\nHe gave the bride | to Gjuki's son,\nThough his heart was hers | from the day they met."
+        },
+        {
+          "id": 6,
+          "text": "She knew no guilt | in her life on earth,\nAnd yet no crime | at her death was clear;\nThe Norns were harsh, | and her heart was hard,\nWhen Sigurd she sent | to his death at last."
+        },
+        {
+          "id": 7,
+          "text": "Alone she sat | when the evening came,\nAnd open her heart | she spoke aloud:\n'Sigurd must be mine, | or else must die,\nThe hero young | in my arms must lie.'"
+        },
+        {
+          "id": 8,
+          "text": "'Of the word I spoke | I now repent,\nHis wife is Gudrun, | and I am Gunnar's;\nThe Norns for us | a heavy weird\nHage fashioned long, | and joy we lack.'"
+        },
+        {
+          "id": 9,
+          "text": "Oft did she go, | full of evil thoughts,\nO'er ice and fells | every evening,\nWhen Gudrun the bed | and the hangings got,\nAnd Sigurd wrapped her | in the coverlet."
+        },
+        {
+          "id": 10,
+          "text": "'Now is lost to me | the hero of Huns,\nAnd his joy in his arms | I must ever lack;\nMy heart is heavy | with hatred and woe,\nAnd only one thought | I have in my mind.'"
+        },
+        {
+          "id": 11,
+          "text": "To death she urged him, | and threatened Gunnar,\nThat land and life | he should lose for aye,\nIf he did not slay | the son of Sigmund,\nOr else to her | the oath fulfill."
+        }
+      ]
+    },
+    {
+      "title": "Helreið Brynhildar",
+      "translation_title": "Brynhild's Ride to Hel",
+      "introduction": "Brynhild, after her suicide, rides to Hel and meets a giantess who accuses her.",
+      "stanzas": [
+        {
+          "id": 1,
+          "text": "After the death of Brynhild two pyres were made, one for Sigurd, which was the first to be burned, and one for Brynhild. She was burned in a wagon which was covered with a rich cloth. It is said that Brynhild drove in the wagon along the road to Hel, and passed by a house where a giantess dwelt."
+        },
+        {
+          "id": 2,
+          "text": "The Giantess spake:\n'Thou shalt not pass | through my stone-built courts,\nThou who hast been | in the bed of heroes;\nMore seemly it were | to weave the cloth,\nThan to seek the husbands | of other women.'"
+        },
+        {
+          "id": 3,
+          "text": "Brynhild spake:\n'Why dost thou blame me, | bride of the giants,\nComing from the home | of the rocky hills,\nBecause I went | to the wars of men?\nOf noble race | I am better than thou.'"
+        },
+        {
+          "id": 4,
+          "text": "The Giantess spake:\n'Thou wast, Brynhild, | Buthli's daughter,\nBorn in the world | for the worst of luck;\nTo death thou hast sent | the sons of Giuki,\nAnd their happy home | thou hast overthrown.'"
+        },
+        {
+          "id": 5,
+          "text": "Brynhild spake:\n'Truth from the wagon | I tell thee now,\nThough witless one, | if thou wilt to know,\nHow the heirs of Giuki | gave me to love,\nWho made me a breaker | of oaths and vows.'"
+        },
+        {
+          "id": 6,
+          "text": "'Hild the helmed | in the Hlymdales they called me,\nAll who knew me | in days of old.'"
+        },
+        {
+          "id": 7,
+          "text": "'For our love shall last | though our lives are lost,\nSigurd and I | shall never be sundred.\nSink now, giantess!'"
+        }
+      ]
+    },
+    {
+      "title": "Atlakviða",
+      "translation_title": "The Lay of Atli",
+      "introduction": "Atli (Attila the Hun) invites the Burgundian kings Gunnar and Hogni to his hall, where they are treacherously slain. Gudrun avenges them.",
+      "stanzas": [
+        {
+          "id": 1,
+          "text": "Atli sent of old | to Gunnar a messenger,\nThe leader of men, | and the lord of the Goths;\nKnefruth was he called, | and to Giuki's courts\nHe rode, and to Gunnar's | hall he came."
+        },
+        {
+          "id": 2,
+          "text": "Then they drank the wine | in the dwelling fair,\nThe shielding-guards | of the Huns were silent,\nFor they feared the wrath | of the Hunnish king;\nThen Knefruth shouted, | the cold-voiced messenger,\nFrom the high seat where | he sat at ease."
+        },
+        {
+          "id": 3,
+          "text": "Knefruth spake:\n'Atli has sent me | on his errand here,\nOn a bit-champing steed | through Mirkwood dark,\nTo bid you, Gunnar, | to his benches come,\nWith helms round the hearth | to seek his home.'"
+        },
+        {
+          "id": 4,
+          "text": "Gunnar spake:\n'What counsel, Hogni, | dost thou give in this,\nSince such the message | the messenger brings?\nOf gold I know not | on Gnitaheith\nEnough to equal | what we two own.'"
+        },
+        {
+          "id": 5,
+          "text": "Hogni spake:\n'What means the woman | by the ring she sends,\nWith a wolf's hair wrapped | in the ring of gold?\nWolfish methinks | is the way we wend.'"
+        },
+        {
+          "id": 6,
+          "text": "But Gunnar the king | gave consent at last,\nAnd the heavy doors | of the hall were opened;\nThe horses were saddled, | the heroes rode forth,\nAnd the women wept | as they went away."
+        },
+        {
+          "id": 7,
+          "text": "Gunnar spake:\n'Be strong, ye Niflungs, | if return we never,\nAnd guard the gold | from the greedy Huns;\nLet the gray wolf hunt | on the hoard if we die,\nAnd the bears bite hard | on the buried wealth.'"
+        },
+        {
+          "id": 8,
+          "text": "Through Mirkwood they rode, | and the mountains wild,\nThrough the Hunnish land | the heroes went;\nThey saw the hall | of Atli high,\nAnd the warriors armed | round the walls they stood."
+        },
+        {
+          "id": 9,
+          "text": "Atli spake:\n'Welcome art thou, Gunnar, | to my halls of gold,\nThe son of Giuki, | and Hogni too;\nWait, if ye will, | for the wine to be poured,\nOr choose ye death | by the dark sword's edge?'"
+        },
+        {
+          "id": 10,
+          "text": "Gunnar spake:\n'Not thus, Atli, | didst thou offer peace\nWhen first we met | in the midst of men;\nThou hast broken oaths, | and betrayed thy kin,\nThe shame of the Huns | shall show full clear.'"
+        },
+        {
+          "id": 11,
+          "text": "Then a battle began, | and the benches broke,\nThe Huns were hewn | in the hall of the king;\nGunnar fought well, | and Hogni fierce,\nTill the floor was red | with the reek of blood."
+        },
+        {
+          "id": 12,
+          "text": "But numbers prevailed, | and the Niflungs fell,\nGunnar was seized, | and set in chains;\nAnd Hogni the brave | was bound as well,\nTo death were they doomed | by the dark king's will."
+        },
+        {
+          "id": 13,
+          "text": "Atli spake:\n'Cut out the heart | of Hogni now,\nAnd let it lie | on a platter large;\nFor the heart of the hero | I hunger sore,\nAnd Gunnar shall gaze | on the gory sight.'"
+        },
+        {
+          "id": 14,
+          "text": "They cut out the heart | of Hjalli the thrall,\nAnd laid it bleeding | on a platter broad;\nTo Gunnar they bore it, | and grimly said:\n'Here hast thou the heart | of Hogni the brave.'"
+        },
+        {
+          "id": 15,
+          "text": "Gunnar spake:\n'Here have I the heart | of Hjalli the thrall,\nUnlike the heart | of Hogni the brave;\nFor it trembles still | as it stands on the plate;\nTwice more did it tremble | in the thrall's breast.'"
+        },
+        {
+          "id": 16,
+          "text": "Then Hogni laughed | as they hewed out his heart,\nNor quaked he ever, | the hero quick;\nOn a platter they laid it, | and brought it to Gunnar,\nWait, and behold | the hero's heart."
+        },
+        {
+          "id": 17,
+          "text": "Gunnar spake:\n'Here have I the heart | of Hogni the brave,\nUnlike the heart | of Hjalli the thrall;\nFor it trembles not | as it stands on the plate,\nEven less did it tremble | in the hero's breast.'"
+        },
+        {
+          "id": 18,
+          "text": "'Now is the hoard | of the Niflungs mine,\nAlone I hold it, | since Hogni is dead;\nWhile two of us lived, | I trusted not,\nBut now am I sure, | for alone I am.'"
+        },
+        {
+          "id": 19,
+          "text": "'The Rhine shall rule | o'er the ruddy gold,\nThe river roll | o'er the rings of the gods;\nIn the water deep | shall the wealth be hid,\nBut never shall shine | on the Hunnish shields.'"
+        },
+        {
+          "id": 20,
+          "text": "Then Atli bade | that Gunnar be cast\nInto the snake-pit, | swarming with snakes;\nBut Gudrun a harp | to the hero sent,\nAnd with his toes | he touched the strings."
+        },
+        {
+          "id": 21,
+          "text": "So well he played | that the serpents slept,\nSave one alone, | a snake so vile,\nWhich gnawed through the breast | to the heart of the king,\nAnd so did Gunnar | give up his life."
+        },
+        {
+          "id": 22,
+          "text": "Gudrun then | for her brothers grieved,\nAnd Atli she slew | in his sleep that night;\nThe hall she burned, | and the Huns therein,\nAnd vengeance she took | for her kinsmen true."
+        }
+      ]
+    },
+    {
+      "title": "Hamðismál",
+      "translation_title": "The Lay of Hamdir",
+      "introduction": "The tragic end of the line of Giuki. Hamdir and Sorli go to avenge their sister Svanhild, but fall due to a curse.",
+      "stanzas": [
+        {
+          "id": 1,
+          "text": "Sprang forth sorrow | and sad events,\nEvery morning | with early day;\nNot now, nor yesterday, | was it known,\nBut long ago, | as the years have gone."
+        },
+        {
+          "id": 2,
+          "text": "Gudrun urged | her gallant sons,\nHamdir and Sorli, | in the hall to speak:\n'Your sister Svanhild | has Jormunrek\nTrampled to death | with trotting steeds,\nWhite and black | on the battle-way,\nGray and Gothic, | the steeds of the Goths.'"
+        },
+        {
+          "id": 3,
+          "text": "'Ye are the last | of my lovely race,\nKings of the folk, | and keen of mind;\nAlone am I left, | like the aspen-tree\nstripped of its boughs | by the biting wind.'"
+        },
+        {
+          "id": 4,
+          "text": "Hamdir spake:\n'Little didst thou praise | the deed of Hogni,\nWhen Sigurd they woke | from his sleep with the sword;\nThy blue-white bed-clothes | were red with blood,\nAnd thy brothers died | by the deed of thine.'"
+        },
+        {
+          "id": 5,
+          "text": "Sorli spake:\n'With my mother I will not | words exchange,\nThough little of joy | in our life is left;\nWhat askest thou, Gudrun, | that shall give thee not\nTears and trouble | and torment sore?'"
+        },
+        {
+          "id": 6,
+          "text": "'We will go to the vengeance, | and glad are we\nTo die for our sister, | though death be sure;\nBut never again | shall we glad thy heart,\nWhen we lie on the field | by the Gothic foes.'"
+        },
+        {
+          "id": 7,
+          "text": "Forth they rode, | and their byrnies rang,\nThrough the Hunnish land | and the hills of snow;\nOn the gibbet they saw | the son of their kin,\nTheir step-brother Erp, | whom they slew themselves."
+        },
+        {
+          "id": 8,
+          "text": "To the hall of Jormunrek | rode the heroes,\nWith fury they fought, | and the floor was red;\nThe hands and feet | of the king they hewed,\nBut his head they could not | hew from his trunk."
+        },
+        {
+          "id": 9,
+          "text": "Then Jormunrek roared | from within his shield:\n'Stone them with stones! | for the steel will not bite,\nNor iron nor edge, | on the sons of Jonakr.'"
+        },
+        {
+          "id": 10,
+          "text": "Then fell Sorli, | at the gable-end,\nAnd Hamdir died | at the back of the house;\nThe Norns had woven | the web of their fate,\nAnd the last of the Volsungs | lay on the field."
+        }
+      ]
+    },
+    {
+      "title": "Baldrs draumar",
+      "translation_title": "Baldr's Dreams",
+      "introduction": "Odin rides to Hel to discover the meaning of Baldr's bad dreams.",
+      "stanzas": [
+        {
+          "id": 1,
+          "text": "Once were the gods | together met,\nAnd the goddesses came | and council held,\nAnd the far-famed ones | the truth would find,\nWhy baleful dreams | to Baldr had come."
+        },
+        {
+          "id": 2,
+          "text": "Then Othin rose, | the enchanter old,\nAnd the saddle he laid | on Sleipnir's back;\nThence rode he down | to Niflhel deep,\nAnd the hound he met | that came from Hel."
+        },
+        {
+          "id": 3,
+          "text": "Bloody he was | on his breast before,\nAt the father of magic | he howled from afar;\nForward rode Othin, | the earth resounded\nTill the house so high | of Hel he reached."
+        },
+        {
+          "id": 4,
+          "text": "Then Othin rode | to the eastern door,\nWhere he knew was the tomb | of the völva old;\nTo the prophetess dead | he sang his spells,\nTill unwilling she rose, | and a word she spake:"
+        },
+        {
+          "id": 5,
+          "text": "'What man is this, | to me unknown,\nWho has for me increased | an irksome course?\nI have snowed on been, | and with rain beaten,\nAnd drenched with the dew; | long was I dead.'"
+        },
+        {
+          "id": 6,
+          "text": "Othin spake:\n'Vegtam my name, | I am Valtam's son;\nSpeak thou of Hel, | for I know of heaven;\nFor whom are the benches | bright with rings,\nAnd the platforms gay | for the guests prepared?'"
+        },
+        {
+          "id": 7,
+          "text": "The Völva spake:\n'Here stands the mead, | for Baldr brewed,\nThe shining drink, | and a shield lies o'er it;\nBut their hope is gone | from the mighty gods.\nUnwilling I speak, | and now would be still.'"
+        },
+        {
+          "id": 8,
+          "text": "Othin spake:\n'Wise woman, cease not! | I seek from thee\nAll to know | that I fain would ask,\nTill all I have learned; | who shall Baldr's bane be,\nAnd the son of Othin | of life bereave?'"
+        },
+        {
+          "id": 9,
+          "text": "The Völva spake:\n'Hoth hither bears | the high-grown branch,\nHe shall the bane | of Baldr be,\nAnd the son of Othin | of life bereave.\nUnwilling I speak, | and now would be still.'"
+        },
+        {
+          "id": 10,
+          "text": "Othin spake:\n'Wise woman, cease not! | I seek from thee\nAll to know | that I fain would ask,\nTill all I have learned; | who shall vengeance win\nFor the evil work, | or who shall bring\nThe slayer of Baldr | to the bale-fire?'"
+        },
+        {
+          "id": 11,
+          "text": "The Völva spake:\n'Rind bears Vali | in Vestrsalir,\nAnd one night old | fights Othin's son;\nHis hands he shall wash not, | his hair he shall comb not,\nTill the slayer of Baldr | he brings to the flames.\nUnwilling I speak, | and now would be still.'"
+        },
+        {
+          "id": 12,
+          "text": "Othin spake:\n'Wise woman, cease not! | I seek from thee\nAll to know | that I fain would ask,\nTill all I have learned; | what maidens are they\nWho then shall weep, | and toss to the sky\nThe yards of the sails? | Answer me that!'"
+        },
+        {
+          "id": 13,
+          "text": "The Völva spake:\n'Vegtam thou art not, | as I thought thee to be;\nBut Othin thou art, | the enchanter old.'"
+        },
+        {
+          "id": 14,
+          "text": "Othin spake:\n'No völva art thou, | nor wise woman thou,\nBut rather the mother | of three giants.'"
+        },
+        {
+          "id": 15,
+          "text": "The Völva spake:\n'Ride home, Othin, | and boast of thy ride;\nFor thus shall no man | seek me again,\nTill Loki treads loose | from his bonds,\nAnd to the last fight | the destroyers fare.'"
+        }
+      ]
+    },
+    {
+      "title": "Rígsþula",
+      "translation_title": "The Lay of Rig",
+      "introduction": "Heimdall, disguised as Rig, wanders the earth and fathers the classes of mankind: Thrall, Churl, and Earl.",
+      "stanzas": [
+        {
+          "id": 1,
+          "text": "Men say that in olden days the god Heimdall, who is called Rig, wandered along the seashore. He came to a house, where dwelt Ai and Edda (Great-Grandfather and Great-Grandmother). They offered him shelter and food."
+        },
+        {
+          "id": 2,
+          "text": "Rig knew well | how to give advice,\nHe sat in the middle | of the seat,\nAnd on either side | the old couple sat."
+        },
+        {
+          "id": 3,
+          "text": "Then took Edda | a loaf heavy and thick,\nHeavy with bran, | and husks were in it;\nAnd broth in a bowl | on the board she set,\nWait was the calf | that was cooked the best."
+        },
+        {
+          "id": 4,
+          "text": "Rig rose up, | and prepared to rest;\nHe laid him down | in the middle of the bed,\nAnd on either side | the old couple lay."
+        },
+        {
+          "id": 5,
+          "text": "So three nights | he dwelt there together,\nThen on his way | he went o'er the waves;\nNine months passed, | and a son was born."
+        },
+        {
+          "id": 6,
+          "text": "They sprinkled him with water, | and Thrall they named him;\nDark was his hair, | and dull his eyes,\nRough was his skin | and wrinkled his hands,\nLumpish his knuckles, | and thick his fingers,\nUgly his face, | and bent was his back,\nLong were his heels, | and large his feet."
+        },
+        {
+          "id": 7,
+          "text": "He grew and throve | in the house of his kin,\nOf his strength he made use, | and heavy burdens\nFaggots he brought home | the whole day long,\nAnd bundles of brushwood | he bore on his back."
+        },
+        {
+          "id": 8,
+          "text": "Then came to the house | a wandering maid,\nScar on her foot, | and sunburnt her arm,\nDown-turned her nose, | and Thir was her name."
+        },
+        {
+          "id": 9,
+          "text": "Children they had, | and happy they were,\nFjosnir and Klur, | Hreim and Kleggi,\nKefsir, Fulnir, | Drumb, Digraldi,\nLutt and Leggjaldi; | Eikintjasna,\nTotrughypja, | Tronubeina."
+        },
+        {
+          "id": 10,
+          "text": "Then Rig went on, | and a hall he found,\nWith fire on the floor; | the couple sat there,\nAfi and Amma, | owning the house."
+        },
+        {
+          "id": 11,
+          "text": "Rig knew well | how to give advice,\nHe sat in the middle | of the seat,\nAnd on either side | the couple sat."
+        },
+        {
+          "id": 12,
+          "text": "So three nights | he dwelt there together,\nThen on his way | he went o'er the waves;\nNine months passed, | and a son was born."
+        },
+        {
+          "id": 13,
+          "text": "They sprinkled him with water, | and Churl they named him,\nRed and fresh | and ruddy of cheek,\nAnd flashing his eyes | as they looked on the world."
+        },
+        {
+          "id": 14,
+          "text": "He grew and throve | in the house of his kin,\nOxen he tamed, | and the plow he made,\nHouses he built, | and barns he fashioned,\nCarts he made, | and the harrow he drove."
+        },
+        {
+          "id": 15,
+          "text": "Then home they brought | the maiden fair,\nIn goatskins clad, | and keys she bore,\nSnor was her name, | and under the veil\nWait did the twain | the wedding hold."
+        },
+        {
+          "id": 16,
+          "text": "Children they had, | and happy they were,\nHal and Dreng, | Holth, Thegn and Smith,\nBreith and Bondi, | Bundinskeggi,\nBui and Boddi, | Brattskegg and Segg."
+        },
+        {
+          "id": 17,
+          "text": "Then Rig went on, | and a hall he found,\nWith southern door, | and the sun shone in;\nOn the benches sat | the couple there,\nFather and Mother, | playing with fingers."
+        },
+        {
+          "id": 18,
+          "text": "Rig knew well | how to give advice,\nHe sat in the middle | of the seat,\nAnd on either side | the couple sat."
+        },
+        {
+          "id": 19,
+          "text": "So three nights | he dwelt there together,\nThen on his way | he went o'er the waves;\nNine months passed, | and a son was born."
+        },
+        {
+          "id": 20,
+          "text": "They sprinkled him with water, | and Jarl they named him,\nBlond was his hair, | and bright his cheeks,\nAnd grim as a snake's | were his glowing eyes."
+        },
+        {
+          "id": 21,
+          "text": "He grew and throve | in the house of his kin,\nShields he brandished, | and bow-strings fitted,\nArrows he shafted, | and spears he shook,\nHorses he rode, | and hounds he unleashed,\nSwords he handled, | and swimming he practiced."
+        },
+        {
+          "id": 22,
+          "text": "Then came from the wood | Rig walking,\nRunes he taught him, | and readable names,\nHis son he called him, | and bade him own\nThe udal lands, | and the ancient halls."
+        },
+        {
+          "id": 23,
+          "text": "Then rode he forth | through the forest dark,\nThrough the frosty fells, | till he came to the hall\nOf Hersir the chief; | his daughter was Erna,\nSlender-fingered | and fair and wise."
+        },
+        {
+          "id": 24,
+          "text": "Wait did they woo her, | and home they brought her,\nMarried she was | to Jarl the young;\nChildren they had, | and happy they were,\nBur the eldest, | and Barn the second,\nJoth and Athal, | Arfi, Mog,\nNith and Svein, | Sun and Kund,\nKon was the youngest, | the kinsman of kings."
+        },
+        {
+          "id": 25,
+          "text": "Up grew the sons | of Jarl the young,\nHorses they tamed, | and shields they curved,\nArrows they cut, | and spears they brandished.\nBut Kon the Young | knew runes as well,\nRunes of the present, | and runes of the past,\nRunes of the future, | and runes of help."
+        }
+      ]
+    },
+    {
+      "title": "Hyndluljóð",
+      "translation_title": "The Lay of Hyndla",
+      "introduction": "Freyja wakes the giantess Hyndla to trace the ancestry of her favorite, Ottar.",
+      "stanzas": [
+        {
+          "id": 1,
+          "text": "Freyja spake:\n'Wake, maid of maids! | wake, my friend!\nHyndla, sister, | who dwellest in the hollow rock!\nNow is there darkness | of darknesses,\nWe will ride to Valhall | and to the holy fane.'"
+        },
+        {
+          "id": 2,
+          "text": "'Now let us pray | to the Father of Hosts,\nGracious he is | to the gold-givers;\nA helm he gave | to Hermoth once,\nAnd a byrnie to Sigmund | he gave to boot.'"
+        },
+        {
+          "id": 3,
+          "text": "'Victory to his sons | he gives, and wealth,\nWisdom and speech | to the sons of men,\nFair winds to sailors, | and song to skalds,\nAnd manly might | to many a hero.'"
+        },
+        {
+          "id": 4,
+          "text": "'For Ottar the young | I would ask a boon,\nHe has made me a shrine | of stones full high;\nNow is the glass | turned to gold,\nRed with the blood | of the oxen slain.'"
+        },
+        {
+          "id": 5,
+          "text": "'Now let us reckon | the race of men,\nAnd the kinship of kings | who have come of old;\nWho are the Skjoldungs, | who are the Skilfings,\nWho are the Othlings, | who are the Ylfings,\nWho are the free-born, | who are the high-born,\nThe choicest of men | in the world of Midgard?'"
+        }
+      ]
+    },
+    {
+      "title": "Grottasöngr",
+      "translation_title": "The Song of Grotti",
+      "introduction": "The giantesses Fenja and Menja grind out gold, peace, and finally an army for King Frodi.",
+      "stanzas": [
+        {
+          "id": 1,
+          "text": "Now are come | to the king's high house,\nThe two fore-knowing | women, Fenja and Menja;\nThese were with Frodi, | Fridleif's son,\nThe mighty maids, | as bondsmen held."
+        },
+        {
+          "id": 2,
+          "text": "To the mill they were led, | and the millstone gray\nThey were bade to turn, | the task to do;\nNor rest nor peace | would he let them have,\nWhile he heard the sound | of the singing stones."
+        },
+        {
+          "id": 3,
+          "text": "They sang and they whirled | the spinning stone,\n'Till the men of Frodi | were mostly asleep;\nThen said Menja, | who stood at the meal:\n'Wealth we grind for Frodi, | we grind him gold,\nAnd happiness mostly | on the mill of peace.'"
+        },
+        {
+          "id": 4,
+          "text": "'He shall sit on gold, | and sleep on down,\nAnd wake to wealth, | if well he grinds;\nNo sword shall strike, | no shield shall clatter,\nNor the bane of the blade | shall bite him there.'"
+        },
+        {
+          "id": 5,
+          "text": "'But he heard no word | save only this:\n\"Sleep ye no longer | than the cuckoo sings,\nOr only while I | say a single song.\""
+        },
+        {
+          "id": 6,
+          "text": "'Thou wast not wise, Frodi, | full of wisdom though thou art,\nWhen thou boughtest the maids, | the mighty ones;\nThou didst choose for strength | and outward show,\nBut of their race | thou didst reck nothing.'"
+        },
+        {
+          "id": 7,
+          "text": "'Hands of giants | hard are to hold,\nThe shafts are shivering, | the mill is shaking;\nThe heavy stone | is hurled from its place,\nThe mountain-giant's | daughter is grinding.'"
+        },
+        {
+          "id": 8,
+          "text": "'An army we grind | for the greedy king,\nNow shall Frodi | for the fight prepare;\nFire in the dwelling | flashes high,\nWait, and the war-cry | wakes the hall.'"
+        },
+        {
+          "id": 9,
+          "text": "'My father's daughter | has ground full hard,\nFor many a man | has met his death;\nNow the mill is broken, | the meal is scattered,\nThe work is done, | we have weary grown.'"
+        }
+      ]
+    }
+  ]
+}

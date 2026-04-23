@@ -1,0 +1,49 @@
+{
+  "profile_id": "phone_low",
+  "display_name": "Phone (Low-End)",
+  "description": "Smartphones with ~2GB RAM. Snapdragon, Apple SoC, MediaTek.",
+  "hardware": {
+    "ram_gb": 2,
+    "vram_gb": 0,
+    "cpu_arch": ["arm64", "armv8"],
+    "gpu": null,
+    "inference_backend": "cpu"
+  },
+  "model": {
+    "max_params_b": 1.1,
+    "recommended_models": ["TinyLlama-1.1B-Chat", "Granite-1B-Instruct"],
+    "quantization": "q2_k",
+    "max_context_tokens": 512,
+    "token_budget_per_turn": 180,
+    "draft_count": 2
+  },
+  "memory": {
+    "max_memory_bundle_facts": 5,
+    "max_vector_results": 3,
+    "episodic_store_cap_soft": 64,
+    "episodic_store_cap_hard": 128,
+    "user_facts_cap_soft": 32,
+    "user_facts_cap_hard": 64,
+    "response_patterns_cap_soft": 32,
+    "response_patterns_cap_hard": 64,
+    "user_preferences_cap_soft": 32,
+    "user_preferences_cap_hard": 64
+  },
+  "retrieval": {
+    "sql_max_results": 5,
+    "vector_top_k": 3,
+    "retrieval_timeout_ms": 500
+  },
+  "generation": {
+    "max_response_tokens": 180,
+    "temperature": 0.7,
+    "repeat_penalty": 1.1,
+    "top_p": 0.9,
+    "max_refinement_passes": 1
+  },
+  "deployment": {
+    "platforms": ["android", "ios"],
+    "runtime": ["termux", "mlc-llm"],
+    "onnx_export": true
+  }
+}

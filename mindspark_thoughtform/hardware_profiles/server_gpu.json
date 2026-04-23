@@ -1,0 +1,55 @@
+{
+  "profile_id": "server_gpu",
+  "display_name": "Server / Workstation (High-End GPU)",
+  "description": "Machines with 24GB+ VRAM. A100, H100, RTX 6000, 4x RTX 4090 setups, etc.",
+  "hardware": {
+    "ram_gb": 64,
+    "vram_gb": 24,
+    "cpu_arch": ["x86_64"],
+    "gpu": "datacenter",
+    "inference_backend": "cuda",
+    "inference_backend_fallback": ["cpu"]
+  },
+  "model": {
+    "max_params_b": 70.0,
+    "recommended_models": [
+      "LLaMA-3-70B-Instruct-fp16",
+      "LLaMA-3-70B-Instruct-q4_k_m",
+      "Mixtral-8x7B-Instruct-v0.1-fp16"
+    ],
+    "quantization": "fp16",
+    "max_context_tokens": 32768,
+    "token_budget_per_turn": 2000,
+    "draft_count": 5
+  },
+  "memory": {
+    "max_memory_bundle_facts": 30,
+    "max_vector_results": 20,
+    "episodic_store_cap_soft": 512,
+    "episodic_store_cap_hard": 1024,
+    "user_facts_cap_soft": 256,
+    "user_facts_cap_hard": 512,
+    "response_patterns_cap_soft": 256,
+    "response_patterns_cap_hard": 512,
+    "user_preferences_cap_soft": 256,
+    "user_preferences_cap_hard": 512
+  },
+  "retrieval": {
+    "sql_max_results": 30,
+    "vector_top_k": 20,
+    "retrieval_timeout_ms": 100
+  },
+  "generation": {
+    "max_response_tokens": 2000,
+    "temperature": 0.7,
+    "repeat_penalty": 1.05,
+    "top_p": 0.9,
+    "max_refinement_passes": 3
+  },
+  "deployment": {
+    "platforms": ["linux"],
+    "runtime": ["native", "docker"],
+    "onnx_export": false,
+    "multi_gpu": true
+  }
+}

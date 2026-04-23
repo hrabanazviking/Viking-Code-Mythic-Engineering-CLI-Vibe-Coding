@@ -1,0 +1,794 @@
+[
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza I of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Silence I call from all sacred kin,\nholy offspring, humble and high—\nHeimdall's children in halls of fate;\nwilt thou, War-Father, wish me to weave\nancient spells from mankind's stirring,\ntales I treasure from time's deep well?"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza II of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Giants I remember, born in elder days,\nthey who fostered me far in the past;\nnine worlds I know, nine wooded realms,\nthe mighty world-tree beneath the mold."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza III of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "In earliest ages when Ymir dwelt,\nno sand nor sea nor surging waves,\nno earth below, no sky above—\nonly Ginnungagap, the yawning void,\nand grass grew nowhere in that gulf."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza IV of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Then Bur's bold sons lifted the lands,\nthey who shaped the shining Midgard;\nsun gleamed south on stone-built halls,\nand ground grew green with tender shoots."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza V of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Sun swung south, the moon her companion,\nright hand reaching round heaven's rim;\nsun knew not her settled hall,\nmoon knew not what might he held,\nstars knew not their stations kept."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza VI of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Then gathered gods on thrones of doom,\nhigh-holy powers, and pondered dee"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza VII of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Aesir assembled on Idavoll's field,\nraised high shrines and timbered temples,\nforged their strength, fashioned their wealth,\ncrafted tongs and tools of might."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza VIII of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "They played at games in golden gardens,\nblissful, blessed, lacking naught;\nuntil three came, mighty giant-maids,\nfierce and fearsome from Jötunheim."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza IX of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Then gathered gods on thrones of doom,\nhigh-holy powers, and pondered dee"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza X of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "There Módsognir, mightiest rose\nof all the dwarfs, and Durinn next;\nmany man-like forms they made,\ndwarfs in earth, as Durinn willed."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XI of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Nýi, Niði, Norðri, Suðri,\nAustri, Vestri, Alþjófr, Dvalinn,\nNár and Náinn, Nípingr, Dáinn,\nBifur, Bǫfur, Bǫmbur, Nóri,\nÁn and Ánarr, Óinn, Mjǫðvitnir."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XII of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Veig and Gandálfr, Vindálfr, Þráinn,\nÞrór and Þrǫnd, Þekkr, Litr and Vitr,\nNýr and Nýráðr—now I name them—\nReginn and Ráðsviðr, rightly told."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XIII of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Fíli, Kíli, Fundinn, Náli,\nHepti, Víli, Hánarr, Svíurr,\nBillingr, Brúni, Bildr and Búri,\nFrár, Hornbori, Frægr and Lóni,\nAurvangr, Jari, Eikinskjaldi."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XIV of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Time to tally the dwarf-line throng\nin Dvalinn's host for human kin,\ndown to Lofar; they who journeyed\nfrom stone-halls unto Aurvangr's plains,\non Jǫruvellir."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XV of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "There Draupnir, Dolgþrasir,\nHár, Haugspori, Hlévangr, Glóinn,\nDori, Ori, Dúfr, Andvari,\nSkirfir, Virfir, Skafiðr, Ái."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XVI of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Álfr and Yngvi, Eikinskjaldi,\nFjalarr and Frosti, Finnr and Ginnarr;\nthis lineage lasts while lives endure,\nlong-descended line of Lofar's blood."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XVII of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Until three came from that great host,\nmighty and loving, Aesir to shore;\nfound on the strand, feeble and waiting,\nAsk and Embla, empty of fate."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XVIII of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "No breath they held, no bright wit,\nno blood, no bearing, no blooming hue;\nbreath gave Óðinn, wit gave Hœnir,\nblood gave Lóðurr, and vibrant glow."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XIX of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "An ash I know, Yggdrasil named,\ntall tree, holy, washed in white;\nthence come dews that drop in dales;\never green it stands o'er Urðr's well."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XX of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "From there come maidens, wise in lore,\nthree from the hall beneath the tree;\nUrðr is one, Verðandi next—\nthey carve on wood—Skuld the third;\nlaws they lay, lives they choose\nfor children of ages, fates of men."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XXI of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "She recalls the first war's fury,\nwhen Gullveig was pierced with spears,\nand burned in Hárr's hallowed hall;\nthrice burned, thrice reborn,\noften, ever—yet she endures."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XXII of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Heiði they hailed her, wherever she went,\nseeress far-seeing, who spells could weave;\nseiðr she wielded where will she bent,\nseiðr that maddened minds with might,\never the joy of wicked wives."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XXIII of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Then gathered gods on thrones of doom,\nhigh-holy powers, and pondered dee"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XXIV of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Óðinn hurled, and shot into hosts—\nthat was still war's first in the world;\nbroken the board-wall of Ásgarðr's burg,\nVanir trod the war-field, victorious."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XXV of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Then gathered gods on thrones of doom,\nhigh-holy powers, and pondered dee"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XXVI of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Þórr alone there thundered in wrath—\nhe seldom sits when such he hears;\noaths were broken, bonds betrayed,\nmighty pacts all torn asunder."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XXVII of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "She knows Heimdallr's horn lies hidden\nunder heaven-bright, holy tree;\na mighty torrent pours upon it\nfrom War-Father's pledge.\n\nWould you know more?"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XXVIII of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Alone she sat when the ancient came,\nYggr of Aesir, and met her gaz"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XXIX of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "War-Father gave her rings and gems,\nwise words and seeress-sight;\nwide she saw, and wider still,\nover every world."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XXX of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "She saw valkyries from far paths riding,\nready to reach the realm of god"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XXXI of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Baldr I beheld, blood-stained god,\nÓðinn's child, with doom conceale"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XXXII of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "From that slim branch, seeming harmless,\ncame deadly dart; Hǫðr let it fly.\nBaldr's brother was born so soon,\nÓðinn's son, one night old, sought vengeance."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XXXIII of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Never washed hands nor combed his hair\ntill Baldr's bane on pyre he bore.\nBut Frigg wept in Fensalir,\nValhǫll's woe.\n\nWould you know more?"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XXXIV of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Then Váli twisted war-bonds strong,\nharsh ropes from gut entwined."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XXXV of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Bound she saw in hot-spring grove\none like Loki, loathsome shape;\nthere sits Sigyn, though not joyful\no'er her mate.\n\nWould you know more?"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XXXVI of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "East flows a river through venom-dales,\nwith knives and swords; Slíðr her name."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XXXVII of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "North stood on Niðavellir\ngolden hall for Sindri's kin;\nanother stood on Ókólnir,\ngiant's beer-hall, Brimir named."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XXXVIII of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "A hall she saw, far from the sun,\non Náströnd, north-facing doors;\nvenom-drops fall through the vents,\nthat hall is wound with serpents' spines."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XXXIX of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "There she saw wading through heavy streams\nmen forsworn and murderous wolves,\nand those who another's trust betray;\nthere Níðhǫggr sucks the slain men's forms,\nwolf rends flesh.\n\nWould you know more?"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XL of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "East sat the crone in Járnviðr,\nand fostered there Fenrir's brood;\nfrom them all shall one arise,\nmoon's devourer in troll's grim guise."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XLI of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Feeds on doomed men's dying breath,\nreddens gods' halls with crimson blood;\nsun shall darken in summers hence,\nweathers turn wild.\n\nWould you know more?"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XLII of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Sat on a hill, struck his harp,\ngiantess-herder, glad Eggþér;\ncrowed above him in gallows-wood\nfair-red rooster, Fjalarr named."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XLIII of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Crowed o'er Aesir Gullinkambi,\nwho wakes the warriors at War-Father's;\nanother crows beneath the earth,\nsoot-red rooster in Hel's deep halls."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XLIV of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "*Garmr howls fierce before Gnípahellir;*\n*fetters shall burst, the wolf run free.*\nMuch wisdom she holds, far I gaze ahead\nto Ragnarǫk, gods' dire doom."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XLV of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Brothers shall battle and fall to ruin,\nsisters' sons shall sunder bonds;\nharsh is the world, betrayal abounds,\naxe-age, sword-age—shields are cloven,\nwind-age, wolf-age—ere world crashes;\nno one shall another mercy show."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XLVI of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Mímir's sons stir, fate ignites\nat ancient Gjallarhorn;\nloud blasts Heimdallr, horn aloft;\nÓðinn speaks with Mímir's head."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XLVII of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Yggdrasil trembles, the ash stands firm,\nancient tree groans as giant breaks loose;\nall quake on roads to Hel\nere Surtr's kin consumes it whole."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XLVIII of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "What troubles Aesir? What ails the elves?\nGiant-realm roars, Aesir assemble;\ndwarfs moan by their stone-doors,\nrock-wise guardians.\n\nWould you know more?"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza XLIX of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "*Garmr howls fierce before Gnípahellir;*\n*fetters shall burst, the wolf run free.*"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza L of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Hrymr drives east, shield upheld,\nJǫrmungandr writhes in giant-wrath;\nserpent lashes waves, eagle shrieks,\ntears pale dead; Naglfar sets sail."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza LI of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Ship comes east, Múspell's host\no'er ocean rides, Loki at helm;\nmonster-kin with wolf advance,\nBýleistr's brother in that fray."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza LII of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Surtr storms south with flame's destroyer,\nsword shines bright as slaughter-gods' sun;\ncliffs crumble, troll-wives tumble;\nwarriors tread Hel-path, heaven splits."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza LIII of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Then Hlín's second sorrow strikes,\nas Óðinn fares to fight the wolf,\nBeli's bane bright against Surtr;\nthere Frigg's beloved shall fall."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza LIV of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "*Garmr howls fierce before Gnípahellir;*\n*fetters shall burst, the wolf run free.*"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza LV of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Then comes Sigfǫðr's mighty son,\nVíðarr, to slay the slaughter-beast;\nthrusts his blade with hand held firm\ndeep in the wolf's heart—father avenged."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza LVI of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Then comes Hlǫðyn's famed heir,\nÓðinn's son to serpent-battle;\nstrikes in wrath Miðgarðr's guardian;\nall must flee their homesteads;\nnine steps takes Fjǫrgyn's child,\nweary from snake, fearless of spite."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza LVII of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Sun shall blacken, earth sink to sea,\nbright stars fall from heaven's hold;\nsteam surges, life-flame roars,\nhigh heat plays against heaven itself."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza LVIII of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "*Garmr howls fierce before Gnípahellir;*\n*fetters shall burst, the wolf run free.*"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza LIX of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "She sees rise a second time\nearth from ocean, forever green;\nwaterfalls flow, eagle soars o'er,\nhunts fish on mountain heights."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza LX of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Aesir meet on Idavǫllr,\nspeak of mighty earth-girdler,\nrecall Fimbultýr's ancient runes."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza LXI of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "There wondrous golden game-boards\nin grass shall be discovered,\nthose they held in days of old."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza LXII of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Fields shall grow unsown and full,\nall harm healed, Baldr returns;\nHǫðr and Baldr dwell in Hroptr's halls of triumph,\nwell the gods of peace.\n\nWould you know more?"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza LXIII of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Then Hœnir shall cast the sacred lots,\nbrothers' sons build wide wind-home.\n\nWould you know more?"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza LXIV of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "A hall she sees, brighter than sun,\ngold-roofed on Gimlé high;\nthere faithful folk shall dwell,\nand through life-days bliss enjoy."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza LXV of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Then comes the mighty one to judgment divine,\npowerful from above, who rules all things."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Recite stanza LXVI of Völuspá."
+      },
+      {
+        "from": "assistant",
+        "value": "Comes the dark dragon flying low,\nglittering serpent from Niðafjǫll;\nbears corpses in wings o'er fields he soars—\nNíðhǫggr with the dead.\n\n*Now she descends.*"
+      }
+    ]
+  }
+]
