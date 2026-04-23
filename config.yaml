@@ -6,7 +6,7 @@
 openrouter:
   # IMPORTANT: Replace this with your actual OpenRouter API key
   # Get your key at: https://openrouter.ai/keys
-  api_key: "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"
+  api_key: ""
   
   # Model selection - see https://openrouter.ai/models
   # 
@@ -221,7 +221,7 @@ ai_prompts:
 # Replicate API Configuration (for image generation)
 replicate:
   # Get your key at: https://replicate.com/account/api-tokens
-  api_key: "r8_RMBtZTBOsjWhXhUljmqDK8cux5ffpc63KSeQp"
+  api_key: ""
   
   # Model for image generation
   # ===========================
