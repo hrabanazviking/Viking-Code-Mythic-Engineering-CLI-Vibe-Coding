@@ -1,0 +1,4 @@
+interface:
+  display_name: "Architect"
+  short_description: "Define domain boundaries and refactor strategy"
+  default_prompt: "Architect, define exact ownership and boundaries for this capability and update DOMAIN_MAP.md and ARCHITECTURE.md."

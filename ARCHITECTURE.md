@@ -3,7 +3,7 @@
 **Last updated:** 2026-04-23
 **Author:** Védis Eikleið (Cartographer)
 **Scope:** Subsystem stack and layer ownership inside `Viking-Code-Mythic-Engineering-CLI-Vibe-Coding`, branch `development`.
-**Companion scrolls:** `MAP.md` (directory map), `DEPENDENCIES.md` (concrete edges), `DATA_FLOW.md` (state movement).
+**Companion scrolls:** `MAP.md` (directory map), `DEPENDENCIES.md` (concrete edges), `DATA_FLOW.md` (state movement), `DOMAIN_MAP.md` (ownership/boundaries), `ARCHITECT_REFACTOR_BLUEPRINT.md` (phased refactor), `CODE_REQUIREMENTS_MATRIX.md` (required code), `ROBUSTNESS_ADVANCEMENT_ROADMAP.md` (hardening trajectory).
 
 ## Symbol legend
 
