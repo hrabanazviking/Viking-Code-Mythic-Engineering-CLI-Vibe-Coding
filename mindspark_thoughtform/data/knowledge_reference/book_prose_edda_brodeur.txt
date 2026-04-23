@@ -1,0 +1,64 @@
+# 📜 The Prose Edda (Snorri Sturluson): Norse Mythology Reference
+
+> **Author:** Snorri Sturluson (Icelandic Chieftain, Poet, and Historian)
+> **Written:** c. 1220 AD
+> **Domain:** Norse Mythology, Skaldic Poetry, Icelandic Literature, Pagan Cosmology
+
+---
+
+## 1. Context and Purpose
+The *Prose Edda* (also known as the Younger Edda or Snorri's Edda) is the single most important and comprehensive source we have on Norse mythology. 
+
+**Why it was written:** By 1220, Iceland had been Christianized for over two centuries. The ancient pagan religion was fading. However, traditional Norse poetry (*Skaldic poetry*) relied heavily on "kennings"—complex, metaphorical riddles that required a deep knowledge of the old myths to understand. (e.g., calling gold "Freyja's tears" or the sea the "whale-road"). Snorri wrote the *Prose Edda* as a textbook for young poets to teach them the old myths so the art of Skaldic poetry would not be lost.
+
+To avoid accusations of heresy by the Christian church, Snorri framed the gods not as actual divine beings, but as ancient, powerful human kings from Troy who were worshipped as gods after they died (Euhemerism).
+
+---
+
+## 2. Structure of the Prose Edda
+
+The work is divided into four main sections:
+
+### 1. Prologue
+Snorri's Christianized, euhemeristic explanation of the origins of the pagan gods (the Æsir). He claims they were descendants of King Priam of Troy who migrated north and were mistaken for gods by the primitive locals due to their advanced knowledge and beauty.
+
+### 2. Gylfaginning (The Beguiling of Gylfi)
+The core mythological section. A Swedish king named Gylfi travels in disguise (as "Gangleri") to Asgard to question the gods about the creation and destruction of the world. He questions three enthroned figures: High, Just-As-High, and Third (who are essentially Odin in disguise).
+Through this Q&A format, Snorri tells the stories of:
+*   The creation of the world from the body of the primordial giant Ymir.
+*   The World Tree, Yggdrasil.
+*   The binding of the apocalyptic wolf Fenrir.
+*   The theft of Thor's hammer.
+*   The death of Baldr.
+*   **Ragnarök:** The twilight of the gods and the fiery destruction and rebirth of the world.
+
+### 3. Skáldskaparmál (The Language of Poetry)
+A dialogue between Ægir (the Norse god of the sea) and Bragi (the god of poetry). This section explains the origins of "kennings" (poetic metaphors). It contains many myths that are only preserved here, explaining *why* certain metaphors exist.
+*   *Example:* Why is gold called "Sif's Hair" or "The Otter's Ransom"? Snorri tells the associated myth to explain the poetic reference.
+
+### 4. Háttatal (List of Verse Forms)
+A highly technical section demonstrating the complex meter and structure of traditional Skaldic poetry, using a 102-stanza poem written by Snorri himself as an example.
+
+---
+
+## 3. Core Cosmological Concepts
+
+### The Nine Realms
+Held in the branches and roots of the world tree, Yggdrasil.
+1.  **Asgard:** Realm of the Æsir (warrior/ruler gods like Odin, Thor).
+2.  **Vanaheim:** Realm of the Vanir (fertility/nature gods like Freyr, Freyja).
+3.  **Midgard:** Realm of humans (Middle-Earth).
+4.  **Jotunheim:** Realm of the Jötnar (Giants/Devourers).
+5.  **Alfheim:** Realm of the Light Elves.
+6.  **Svartalfheim/Nidavellir:** Realm of the Dwarves/Dark Elves (master smiths).
+7.  **Niflheim:** The realm of primordial ice and mist.
+8.  **Muspelheim:** The realm of primordial fire, ruled by Surtr.
+9.  **Hel:** The realm of the dead, ruled by the goddess Hel.
+
+### Ragnarök (The Doom of the Gods)
+Norse mythology is fundamentally fatalistic. The gods know they are going to die. Odin spends his existence gathering knowledge and warriors (the Einherjar) to fight a battle he knows he will lose. Ragnarök is preceded by the Fimbulwinter (three years of unending winter). The stars vanish, the wolf Sköll swallows the sun, Fenrir breaks his chains, and the fire giant Surtr burns the world. Almost all the gods die, but a few survive to rebuild a new, greener world.
+
+---
+
+## 4. Relevance to Sigrid's Architecture
+The *Prose Edda* is the foundational text for Sigrid's entire worldview. Her framing of the world, her use of kennings, her understanding of fate (Wyrd), and her references to the gods are all directly sourced from the stories preserved by Snorri Sturluson.

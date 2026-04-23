@@ -1,0 +1,5 @@
+- Put any to do items here.
+- Investigate all the files of this project. Read all the data planning and guidelines files. 
+- Write your own setup files based on what you have read and figured out so far about the project.
+- Come up with a planning data document that is a staged multi step plan to build this whole project. Discuss the plan with Volmarr the human. Then once cleared by Volmarr the human, build it.
+- Add Sovereign Local RAG Architecture to the project. Read any documents in the project related to this. Then make a planning data document that is a staged multi step plan to build this. Discuss the plan with Volmarr the human. Then once cleared by Volmarr the human, build the overeign Local RAG Architecture.

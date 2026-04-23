@@ -1,0 +1,221 @@
+viking_trolldom:
+  title: "Viking Trolldom: The Ancient Northern Ways"
+  description: >
+    These workings draw upon the ancient currents of Norse magical tradition —
+    seiðr, galdr, and trolldom — where the threads of wyrd are woven and fate itself
+    may be influenced by those who walk between the worlds.
+
+
+  workings:
+    - id: 1
+      name: "Hreinsa"
+      translation: "Spiritual Purification"
+      purpose: "To cleanse away ill-luck, spiritual pollution (óhreinn), and negative influences."
+      methods:
+        - name: "Smoke Cleansing (Reykja)"
+          description: >
+            Burn juniper, mugwort, or birch bark. Carry the smoke through the dwelling
+            while speaking words of power and invoking Thor’s protection.
+        - name: "Water Rites"
+          description: >
+            Bathe in water infused with northern sea salt, pine needles, or rowan.
+            Pour from crown to feet while visualizing purification.
+        - name: "Floor Washing"
+          description: >
+            Wash floors with moon-blessed water mixed with hearth ash, moving from
+            the back of the home toward the threshold.
+        - name: "Egg Rolling"
+          description: >
+            Roll a fresh egg over the body to draw out affliction, then crack it into
+            running water or bury it at a crossroads.
+
+
+    - id: 2
+      name: "Hlífðarverk"
+      translation: "Ward and Protection"
+      purpose: "To shield home, body, and spirit from malevolent forces."
+      methods:
+        - name: "Rune Staves and Bind-Runes"
+          description: >
+            Carve Algiz, Thurisaz, and Eihwaz on wooden stakes placed at property corners.
+            Draw Ægishjálmur above doorways.
+        - name: "Salt and Iron Barriers"
+          description: >
+            Place iron nails at thresholds and sprinkle sea salt across entryways.
+        - name: "Níð-Stakes Reversed"
+          description: >
+            Protective stakes invoking landvættir, buried facing outward to repel harm.
+        - name: "Ward Bottles"
+          description: >
+            Bottles filled with iron nails, thorns, pins, blessed salt, and red thread,
+            sealed with beeswax and hidden or buried.
+
+
+    - id: 3
+      name: "Togverk"
+      translation: "Attraction and Drawing"
+      purpose: "To call forth love, prosperity, favor, and fortunate circumstances."
+      methods:
+        - name: "Honey and Mead Vessels"
+          description: >
+            Petition papers placed in honey or mead jars with symbolic additions
+            such as rose petals, coins, or lodestone shavings.
+        - name: "Candle Rites with Nordic Herbs"
+          description: >
+            Beeswax candles dressed with herbal oils and carved with runes.
+        - name: "Lodestone Feeding"
+          description: >
+            Lodestones fed with iron filings and carried in red flannel bags.
+        - name: "Charm Bags"
+          description: >
+            Leather pouches filled with goal-aligned herbs, bound with red thread
+            knotted nine times.
+
+
+    - id: 4
+      name: "Vegaopnun"
+      translation: "Road Opening"
+      purpose: "To clear obstacles, break stagnation, and open new pathways."
+      methods:
+        - name: "Crossroads Work"
+          description: >
+            Offer mead at a crossroads sacred to Odin, leaving coins or tobacco.
+        - name: "Birch Broom Sweeping"
+          description: >
+            Sweep the threshold outward at dawn while chanting galdr.
+        - name: "Bathing Upward"
+          description: >
+            Wash from feet to head with ash, rowan berries, or spring water.
+        - name: "Key Magic"
+          description: >
+            Carry or hang moon-charged iron keys as symbols of unlocked fate.
+
+
+    - id: 5
+      name: "Gæfa og Auðn"
+      translation: "Success and Prosperity"
+      purpose: "To increase wealth, business fortune, and material abundance."
+      methods:
+        - name: "Wealth Bowls"
+          description: >
+            Wooden bowls containing coins, grain, pyrite, cinnamon, and a central candle.
+        - name: "Money-Runes"
+          description: >
+            Fehu carved on coins, wood, or traced over wallets and thresholds.
+        - name: "Offerings to Freyja"
+          description: >
+            Honey, amber, or flowers offered for blessings of abundance.
+        - name: "Prosperity Sachets"
+          description: >
+            Green cloth sachets with basil, mint, cinnamon, and silver coins.
+
+
+    - id: 6
+      name: "Friðarverk"
+      translation: "Peace and Healing"
+      purpose: "To restore harmony and emotional tranquility."
+      methods:
+        - name: "Peace Water"
+          description: >
+            Dew or rainwater infused with chamomile and rose, used for sprinkling or baths.
+        - name: "Blue Candle Rites"
+          description: >
+            Pale blue or white candles dressed with lavender oil.
+        - name: "Household Sweetening"
+          description: >
+            Honey jars containing names written on birch bark.
+        - name: "Herbal Washes"
+          description: >
+            Lemon balm, skullcap, or valerian used as spiritual baths.
+
+
+    - id: 7
+      name: "Bænasambönd"
+      translation: "Petition and Manifestation"
+      purpose: "To clearly communicate desires to spirits, gods, and fate."
+      methods:
+        - name: "Runic Petitions"
+          description: >
+            Desires written in runes and folded according to intention.
+        - name: "Bind-Rune Sigils"
+          description: >
+            Personal sigils charged with breath and symbolic blood.
+        - name: "Offering Exchange"
+          description: >
+            Petitions paired with offerings honoring reciprocity.
+        - name: "Shoeing the Petition"
+          description: >
+            Written desires placed in shoes to walk the will into reality.
+
+
+    - id: 8
+      name: "Jarðartengsl"
+      translation: "Earth-Grounded Workings"
+      purpose: "Stability, grounding, and cooperation with land spirits."
+      methods:
+        - name: "Burial Workings"
+          description: >
+            Protective charms buried in front; banishings buried in back.
+        - name: "Tree Offerings"
+          description: >
+            Red thread or cloth tied to oak, ash, or rowan trees.
+        - name: "Sacred Soil"
+          description: >
+            Soil collected from crossroads, ancient sites, or personal land.
+        - name: "Stone Allies"
+          description: >
+            Hematite, obsidian, or quartz carried and charged.
+
+
+    - id: 9
+      name: "Kertaljós"
+      translation: "Candle Sorcery"
+      purpose: "To focus will through flame and wax."
+      color_correspondence:
+        red: "passion, courage, vitality"
+        green: "wealth, growth, fertility"
+        white: "purity, healing, spirits"
+        black: "banishing, protection, shadow work"
+        blue: "peace, wisdom, justice"
+      methods:
+        - name: "Dressing and Carving"
+        - name: "Burning Direction"
+        - name: "Candle Divination"
+
+
+    - id: 10
+      name: "Galdrapoki"
+      translation: "Power Bag"
+      purpose: "A personal talisman for ongoing magical influence."
+      methods:
+        - name: "Assembly"
+        - name: "Consecration"
+        - name: "Feeding the Bag"
+        - name: "Sacred Privacy"
+
+
+    - id: 11
+      name: "Sætukverk"
+      translation: "Sweetening Sorcery"
+      purpose: "To soften hearts and dissolve conflict."
+      methods:
+        - name: "Honey Vessels"
+        - name: "Sugar and Cream Bowls"
+        - name: "Sweet Offerings"
+        - name: "Inward Folding"
+
+
+    - id: 12
+      name: "Mátturverk"
+      translation: "Empowerment and Strength"
+      purpose: "To increase personal power, courage, and authority."
+      methods:
+        - name: "Warrior’s Bath"
+        - name: "Root and Stone Allies"
+        - name: "Strength Oils"
+        - name: "Rune Empowerment"
+
+
+  closing_blessing: >
+    Thus are the ways woven. May your workings be wise, your intentions clear,
+    and your path blessed by the gods and spirits of the North.

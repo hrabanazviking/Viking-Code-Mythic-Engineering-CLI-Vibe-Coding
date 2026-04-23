@@ -1,0 +1,54 @@
+{
+  "profile_id": "desktop_gpu",
+  "display_name": "Desktop / Workstation (Consumer GPU)",
+  "description": "Machines with 8–16GB VRAM GPUs (RTX 3080/4080/4090, RX 6800 XT, etc.).",
+  "hardware": {
+    "ram_gb": 16,
+    "vram_gb": 12,
+    "cpu_arch": ["x86_64"],
+    "gpu": "consumer",
+    "inference_backend": "cuda",
+    "inference_backend_fallback": ["vulkan", "directml", "cpu"]
+  },
+  "model": {
+    "max_params_b": 13.0,
+    "recommended_models": [
+      "LLaMA-3-8B-Instruct-q8_0",
+      "Mistral-7B-Instruct-v0.3-fp16",
+      "LLaMA-3-13B-Instruct-q4_k_m"
+    ],
+    "quantization": "q8_0",
+    "max_context_tokens": 8192,
+    "token_budget_per_turn": 500,
+    "draft_count": 3
+  },
+  "memory": {
+    "max_memory_bundle_facts": 15,
+    "max_vector_results": 10,
+    "episodic_store_cap_soft": 256,
+    "episodic_store_cap_hard": 512,
+    "user_facts_cap_soft": 128,
+    "user_facts_cap_hard": 256,
+    "response_patterns_cap_soft": 128,
+    "response_patterns_cap_hard": 256,
+    "user_preferences_cap_soft": 128,
+    "user_preferences_cap_hard": 256
+  },
+  "retrieval": {
+    "sql_max_results": 15,
+    "vector_top_k": 10,
+    "retrieval_timeout_ms": 200
+  },
+  "generation": {
+    "max_response_tokens": 600,
+    "temperature": 0.7,
+    "repeat_penalty": 1.1,
+    "top_p": 0.9,
+    "max_refinement_passes": 3
+  },
+  "deployment": {
+    "platforms": ["windows", "linux"],
+    "runtime": ["native", "docker"],
+    "onnx_export": false
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "profile_id": "pi_zero",
+  "display_name": "Raspberry Pi Zero / Zero 2W",
+  "description": "Ultra-constrained ARM devices with 512MB RAM. Single-board computers.",
+  "hardware": {
+    "ram_gb": 0.5,
+    "vram_gb": 0,
+    "cpu_arch": ["armv6", "armv7", "arm64"],
+    "gpu": null,
+    "inference_backend": "cpu"
+  },
+  "model": {
+    "max_params_b": 0.5,
+    "recommended_models": ["TinyLlama-1.1B-Chat-q2_k_subset"],
+    "quantization": "q2_k",
+    "max_context_tokens": 256,
+    "token_budget_per_turn": 120,
+    "draft_count": 1
+  },
+  "memory": {
+    "max_memory_bundle_facts": 3,
+    "max_vector_results": 2,
+    "episodic_store_cap_soft": 32,
+    "episodic_store_cap_hard": 64,
+    "user_facts_cap_soft": 16,
+    "user_facts_cap_hard": 32,
+    "response_patterns_cap_soft": 16,
+    "response_patterns_cap_hard": 32,
+    "user_preferences_cap_soft": 16,
+    "user_preferences_cap_hard": 32
+  },
+  "retrieval": {
+    "sql_max_results": 3,
+    "vector_top_k": 2,
+    "retrieval_timeout_ms": 2000
+  },
+  "generation": {
+    "max_response_tokens": 120,
+    "temperature": 0.7,
+    "repeat_penalty": 1.1,
+    "top_p": 0.9,
+    "max_refinement_passes": 0
+  },
+  "deployment": {
+    "platforms": ["linux-arm"],
+    "runtime": ["docker", "native"],
+    "onnx_export": true,
+    "knowledge_subset": true,
+    "knowledge_subset_max_gb": 0.5
+  }
+}

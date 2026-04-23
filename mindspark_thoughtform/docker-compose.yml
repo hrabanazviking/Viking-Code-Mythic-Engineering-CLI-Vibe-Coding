@@ -1,0 +1,98 @@
+# MindSpark: ThoughtForge — Docker Compose
+#
+# Start a specific profile:
+#   docker compose up thoughtforge-desktop
+#   docker compose up thoughtforge-pi
+#   docker compose up thoughtforge-phone
+#
+# Run a single query:
+#   docker compose run --rm thoughtforge-desktop "What is Yggdrasil?"
+#
+# Build all images:
+#   docker compose build
+
+version: "3.9"
+
+x-thoughtforge-base: &thoughtforge-base
+  build:
+    context: .
+    dockerfile: Dockerfile
+  volumes:
+    - thoughtforge-data:/app/data
+    - thoughtforge-models:/app/models
+  environment:
+    - PYTHONUNBUFFERED=1
+  restart: unless-stopped
+  stdin_open: true
+  tty: true
+
+services:
+
+  # ── Desktop CPU (8GB+ RAM, 3B–7B models) ────────────────────────────────────
+  thoughtforge-desktop:
+    <<: *thoughtforge-base
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PROFILE: desktop_cpu
+    image: thoughtforge:desktop-cpu
+    container_name: thoughtforge-desktop
+    environment:
+      - THOUGHTFORGE_PROFILE=desktop_cpu
+      - PYTHONUNBUFFERED=1
+
+  # ── Desktop GPU (8–16GB VRAM, 7B–13B models) ────────────────────────────────
+  thoughtforge-gpu:
+    <<: *thoughtforge-base
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PROFILE: desktop_gpu
+    image: thoughtforge:desktop-gpu
+    container_name: thoughtforge-gpu
+    environment:
+      - THOUGHTFORGE_PROFILE=desktop_gpu
+      - PYTHONUNBUFFERED=1
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # ── Raspberry Pi 5 (4GB RAM, 1B–3B models) ──────────────────────────────────
+  thoughtforge-pi:
+    <<: *thoughtforge-base
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PROFILE: pi_5
+    image: thoughtforge:pi5
+    container_name: thoughtforge-pi5
+    environment:
+      - THOUGHTFORGE_PROFILE=pi_5
+      - PYTHONUNBUFFERED=1
+
+  # ── Phone / Termux (2GB RAM, 1B TinyLlama) ──────────────────────────────────
+  thoughtforge-phone:
+    <<: *thoughtforge-base
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PROFILE: phone_low
+    image: thoughtforge:phone
+    container_name: thoughtforge-phone
+    environment:
+      - THOUGHTFORGE_PROFILE=phone_low
+      - PYTHONUNBUFFERED=1
+
+volumes:
+  thoughtforge-data:
+    driver: local
+  thoughtforge-models:
+    driver: local

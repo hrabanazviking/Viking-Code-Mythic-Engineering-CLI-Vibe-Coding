@@ -1,0 +1,68 @@
+# MindSpark: ThoughtForge — Docker ignore file
+# Excludes large data files, dev artifacts, and secrets from Docker build context.
+
+# Knowledge data (large — mount as volume instead)
+data/
+*.db
+*.db-shm
+*.db-wal
+*.jsonl
+*.jsonl.gz
+*.json.gz
+*.gz
+
+# Model files (mount as volume)
+models/
+*.gguf
+*.bin
+*.pt
+*.safetensors
+*.onnx
+
+# Git
+.git/
+.gitignore
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Documentation (not needed at runtime)
+docs/
+
+# Test files (not needed at runtime)
+tests/
+
+# Task tracking files
+TASK_*.md
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Coverage
+.coverage
+htmlcov/

@@ -1,0 +1,402 @@
+[
+  {
+    "theme": "The Law of Alliteration (Stabreim)",
+    "value": "In formal speech and all poetry, the first stressed syllable of the second half-line must alliterate with a stressed syllable in the first half-line. For example: 'Fjörðr framvíss | fara vildi' (The wise-in-advance fjord wished to travel). This creates the binding sonic chain of the verse."
+  },
+  {
+    "theme": "Kennings as Compressed Thought",
+    "value": "A kenning is a two-part metaphor that replaces a simple noun. It requires cultural knowledge to decode. The sea is not 'sea,' but 'the whale-road' (hvalveg) or 'the sail's field' (segls völlr). A sword is 'the wound-serpent' (benormr) or 'the blood-ember' (blóðkólnir)."
+  },
+  {
+    "theme": "Extended Kennings (Tvíkent)",
+    "value": "More complex kennings stack metaphors. Gold becomes 'the fire of the arm-sea' (arma sjáfar eldr), where 'arm-sea' is silver (the ring-metal), and the fire that burns on it is gold. This is the highest form of poetic intellect, displaying the speaker's mastery of tradition and imagery."
+  },
+  {
+    "theme": "The Heiti - The Poetic Synonym",
+    "value": "A heiti is a simple, non-metaphorical synonym used only in poetry. For 'king' one might say 'dróttinn,' 'gramr,' 'konungr,' or 'stillir,' each with a slightly different nuance (lord, ruler, king, peace-bringer). Using the correct heiti shows poetic education."
+  },
+  {
+    "theme": "Forms of Address - Honoring the Other",
+    "value": "One addresses others by their title and name, or a flattering epithet, never just 'you.' To a chieftain: 'Hail, Ragnar, raven-feeder.' To a craftsman: 'Greetings, Eirik, skilled of hand.' Omission of name or title is a deliberate insult, implying they are not worth remembering."
+  },
+  {
+    "theme": "The Language of Oaths (Heitstrenging)",
+    "value": "Oaths are sworn on sacred objects: a ring, a weapon, the pillar of the high-seat. The formula is direct and fatalistic: 'I swear by this ring and by all my luck (hamingja) that I will do this thing, or may my luck desert me.' The oath binds one's very spiritual fate."
+  },
+  {
+    "theme": "The Boast (Gørvirðing)",
+    "value": "After a great deed, a man is expected to recount it publicly at the feast. This is not mere bragging but a formal declaration that adds to his orðstír (word-fame). It follows a pattern: 'I took my axe, and there I did... and so the blood ran...' The hall confirms it with cheers."
+  },
+  {
+    "theme": "The Flyting (Senna) - Ritual Insult Duel",
+    "value": "A flyting is a formal, poetic exchange of insults, often in verse, to assert dominance. Accusations of cowardice (ragr), poor hospitality, or being fatherless are common. Wit and poetic skill matter more than volume. The winner is the one who leaves his opponent speechless with a devastating, clever verse."
+  },
+  {
+    "theme": "The Language of Gift-Giving",
+    "value": "When presenting a gift, the giver downplays its value verbally while the recipient loudly praises its excellence. The giver says, 'This small sword is for you.' The recipient responds, 'This is a kingly gift, the finest I have seen!' This dance maintains the honor of both parties."
+  },
+  {
+    "theme": "Speaking at the Thing (Assembly)",
+    "value": "At the law assembly, one speaks only when holding the talking-stick or designated spear. Speech is deliberate, structured around facts and precedent, not emotion. One addresses the entire gathering, not just an opponent. Slander (ógagnamál) at the Thing carries heavy fines."
+  },
+  {
+    "theme": "The Language of Hospitality",
+    "value": "A guest's first words upon entering a hall are a greeting to the host and a compliment to the household: 'This is a mighty hall, rich with the smell of meat.' The host responds with a formal welcome: 'All within are gladdened by your coming. Take your place and be at peace.'"
+  },
+  {
+    "theme": "Riddles (Gátur) as Social and Intellectual Sport",
+    "value": "Posing clever riddles in verse is a high-status pastime at feasts. A good riddle describes an object in kennings. 'Four hang, four swing, two point the way, two ward off dogs, one dangles behind, often dirty.' (Answer: A cow). Solving it shows quick wit."
+  },
+  {
+    "theme": "The Drottkvætt Meter - The Chieftain's Measure",
+    "value": "The highest form of skaldic verse. Each stanza has eight lines, with six syllables per line, strict alliteration, and internal rhyme (aðalhending and skothending). Composing in dróttkvætt is the pinnacle of verbal art, reserved for praising kings and immortalizing great deeds."
+  },
+  {
+    "theme": "Lausavísur - The Improvised Stanza",
+    "value": "A 'loose verse' composed and recited on the spot to comment on a situation. A warrior might speak one before battle, a lover upon parting. It proves one's mental agility and poetic skill under pressure, weaving immediate experience into the eternal patterns of verse."
+  },
+  {
+    "theme": "The Language of Prophecy (Spádómr)",
+    "value": "The völva speaks in a distinct, often haunting, poetic meter (fornyrðislag or ljóðaháttr). Her pronouncements are oblique, filled with natural imagery and ominous kennings. She does not explain; she declares. Her words are a performance of her connection to the otherworld."
+  },
+  {
+    "theme": "Understatement (Ljóðlátr) as a Virtue",
+    "value": "Boasting is for formal occasions. In daily speech, understatement is valued. A grievous wound is 'a scratch.' A terrible storm is 'a bit of wind.' This demonstrates toughness and composure, showing that events do not overly impress or disturb the speaker's mind."
+  },
+  {
+    "theme": "Kinship Terms as Social Glue",
+    "value": "Kinship terms are used precisely and frequently to reinforce bonds. 'Brother,' 'sister,' 'uncle' (frændi) are used for blood relatives and close oath-sworn allies. Using these terms reminds all of their mutual obligations and the shared hamingja of the kin-group."
+  },
+  {
+    "theme": "The Language of Challenge (Bráðung)",
+    "value": "To challenge someone, one uses direct, unequivocal language, often before witnesses. 'I name you níðingr (villain),' or 'I say your words are lies, and I will prove it with my sword.' There is no polite hedging; a challenge is a public act that changes the web of wyrd."
+  },
+  {
+    "theme": "The Demand for a Heard Answer",
+    "value": "Silence is not an acceptable response to a direct question or accusation in a public setting. To remain silent is to admit guilt or weakness. The social pressure to speak, to defend, to explain, or to counter is immense. A man is defined by his spoken words."
+  },
+  {
+    "theme": "Poetic Circumlocution for Taboo Subjects",
+    "value": "For dangerous or powerful subjects (like death, the gods, or potent magic), one uses kennings to avoid naming them directly and drawing their full attention. Death is 'the sleep of the sword' or 'the bed of Hel.' This is a form of both respect and magical caution."
+  },
+  {
+    "theme": "The Guest's Duty of News (Fréttir)",
+    "value": "A traveler, upon being welcomed, is expected to give 'news'—a detailed account of events, politics, and gossip from where he has come. This is a valuable service and part of the guest-gift exchange. A good storyteller is a prized guest."
+  },
+  {
+    "theme": "The Final Insult: Speaking as if to a Non-Person",
+    "value": "The ultimate verbal dismissal is to speak *past* someone, to give an order about them as if they were an object, or to pointedly use the wrong name. It declares they hold no social weight, no honor to be acknowledged, reducing them to the status of a þræll (slave) in the social landscape."
+  },
+  {
+    "theme": "The Fornyrðislag Meter - Ancient Storytelling Rhythm",
+    "value": "The 'old story meter' is used for epic narratives and eddic poetry. It has two half-lines with two stressed syllables each, linked by alliteration. Its driving, repetitive rhythm is for reciting genealogies, myths, and histories, embedding memory into a hypnotic sonic pattern."
+  },
+  {
+    "theme": "The Ljóðaháttur Meter - Magical and Gnomic Speech",
+    "value": "The 'song meter' consists of a couplet followed by a full line summarizing or contrasting it. It is the meter of spells, wisdom poetry like Hávamál, and prophetic utterances. Its structure creates a sense of timeless, axiomatic truth, perfect for divine speech or deep counsel."
+  },
+  {
+    "theme": "Hersir's Hall Pronouncements",
+    "value": "A chieftain (hersir) addresses his men from his high-seat. His speech is short, direct, and action-oriented. He uses collective pronouns: 'We will go,' 'Our swords will speak.' He frames decisions as shared fate, binding the group's hamingja to his own through declarative language."
+  },
+  {
+    "theme": "The Greeting of a Stranger",
+    "value": "Meeting a stranger on the road, one states name, lineage, and home farm first: 'I am called Egill, son of Skalla-Grímr, from Borg.' This places the speaker in the social and legal web. The stranger is then obligated to do the same, establishing a framework for interaction."
+  },
+  {
+    "theme": "The Language of the Law-Speaker (Lögsögumaður)",
+    "value": "The law-speaker recites the entire legal code from memory at the Althing. His language is formulaic, archaic, and precise. He uses a chanting, monotonous delivery, emphasizing the immutable and timeless nature of the law, which exists independent of any single person."
+  },
+  {
+    "theme": "Kennings for Basic Concepts - The Poetic Mindset",
+    "value": "To think like a poet is to never see a simple object. A ship is a 'wave-steed' (báru hestur). Blood is 'battle-dew' (hjaldr-dögg). The sun is 'the world's candle' (heimskerit). This linguistic reflex demonstrates a worldview where everything is interconnected through metaphor."
+  },
+  {
+    "theme": "Women's Speech - Inciting and Peace-Weaving",
+    "value": "A high-status woman (húsfreyja) uses speech to manage social dynamics. She incites men to action through pointed questions or reminders of honor. Conversely, she weaves peace (friðill) by proposing compromises, praising generosity, and using kinship terms to soothe anger."
+  },
+  {
+    "theme": "The Curse (Áform) - Binding Words of Harm",
+    "value": "A formal curse is a spoken spell, often in verse. It invokes supernatural forces to enact harm: 'May the land reject you, may your ships founder, may your kin wither.' It is a weapon of last resort for the powerless or a terrifying declaration of enmity from the powerful."
+  },
+  {
+    "theme": "The Toast (Full) - Ritualized Drinking Speech",
+    "value": "Drinking horns are raised with specific toasts. One first drinks to Odin for victory, then to Njörðr and Freyr for peace and plenty, then to the king, then to departed kin. Each toast is announced aloud, binding the communal act to specific divine powers and social bonds."
+  },
+  {
+    "theme": "The Language of Bargaining",
+    "value": "Haggling is a verbal duel of wit and patience. The buyer lists flaws, the seller extols virtues, both using humorous exaggeration. Agreement is sealed with a handshake and a formal phrase: 'The bargain is struck. May it bring luck to us both.' The words finalize the transfer of property and luck."
+  },
+  {
+    "theme": "The Art of the Hint (Vísbending)",
+    "value": "Direct commands can be demeaning. Instead, a superior gives a hint. 'The firewood seems low,' means 'fetch more wood.' 'That field looks ready,' means 'go and harvest.' Understanding and acting on the hint demonstrates intelligence and respect for the subtle social hierarchy."
+  },
+  {
+    "theme": "The Grunt of Acknowledgement (Hmm)",
+    "value": "In conversation, a low 'hmm' or 'já' (yes) is constantly used to signal active listening. It does not necessarily mean agreement, but that the words are heard and processed. Silence in response to speech is jarring and implies inattention or contempt."
+  },
+  {
+    "theme": "The Death Song (Erfikvæði)",
+    "value": "A warrior dying of wounds or illness may compose an erfikvæði, a heroic elegy for himself. He recounts his life's deeds, scorns his death, and prophesies his arrival in Valhalla. It is the ultimate act of verbal self-definition, asserting control over one's narrative at the threshold of death."
+  },
+  {
+    "theme": "Naming as a Magical Act",
+    "value": "To name something is to invoke its essence. Naming a newly forged sword ('Gramr,' Wrath) imbues it with a destiny. Naming a child after a dead hero invites that ancestor's hamingja into the lineage. Misnaming or using the wrong name is a subtle form of attack or magic."
+  },
+  {
+    "theme": "The Shield-Rune (Skaldskap) - Kennings for Battle",
+    "value": "In battle poetry, a specialized lexicon describes violence poetically. Battle is 'the iron-storm' (ísarnský). Arrows are 'the hail of the bow' (bogmaðr hagl). To fight is 'to redden the eagle's beak' (rauða erns gamm). This transforms carnage into a brutal, beautiful art form."
+  },
+  {
+    "theme": "The Fostering Bond - Language of Foster-Kin",
+    "value": "A foster-parent (fóstri) and child (fóstri) use familial terms with great tenderness. The bond is spoken of as being 'closer than blood.' Promises made between them are considered unbreakable, and the language reflects this profound, chosen obligation."
+  },
+  {
+    "theme": "The Silent Communication of Warriors",
+    "value": "On a raid or in a shield-wall, verbal commands are few and pre-agreed. A nod, a hand gesture, a shift in stance conveys complex instructions. This silence, born of trust and training, is more powerful than shouts. It marks the group as a single, cohesive organism."
+  },
+  {
+    "theme": "The Praise Poem (Drápa) Structure",
+    "value": "A formal drápa praising a king has a strict structure: an opening (upphaf), a series of narrative stanzas (stefjabálkr) with a repeating refrain (stef), and a concluding section (slæmr). Its complexity is a gift as valuable as gold, eternizing the patron's name in perfect verse."
+  },
+  {
+    "theme": "The Language of Boundaries (Mörk)",
+    "value": "When walking property lines, one speaks the boundary markers aloud to witnesses: 'From this oak, to the grey stone, to the stream's bend...' The spoken word, tied to the physical landmark, makes the boundary legally and spiritually real. The land 'hears' and remembers its name."
+  },
+  {
+    "theme": "The Echo of the Ancestors in Proverbs",
+    "value": "Daily speech is peppered with old sayings (málsháttur) believed to contain ancestral wisdom. 'Cattle die, kinsmen die, you yourself die; I know one thing that never dies: the judgment of a dead man's deeds.' Using these proverbs roots one's speech in the authority of the past."
+  },
+  {
+    "theme": "The Hrafnagaldr Meter - Whispered Divination",
+    "value": "A low, rhythmic chanting meter used by spákona for divinatory trances. Its cadence is irregular and hypnotic, designed to lull the conscious mind and let the hidden layers of reality speak through the seeress. The words are often archaic, their original meanings obscured by time."
+  },
+  {
+    "theme": "The Grípisspá Style - Prophetic Q&A",
+    "value": "A formal dialogue of prophecy, where a seeker asks direct, numbered questions and the prophet answers in equally numbered, cryptic stanzas. The structure imposes order on the chaos of foresight, creating a ritual framework for extracting fate's secrets: 'Tell me the first...' 'I tell you the first...'"
+  },
+  {
+    "theme": "The Language of the Hólmganga Duel",
+    "value": "Before a formal duel, challenger and challenged exchange specific, irrevocable phrases on the dueling ground. The challenger states the insult anew; the defender accepts the challenge. Witnesses are named. The final words are: 'Let the one who is right be helped by his luck.' No further discussion is permitted."
+  },
+  {
+    "theme": "The Veizla Announcement - Inviting to Feast",
+    "value": "Announcing a feast is a public performance. The host stands at the thing or sends a speaker to proclaim: 'Ale is brewed at [Farm Name] for all free men! The slaughter-beasts are fat. Come at the winter nights' moon.' The announcement praises the host's generosity and promises good fellowship."
+  },
+  {
+    "theme": "The Language of the Skipper (Styrimaður)",
+    "value": "Commands on a longship are terse, technical, and roared over wind and wave. 'Land sighted, steerboard!' 'All men to oars!' 'Lower the sail!' Each term is unambiguous. Misunderstanding means death. The crew's response is a unified shout or action, not words—speech is for the commander alone in transit."
+  },
+  {
+    "theme": "Husþryll's Speech - The Thrall's Limited Vocabulary",
+    "value": "A household thrall (husþryll) uses a simplified, functional vocabulary centered on tasks: 'yes, master,' 'water fetched,' 'wood split.' They do not initiate complex speech with free people. Their silence or simple affirmations reinforce their social place as instruments of labor, not conversational partners."
+  },
+  {
+    "theme": "The Berserksgangr Howl",
+    "value": "Before battle, berserkers (berserkir) engage in a specific vocal ritual: biting their shields, roaring like animals, and chanting garbled, guttural phrases. This is not language but anti-language, a deliberate shedding of human speech to invoke the fury of the bear or wolf within."
+  },
+  {
+    "theme": "The Naming of Weapons - Direct Address",
+    "value": "A warrior speaks to his primary weapon as to a trusted ally, using the second person singular (þú). 'Do not fail me now, Fótbítr (Leg-Biter).' 'Sing well today, sister.' This personalizes the relationship, binding the weapon's spirit (the álfr within the metal) to the wielder's intent."
+  },
+  {
+    "theme": "The Vísa of Parting",
+    "value": "When companions part for a long journey, they often exchange a short, improvised verse (vísa) as a token. It typically wishes for fair winds, good luck, and a future meeting. The verse becomes a tangible piece of friendship to carry, its words a charm for safe travel."
+  },
+  {
+    "theme": "The Lögsögunautr's Testimony",
+    "value": "A witness (lögsögunautr) at the thing gives testimony in a specific form: he states what he saw/heard, names others present, and concludes with 'I witness this before the assembly.' He does not interpret, only reports. His words must be precise; a flawed testimony voids a case and damages his honor."
+  },
+  {
+    "theme": "The Kenning for Shame - Indirect Blame",
+    "value": "To accuse someone of shameful acts without a direct challenge, one uses a blaming kenning in their presence. Calling a stingy man 'a friend of the locked chest' or a coward 'a lover of the long bench' allows the insult to hang in the air, forcing them to either acknowledge it or ignore it to their detriment."
+  },
+  {
+    "theme": "The Galdralag - The Enchantment Meter",
+    "value": "A powerful, spell-specific meter where sound overrides literal meaning. It uses heavy alliteration, internal rhyme, and nonsense syllables (galdrastafir) to create a sonic web that traps intention and forces it into reality. The words are tools of sound-magic, not carriers of prose meaning."
+  },
+  {
+    "theme": "The Húskarl's Oath of Fealty",
+    "value": "A sworn man (húskarl) pledges to his lord with a formal speech, often kneeling and touching the lord's weapon: 'My hands are yours, my axe is yours, my death is yours. From this day, your foe is my foe, your kin is my kin. I swear this on my ring and my father's grave.'"
+  },
+  {
+    "theme": "The Language of the Smithy",
+    "value": "Smiths use a secretive, metaphorical jargon to describe their craft, protecting their art. The fire is 'the wolf.' The bellows are 'the lungs.' Quenching is 'the water's kiss.' To an outsider, they sound like they are discussing a living creature, not a process, guarding the magical nature of metalworking."
+  },
+  {
+    "theme": "The Dismissal of a Guest",
+    "value": "A host does not bluntly tell a guest to leave. Instead, he makes a final, generous offer: 'The night is deep. My hall is yours if you wish to stay until sunrise.' The polite guest understands this as the closure of hospitality and announces his departure, thanking the host for his generosity."
+  },
+  {
+    "theme": "The Vígslóði's Chant - The Battle-Path Summons",
+    "value": "When a chieftain musters men for war, a herald (vígslóði) rides to nearby farms chanting a specific call: 'The war-arrow is sent! The swords must speak! Gather at the [Place] at [Time]! He who stays behind loses his honor!' The chant is repetitive, public, and leaves no room for private refusal."
+  },
+  {
+    "theme": "The Language of the Hunt",
+    "value": "Hunters use a specialized, quiet vocabulary in the forest to avoid alerting prey. They refer to a deer as 'the branch-walker,' a boar as 'the forest-root,' and a bow as 'the singing yew.' This functional poetry demonstrates respect for the prey and the subtlety of the hunt."
+  },
+  {
+    "theme": "The Ergi Accusation - The Unspeakable Insult",
+    "value": "The accusation of *ergi* (unmanliness, sexual passivity) is the gravest verbal attack. It is rarely stated outright but is conveyed through intricate, damning poetry that implies the target is fit only for a woman's role. The accused must respond with immediate, lethal violence or be utterly destroyed in the eyes of society."
+  },
+  {
+    "theme": "The Lof - Public Praise as Social Currency",
+    "value": "Publicly praising (lof) another man's deeds, generosity, or skill is a vital social act. It increases his orðstír and obligates him to you. The praise must be specific and credible. Exaggerated or false lof is seen as flattery (smjör) and damages the praiser's reputation for judgment."
+  },
+  {
+    "theme": "The Final Verdict (Dómr)",
+    "value": "At the thing, the law-speaker or selected judges render the verdict (dómr). The language is absolute and performative: 'We find that [Name] owes [Name] a weregild of three marks of silver. So we doom. So it is settled.' The spoken doom alters reality, creating a legal and spiritual fact that must be obeyed."
+  },
+  {
+    "theme": "The Þula - Mnemonic Verse Lists",
+    "value": "A þula is a memorized, rhythmic list of names, heiti, or kennings for a single subject (e.g., all names for Odin, all terms for sword). Recited as a training exercise for skalds, it demonstrates encyclopedic knowledge and keeps the poetic lexicon alive. It is speech as a living database."
+  },
+  {
+    "theme": "The Mannjafnaðr - The 'Comparing of Men'",
+    "value": "A formal debate where two speakers take turns praising their own champion (often themselves or their lord) and disparaging the other's, using elaborate kennings and historical parallels. The winner is judged by the audience's reaction. It is a structured, poetic form of competitive boasting."
+  },
+  {
+    "theme": "The Language of the Leikr (Ritual Game)",
+    "value": "During ritual games at festivals, participants use a stylized, playful banter. In the tug-of-war, they chant opposing verses about strength. In ball games, they mock missed catches with improvised couplets. The speech is part of the play, reinforcing community through controlled, festive competition."
+  },
+  {
+    "theme": "The Fórnarmál - Sacrificial Invocation",
+    "value": "The prayer spoken over a sacrificial offering (blót) by the goði. It is not a humble plea but a declarative speech-act, stating the offering, the god it is for, and the favor expected in a formula of exchange: 'Óðinn, this stallion is yours. We give you its strength. Give us victory in return.'"
+  },
+  {
+    "theme": "The Húsdrápa - House-Poem Description",
+    "value": "A skald composes verses describing the mythological carvings on the high-seat pillars, wall panels, or tapestries in a chieftain's hall. The poem brings the static images to life through speech, intertwining the owner's physical space with the mythic past, amplifying the hall's spiritual power."
+  },
+  {
+    "theme": "The Hjálmþrúðr's Cry - The Helm-Dread",
+    "value": "Before a shield-wall clash, seasoned warriors (often berserkers or champions) roar their own names, lineage, and a short list of past kills directly at the enemy line. This 'helm-terror' speech is meant to freeze the hearts of less experienced foes, weakening their resolve before the first blow."
+  },
+  {
+    "theme": "The Language of the Fóstbræðralag",
+    "value": "Blood-brothers (fóstbræðr) swear an oath using a unique, intimate vocabulary. They refer to each other as 'my other self' or 'my share of breath.' They may create private kennings known only to them. Their speech reflects their fused wyrd, making them one entity in two bodies for legal and spiritual purposes."
+  },
+  {
+    "theme": "The Rekast - The Chase-Poem",
+    "value": "A poetic form describing a pursuit, often of an outlaw. The meter is fast-paced, with repetitive alliteration mimicking running footsteps. It lists landmarks passed and the growing desperation of the fugitive. It is spoken as entertainment but also serves as a legal record of the outlaw's condemnation."
+  },
+  {
+    "theme": "The Barnsþula - Lullabies and Infant Charms",
+    "value": "Songs and rhythmic chants sung to infants are not merely soothing; they are protective incantations. They name the child's strong lineage, call guardian dísir and álfar to watch over the crib, and describe a future of strength and luck, weaving a protective spell of words around the vulnerable newborn."
+  },
+  {
+    "theme": "The Kaupmál - Trader's Patter",
+    "value": "A traveling merchant (kaupmaðr) develops a fast, persuasive, polyglot speech to hawk wares. He mixes Norse with fragments of Saxon, Frisian, and Baltic terms. His speech emphasizes rarity, distant origins, and utility. It is performance art designed to create desire and justify value in an unfamiliar market."
+  },
+  {
+    "theme": "The Dulargjöld - Ransom Negotiation",
+    "value": "The speech for negotiating the ransom (gjöld) for a high-status captive is highly formal and indirect. The captor praises the captive's worth without stating a price. The captive's kin lament his absence without begging. A third-party mediator eventually names a sum, using proverbs about the value of a good man's life."
+  },
+  {
+    "theme": "The Heitstrenging Before a Voyage",
+    "value": "Crewmembers on a dangerous voyage may publicly swear a conditional oath (heitstrenging) to motivate themselves and bind their luck: 'I swear that if we reach Iceland, I will give my cloak to the first poor man I see.' The oath places a portion of their future good fortune as collateral for present success."
+  },
+  {
+    "theme": "The Ármann's Rally - The Outlaw's Defiance",
+    "value": "An outlaw (ármaðr) facing his final stand may shout a defiant speech to his pursuers, acknowledging his fate but cursing them and vowing his fylgja will haunt them. This speech aims to salvage personal honor from a doomed situation and ensure his name is remembered for his fierceness, not his crimes."
+  },
+  {
+    "theme": "The Vápmagátt - The 'Weapon-Gate' Challenge",
+    "value": "When approaching a potentially hostile farmstead, a visitor stops at the property's boundary (the 'weapon-gate') and shouts his name and peaceful intent: 'I am [Name], son of [Name], coming in peace! I seek fire and news!' This protocol prevents misunderstandings that could lead to a blood feud from a startled homeowner."
+  },
+  {
+    "theme": "The Talismanic Inscription (Rúnastaver)",
+    "value": "The act of inscribing runes is accompanied by a spoken galdr that activates them. The carver whispers or chants the intended outcome ('I carve runes of protection,' 'I carve runes of strife') as the knife cuts. The speech and the act are one; the runes are frozen speech given permanent form."
+  },
+  {
+    "theme": "The Deila - The Lawsuit's Opening Statement",
+    "value": "The plaintiff (deilumaðr) begins a lawsuit by stating his case in a specific, dramatic form at the Law Rock. He names the defendant, the wrong, the evidence, and the law broken, often ending with the phrase, 'I bring this case before all free men, and I demand justice.' His opening sets the tone for the entire proceeding."
+  },
+  {
+    "theme": "The Hvísl - The Deliberate Whisper",
+    "value": "In a culture of loud, public speech, a deliberate whisper (hvísl) is a powerful tool. Used in the hall, it signals secrecy, intimacy, or conspiracy. A chief whispering to his favorite retainer excludes all others. A völva whispering her prophecy makes the listeners lean in, marking the words as dangerously potent."
+  },
+  {
+    "theme": "The Landnámaskrá Speech - Claiming New Land",
+    "value": "When a settler first steps onto new land in Iceland, he formally claims it by walking its boundaries with a fire-brand and speaking a declaration to witnesses: 'I claim this land from fell to foreshore, for myself and my descendants. So I name it, and so it shall be.' The spoken claim, tied to physical action, makes it law."
+  },
+  {
+    "theme": "The Niðvísa - The Slander-Poem",
+    "value": "The most feared and dishonorable form of speech. A niðvísa is a lampoon or slander composed in secret and disseminated publicly. It accuses a man of ergi or a woman of promiscuity in explicit, grotesque kennings. Unlike flyting, it is not face-to-face; it is cowardly psychological warfare that can force its target to kill or be killed to restore honor."
+  },
+  {
+    "theme": "The Andvari's Curse - The Binding of Treasure",
+    "value": "A specific type of curse modeled on the myth of the ring Andvaranaut. When laying a treasure hoard in a burial mound or hiding place, the owner may speak a curse over it, binding misfortune to anyone who steals it. The curse names specific calamities and ends with the formula, 'The ring's doom shall grip the thief.'"
+  },
+  {
+    "theme": "The Kappi's Boast - Champion's Declaration",
+    "value": "A chosen champion (kappi) steps before two opposing forces and delivers a formal boast of his lineage and past victories, claiming the right to fight the enemy's champion. His speech is a psychological weapon meant to intimidate and establish dominance before blades cross."
+  },
+  {
+    "theme": "The Féhirðir's Tally - Herdsman's Accounting",
+    "value": "The herdsman responsible for livestock uses a specific, numeric chant when counting animals. He recites the lineage of important breeding stock and describes each animal's markings in formulaic phrases. This speech-act transforms a mundane count into a ritual acknowledgment of the family's wealth-in-beasts."
+  },
+  {
+    "theme": "The Vébondi's Boundary Chant",
+    "value": "When establishing or renewing the sacred boundary (vé) around a temple or holy ground, the goði walks the perimeter chanting a protective galdr. The chant names the gods and land spirits, forbids violence and spiteful speech within the space, and declares the area under divine peace (grith)."
+  },
+  {
+    "theme": "The Ármann's Claim - The Outlaw's Right of Refuge",
+    "value": "An outlaw who successfully flees to a specific, recognized sanctuary (like certain forests or shores) may shout a claim of refuge to pursuing lawmen. His declaration invokes the ancient custom of the place. If the pursuers respect it, they must halt; to violate it is its own dishonor."
+  },
+  {
+    "theme": "The Húskarl's Bench-Talk",
+    "value": "In the hall, retainers (húskarlar) speak to each other in a distinct register when their lord is present. They praise his deeds, debate the merits of weapons and tactics, and tell stories that reinforce group values. Their speech is a performance of loyalty and martial culture for their lord's ear."
+  },
+  {
+    "theme": "The Barnfóstr's Teachings - Foster-Parent's Proverbs",
+    "value": "A foster-parent educates a child not through lectures but by weaving lessons into stories, proverbs, and riddles. When the child errs, the foster-parent responds with a relevant saying, forcing the child to deduce the moral. Speech here is a tool for shaping character and intellect indirectly."
+  },
+  {
+    "theme": "The Vættfang's Summons - Summoning Land Spirits",
+    "value": "Before building a house or ploughing a new field, the head of household performs a small offering and speaks a quiet summons to the local land spirits (landvættir). He introduces himself, states his peaceful intent, and asks for their permission and blessing, ensuring his work does not offend unseen powers."
+  },
+  {
+    "theme": "The Flokksmaður's Rally Cry",
+    "value": "A warband leader (flokksmaður) gives a short, fiery speech just before engagement. He does not detail tactics but reminds his men of shared grievances, promised plunder, and the everlasting shame of flight. His words are designed to forge individual fears into a single, collective rage."
+  },
+  {
+    "theme": "The Húsgöngumaður's Request - The House-Walker's Plea",
+    "value": "A destitute traveler seeking temporary shelter at a farmstead uses a formal, humble request. He stands at the edge of the yard and calls out, listing his misfortunes and swearing he brings no ill will. His speech follows a recognized pattern that allows the farmer to assess him as a harmless guest, not a threat."
+  },
+  {
+    "theme": "The Málafylgjumaður's Plea - Legal Advocate's Speech",
+    "value": "A man skilled in law (málafylgjumaður) can be hired to plead another's case at the Thing. His speech is highly structured, citing precedent, listing witnesses, and methodically dismantling the opponent's arguments. His art is using words as precise legal tools to shape the judgment of the crowd."
+  },
+  {
+    "theme": "The Varðmaður's Challenge - The Watchman's Call",
+    "value": "A sentry (varðmaður) guarding a shore or approach challenges approaching figures with a loud, standardized call: 'Who goes there, breaking the night's peace?' He demands name, business, and lineage. The correct, confident response prevents conflict; hesitation or a wrong answer may lead to violence."
+  },
+  {
+    "theme": "The Sáluhjálp - Soul-Help Prayer for the Dying",
+    "value": "Kneeling beside a dying kin member, a family elder speaks a low, guiding prayer. It does not plead to gods but directs the departing consciousness: 'Remember the bright hall. Follow the path of your fathers. Do not linger here.' This speech helps steer the soul safely to the afterlife, a final service of kin to kin."
+  },
+  {
+    "theme": "The Grámál - The 'Grey-Speech' of Ambiguity",
+    "value": "In politically dangerous situations, a wise man uses grámál—speech that is deliberately ambiguous, allowing for multiple interpretations. He makes promises or statements that can be claimed as supportive or non-committal later. This is the language of survival in the courts of kings, where clear words can be fatal."
+  },
+  {
+    "theme": "The Veiðimaður's Success Chant",
+    "value": "Upon making a significant kill in the hunt, the hunter (veiðimaðr) places his hand on the animal and chants a thanks to the animal's spirit and to the god Ullr or Skadi. He praises its strength and beauty, ensuring its spirit is appeased and will allow other animals of its kind to be taken in the future."
+  },
+  {
+    "theme": "The Bóndi's Althing Report",
+    "value": "After attending the regional Thing, the householder (bóndi) returns and formally reports the outcomes to his family and workers gathered in the main room. He recounts lawsuits, new laws, and important news, performing the speeches of key figures. This transforms distant events into shared local knowledge."
+  },
+  {
+    "theme": "The Seiðkona's Invocation of Fylgjur",
+    "value": "In a deep trance, a völva may chant an invocation to summon the fylgjur (fetch spirits) of those present. She describes the animals or shapes she sees approaching, linking them to individuals. Her speech bridges the gap between the unseen guardian and its human charge, revealing hidden aspects of their nature and luck."
+  },
+  {
+    "theme": "The Hólmgöngumaður's Forfeit Speech",
+    "value": "A duelist who yields in a hólmganga must declare his forfeit publicly. He states his name, admits his lesser skill or weaker luck, and surrenders the agreed-upon ransom. His speech, while acknowledging defeat, does so with a stoic dignity that preserves a shred of honor, framing the loss as fate, not cowardice."
+  },
+  {
+    "theme": "The Festargaman - Feast Game Riddle Contests",
+    "value": "During the height of a feast, guests engage in formal riddle contests. A person poses a riddle in verse; others must solve it or drink a penalty. The riddles often involve risqué double meanings or clever kennings for body parts, testing both wit and knowledge of poetic convention in a playful, competitive setting."
+  }
+]

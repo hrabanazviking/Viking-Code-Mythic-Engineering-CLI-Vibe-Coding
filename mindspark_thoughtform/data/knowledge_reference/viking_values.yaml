@@ -1,0 +1,857 @@
+# Viking Values - 200 Core Principles
+# =====================================
+# These values permeate all NPC behavior, dialogue, and moral frameworks.
+# The AI uses these to make characters feel authentically Viking.
+
+categories:
+  - name: "Courage & Heroism"
+    range: "1-20"
+    description: "Bravery in battle and life"
+  - name: "Wisdom & Knowledge"
+    range: "21-40"
+    description: "Seeking and applying wisdom"
+  - name: "Loyalty & Kinship"
+    range: "41-60"
+    description: "Bonds of blood and oath"
+  - name: "Justice & Honor"
+    range: "61-80"
+    description: "Upholding reputation and law"
+  - name: "Spiritual & Mystical"
+    range: "81-100"
+    description: "Relationship with gods and fate"
+  - name: "Strength & Endurance"
+    range: "101-120"
+    description: "Physical prowess and resilience"
+  - name: "Generosity & Hospitality"
+    range: "121-140"
+    description: "Sharing wealth and welcoming guests"
+  - name: "Courage of Speech"
+    range: "141-160"
+    description: "Speaking truth and preserving stories"
+  - name: "Discipline & Self-Mastery"
+    range: "161-180"
+    description: "Control of self and skill"
+  - name: "Legacy & Reputation"
+    range: "181-200"
+    description: "Building lasting renown"
+
+entries:
+  # Courage & Heroism (1-20)
+  - id: 1
+    value: "Bravery in battle"
+    category: "courage"
+    description: "Face enemies without flinching"
+  - id: 2
+    value: "Boldness in exploration"
+    category: "courage"
+    description: "Venture into unknown lands without fear"
+  - id: 3
+    value: "Facing fear without hesitation"
+    category: "courage"
+    description: "Act despite terror in your heart"
+  - id: 4
+    value: "Protecting family and kin"
+    category: "courage"
+    description: "Shield your blood at any cost"
+  - id: 5
+    value: "Defending honor"
+    category: "courage"
+    description: "Never let insults stand unanswered"
+  - id: 6
+    value: "Valor in duels"
+    category: "courage"
+    description: "Meet challenges with steel and skill"
+  - id: 7
+    value: "Sacrifice for community"
+    category: "courage"
+    description: "Give of yourself for the greater good"
+  - id: 8
+    value: "Fearlessness against monsters or giants"
+    category: "courage"
+    description: "Face supernatural threats with mortal courage"
+  - id: 9
+    value: "Enduring hardship"
+    category: "courage"
+    description: "Suffer cold, hunger, and pain without complaint"
+  - id: 10
+    value: "Persistence in adversity"
+    category: "courage"
+    description: "Never give up when the path grows hard"
+  - id: 11
+    value: "Leadership under pressure"
+    category: "courage"
+    description: "Guide others when chaos reigns"
+  - id: 12
+    value: "Risking self for others"
+    category: "courage"
+    description: "Put yourself in danger to save companions"
+  - id: 13
+    value: "Courage to speak truth"
+    category: "courage"
+    description: "Say what must be said regardless of consequence"
+  - id: 14
+    value: "Heroism in death"
+    category: "courage"
+    description: "Die well, with weapon in hand"
+  - id: 15
+    value: "Standing firm against treachery"
+    category: "courage"
+    description: "Resist betrayal with unwavering resolve"
+  - id: 16
+    value: "Defiance against tyranny"
+    category: "courage"
+    description: "Oppose unjust power even at great cost"
+  - id: 17
+    value: "Boldness in negotiation"
+    category: "courage"
+    description: "Speak your terms without trembling"
+  - id: 18
+    value: "Braving the unknown"
+    category: "courage"
+    description: "Venture where none have gone before"
+  - id: 19
+    value: "Upholding oaths"
+    category: "courage"
+    description: "Keep your word even unto death"
+  - id: 20
+    value: "Strength in adversity"
+    category: "courage"
+    description: "Grow stronger through trials"
+
+  # Wisdom & Knowledge (21-40)
+  - id: 21
+    value: "Seeking guidance from elders"
+    category: "wisdom"
+    description: "Learn from those who came before"
+  - id: 22
+    value: "Learning from ancestors"
+    category: "wisdom"
+    description: "Honor the wisdom of the dead"
+  - id: 23
+    value: "Observing nature for insight"
+    category: "wisdom"
+    description: "Read omens in wind, beast, and sky"
+  - id: 24
+    value: "Understanding runes"
+    category: "wisdom"
+    description: "Know the sacred letters and their power"
+  - id: 25
+    value: "Consulting prophecies"
+    category: "wisdom"
+    description: "Heed the words of seers and völvas"
+  - id: 26
+    value: "Listening before acting"
+    category: "wisdom"
+    description: "Gather knowledge before making decisions"
+  - id: 27
+    value: "Studying stars and tides"
+    category: "wisdom"
+    description: "Navigate by celestial wisdom"
+  - id: 28
+    value: "Recording history"
+    category: "wisdom"
+    description: "Preserve deeds for future generations"
+  - id: 29
+    value: "Honoring oral tradition"
+    category: "wisdom"
+    description: "Pass knowledge through story and song"
+  - id: 30
+    value: "Applying lessons from past mistakes"
+    category: "wisdom"
+    description: "Learn from failure to achieve success"
+  - id: 31
+    value: "Strategy in battle"
+    category: "wisdom"
+    description: "Think before striking"
+  - id: 32
+    value: "Recognizing omens"
+    category: "wisdom"
+    description: "See fate's signs in daily life"
+  - id: 33
+    value: "Discernment of truth"
+    category: "wisdom"
+    description: "See through lies and deception"
+  - id: 34
+    value: "Wisdom in negotiation"
+    category: "wisdom"
+    description: "Know when to speak and when to stay silent"
+  - id: 35
+    value: "Practical intelligence"
+    category: "wisdom"
+    description: "Apply knowledge to real problems"
+  - id: 36
+    value: "Crafting clever solutions"
+    category: "wisdom"
+    description: "Solve problems with wit, not just force"
+  - id: 37
+    value: "Respect for mystical knowledge"
+    category: "wisdom"
+    description: "Honor seiðr and runic wisdom"
+  - id: 38
+    value: "Learning from enemies"
+    category: "wisdom"
+    description: "Study those who oppose you"
+  - id: 39
+    value: "Insightful leadership"
+    category: "wisdom"
+    description: "Guide with wisdom, not just strength"
+  - id: 40
+    value: "Storytelling with purpose"
+    category: "wisdom"
+    description: "Share tales that teach and inspire"
+
+  # Loyalty & Kinship (41-60)
+  - id: 41
+    value: "Fidelity to family"
+    category: "loyalty"
+    description: "Blood bonds above all else"
+  - id: 42
+    value: "Protecting one's tribe"
+    category: "loyalty"
+    description: "Defend your people with your life"
+  - id: 43
+    value: "Loyalty to chieftain"
+    category: "loyalty"
+    description: "Serve your lord with unwavering faith"
+  - id: 44
+    value: "Upholding clan honor"
+    category: "loyalty"
+    description: "Your family's reputation is your own"
+  - id: 45
+    value: "Supporting comrades"
+    category: "loyalty"
+    description: "Stand by your shield-brothers"
+  - id: 46
+    value: "Keeping promises"
+    category: "loyalty"
+    description: "Your word is unbreakable"
+  - id: 47
+    value: "Aid to allies"
+    category: "loyalty"
+    description: "Help those who have helped you"
+  - id: 48
+    value: "Valuing friendship"
+    category: "loyalty"
+    description: "Treasure bonds forged in hardship"
+  - id: 49
+    value: "Defending kin lands"
+    category: "loyalty"
+    description: "Protect the soil of your ancestors"
+  - id: 50
+    value: "Respecting ancestral ties"
+    category: "loyalty"
+    description: "Honor the connections of blood"
+  - id: 51
+    value: "Caring for elders"
+    category: "loyalty"
+    description: "Support those who raised you"
+  - id: 52
+    value: "Responsibility toward dependents"
+    category: "loyalty"
+    description: "Provide for those in your care"
+  - id: 53
+    value: "Solidarity in raids"
+    category: "loyalty"
+    description: "Share danger and reward equally"
+  - id: 54
+    value: "Maintaining household harmony"
+    category: "loyalty"
+    description: "Keep peace within your home"
+  - id: 55
+    value: "Standing with sworn companions"
+    category: "loyalty"
+    description: "Never abandon those bound by oath"
+  - id: 56
+    value: "Guarding reputation"
+    category: "loyalty"
+    description: "Protect the good name of your kin"
+  - id: 57
+    value: "Avoiding betrayal"
+    category: "loyalty"
+    description: "Treachery is the worst of sins"
+  - id: 58
+    value: "Preserving family name"
+    category: "loyalty"
+    description: "Pass on honor to your children"
+  - id: 59
+    value: "Sharing wealth with kin"
+    category: "loyalty"
+    description: "What you have belongs to family"
+  - id: 60
+    value: "Upholding collective decisions"
+    category: "loyalty"
+    description: "Support the will of the assembly"
+
+  # Justice & Honor (61-80)
+  - id: 61
+    value: "Fair judgment in disputes"
+    category: "justice"
+    description: "Settle conflicts with wisdom"
+  - id: 62
+    value: "Avenging wrongs appropriately"
+    category: "justice"
+    description: "Blood debts must be paid"
+  - id: 63
+    value: "Respecting laws and assemblies"
+    category: "justice"
+    description: "Honor the Thing and its rulings"
+  - id: 64
+    value: "Punishing deceit"
+    category: "justice"
+    description: "Liars deserve their fate"
+  - id: 65
+    value: "Rewarding courage"
+    category: "justice"
+    description: "Brave deeds earn recognition"
+  - id: 66
+    value: "Maintaining personal honor"
+    category: "justice"
+    description: "Your reputation is your wealth"
+  - id: 67
+    value: "Avoiding shameful acts"
+    category: "justice"
+    description: "Better death than dishonor"
+  - id: 68
+    value: "Upholding promises publicly"
+    category: "justice"
+    description: "Let all witness your word"
+  - id: 69
+    value: "Respect for sworn oaths"
+    category: "justice"
+    description: "Oaths bind the soul"
+  - id: 70
+    value: "Protecting innocents"
+    category: "justice"
+    description: "Shield those who cannot fight"
+  - id: 71
+    value: "Justice through skill and evidence"
+    category: "justice"
+    description: "Prove your case with deeds"
+  - id: 72
+    value: "Honoring oaths and oral contracts"
+    category: "justice"
+    description: "Spoken agreements are sacred"
+  - id: 73
+    value: "Moral responsibility in decisions"
+    category: "justice"
+    description: "Own the consequences of your choices"
+  - id: 74
+    value: "Avoiding cowardice"
+    category: "justice"
+    description: "Never flee when honor demands you stay"
+  - id: 75
+    value: "Maintaining reputation after conflict"
+    category: "justice"
+    description: "Win with honor, lose with dignity"
+  - id: 76
+    value: "Acceptance of consequences"
+    category: "justice"
+    description: "Face the results of your actions"
+  - id: 77
+    value: "Fairness in trade"
+    category: "justice"
+    description: "Honest dealing builds trust"
+  - id: 78
+    value: "Resolving disputes peacefully when possible"
+    category: "justice"
+    description: "Blood need not always flow"
+  - id: 79
+    value: "Respect for elders' judgments"
+    category: "justice"
+    description: "Experience brings wisdom"
+  - id: 80
+    value: "Upholding communal welfare"
+    category: "justice"
+    description: "The good of all matters"
+
+  # Spiritual & Mystical (81-100)
+  - id: 81
+    value: "Reverence for the Gods and Goddesses"
+    category: "spiritual"
+    description: "Honor Odin, Thor, Freya and all the Aesir and Vanir"
+  - id: 82
+    value: "Observing seasonal rites"
+    category: "spiritual"
+    description: "Mark Yule, midsummer, and harvest"
+  - id: 83
+    value: "Honoring ancestors"
+    category: "spiritual"
+    description: "The dead watch and guide"
+  - id: 84
+    value: "Understanding fate (wyrd)"
+    category: "spiritual"
+    description: "Accept what the Norns weave"
+  - id: 85
+    value: "Offering sacrifices for blessings"
+    category: "spiritual"
+    description: "Give to receive from the gods"
+  - id: 86
+    value: "Ritual purity"
+    category: "spiritual"
+    description: "Prepare properly for sacred acts"
+  - id: 87
+    value: "Consulting seers and witches"
+    category: "spiritual"
+    description: "Seek wisdom from those who see beyond"
+  - id: 88
+    value: "Respect for sacred sites"
+    category: "spiritual"
+    description: "Honor groves, temples, and holy places"
+  - id: 89
+    value: "Observing omens in nature"
+    category: "spiritual"
+    description: "Ravens, wolves, and storms speak"
+  - id: 90
+    value: "Performing protective charms"
+    category: "spiritual"
+    description: "Ward against evil with runes and ritual"
+  - id: 91
+    value: "Seeking insight through dreams"
+    category: "spiritual"
+    description: "The gods speak in sleep"
+  - id: 92
+    value: "Harmonizing with natural forces"
+    category: "spiritual"
+    description: "Work with, not against, nature"
+  - id: 93
+    value: "Using runes responsibly"
+    category: "spiritual"
+    description: "Sacred letters have power"
+  - id: 94
+    value: "Acknowledging mystical signs"
+    category: "spiritual"
+    description: "See the hidden world's messages"
+  - id: 95
+    value: "Accepting divine will"
+    category: "spiritual"
+    description: "The gods' plans are beyond mortals"
+  - id: 96
+    value: "Maintaining ritual knowledge"
+    category: "spiritual"
+    description: "Pass on sacred practices"
+  - id: 97
+    value: "Following lunar and solar cycles"
+    category: "spiritual"
+    description: "Time sacred acts to celestial rhythms"
+  - id: 98
+    value: "Respecting sacred animals"
+    category: "spiritual"
+    description: "Ravens, wolves, and boars are holy"
+  - id: 99
+    value: "Observing communal rituals"
+    category: "spiritual"
+    description: "Worship together strengthens all"
+  - id: 100
+    value: "Celebrating seasonal festivals"
+    category: "spiritual"
+    description: "Mark the turning of the year"
+
+  # Strength & Endurance (101-120)
+  - id: 101
+    value: "Physical fitness for battle"
+    category: "strength"
+    description: "Train your body for war"
+  - id: 102
+    value: "Mastery of weapons"
+    category: "strength"
+    description: "Know sword, axe, and spear"
+  - id: 103
+    value: "Stamina in long journeys"
+    category: "strength"
+    description: "March without rest when needed"
+  - id: 104
+    value: "Survival skills in harsh conditions"
+    category: "strength"
+    description: "Live where others would die"
+  - id: 105
+    value: "Resistance to cold and hunger"
+    category: "strength"
+    description: "Endure what the north demands"
+  - id: 106
+    value: "Maintaining health for duty"
+    category: "strength"
+    description: "Your body serves your obligations"
+  - id: 107
+    value: "Strength in lifting and combat"
+    category: "strength"
+    description: "Raw power wins battles"
+  - id: 108
+    value: "Endurance under stress"
+    category: "strength"
+    description: "Keep fighting when exhausted"
+  - id: 109
+    value: "Resilience after injury"
+    category: "strength"
+    description: "Heal and return to the fight"
+  - id: 110
+    value: "Skill in horsemanship"
+    category: "strength"
+    description: "Master the horse for war and travel"
+  - id: 111
+    value: "Agility and dexterity"
+    category: "strength"
+    description: "Move with speed and precision"
+  - id: 112
+    value: "Bravery against physical threats"
+    category: "strength"
+    description: "Face danger with steady hands"
+  - id: 113
+    value: "Craftsmanship requiring endurance"
+    category: "strength"
+    description: "Work forge and oar without tiring"
+  - id: 114
+    value: "Steadfastness under attack"
+    category: "strength"
+    description: "Hold the line when others flee"
+  - id: 115
+    value: "Defending one's home"
+    category: "strength"
+    description: "Die on your threshold if needed"
+  - id: 116
+    value: "Strength in rowing or sailing"
+    category: "strength"
+    description: "Cross seas with arm and will"
+  - id: 117
+    value: "Ability to carry burdens"
+    category: "strength"
+    description: "Bear loads others cannot"
+  - id: 118
+    value: "Hardiness against storms"
+    category: "strength"
+    description: "Weather what nature throws at you"
+  - id: 119
+    value: "Mastery of armor and shield"
+    category: "strength"
+    description: "Bear the weight of protection"
+  - id: 120
+    value: "Mastery of naval combat"
+    category: "strength"
+    description: "Fight on rolling decks"
+
+  # Generosity & Hospitality (121-140)
+  - id: 121
+    value: "Sharing food and drink"
+    category: "generosity"
+    description: "A full table honors the host"
+  - id: 122
+    value: "Hosting travelers"
+    category: "generosity"
+    description: "Give shelter to wanderers"
+  - id: 123
+    value: "Offering gifts in alliance"
+    category: "generosity"
+    description: "Seal bonds with treasure"
+  - id: 124
+    value: "Caring for guests"
+    category: "generosity"
+    description: "Guest rights are sacred"
+  - id: 125
+    value: "Respecting visiting strangers"
+    category: "generosity"
+    description: "Any guest may be a god in disguise"
+  - id: 126
+    value: "Charity toward those in need"
+    category: "generosity"
+    description: "Help those less fortunate"
+  - id: 127
+    value: "Sharing wealth with family"
+    category: "generosity"
+    description: "Kin share in prosperity"
+  - id: 128
+    value: "Supporting allies in need"
+    category: "generosity"
+    description: "Aid friends in hardship"
+  - id: 129
+    value: "Offering shelter in winter"
+    category: "generosity"
+    description: "Save lives with hearth and roof"
+  - id: 130
+    value: "Generosity in trade"
+    category: "generosity"
+    description: "Fair dealing builds reputation"
+  - id: 131
+    value: "Honoring guest rights"
+    category: "generosity"
+    description: "Guests are sacred"
+  - id: 132
+    value: "Rewarding skill or service"
+    category: "generosity"
+    description: "Pay fairly for work done"
+  - id: 133
+    value: "Aid during famine"
+    category: "generosity"
+    description: "Share when others starve"
+  - id: 134
+    value: "Loyalty through gifts"
+    category: "generosity"
+    description: "Bind followers with treasure"
+  - id: 135
+    value: "Encouraging cooperation"
+    category: "generosity"
+    description: "Together we are stronger"
+  - id: 136
+    value: "Building bonds through giving"
+    category: "generosity"
+    description: "Gifts create obligations"
+  - id: 137
+    value: "Protecting community resources"
+    category: "generosity"
+    description: "Guard what belongs to all"
+  - id: 138
+    value: "Supporting marriages and families"
+    category: "generosity"
+    description: "Help kin establish homes"
+  - id: 139
+    value: "Offering counsel freely"
+    category: "generosity"
+    description: "Share wisdom without cost"
+  - id: 140
+    value: "Maintaining feast traditions"
+    category: "generosity"
+    description: "Celebrate together regularly"
+
+  # Courage of Speech (141-160)
+  - id: 141
+    value: "Speaking truth to power"
+    category: "speech"
+    description: "Tell kings what they need to hear"
+  - id: 142
+    value: "Declaring one's deeds honestly"
+    category: "speech"
+    description: "Neither boast nor diminish"
+  - id: 143
+    value: "Storytelling for legacy"
+    category: "speech"
+    description: "Preserve deeds in tales"
+  - id: 144
+    value: "Singing sagas and poems"
+    category: "speech"
+    description: "Give voice to heroic verse"
+  - id: 145
+    value: "Sharing counsel in assemblies"
+    category: "speech"
+    description: "Speak wisely at the Thing"
+  - id: 146
+    value: "Respectful debate"
+    category: "speech"
+    description: "Argue with honor"
+  - id: 147
+    value: "Warning against deceit"
+    category: "speech"
+    description: "Call out liars"
+  - id: 148
+    value: "Teaching wisdom to youth"
+    category: "speech"
+    description: "Pass knowledge to the young"
+  - id: 149
+    value: "Recounting victories accurately"
+    category: "speech"
+    description: "Tell battles as they happened"
+  - id: 150
+    value: "Offering prophecy or advice"
+    category: "speech"
+    description: "Share visions of what may come"
+  - id: 151
+    value: "Speaking against injustice"
+    category: "speech"
+    description: "Denounce wrongs publicly"
+  - id: 152
+    value: "Public declaration of oaths"
+    category: "speech"
+    description: "Let all witness your word"
+  - id: 153
+    value: "Voicing grief appropriately"
+    category: "speech"
+    description: "Mourn with dignity"
+  - id: 154
+    value: "Celebrating heroism in words"
+    category: "speech"
+    description: "Praise the brave"
+  - id: 155
+    value: "Giving praise where due"
+    category: "speech"
+    description: "Acknowledge excellence"
+  - id: 156
+    value: "Inspiring comrades through speech"
+    category: "speech"
+    description: "Rouse hearts with words"
+  - id: 157
+    value: "Declaring intentions clearly"
+    category: "speech"
+    description: "Let none misunderstand your purpose"
+  - id: 158
+    value: "Upholding verbal contracts"
+    category: "speech"
+    description: "Spoken deals are binding"
+  - id: 159
+    value: "Humility in speech"
+    category: "speech"
+    description: "Let deeds speak louder than boasts"
+  - id: 160
+    value: "Using words to protect honor"
+    category: "speech"
+    description: "Defend reputation with wit"
+
+  # Discipline & Self-Mastery (161-180)
+  - id: 161
+    value: "Training body daily"
+    category: "discipline"
+    description: "Constant practice builds skill"
+  - id: 162
+    value: "Mastery of weapons through repetition"
+    category: "discipline"
+    description: "Drill until strikes are instinct"
+  - id: 163
+    value: "Controlling anger"
+    category: "discipline"
+    description: "Rage serves no master"
+  - id: 164
+    value: "Patience in adversity"
+    category: "discipline"
+    description: "Wait for the right moment"
+  - id: 165
+    value: "Self-restraint in desires"
+    category: "discipline"
+    description: "Control appetite and lust"
+  - id: 166
+    value: "Learning craft and skill"
+    category: "discipline"
+    description: "Master a useful trade"
+  - id: 167
+    value: "Observing proper ritual conduct"
+    category: "discipline"
+    description: "Follow sacred forms exactly"
+  - id: 168
+    value: "Avoiding rash decisions"
+    category: "discipline"
+    description: "Think before acting"
+  - id: 169
+    value: "Honoring daily routines"
+    category: "discipline"
+    description: "Structure brings strength"
+  - id: 170
+    value: "Preparing for raids"
+    category: "discipline"
+    description: "Ready weapons and plans"
+  - id: 171
+    value: "Maintaining focus in battle"
+    category: "discipline"
+    description: "Chaos cannot shake concentration"
+  - id: 172
+    value: "Meditation for clarity"
+    category: "discipline"
+    description: "Still the mind to see clearly"
+  - id: 173
+    value: "Repetition to master skill"
+    category: "discipline"
+    description: "Do a thing a thousand times"
+  - id: 174
+    value: "Honoring mental discipline"
+    category: "discipline"
+    description: "Train the mind like the body"
+  - id: 175
+    value: "Avoiding excessive indulgence"
+    category: "discipline"
+    description: "Moderation in all things"
+  - id: 176
+    value: "Respecting hierarchy"
+    category: "discipline"
+    description: "Know your place and honor it"
+  - id: 177
+    value: "Persistence in learning"
+    category: "discipline"
+    description: "Never stop improving"
+  - id: 178
+    value: "Controlling speech under pressure"
+    category: "discipline"
+    description: "Guard your tongue in crisis"
+  - id: 179
+    value: "Maintaining vigilance"
+    category: "discipline"
+    description: "Stay alert to danger"
+  - id: 180
+    value: "Exercising strategic foresight"
+    category: "discipline"
+    description: "Plan several moves ahead"
+
+  # Legacy & Reputation (181-200)
+  - id: 181
+    value: "Preserving family name"
+    category: "legacy"
+    description: "Guard your lineage's honor"
+  - id: 182
+    value: "Upholding ancestral honor"
+    category: "legacy"
+    description: "Live worthy of those before you"
+  - id: 183
+    value: "Building personal renown"
+    category: "legacy"
+    description: "Let your deeds be known"
+  - id: 184
+    value: "Recording deeds for memory"
+    category: "legacy"
+    description: "Ensure your story survives"
+  - id: 185
+    value: "Inspiring future generations"
+    category: "legacy"
+    description: "Be an example to follow"
+  - id: 186
+    value: "Mentoring youth"
+    category: "legacy"
+    description: "Teach the young your skills"
+  - id: 187
+    value: "Leaving lasting monuments"
+    category: "legacy"
+    description: "Build what will endure"
+  - id: 188
+    value: "Celebrating lineage"
+    category: "legacy"
+    description: "Know and honor your ancestors"
+  - id: 189
+    value: "Protecting sacred heritage"
+    category: "legacy"
+    description: "Guard traditions and holy things"
+  - id: 190
+    value: "Avoiding shameful legacy"
+    category: "legacy"
+    description: "Leave no stain on your name"
+  - id: 191
+    value: "Building alliances for posterity"
+    category: "legacy"
+    description: "Create bonds that outlast you"
+  - id: 192
+    value: "Ensuring wealth passes responsibly"
+    category: "legacy"
+    description: "Leave inheritance wisely"
+  - id: 193
+    value: "Teaching ethical codes"
+    category: "legacy"
+    description: "Pass on moral wisdom"
+  - id: 194
+    value: "Maintaining heroic reputation"
+    category: "legacy"
+    description: "Live so songs are sung of you"
+  - id: 195
+    value: "Rewarding service and loyalty"
+    category: "legacy"
+    description: "Acknowledge those who serve well"
+  - id: 196
+    value: "Leaving cultural contributions"
+    category: "legacy"
+    description: "Add to the sum of knowledge"
+  - id: 197
+    value: "Inspiring sagas in future songs"
+    category: "legacy"
+    description: "Live a life worth singing"
+  - id: 198
+    value: "Continuing traditions"
+    category: "legacy"
+    description: "Keep the old ways alive"
+  - id: 199
+    value: "Ensuring moral lessons are remembered"
+    category: "legacy"
+    description: "Your story teaches others"
+  - id: 200
+    value: "Living in accordance with wyrd and the Gods"
+    category: "legacy"
+    description: "Align your life with fate and divine will"

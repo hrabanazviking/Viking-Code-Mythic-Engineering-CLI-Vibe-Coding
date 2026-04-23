@@ -1,0 +1,95 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "thoughtforge"
+version = "1.0.0"
+description = "MindSpark: ThoughtForge — Universal cognitive enhancement layer for AI models of any size"
+readme = "README.md"
+license = { text = "CC BY 4.0" }
+authors = [{ name = "RuneForgeAI" }]
+requires-python = ">=3.10"
+keywords = [
+    "AI", "LLM", "RAG", "memory", "cognition", "local-AI",
+    "quantization", "edge-AI", "Norse", "offline"
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: Free for non-commercial use",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "sqlalchemy>=2.0",
+    "sentence-transformers>=2.7",
+    "ijson>=3.2",
+    "numpy>=1.26",
+    "tqdm>=4.66",
+    "pyyaml>=6.0",
+    "click>=8.1",
+    "rich>=13.0",
+    "platformdirs>=4.0",
+]
+
+[project.optional-dependencies]
+inference = [
+    "llama-cpp-python>=0.2.50",
+]
+quantization = [
+    "bitsandbytes>=0.43",
+    "auto-gptq>=0.7",
+]
+gpu = [
+    "torch>=2.2",
+    "accelerate>=0.27",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.4",
+    "mypy>=1.9",
+    "locust>=2.24",
+]
+docs = [
+    "mkdocs>=1.5",
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.24",
+]
+all = [
+    "thoughtforge[inference,quantization,gpu,dev,docs]"
+]
+
+[project.scripts]
+thoughtforge = "thoughtforge.cli:main"
+forge-memory = "thoughtforge.etl.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+thoughtforge = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "PTH"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+ignore_missing_imports = true

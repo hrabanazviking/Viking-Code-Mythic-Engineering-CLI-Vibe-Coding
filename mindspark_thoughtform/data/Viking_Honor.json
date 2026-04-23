@@ -1,0 +1,74 @@
+[
+  {
+    "theme": "Honor as External Currency (Orðstír)",
+    "value": "Honor is not a private feeling but a public resource, a form of social credit known as 'word-fame' (orðstír). It is earned through great deeds, generous gifts, and wise speech, and is spent to secure alliances, command loyalty, and influence judgments at the Thing. A man with little orðstír is a non-entity."
+  },
+  {
+    "theme": "The Economy of Gift-Giving (Gjafnaðr)",
+    "value": "Gift-giving is the primary engine of honor. A generous gift (giöf) increases the giver's honor and places the receiver in a debt of honor (skuld). The receiver must reciprocate with a gift of greater value or a service of equal weight to avoid losing honor themselves. This cycle binds society."
+  },
+  {
+    "theme": "Honor Bound to Kin (Ættar Sómi)",
+    "value": "An individual's honor is inseparable from the honor of their kin-group (ætt). A shameful act by one member stains all. A glorious deed elevates all. The family's collective honor (ættar sómi) is a shared treasure to be defended and augmented by every member, living and dead."
+  },
+  {
+    "theme": "The Unforgivable Dishonor (Níð)",
+    "value": "The ultimate dishonor is níð—a public, actionable insult that questions a man's courage, loyalty, or masculinity. This includes cowardice in battle, oath-breaking, or the accusation of being argr. Níð demands immediate, violent redress; ignoring it means accepting the label and becoming a social outcast."
+  },
+  {
+    "theme": "Honor Demands Vengeance (Hefnd)",
+    "value": "When honor is violated, vengeance (hefnd) is not a crime but a sacred duty. It restores cosmic and social balance. The killing of a kin member creates a debt of honor that must be repaid in blood. Failure to seek vengeance is a betrayal of the dead and a profound dishonor to the living."
+  },
+  {
+    "theme": "Hospitality as a Sacred Trust (Gestrísni)",
+    "value": "Honor is demonstrated through flawless hospitality (gestrisni). A host must offer food, drink, and shelter to any guest, regardless of prior relationship. To harm a guest under one's roof is a primal sacrilege (grithbreach) that destroys the host's honor utterly and invites supernatural retribution."
+  },
+  {
+    "theme": "The Honor of the Oath (Eiðr)",
+    "value": "A sworn oath (eiðr) is an extension of one's honor made tangible. Breaking an oath is not merely lying; it is a metaphysical betrayal that sunders one's word from reality. An oath-breaker (eiðrofi) loses all honor, legal standing, and the protection of the gods."
+  },
+  {
+    "theme": "Honor in Death (Draumr)",
+    "value": "How one dies defines one's final honor. A 'straw death' (draumr) in bed from sickness or old age is dishonorable—a quiet end with no fame. A 'good death' in battle, defending one's home, or facing an execution with courage secures a legacy of honor for one's descendants."
+  },
+  {
+    "theme": "Women's Honor (Húsfreyju Sómi)",
+    "value": "A woman's honor resides in her wisdom (speki), skill in managing the household (heimili), fidelity to her husband, and the strength of her sons. She upholds the family's honor through incitement (eggjan), peace-weaving (friðill), and maintaining the prosperity and frith of the home."
+  },
+  {
+    "theme": "The Honor of the Craftsman (Smíðar Sómi)",
+    "value": "A master craftsman—a shipwright, swordsmith, or carpenter—holds honor in the perfection and utility of his work. His skill (ípróttir) is his fame. A flawed product that fails in its purpose brings him public shame and obligates him to make amends or face a loss of status."
+  },
+  {
+    "theme": "Honor Through Restraint (Hóf)",
+    "value": "True honor requires moderation (hóf). A honorable man controls his anger, his appetite, and his tongue. Uncontrolled rage (berserksgangr), gluttony, or drunken, foolish speech diminishes honor, revealing a lack of self-mastery. Strength under control is more honorable than wild strength."
+  },
+  {
+    "theme": "The Shame of Theft (Þjófskapr)",
+    "value": "Stealthy theft is the act of a níðingr (villain), as it avoids open confrontation and honest risk. It dishonors both thief and victim. Openly taking by force in a raid is honorable; secretly stealing is not. The thief's hand can be lawfully struck off, a public, permanent mark of his dishonor."
+  },
+  {
+    "theme": "Honor in Loyalty (Tryggð)",
+    "value": "Loyalty (tryggð) to one's lord, kin, and oath-sworn brothers is a cornerstone of honor. Betrayal is the deepest shame. A loyal retainer who dies defending his lord achieves supreme honor; one who survives his lord without vengeance or a heroic death carries a lasting stain."
+  },
+  {
+    "theme": "The Public Nature of Honor",
+    "value": "Honor exists only in the eyes of the community. Deeds done in secret have no honor-value. Acts must be witnessed, recounted, and validated by the collective. The assembly (þing), the feast (veisla), and the battlefield are the theaters where honor is performed, judged, and recorded."
+  },
+  {
+    "theme": "Honor Demands Reciprocity (Jafnaðr)",
+    "value": "All social interactions are governed by a relentless sense of fairness (jafnaðr). An honorable man repays every service, answers every insult in kind, and matches every gift. To receive without giving, or to give without the capacity to receive, creates an imbalance that erodes honor."
+  },
+  {
+    "theme": "The Warrior's Honor (Drengskapr)",
+    "value": "The warrior's code (drengskapr) demands courage in attack, steadfastness in defense, generosity with plunder, fairness to equals, mercilessness to enemies, and cheerfulness in the face of hardship. It is the practical expression of honor for those who live by the sword."
+  },
+  {
+    "theme": "Insults Must Be Answered (Mál)",
+    "value": "A verbal insult (máligr) is a direct attack on honor and cannot be ignored. It must be answered immediately with a counter-insult, a challenge, or a lawsuit. Silence implies the insult is true. The exchange, whether in flyting or combat, is the process by which relative honor is recalibrated."
+  },
+  {
+    "theme": "Honor Beyond Death (Dómr um Dauðan Hvern)",
+    "value": "A person's final honor is the judgment (dómr) passed on them by the living after their death. It is encapsulated in the funeral oration, the memorial stone's inscription, and the stories told of them. This posthumous reputation is their only true immortality and the inheritance they leave their kin."
+  }
+]

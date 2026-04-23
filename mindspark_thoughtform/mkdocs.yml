@@ -1,0 +1,82 @@
+site_name: "MindSpark: ThoughtForge"
+site_description: "Universal cognitive enhancement layer — offline RAG, TurboQuant inference, and memory-enforced cognition for any model size."
+site_author: "RuneForgeAI"
+site_url: "https://hrabanazviking.github.io/MindSpark_ThoughtForge/"
+repo_url: "https://github.com/hrabanazviking/MindSpark_ThoughtForge"
+repo_name: "hrabanazviking/MindSpark_ThoughtForge"
+edit_uri: "edit/development/docs/"
+
+# ── Theme ──────────────────────────────────────────────────────────────────────
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: indigo
+      accent: cyan
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: indigo
+      accent: cyan
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  font:
+    text: Inter
+    code: JetBrains Mono
+  icon:
+    repo: fontawesome/brands/github
+    logo: material/brain
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+
+# ── Navigation ─────────────────────────────────────────────────────────────────
+nav:
+  - Home: index.md
+  - Quick Start: quickstart.md
+  - Hardware Profiles: hardware_profiles.md
+  - API Reference: api.md
+
+# ── Plugins ────────────────────────────────────────────────────────────────────
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+
+# ── Markdown extensions ────────────────────────────────────────────────────────
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true
+
+# ── Extra ──────────────────────────────────────────────────────────────────────
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/hrabanazviking/MindSpark_ThoughtForge
+  version:
+    provider: mike
+
+copyright: "CC BY 4.0 — RuneForgeAI"
