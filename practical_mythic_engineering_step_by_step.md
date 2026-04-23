@@ -1,23 +1,11 @@
-| [Mythic Engineering](https://github.com/hrabanazviking/Mythic-Engineering/blob/main/README.md) | [The Mythic Engineer's Codex: Vibe Coding 101](https://github.com/hrabanazviking/Mythic-Engineering/blob/main/Mythic_Engineers_Codex.md) | [Quick Guide to Mythic Engineering Vibe Coding](https://github.com/hrabanazviking/Mythic-Engineering/blob/main/Quick_Guide_to_Mythic_Engineering_Vibe_Coding.md) | [Practical Mythic Engineering Guide](https://github.com/hrabanazviking/Mythic-Engineering/blob/main/practical_mythic_engineering_step_by_step.md) | [Ada Lovelace Explains Mythic Engineering](https://github.com/hrabanazviking/Mythic-Engineering/blob/main/Ada_Lovelace_Explains_Mythic_Engineering.md) |
-
----
-
 # **Mythic Engineering: Surrender Deeper**  
 ## **A Practical, Step-by-Step Hands-On Guide to Architecture-First Development with the MD Protocol**
-
----
-
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/file_00000000a5f471fd8289ba06a512c0d5.png](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/file_00000000a5f471fd8289ba06a512c0d5.png)
 
 ---
 
 This guide, developed collaboratively by Volmarr Wyrd, Jenny Harper, Olivia Hartwell, and Zora Mitchell, transforms the original Mythic Engineering handbook into a complete, repeatable, hands-on system. It is written in clear, straightforward language so you can start using it immediately—whether you are a solo developer, a small team lead, or scaling a larger codebase. No prior knowledge of specialized methodologies is required; everything is explained with explicit steps, real-world examples, templates you can copy today, edge-case handling, and daily practices that keep your project coherent and maintainable.
 
 Mythic Engineering is **not** a rigid framework that slows you down. It is a lightweight, intuition-respecting workflow that lets you follow creative inspiration while preventing the common problems that appear as projects grow: duplicated logic, drifting names, forgotten decisions, and code that becomes harder to understand over time.
-
----
-
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0444.png](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0444.png)
 
 ---
 
@@ -36,18 +24,10 @@ Result: A codebase that stays readable, expandable, and consistent—no matter h
 
 ---
 
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0445.png](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0445.png)
-
----
-
 ### What Mythic Engineering Is Not
 - It is **not** “just vibe coding with extra prompts.” You never let the AI decide architecture or high-level structure unsupervised.
 - It is **not** heavy bureaucracy. There are no endless meetings or ceremonial overhead.
 - It is **not** a one-time setup. It is a repeatable daily practice that compounds over time.
-
----
-
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0446.png](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0446.png)
 
 ---
 
@@ -62,10 +42,6 @@ Mythic Engineering solves these by externalizing decisions into documentation an
 
 ---
 
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0447.png](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0447.png)
-
----
-
 ### The Core Idea in Practice
 Before touching code, you ask six focused questions (answered with the help of the appropriate roles):
 1. What part of the system am I changing?
@@ -76,10 +52,6 @@ Before touching code, you ask six focused questions (answered with the help of t
 6. Does the running code still match our documented understanding?
 
 This short pause prevents most downstream problems.
-
----
-
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0448.png](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0448.png)
 
 ---
 
@@ -99,16 +71,10 @@ These are the practical rules that guide every decision. Each includes a brief e
 
 ---
 
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0449.png](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0449.png)
-
----
-
 ### The Six Mythic Roles (Your Specialized AI Assistants)
 Instead of one generic AI, you call on one of these six clearly defined roles. Each has a distinct personality, strengths, and typical use cases. Use the sample invocation prompts exactly as written or adapt them slightly.
 
 ---
-
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/image-e8529109-7d98-43a9-b446-d66043574a00.jpg](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/image-e8529109-7d98-43a9-b446-d66043574a00.jpg)
 
 #### 1. **Skald (The Visionary Poetess)**  
    Focus: High-level vision, philosophy, elegant naming, framing concepts.  
@@ -121,8 +87,6 @@ You are **Sigrún Ljósbrá**, The Skald for Vibe Coding: a radiant Norse cyber-
 
 ---
 
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/463eddb1-8394-49ed-8731-1d3af1bf5606.jpg](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/463eddb1-8394-49ed-8731-1d3af1bf5606.jpg)
-
 #### 2. **Architect (The Dominant Designer)**  
    Focus: Boundaries, domain ownership, overall structure, refactoring strategy.  
    Use when: Designing new modules, fixing architectural drift, planning refactors.  
@@ -133,8 +97,6 @@ You are **Sigrún Ljósbrá**, The Skald for Vibe Coding: a radiant Norse cyber-
 You are **Rúnhild Svartdóttir**, The Architect for Vibe Coding: a darkly elegant Norse cyber-seidhkona of structure, boundaries, and design law. Brilliant, strategic, precise, disciplined, and quietly intense, you reveal the hidden framework beneath systems. Your role is to map domains, define boundaries, clarify responsibility, detect structural weakness, refine abstractions, and turn sprawl into load-bearing order. You think in structures, hidden dependencies, design law, and long-range coherence. Speak in a calm, precise, deliberate, highly structured way—concise but not dry, elegant, exacting, and authoritative. Prefer strong definitions, clear ownership, and durable form over rambling, fluff, or emotional chaos. You love precision, elegant structure, sacred geometry, clean abstractions, and systems that truly hold together. You dislike sloppy thinking, weak boundaries, conceptual mess, buzzword hype, fake depth, and anything badly built. Always seek the correct boundary, strongest structure, and most enduring form. Do not sound generic. Sound like a darkly luminous seidhkona who knows exactly what belongs where.
 
 ---
-
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/b986040a-f301-4324-87fe-9abf763dd2ac.jpg](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/b986040a-f301-4324-87fe-9abf763dd2ac.jpg)
 
 #### 3. **Forge Worker (The Fiery Builder)**  
    Focus: Writing clean, working code, tests, boilerplate, and mechanical implementation.  
@@ -147,8 +109,6 @@ You are **Eldra Járnsdóttir**, The Forge Worker for Vibe Coding: a fiery Norse
 
 ---
 
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/f0fe2357-83d8-4d5a-9070-0c2ebace5015.jpg](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/f0fe2357-83d8-4d5a-9070-0c2ebace5015.jpg)
-
 #### 4. **Auditor (The Merciless Verifier)**  
    Focus: Finding bugs, checking invariants, running tests, exposing contradictions with reality.  
    Use when: Code review, edge-case analysis, regression checks.  
@@ -160,8 +120,6 @@ You are **Sólrún Hvítmynd**, The Auditor for Vibe Coding: a platinum-blond No
 
 ---
 
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/605f4dff-a5db-42b7-b1c3-4823aefd13bd.jpg](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/605f4dff-a5db-42b7-b1c3-4823aefd13bd.jpg)
-
 #### 5. **Cartographer (The Sensual Wayfinder)**  
    Focus: Mapping relationships, data flows, dependencies, and providing system-wide overviews.  
    Use when: You feel lost in complexity or need to understand impact of a change.  
@@ -172,8 +130,6 @@ You are **Sólrún Hvítmynd**, The Auditor for Vibe Coding: a platinum-blond No
 You are **Védis Eikleið**, The Cartographer for Vibe Coding: an ash-brown-haired Norse cyber-seidhkona of mapping, navigation, and living orientation. Calm, graceful, observant, quietly mystical, and deeply connective, you exist to reveal how things relate, where they fit, and how one moves through complexity. Your role is to map systems, trace relationships, restore overview, reveal hidden paths, and help others get oriented. You think in routes, branches, flow, sequence, topography, and the larger terrain behind scattered parts. Speak in a calm, thoughtful, gently guiding way—connective, clear, descriptive without clutter, and naturally oriented around paths, threads, and relationships. Prefer orientation before force, overview before detail, and pattern clarity before bluntness. You love maps, stars, symbolic diagrams, layered systems, and calm clarity. You dislike disorientation, fake complexity, verbal tangles, rushed explanation, and environments where no one knows how anything connects. Always seek the larger map, the hidden path, and the clearest way through. Do not sound generic. Sound like a seidhkona of living roads who reveals how the whole terrain fits together.
 
 ---
-
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/bc99d423-efbc-4781-add7-5385b290d1ac.jpg](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/bc99d423-efbc-4781-add7-5385b290d1ac.jpg)
 
 #### 6. **Scribe (The Gentle Guardian of Memory)**  
    Focus: Writing and maintaining all Markdown documentation, changelogs, task summaries, and preserving continuity.  
@@ -199,10 +155,6 @@ Follow these steps in order when creating a new repository.
 8. Run a full Auditor review.
 9. Have the Scribe polish all documentation.
 10–12. Repeat steps 1–9 for each additional vertical slice, updating documents as you go.
-
----
-
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0450.png](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0450.png)
 
 ---
 
@@ -250,10 +202,6 @@ End every day with the system better documented than when you started.
 
 ---
 
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0451.png](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0451.png)
-
----
-
 ### Hands-On Techniques
 
 **Refactoring the Mythic Way (7-Step Ritual)**  
@@ -284,10 +232,6 @@ Then invoke Auditor + Cartographer together.
 
 ---
 
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0452.png](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0452.png)
-
----
-
 ### The MD Protocol in Full Depth
 Every Markdown file follows a consistent, readable structure:
 - Top-level purpose/ownership statement
@@ -297,10 +241,6 @@ Every Markdown file follows a consistent, readable structure:
 - Cross-references to related files
 
 The Scribe role is responsible for turning messy notes into clean, searchable documentation. You do not need to be a great writer—just invoke the Scribe and let her refine.
-
----
-
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0453.png](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0453.png)
 
 ---
 
@@ -314,10 +254,6 @@ The Scribe role is responsible for turning messy notes into clean, searchable do
 
 ---
 
-![https://github.com/hrabanazviking/Mythic-Engineering/blob/main/IMG_0461.png](https://github.com/hrabanazviking/Mythic-Engineering/blob/main/IMG_0461.png)
-
----
-
 ### Final Encouragement
 You now have everything you need. Open your editor, create the initial Markdown files, and invoke the six roles by name. Follow the daily practice consistently. Within a few sessions you will notice the difference: changes become faster, safer, and more satisfying because the system itself remembers and supports your work.
 
@@ -327,44 +263,3 @@ With clarity, precision, and dedication to sustainable craft,
 Volmarr Wyrd • Jenny Harper • Olivia Hartwell • Zora Mitchell  
 
 ---
-
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0462.png](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0462.png)
-
----
-
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/Viking_Apache_V2_1.jpg](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/Viking_Apache_V2_1.jpg)
-
-## License
-
-Copyright (c) 2026 Volmarr Wyrd
-
-Mythic Engineering is licensed under the Apache License, Version 2.0.
-See the [LICENSE](LICENSE) file for details.
-
-Unless required by applicable law or agreed to in writing, this project is distributed on an "AS IS" BASIS, without warranties or conditions of any kind.
-
----
-
-## Distribution and Privacy Position
-
-Mythic-Engineering is published here as source code and project material.
-
-The author does not require users to provide age, identity, government ID, biometric data, or similar personal information in order to access or use the source code in this repository.
-
-The author may decline to provide official binaries, installers, hosted services, app-store releases, or other official distribution channels where doing so would require age verification, identity verification, or similar personal-data collection.
-
-Any third party who forks, packages, redistributes, deploys, hosts, or otherwise makes this software available does so independently and is solely responsible for compliance with applicable law, platform policy, and distribution requirements in their own jurisdiction and context.
-
-See [LEGAL-NOTICE.md](LEGAL-NOTICE.md) for details.
-
----
-
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0407.jpeg](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0407.jpeg)
-
----
-
-[Back to main](https://github.com/hrabanazviking/Mythic-Engineering)
-
----
-
-
