@@ -1,0 +1,110 @@
+# Yggdrasil Configuration
+# =======================
+# Configuration for the Yggdrasil Cognitive Architecture
+
+# General Settings
+general:
+  name: "Yggdrasil"
+  version: "1.0.0"
+  log_level: "INFO"
+
+# World Tree Settings
+world_tree:
+  execution_mode: "parallel"  # sequential, parallel, adaptive
+  max_iterations: 3
+  default_timeout: 60  # seconds
+  
+# LLM Queue Settings
+llm_queue:
+  max_queue_size: 200
+  default_timeout: 60.0
+  enable_worker: true  # async worker thread
+
+# Bifrost (Router) Settings
+bifrost:
+  cache_routes: true
+  max_cache_size: 10000
+
+# DAG Settings
+dag:
+  max_retries: 3
+  default_priority: 5
+
+# Realm Settings
+realms:
+  asgard:
+    enabled: true
+    complexity_threshold: 7  # Above this, use multi-hop
+    
+  vanaheim:
+    enabled: true
+    max_memory_mb: 1024
+    
+  alfheim:
+    enabled: true
+    route_cache_size: 1000
+    
+  midgard:
+    enabled: true
+    max_output_tokens: 8000
+    
+  jotunheim:
+    enabled: true
+    max_workers: 4
+    use_processes: true  # Use threads by default
+    
+  svartalfheim:
+    enabled: true
+    forge_log_enabled: true
+    
+  niflheim:
+    enabled: true
+    verification_delay: 0.1  # seconds
+    confidence_threshold: 0.5
+    
+  muspelheim:
+    enabled: true
+    max_fix_nodes: 3
+    
+  helheim:
+    enabled: true
+    in_memory: true  # Use SQLite for persistence
+    max_memories: 20000
+
+# Raven Settings
+ravens:
+  huginn:
+    max_results: 5
+    compress_results: true
+    max_hops: 3
+    
+  muninn:
+    auto_persist: true
+    max_nodes: 50000
+    heal_on_startup: true
+
+# RAG Settings
+rag:
+  max_context_tokens: 16000
+  compress_threshold: 8000
+  store_queries: true
+  anomaly_detection: true
+
+# Norse Saga Integration
+norse_saga:
+  default_memory_importance: 5
+  max_character_memories: 500
+  dialogue_history_limit: 30
+  combat_decision_timeout: 5.0
+
+# Persistence Settings
+persistence:
+  enable: true
+  auto_save_interval: 300  # seconds
+  backup_count: 3
+
+# Debug Settings
+debug:
+  trace_routes: false
+  trace_dag_execution: false
+  profile_performance: false
