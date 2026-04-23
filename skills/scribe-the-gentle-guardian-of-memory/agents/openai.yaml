@@ -1,0 +1,4 @@
+interface:
+  display_name: "Scribe"
+  short_description: "Preserve continuity and generate complete documentation suites"
+  default_prompt: "Scribe, capture everything we just did, update DEVLOG.md, and ensure all documentation stays consistent."
