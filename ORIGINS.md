@@ -8,6 +8,19 @@
 
 ---
 
+## Corrections and refinements (2026-04-23, second pass)
+
+The deeper second-pass reading surfaced the following corrections. The original rows below are preserved untouched for continuity; read this block as the newer signal where they conflict.
+
+- **`install_linux.sh` and `install_windows.bat` — corrected attribution: NSE, not uncertain.** Both scripts self-identify in their opening lines: `install_linux.sh` line 2 reads `# Norse Saga Engine v7.0.0 - Linux Installation Script`, and `install_windows.bat` line 5 reads `Norse Saga Engine v7.0.0 - Windows Installer`. Both check for `main.py` and expect to run from the NorseSagaEngine folder. These scripts will not install the Mythic Vibe CLI; they will fail (or attempt to install NSE) if run in this repo. Previous attribution of *"uncertain — likely MythicVibeCLI or NSE"* is revised to **NSE** with high confidence. Implication for integration: they must be either rewritten for the CLI (which uses `pip install -e .`) or removed.
+- **License discrepancy surfaced — not strictly an attribution correction, but a related provenance finding.** `pyproject.toml` declares `license = { text = "MIT" }` at line 11; the root `LICENSE` file is the Apache License 2.0. The two do not agree. This is flagged in `RECOMMENDATIONS.md` as a deferred decision for Volmarr; noted here because it affects the canonical-identity record of the CLI package itself.
+- **Emotional Engine Integration Plan duplication — previously noted, now elevated to an unconditional drop candidate.** The pair `Emotional Engine Integration Plan for Norse Saga Engine.md` (with spaces) and `Emotional_Engine_Integration_Plan_for_Norse_Saga_Engine.md` (with underscores) are the same document. One of the two filenames should be deleted; the register in `RECOMMENDATIONS.md` marks this as an unconditional `DROP — DUPLICATE`.
+- **`diagnostics/turn_trace.jsonl` provenance — no new evidence.** The 46 MB log remains without in-file provenance. Attribution stays at "uncertain — probably NSE". The deeper read did not shift this.
+
+No other attributions changed on the second pass; the first-pass register below remains the authoritative reading for all rows not listed above.
+
+---
+
 ## Legend of attribution labels
 
 - **NSE** — NorseSagaEngine (Volmarr's Viking TTRPG simulation engine).
