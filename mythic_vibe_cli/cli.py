@@ -75,9 +75,6 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("method", help="Print active Mythic method notes")
 
 
-    config_show = sub.add_parser("config-show", help="Show resolved mythic-vibe configuration")
-    config_show.add_argument("--path", default=".", help="Project directory used for local overrides")
-
     doctor = sub.add_parser("doctor", help="Validate Mythic project structure and status")
     doctor.add_argument("--path", default=".", help="Project directory (default: current directory)")
 
@@ -118,8 +115,9 @@ def build_parser() -> argparse.ArgumentParser:
     grimoire_list = grimoire_sub.add_parser("list", help="List registered plugins")
     grimoire_list.add_argument("--path", default=".", help="Project directory (default: current directory)")
 
-    config = sub.add_parser("config", help="Manage configuration values")
-    config_sub = config.add_subparsers(dest="config_command", required=True)
+    config = sub.add_parser("config", help="Show or manage configuration values")
+    config.add_argument("--path", default=".", help="Project directory used for local overrides")
+    config_sub = config.add_subparsers(dest="config_command", required=False)
     config_set = config_sub.add_parser("set", help="Set a dotted configuration value")
     config_set.add_argument("key", help="Dotted key, e.g. core.default_model")
     config_set.add_argument("value", help="String value")
@@ -483,8 +481,6 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_sync()
     if args.command == "method":
         return cmd_method()
-    if args.command == "config-show":
-        return cmd_config(args)
     if args.command == "doctor":
         return cmd_doctor(args)
     if args.command == "evoke":
@@ -502,7 +498,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "grimoire":
         return cmd_grimoire(args)
     if args.command == "config":
-        return cmd_config_set(args)
+        if args.config_command == "set":
+            return cmd_config_set(args)
+        return cmd_config(args)
     if args.command == "db":
         return cmd_db_migrate(args)
     if args.command == "plunder":
