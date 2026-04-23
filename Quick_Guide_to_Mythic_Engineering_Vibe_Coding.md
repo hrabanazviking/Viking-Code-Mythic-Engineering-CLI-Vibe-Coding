@@ -1,14 +1,4 @@
-| [Mythic Engineering](https://github.com/hrabanazviking/Mythic-Engineering/blob/main/README.md) | [The Mythic Engineer's Codex: Vibe Coding 101](https://github.com/hrabanazviking/Mythic-Engineering/blob/main/Mythic_Engineers_Codex.md) | [Quick Guide to Mythic Engineering Vibe Coding](https://github.com/hrabanazviking/Mythic-Engineering/blob/main/Quick_Guide_to_Mythic_Engineering_Vibe_Coding.md) | [Practical Mythic Engineering Guide](https://github.com/hrabanazviking/Mythic-Engineering/blob/main/practical_mythic_engineering_step_by_step.md) | [Ada Lovelace Explains Mythic Engineering](https://github.com/hrabanazviking/Mythic-Engineering/blob/main/Ada_Lovelace_Explains_Mythic_Engineering.md) |
-
----
-
 # Quick Guide to Mythic Engineering Vibe Coding
-
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/ndfnfnd8348383.png](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/ndfnfnd8348383.png)
-
----
-
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/Mystic_Engineerrs_Codex_Vibe_Coding_101-3.png](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/Mystic_Engineerrs_Codex_Vibe_Coding_101-3.png)
 
 ---
 
@@ -23,10 +13,6 @@ The **core of this methodology** is the partnership between the **Mythic Enginee
 * **Living Systems:** Software should be cultivated like a garden, requiring pruning (refactoring) and healing (debugging) rather than mere mechanical part-swapping.
 * **Absolute Context:** Success in Vibe Coding depends on "Sacred Texts" (documentation) that serve as an external memory for both the human and the AI.
 * **Architectural Discipline:** To prevent "Balls of Mud," engineers must enforce "Sacred Boundaries" (Separation of Concerns) and "Location Agnosticism."
-
----
-
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/Mystic_Engineerrs_Codex_Vibe_Coding_101.png](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/Mystic_Engineerrs_Codex_Vibe_Coding_101.png)
 
 ---
 
@@ -49,10 +35,6 @@ There is a historical chasm between the **Realm of Human Intention** (stories, f
 
 ---
 
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/5pillars_of_the_living_system.png](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/5pillars_of_the_living_system.png)
-
----
-
 ## II. The Five Pillars of the Living System
 
 ### Pillar One: Design Intent (The Soul's Blueprint)
@@ -61,10 +43,6 @@ The **creation begins** with the Vision Scroll (`SYSTEM_VISION.md`), a plain-tex
 * **The Primary Rite:** The single most important action a user takes (the core interaction).
 * **Unbreakable Vows:** Non-negotiable principles (e.g., "This creation shall never share private thoughts").
 * **True Names:** Using long, descriptive, story-like names (e.g., `MorningGreetingRitual` instead of `dataStuff`) to give the AI power over the hidden architecture.
-
----
-
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/c832097b-51ba-4b90-a4b7-da0b95123311.jpg](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/c832097b-51ba-4b90-a4b7-da0b95123311.jpg)
 
 ---
 
@@ -102,10 +80,6 @@ The **creation begins** with the Vision Scroll (`SYSTEM_VISION.md`), a plain-tex
 
 ---
 
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/5Great_Trials_of_Vibe_Coding.png](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/5Great_Trials_of_Vibe_Coding.png)
-
----
-
 ## III. The Five Great Trials of Vibe Coding
 
 **Common pitfalls** that lead to project collapse:
@@ -117,10 +91,6 @@ The **creation begins** with the Vision Scroll (`SYSTEM_VISION.md`), a plain-tex
 
 ---
 
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/Mythic_Engineers_Toolkit.png](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/Mythic_Engineers_Toolkit.png)
-
----
-
 ## IV. The Mythic Engineer's Toolkit
 
 A **Mythic Engineer** requires a minimal but specific set of "artifacts":
@@ -129,10 +99,6 @@ A **Mythic Engineer** requires a minimal but specific set of "artifacts":
 * **The Package Scroll:** Inventory of external "relics" (e.g., `package.json` or `requirements.txt`).
 * **The Ignore Scroll:** A list of things to keep secret or local (e.g., `.gitignore`).
 * **The Environment Scroll:** A hidden scroll for "local truths" and secrets (e.g., `.env`).
-
----
-
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/Mystic_Engineerrs_Codex_Vibe_Coding_101-2.png](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/Mystic_Engineerrs_Codex_Vibe_Coding_101-2.png)
 
 ---
 
@@ -153,61 +119,14 @@ Brief **Glossary** to translate technical jargon into "Mythic" terminology to ma
 
 ---
 
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/Image_fmir17fmir17fmir.png](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/Image_fmir17fmir17fmir.png)
-
----
-
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/Master_Architect.png](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/Master_Architect.png)
-
----
-
 ## VI. Conclusion: The Master Architect’s Goal
 
 The **ultimate goal of Mythic Engineering** is not speed, but endurance. By treating AI not as a tool for instant gratification but as a master craftsman to be guided by philosophy and architecture, the Mythic Engineer builds "living systems" that are coherent, expandable, and resilient. The methodology emphasizes that while the "hidden laws" (code) are written by the machine, the "soul" of the system remains entirely the responsibility of the human architect.
 
 ---
 
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/AI_World_Simulation_101.png](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/AI_World_Simulation_101.png)
-
----
-
 ## VII. Extra Credit: AI World Simulation
 
 AI world simulation is like an incredibly advanced digital dollhouse where computer programs act as both the characters and the environment. Instead of following a rigid, pre-written script, these AI characters can learn, make their own decisions, and interact with each other naturally over time. This allows creators to watch unique, unpredictable stories unfold on their own or safely test how different scenarios might play out in a virtual space.
-
----
-
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/Viking_Apache_V2_1.jpg](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/Viking_Apache_V2_1.jpg)
-
-## License
-
-Copyright (c) 2026 Volmarr Wyrd
-
-Mythic Engineering is licensed under the Apache License, Version 2.0.
-See the [LICENSE](LICENSE) file for details.
-
-Unless required by applicable law or agreed to in writing, this project is distributed on an "AS IS" BASIS, without warranties or conditions of any kind.
-
----
-
-## Distribution and Privacy Position
-
-Mythic-Engineering is published here as source code and project material.
-
-The author does not require users to provide age, identity, government ID, biometric data, or similar personal information in order to access or use the source code in this repository.
-
-The author may decline to provide official binaries, installers, hosted services, app-store releases, or other official distribution channels where doing so would require age verification, identity verification, or similar personal-data collection.
-
-Any third party who forks, packages, redistributes, deploys, hosts, or otherwise makes this software available does so independently and is solely responsible for compliance with applicable law, platform policy, and distribution requirements in their own jurisdiction and context.
-
-See [LEGAL-NOTICE.md](LEGAL-NOTICE.md) for details.
-
----
-
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0407.jpeg](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0407.jpeg)
-
----
-
-[Back to main](https://github.com/hrabanazviking/Mythic-Engineering)
 
 ---
