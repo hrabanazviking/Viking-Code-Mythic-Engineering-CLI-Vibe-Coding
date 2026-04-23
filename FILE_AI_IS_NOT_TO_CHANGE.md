@@ -7,3 +7,4 @@
 - Any picture files (unless Volmarr the Human directly tells you to change certain ones)
 - LICENSE
 - NOTICE
+- RULES.AI.md
