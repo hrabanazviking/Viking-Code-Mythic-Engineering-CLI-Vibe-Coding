@@ -34,6 +34,35 @@ class MythicCliRitualTests(unittest.TestCase):
             self.assertEqual(code, 0)
             self.assertTrue((Path(tmp) / "mythic" / "weave.db").exists())
 
+    def test_config_show_and_config_set_do_not_conflict(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            show_code = main(["config", "--path", tmp])
+            self.assertEqual(show_code, 0)
+
+            set_code = main(["config", "set", "core.default_model", "gpt-5", "--path", tmp])
+            self.assertEqual(set_code, 0)
+
+            cfg = Path(tmp) / "mythic" / "config.toml"
+            self.assertTrue(cfg.exists())
+            self.assertIn('core.default_model = "gpt-5"', cfg.read_text(encoding="utf-8"))
+
+    def test_plunder_requires_token_env(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            code = main(
+                [
+                    "plunder",
+                    "--repo",
+                    "example/does-not-matter",
+                    "--source",
+                    "README.md",
+                    "--dest",
+                    str(Path(tmp) / "README.md"),
+                    "--token-env",
+                    "MYTHIC_TEST_TOKEN_MISSING",
+                ]
+            )
+            self.assertEqual(code, 2)
+
 
 if __name__ == "__main__":
     unittest.main()
