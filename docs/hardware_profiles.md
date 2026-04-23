@@ -1,170 +1,110 @@
 # Hardware Profiles
 
-ThoughtForge auto-detects your hardware and selects the appropriate profile.
-You can override manually with `--profile` or `-profile`.
+This guide maps typical machine classes to practical operating profiles for local AI-assisted workflows in this repository ecosystem.
+
+> Use this as planning guidance. Actual performance depends on model choice, quantization, context length, and concurrent workload.
 
 ---
 
-## Profile Overview
+## 1) Profile quick matrix
 
-| Profile | RAM | VRAM | Model Size | Quantization | Context | Draft Count |
-|---|---|---|---|---|---|---|
-| `phone_low` | 2 GB | — | 1.1B (TinyLlama) | Q2_K | 512 tokens | 2 |
-| `pi_zero` | 512 MB | — | 1B subset | Q2_K ultra | 256 tokens | 1 |
-| `pi_5` | 4 GB | — | 1B–3B | Q4_K_M | 1024 tokens | 2 |
-| `desktop_cpu` | 8 GB+ | — | 3B–7B | Q4_K_M / Q8 | 2048 tokens | 3 |
-| `desktop_gpu` | — | 8–16 GB | 7B–13B | Q8 / fp16 | 4096 tokens | 3 |
-| `server_gpu` | — | 24 GB+ | 30B–70B | fp16 / bf16 | 8192 tokens | 4 |
-
----
-
-## Profile Details
-
-### `phone_low` — Smartphones
-
-**Target:** Android (Termux), iOS (MLC LLM), low-power ARM devices
-
-```json
-{
-  "hardware": { "ram_gb": 2, "cpu_arch": ["arm64", "armv8"] },
-  "model": { "max_params_b": 1.1, "quantization": "q2_k", "token_budget_per_turn": 180 },
-  "deployment": { "platforms": ["android", "ios"], "runtime": ["termux", "mlc-llm"], "onnx_export": true }
-}
-```
-
-**Recommended models:**
-- `TinyLlama-1.1B-Chat-v1.0.Q2_K.gguf` (~500 MB)
-- `Granite-1B-Instruct.Q3_K_S.gguf` (~600 MB)
-
-**Install:**
-```bash
-./scripts/install_termux.sh --profile phone_low --onnx
-```
+| Profile | RAM | VRAM | Typical model band | Suggested context budget | Suggested draft count | Best use case |
+|---|---:|---:|---|---:|---:|---|
+| `phone_low` | ~2 GB | — | 1B class (aggressively quantized) | 256–512 | 1–2 | mobile experimentation, lightweight prompts |
+| `pi_zero` | ~0.5 GB | — | 1B subset / knowledge-only | 128–256 | 1 | ultra-constrained edge and kiosk-style automation |
+| `pi_5` | ~4 GB | — | 1B–3B | 512–1024 | 1–2 | low-power local assistant workflows |
+| `desktop_cpu` | 8+ GB | — | 3B–7B | 1024–2048 | 2–3 | general daily development on CPU |
+| `desktop_gpu` | 16+ GB RAM | 8–16 GB | 7B–13B | 2048–4096 | 2–3 | high-throughput local development |
+| `server_gpu` | 64+ GB RAM | 24+ GB | 30B+ or multi-model serving | 4096–8192 | 3–4 | team/shared inference and deep context workloads |
 
 ---
 
-### `pi_zero` — Raspberry Pi Zero 2W
+## 2) How to choose a profile
 
-**Target:** 512 MB RAM single-board computers. Ultra-constrained.
+Prioritize in this order:
 
-```json
-{
-  "hardware": { "ram_gb": 0.5, "cpu_arch": ["armv7l", "arm64"] },
-  "model": { "max_params_b": 1.1, "quantization": "q2_k", "token_budget_per_turn": 120 },
-  "deployment": { "platforms": ["linux-arm"], "onnx_export": true, "knowledge_subset": true }
-}
-```
-
-**Notes:**
-- Use `--subset` flag during Pi install to build reduced knowledge DB (50K entities)
-- Knowledge-only mode recommended — inference is very slow on Pi Zero
-- Increase swap to 1 GB before compiling llama-cpp-python
+1. **Stability first:** choose the profile that avoids swapping/OOM under expected load.
+2. **Latency target second:** reduce model size/context before increasing hardware complexity.
+3. **Quality tuning third:** increase draft count/context gradually after stability is proven.
 
 ---
 
-### `pi_5` — Raspberry Pi 4 / 5
+## 3) Practical recommendations by profile
 
-**Target:** 4 GB ARM board, optional Vulkan VideoCore VII (Pi 5)
+### `phone_low`
 
-```json
-{
-  "hardware": { "ram_gb": 4, "cpu_arch": ["arm64"] },
-  "model": { "max_params_b": 3, "quantization": "q4_k_m", "token_budget_per_turn": 200 },
-  "deployment": { "platforms": ["linux-arm"], "runtime": ["docker", "native"] }
-}
-```
+- Use short prompts and constrained output lengths.
+- Prefer quantized 1B-class models.
+- Keep background apps minimal to reduce OS memory pressure.
 
-**Recommended models:**
-- `Phi-3-mini-128k-instruct.Q4_K_M.gguf` (~2.2 GB)
-- `Gemma-2B-it.Q4_K_M.gguf` (~1.5 GB)
+### `pi_zero`
 
-**Install with Vulkan (Pi 5):**
-```bash
-./scripts/install_pi.sh --profile pi_5 --vulkan
-```
+- Treat this as knowledge-only or narrowly scoped inference.
+- Build reduced datasets/subsets where applicable.
+- Avoid large context windows and multi-draft generation.
 
----
+### `pi_5`
 
-### `desktop_cpu` — Desktop / Laptop (CPU)
+- Use compact models and moderate context.
+- Limit concurrent services while running local inference.
+- Consider lightweight batching only if thermals stay controlled.
 
-**Target:** 8–32 GB RAM, x86_64 or ARM64, no discrete GPU required.
+### `desktop_cpu`
 
-```json
-{
-  "hardware": { "ram_gb": 8, "inference_backend": "cpu" },
-  "model": { "max_params_b": 7, "quantization": "q4_k_m", "token_budget_per_turn": 220 }
-}
-```
+- Best balance for many contributors.
+- Prefer mid-size quantized models and 2–3 draft loops.
+- If latency is high, reduce context before changing profile.
 
-**Recommended models:**
-- `Mistral-7B-Instruct-v0.3.Q4_K_M.gguf` (~4.1 GB)
-- `LLaMA-3-8B-Instruct.Q4_K_M.gguf` (~4.6 GB)
-- `Phi-3-mini-128k-instruct.Q8_0.gguf` (~4.0 GB)
+### `desktop_gpu`
 
----
+- Strong default for advanced local workflows.
+- Monitor VRAM fragmentation when switching models repeatedly.
+- Keep fallback CPU profile available for reliability.
 
-### `desktop_gpu` — Desktop / Workstation GPU
+### `server_gpu`
 
-**Target:** NVIDIA (CUDA), AMD (ROCm), Intel Arc (Vulkan). 8–16 GB VRAM.
-
-```json
-{
-  "hardware": { "vram_gb": 12, "inference_backend": "cuda" },
-  "model": { "max_params_b": 13, "quantization": "q8_0", "token_budget_per_turn": 240 }
-}
-```
-
-**Recommended models:**
-- `LLaMA-3-8B-Instruct.Q8_0.gguf` (8 GB VRAM)
-- `Mistral-7B-Instruct-v0.3.fp16.gguf` (14 GB VRAM — requires 16 GB card)
-
-**GPU backend auto-detection priority:** CUDA → ROCm → Vulkan → Metal → CPU
+- Use for heavy-context or team-serving scenarios.
+- Enforce resource quotas and concurrency limits.
+- Document model routing and failover behavior.
 
 ---
 
-### `server_gpu` — Server / Cloud GPU
+## 4) Override strategy
 
-**Target:** 24 GB+ VRAM. A100, H100, RTX 3090+, RTX 4090.
+When profile auto-selection is available, it should be considered a baseline. Override only when you have measured reason to do so.
 
-```json
-{
-  "hardware": { "vram_gb": 24, "inference_backend": "cuda" },
-  "model": { "max_params_b": 70, "quantization": "fp16", "token_budget_per_turn": 250 },
-  "deployment": { "multi_gpu": true }
-}
-```
+Common override triggers:
 
-**Recommended models:**
-- `LLaMA-3-70B-Instruct.fp16` (requires 140 GB VRAM across 2× A100 80GB)
-- `Mixtral-8x7B-Instruct.Q4_K_M.gguf` (24 GB single GPU)
-- `LLaMA-3-70B-Instruct.Q4_K_M.gguf` (40 GB — 2× 24GB)
+- predictable OOM events,
+- unacceptable latency for your loop,
+- specific model constraints requiring alternate quantization.
 
 ---
 
-## Overriding the Profile
+## 5) Custom profile governance
 
-```bash
-# CLI
-python run_thoughtforge.py --profile pi_5
+If you add custom profiles in code/config:
 
-# Python API
-from thoughtforge.cognition.core import ThoughtForgeCore
-core = ThoughtForgeCore(model_path=None)  # auto-detect
-```
+- Include explicit memory and context ceilings.
+- Document expected model band and fallback behavior.
+- Add a short benchmark note (latency + stability observation).
+- Keep naming stable and human-readable.
 
-## Manual Profile Tuning
+---
 
-Profiles are JSON files in `hardware_profiles/`. You can add a custom profile:
+## 6) Operational warning signs
 
-```json
-{
-  "profile_id": "my_workstation",
-  "display_name": "My Workstation",
-  "hardware": { "ram_gb": 32, "vram_gb": 24, "inference_backend": "cuda" },
-  "model": { "max_params_b": 13, "quantization": "q8_0", "token_budget_per_turn": 240 },
-  "memory": { "episodic_store_cap_soft": 2048, "episodic_store_cap_hard": 4096 },
-  "retrieval": { "sql_max_results": 15, "vector_top_k": 10 },
-  "generation": { "max_response_tokens": 500, "temperature": 0.7, "max_refinement_passes": 2 },
-  "deployment": { "platforms": ["linux", "windows"], "runtime": ["native"], "onnx_export": false }
-}
-```
+Re-tune profile selection when you observe:
+
+- repeated OOM/swap spikes,
+- severe p95 latency regressions,
+- unstable generation quality from over-aggressive quantization,
+- thermal throttling on edge devices.
+
+---
+
+## 7) Related docs
+
+- [Quickstart](quickstart.md)
+- [API Reference](api.md)
+- [Architecture](ARCHITECTURE.md)

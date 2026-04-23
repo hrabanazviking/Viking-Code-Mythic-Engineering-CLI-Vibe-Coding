@@ -1,180 +1,94 @@
-# Quick Start
+# Quickstart
 
-Get ThoughtForge running in under 5 minutes.
+Get Mythic Vibe CLI running quickly and complete your first structured workflow loop.
 
 ---
 
-## Prerequisites
+## 1) Prerequisites
 
-- Python 3.10, 3.11, or 3.12
+- Python 3.10+
 - Git
-- 500 MB free disk space (for reference knowledge only)
-- A GGUF model file *(optional — knowledge-only mode works without one)*
+- A shell environment (bash, zsh, PowerShell, or equivalent)
+
+Optional but useful:
+- A virtual environment tool (`venv`, `uv`, or `conda`)
+- An editor with Python linting and formatting support
 
 ---
 
-## Installation
+## 2) Clone and set up
 
-=== "Linux"
+```bash
+git clone <your-fork-or-repo-url>
+cd Viking-Code-Mythic-Engineering-CLI-Vibe-Coding
+python -m venv .venv
+source .venv/bin/activate  # Windows PowerShell: .\.venv\Scripts\Activate.ps1
+pip install -e .
+```
 
-    ```bash
-    git clone https://github.com/hrabanazviking/MindSpark_ThoughtForge
-    cd MindSpark_ThoughtForge
-    chmod +x scripts/install_linux.sh
-    ./scripts/install_linux.sh --profile desktop_cpu
-    source .venv/bin/activate
-    ```
-
-=== "macOS"
-
-    ```bash
-    git clone https://github.com/hrabanazviking/MindSpark_ThoughtForge
-    cd MindSpark_ThoughtForge
-    chmod +x scripts/install_mac.sh
-    ./scripts/install_mac.sh --profile desktop_cpu
-    # Apple Silicon: add --metal for Metal GPU acceleration
-    source .venv/bin/activate
-    ```
-
-=== "Windows"
-
-    ```powershell
-    git clone https://github.com/hrabanazviking/MindSpark_ThoughtForge
-    cd MindSpark_ThoughtForge
-    Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
-    .\scripts\install_windows.ps1 -Profile desktop_cpu
-    .\.venv\Scripts\Activate.ps1
-    ```
-
-=== "Termux (Android)"
-
-    ```bash
-    git clone https://github.com/hrabanazviking/MindSpark_ThoughtForge
-    cd MindSpark_ThoughtForge
-    chmod +x scripts/install_termux.sh
-    ./scripts/install_termux.sh --profile phone_low
-    source .venv/bin/activate
-    ```
-
-=== "Raspberry Pi"
-
-    ```bash
-    git clone https://github.com/hrabanazviking/MindSpark_ThoughtForge
-    cd MindSpark_ThoughtForge
-    chmod +x scripts/install_pi.sh
-    ./scripts/install_pi.sh  # auto-detects Pi Zero vs Pi 5
-    source .venv/bin/activate
-    ```
-
-=== "Docker"
-
-    ```bash
-    git clone https://github.com/hrabanazviking/MindSpark_ThoughtForge
-    cd MindSpark_ThoughtForge
-    docker compose up thoughtforge-desktop
-    ```
+If editable install is not configured in your environment, install dependencies from the project’s packaging files and run the module directly.
 
 ---
 
-## Build the Knowledge Base
+## 3) Verify the CLI is available
 
-ThoughtForge uses an offline SQLite knowledge database. Start with the built-in
-reference data (fast — seconds to minutes):
-
-```bash
-python forge_memory.py reference
-```
-
-For full knowledge (requires Wikidata dump — 100 GB+, many hours):
+Run one of the following (depending on your setup):
 
 ```bash
-python forge_memory.py all
+mythic --help
+# or
+python -m mythic_vibe_cli.cli --help
 ```
 
-Check status:
-
-```bash
-python forge_memory.py status
-```
+You should see command help text and available workflow operations.
 
 ---
 
-## Run
+## 4) Initialize a working loop
 
-### Interactive REPL
+Use the CLI to initialize/adopt a project and enter the method loop:
 
-```bash
-python run_thoughtforge.py
-```
+`intent -> constraints -> architecture -> plan -> build -> verify -> reflect`
 
-```
-MindSpark: ThoughtForge
-The forge is ready. Type 'exit' or 'quit' to leave.
-
-Forge> What is Yggdrasil?
-
-════════════════════════════════════════════════════════════════════════
-Yggdrasil is the immense sacred tree in Norse cosmology, connecting
-the nine worlds: Asgard, Midgard, Jotunheim, and six others...
-════════════════════════════════════════════════════════════════════════
-Citations   : Q42240
-Confidence  : 0.712  [good]
-Enforcement : PASS
-Tokens      : 87
-```
-
-### Single Query
-
-```bash
-python run_thoughtforge.py "What are the nine worlds?"
-```
-
-### With a GGUF Model
-
-```bash
-python run_thoughtforge.py --model /models/phi-3-mini-q4.gguf --profile desktop_cpu
-```
-
-### Debug Logging
-
-```bash
-python run_thoughtforge.py --debug "Who is Loki?"
-```
+At each phase, capture outputs in project artifacts (for example, docs and task notes) so the next session starts with context.
 
 ---
 
-## Knowledge-Only Mode
+## 5) Daily operating pattern (recommended)
 
-ThoughtForge works without a GGUF model — it assembles a knowledge summary
-from retrieved records. Ideal for Pi Zero, low-RAM devices, or testing:
+1. **Check current status** (what phase, what’s blocked, what’s next).
+2. **Run the next phase command**.
+3. **Record decisions and rationale** in artifacts.
+4. **Verify outcomes** with tests/checks.
+5. **Log reflection** so future sessions resume cleanly.
 
-```bash
-python run_thoughtforge.py  # no --model flag = knowledge-only mode
-```
-
----
-
-## Building an Edge Subset
-
-For Pi Zero or phone (< 1 GB knowledge DB):
-
-```bash
-python - <<'EOF'
-from pathlib import Path
-from thoughtforge.etl.subset import EdgeSubsetBuilder
-
-builder = EdgeSubsetBuilder()
-result = builder.build(
-    source_db=Path("data/thoughtforge.db"),
-    profile_id="pi_zero",        # 50K entities
-)
-print(f"Subset: {result.entities_copied} entities → {result.output_path}")
-EOF
-```
+This operating pattern is the fastest way to avoid drift and repeated rework.
 
 ---
 
-## Next Steps
+## 6) Troubleshooting
 
-- See [Hardware Profiles](hardware_profiles.md) for profile tuning
-- See [API Reference](api.md) for `ThoughtForgeCore` integration
+### CLI not found
+
+- Confirm virtual environment is active.
+- Re-run `pip install -e .`.
+- Fall back to `python -m mythic_vibe_cli.cli --help`.
+
+### Phase confusion or state mismatch
+
+- Inspect generated artifacts in `docs/`, `tasks/`, and `mythic/`.
+- Re-run the status/check command before making edits.
+
+### Import/boundary errors
+
+- Review [Architecture](ARCHITECTURE.md) and [Domain Map](DOMAIN_MAP.md).
+- Ensure runtime code changes stay in `mythic_vibe_cli/` unless an explicit architecture decision says otherwise.
+
+---
+
+## 7) Next reads
+
+- [System Vision](SYSTEM_VISION.md)
+- [Architecture](ARCHITECTURE.md)
+- [Domain Map](DOMAIN_MAP.md)
+- [API Reference](api.md)

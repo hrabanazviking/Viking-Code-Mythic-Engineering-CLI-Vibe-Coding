@@ -1,111 +1,122 @@
-# Architecture (Architect Invocation)
+# Architecture
 
 **Status:** Active architecture record  
 **Last updated:** 2026-04-23  
 **Owner:** Architecture / Docs
 
-This document is the `docs/` companion to the root-level `ARCHITECTURE.md`.  
-Use this version when you need a fast orientation and clear implementation boundaries.
+This document defines the active runtime architecture for this monorepo and the rules that prevent accidental coupling.
 
 ---
 
-## 1) System posture
+## 1) Repository posture
 
-The repository currently behaves as a **multi-project monorepo** with one primary executable product:
+Treat this repository as a **multi-project monorepo** with one primary live product path:
 
-1. **Mythic Vibe CLI** (`mythic_vibe_cli/`) — live operational path.
-2. **Norse Saga Engine runtime modules** (`ai/`, `core/`, `systems/`, `sessions/`, `yggdrasil/`) — present, mostly dormant/incomplete wiring.
-3. **Embedded upstream/vendor trees** (`ollama/`, `whisper/`, `WYRD-.../`, and research/spec artifacts) — largely self-contained.
+1. **Mythic Vibe CLI** (`mythic_vibe_cli/`) — active runtime and operational entrypoint.
+2. **Legacy/runtime islands** (`ai/`, `core/`, `systems/`, `sessions/`, `yggdrasil/`) — mostly dormant/fragmented.
+3. **Vendor/research islands** (`ollama/`, `whisper/`, `WYRD-.../`, specs/research corpora) — reference only unless explicitly integrated.
 
-Architecturally, treat these as **separate islands** until explicit integration contracts are introduced.
+Default assumption: islands are independent unless a documented adapter contract exists.
 
 ---
 
-## 2) Primary live architecture: Mythic Vibe CLI
+## 2) Active system flow (Mythic Vibe CLI)
 
 ```text
 User
   -> CLI Router (mythic_vibe_cli/cli.py)
-    -> Workflow Engine (workflow.py)
-    -> Codex Packet Builder (codex_bridge.py)
+    -> Workflow Orchestrator (workflow.py)
+    -> Prompt/Bridge Composer (codex_bridge.py)
     -> Config Resolution (config.py)
     -> Method Sync + Cache (mythic_data.py)
-      -> Filesystem state (docs/, tasks/, mythic/, DEVLOG.md, weave.db)
-      -> Optional GitHub method sync
+      -> Project artifacts (docs/, tasks/, mythic/, DEVLOG.md, weave.db)
+      -> Optional external sync providers
 ```
 
 ### Layer responsibilities
 
-- **Interface layer (`cli.py`)**
-  - Parses commands and options.
-  - Dispatches command handlers.
-- **Orchestration layer (`workflow.py`)**
-  - Maintains phased flow (intent → constraints → architecture → plan → build → verify → reflect).
-  - Manages operational project artifacts.
-- **Prompt/bridge layer (`codex_bridge.py`)**
-  - Builds prompt packets and context excerpts.
-  - Applies budget and compaction behavior.
-- **Configuration layer (`config.py`)**
-  - Resolves config precedence from local/user/env scopes.
-- **Data/method layer (`mythic_data.py`)**
-  - Pulls and caches method docs.
+- **`cli.py` (interface layer)**
+  - Defines commands/options and dispatches handlers.
+  - Keeps user-facing behavior coherent and predictable.
+
+- **`workflow.py` (orchestration layer)**
+  - Runs phase lifecycle and state transitions.
+  - Writes/updates durable artifacts.
+
+- **`codex_bridge.py` (prompt/packet layer)**
+  - Builds high-signal context packets.
+  - Applies compaction and budget constraints.
+
+- **`config.py` (configuration layer)**
+  - Resolves env/file/default precedence.
+  - Stays low-side-effect and stable.
+
+- **`mythic_data.py` (data/sync layer)**
+  - Handles method source sync/import/caching.
+  - Avoids owning orchestration logic.
 
 ---
 
-## 3) Architectural boundaries
+## 3) Dependency direction law
 
-### Hard boundaries (current)
+To keep architecture legible, dependency direction should remain one-way:
 
-- `mythic_vibe_cli/` should remain independently executable.
-- Root runtime trees (`core/`, `systems/`, `yggdrasil/`, etc.) are not assumed load-bearing for CLI execution.
-- Vendor/upstream folders should not be imported accidentally into CLI runtime paths.
+1. `cli.py` -> `workflow`, `codex_bridge`, `config`, `mythic_data`
+2. `workflow.py` -> `config` + local artifact IO
+3. `codex_bridge.py` -> `config` + prepared workflow context
+4. `config.py` -> minimal dependencies
+5. `mythic_data.py` -> sync/cache concerns only
 
-### Soft boundaries (planned)
-
-- Integration should occur via explicit adapters/interfaces rather than direct deep imports.
-- Cross-island reuse should be documented first (contract + data-flow + dependency impact), then wired.
-
----
-
-## 4) Dependency direction rules
-
-For maintainability, enforce one-way architectural flow in the live path:
-
-1. `cli.py` can depend on `workflow`, `codex_bridge`, `config`, `mythic_data`.
-2. `workflow.py` can depend on `config` and file-system state.
-3. `codex_bridge.py` can depend on `config` and prepared workflow artifacts.
-4. `config.py` should remain low-level and side-effect light.
-5. `mythic_data.py` can touch network/cache concerns but should not absorb CLI orchestration logic.
-
-If a change requires reversing this direction, treat it as an architecture decision and record it before merging.
+Any reversal requires an architecture decision record (ADR-style note in docs) before merge.
 
 ---
 
-## 5) Operational risks to monitor
+## 4) Boundary rules
 
-- **Monorepo ambiguity:** contributors may assume dormant modules are active runtime dependencies.
-- **Import drift:** accidental imports from unrelated islands can silently increase coupling.
-- **Docs drift:** root `ARCHITECTURE.md`, `DOMAIN_MAP.md`, and this file can diverge without regular refresh.
+### Hard boundaries
+
+- `mythic_vibe_cli/` remains independently executable.
+- Dormant islands are not implicit runtime dependencies.
+- Vendor mirrors are not direct product import targets.
+
+### Soft boundaries
+
+- Cross-island reuse must enter via explicit adapters/interfaces.
+- Document contracts and data flow before adding wiring.
 
 ---
 
-## 6) Architecture guardrails
+## 5) Architecture risks
 
-- Keep primary executable behavior centered in `mythic_vibe_cli/`.
-- Prefer composition/adapters over direct cross-tree imports.
-- Update architecture docs when introducing:
-  - a new runtime entrypoint,
-  - a new persistence contract,
-  - a new external dependency path,
-  - or any cross-island integration.
+- **Monorepo ambiguity:** contributors may edit the wrong island for active product behavior.
+- **Import drift:** accidental imports increase coupling and maintenance cost.
+- **Docs drift:** architecture/governance docs can diverge from runtime reality.
+
+Mitigation: require boundary verification commands in every meaningful PR.
+
+---
+
+## 6) Change protocol
+
+When a change introduces any of the following, update this file in the same PR:
+
+- new runtime entrypoint,
+- new persistence/state contract,
+- new external dependency path,
+- new cross-island integration,
+- significant command lifecycle change.
+
+Also update related records:
+
+- `docs/DOMAIN_MAP.md`
+- root `ARCHITECTURE.md`
+- `DATA_FLOW.md` (if data movement changed)
 
 ---
 
 ## 7) Related records
 
 - Root deep-dive: `ARCHITECTURE.md`
-- Domain boundaries: `docs/DOMAIN_MAP.md`
-- Data movement: `DATA_FLOW.md`
-- Concrete dependencies: `DEPENDENCIES.md`
-- Required-code matrix: `CODE_REQUIREMENTS_MATRIX.md`
-
+- Ownership boundaries: `docs/DOMAIN_MAP.md`
+- System direction: `docs/SYSTEM_VISION.md`
+- Operational flow details: `DATA_FLOW.md`
