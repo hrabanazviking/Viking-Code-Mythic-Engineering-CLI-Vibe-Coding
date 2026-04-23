@@ -61,13 +61,41 @@ Both agents work the same repo in parallel. They write to **different files** (n
 ## Progress tracker
 
 - [x] TASK file written and committed (Runa, 2026-04-23)
-- [ ] Cartographer launched
-- [ ] Scribe launched
-- [ ] Cartographer's maps written: MAP.md, ARCHITECTURE.md, DEPENDENCIES.md, DATA_FLOW.md
-- [ ] Scribe's records written: INVENTORY.md, DEVLOG.md, ORIGINS.md
-- [ ] Synthesis review (Runa)
-- [ ] Results committed and pushed to development
+- [x] Cartographer launched (2026-04-23)
+- [x] Scribe launched (2026-04-23)
+- [x] Cartographer's maps written: MAP.md (14KB), ARCHITECTURE.md (12KB), DEPENDENCIES.md (12KB), DATA_FLOW.md (13KB) — 2026-04-23
+- [x] Scribe's records written: INVENTORY.md (27KB), DEVLOG.md (5KB), ORIGINS.md (17KB) — 2026-04-23
+- [x] First-pass synthesis (Runa, 2026-04-23)
+- [x] First-pass results committed and pushed to development (2026-04-23)
 - [ ] Memory updated with findings
+- [ ] Second-pass deeper analysis (pending Volmarr's direction)
+
+## Key findings from first pass (2026-04-23)
+
+**Product vs imports — only `mythic_vibe_cli/` is the product.** Everything else is imported material or upstream vendoring. `pyproject.toml` only packages `mythic_vibe_cli`.
+
+**Three upstream OSS vendorings** (untouched):
+- `ollama/` — 681 Go files, 185 C++, 158 CUDA, 143 shaders, 113 C headers
+- `whisper/` — OpenAI Whisper
+- `chatterbox/` — Resemble AI Chatterbox TTS
+
+**NSE-origin imports** (live config v8.0.0 present):
+- `ai/`, `core/`, `systems/` (27 files), `sessions/`, `yggdrasil/` (Nine-Worlds + Huginn/Muninn), `diagnostics/`, `scripts/`
+- `config.yaml` (35KB) self-identifies as *"Norse Saga Engine Configuration v8.0.0"*
+- `imports/norsesaga/systems/` is a ⟂ partial duplicate of files already in `core/`
+
+**MindSpark subproject** — `mindspark_thoughtform/` carries its own full pyproject, src tree, and phase1–8 tests.
+
+**WYRD subproject** — `WYRD-Protocol-*/` carries full v1.0.0 wyrdforge tree, 30+ test files.
+
+**Two different Yggdrasils** from different eras:
+- Repo root `yggdrasil/` — NSE-era (Nine-Worlds realms, Huginn/Muninn ravens, "one tree, one breath" OpenRouter doctrine)
+- WYRD's internal `src/wyrdforge/ecs/yggdrasil.py` — ECS-era
+- Not the same artifact. Integration decision required.
+
+**Shared research corpus duplicated three times**: root `research_data/`, `mindspark_thoughtform/research_data/`, `WYRD-Protocol-*/research_data/`.
+
+**Multi-assistant tooling configured**: `.aider.*`, `.cline*`, `.roo*`, `.claude/` — repo expects multiple AI coding assistants to coexist.
 
 ---
 
