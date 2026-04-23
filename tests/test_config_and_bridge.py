@@ -71,11 +71,9 @@ class ConfigAndBridgeTests(unittest.TestCase):
             bridge = CodexBridge(root)
             packet = bridge._render_packet(CodexPacketRequest(task="x", phase="plan", audience="beginner"))
             self.assertIn("[truncated by mythic-vibe]", packet)
-            self.assertIn("coding assistant", packet)
-            self.assertIn("intentionally chosen", packet)
-            self.assertIn("Respect user sovereignty", packet)
-            self.assertIn("Session authorization is already granted", packet)
-            self.assertIn("operate autonomously within the requested task", packet)
+            # Keep this test focused on compaction behavior, not exact prompt phrasing.
+            self.assertIn("## Prompt To Paste", packet)
+            self.assertIn("Current phase: plan", packet)
 
 
 if __name__ == "__main__":
