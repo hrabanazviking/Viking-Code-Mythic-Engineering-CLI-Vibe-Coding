@@ -2,121 +2,182 @@
 
 **Status:** Active architecture record  
 **Last updated:** 2026-04-23  
-**Owner:** Architecture / Docs
+**Owner:** Architecture + Documentation maintainers  
+**Scope:** Active product runtime (`mythic_vibe_cli/`) and its governance boundaries in this monorepo.
 
-This document defines the active runtime architecture for this monorepo and the rules that prevent accidental coupling.
+This document is the architecture contract for contributors. It defines where runtime behavior lives, how dependencies may flow, and how to avoid accidental coupling to dormant islands.
 
 ---
 
 ## 1) Repository posture
 
-Treat this repository as a **multi-project monorepo** with one primary live product path:
+Treat this repository as a **multi-project monorepo**.
 
-1. **Mythic Vibe CLI** (`mythic_vibe_cli/`) — active runtime and operational entrypoint.
-2. **Legacy/runtime islands** (`ai/`, `core/`, `systems/`, `sessions/`, `yggdrasil/`) — mostly dormant/fragmented.
-3. **Vendor/research islands** (`ollama/`, `whisper/`, `WYRD-.../`, specs/research corpora) — reference only unless explicitly integrated.
+### Active runtime product
 
-Default assumption: islands are independent unless a documented adapter contract exists.
+- `mythic_vibe_cli/`
+
+### Active support surfaces
+
+- `tests/`
+- `docs/`
+- root governance records (`README.md`, `ARCHITECTURE.md`, `DATA_FLOW.md`, `DEVLOG.md`, `CHANGELOG.md`)
+
+### Dormant/reference islands
+
+- runtime fragments (`ai/`, `core/`, `systems/`, `sessions/`, `yggdrasil/`)
+- large protocol/research islands (`WYRD-...`, `mindspark_thoughtform/`)
+- vendor mirrors (`whisper/`, `chatterbox/`, `ollama/`)
+
+Default rule: islands are independent unless explicit adapter contracts are documented.
 
 ---
 
-## 2) Active system flow (Mythic Vibe CLI)
+## 2) Active system flow
 
 ```text
 User
   -> CLI Router (mythic_vibe_cli/cli.py)
     -> Workflow Orchestrator (workflow.py)
-    -> Prompt/Bridge Composer (codex_bridge.py)
-    -> Config Resolution (config.py)
-    -> Method Sync + Cache (mythic_data.py)
-      -> Project artifacts (docs/, tasks/, mythic/, DEVLOG.md, weave.db)
-      -> Optional external sync providers
+    -> Prompt Bridge (codex_bridge.py)
+    -> Config Resolver (config.py)
+    -> Method Data Sync/Cache (mythic_data.py)
+      -> Filesystem artifacts (docs/, tasks/, mythic/, DEVLOG.md)
+      -> Optional external method sync sources
 ```
-
-### Layer responsibilities
-
-- **`cli.py` (interface layer)**
-  - Defines commands/options and dispatches handlers.
-  - Keeps user-facing behavior coherent and predictable.
-
-- **`workflow.py` (orchestration layer)**
-  - Runs phase lifecycle and state transitions.
-  - Writes/updates durable artifacts.
-
-- **`codex_bridge.py` (prompt/packet layer)**
-  - Builds high-signal context packets.
-  - Applies compaction and budget constraints.
-
-- **`config.py` (configuration layer)**
-  - Resolves env/file/default precedence.
-  - Stays low-side-effect and stable.
-
-- **`mythic_data.py` (data/sync layer)**
-  - Handles method source sync/import/caching.
-  - Avoids owning orchestration logic.
 
 ---
 
-## 3) Dependency direction law
+## 3) Component responsibilities
 
-To keep architecture legible, dependency direction should remain one-way:
+### `mythic_vibe_cli/cli.py`
+
+- Defines command surface and argument contracts.
+- Dispatches behavior to orchestration layers.
+- Maintains user-facing ergonomics and stability.
+
+### `mythic_vibe_cli/workflow.py`
+
+- Owns phase transitions and lifecycle orchestration.
+- Creates/updates artifacts and state files.
+- Enforces sequence coherence for method execution.
+
+### `mythic_vibe_cli/codex_bridge.py`
+
+- Composes context packets for AI-assisted workflows.
+- Applies excerpting/compaction/budget policies.
+- Preserves explicit packet structure for reproducibility.
+
+### `mythic_vibe_cli/config.py`
+
+- Resolves layered configuration from defaults/files/environment.
+- Should remain deterministic and low side-effect.
+
+### `mythic_vibe_cli/mythic_data.py`
+
+- Handles sync/import/cache concerns for method data.
+- Encapsulates network/provider interactions.
+
+---
+
+## 4) Dependency direction law
+
+Allowed primary direction:
 
 1. `cli.py` -> `workflow`, `codex_bridge`, `config`, `mythic_data`
 2. `workflow.py` -> `config` + local artifact IO
-3. `codex_bridge.py` -> `config` + prepared workflow context
-4. `config.py` -> minimal dependencies
-5. `mythic_data.py` -> sync/cache concerns only
+3. `codex_bridge.py` -> `config` + prepared context
+4. `config.py` -> minimal dependencies only
+5. `mythic_data.py` -> provider/sync/cache concerns
 
-Any reversal requires an architecture decision record (ADR-style note in docs) before merge.
+Forbidden by default:
+
+- Reverse-layer imports that create cycles.
+- Imports from dormant runtime islands.
+- Imports from vendor mirrors directly into active CLI runtime.
+
+Any exception requires a documented architecture decision before merge.
 
 ---
 
-## 4) Boundary rules
+## 5) Filesystem interface contract
+
+Runtime behavior assumes stable interaction with:
+
+- `docs/` for governance/architecture records
+- `tasks/` for planning and execution tracking
+- `mythic/` for loop status/plan artifacts
+- root continuity records such as `DEVLOG.md` and `CHANGELOG.md`
+
+Renaming or relocating these without migration strategy is considered a breaking change.
+
+---
+
+## 6) Boundary rules
 
 ### Hard boundaries
 
-- `mythic_vibe_cli/` remains independently executable.
-- Dormant islands are not implicit runtime dependencies.
-- Vendor mirrors are not direct product import targets.
+- Active CLI remains independently executable.
+- Dormant islands are not implicit dependencies.
+- Vendor mirrors are not product runtime import targets.
 
 ### Soft boundaries
 
-- Cross-island reuse must enter via explicit adapters/interfaces.
-- Document contracts and data flow before adding wiring.
+- Cross-island reuse must be done through explicit adapters.
+- Adapter contracts must be documented before broad integration.
 
 ---
 
-## 5) Architecture risks
+## 7) Architecture risks
 
-- **Monorepo ambiguity:** contributors may edit the wrong island for active product behavior.
-- **Import drift:** accidental imports increase coupling and maintenance cost.
-- **Docs drift:** architecture/governance docs can diverge from runtime reality.
+1. **Monorepo ambiguity:** contributors may patch a look-alike module outside active path.
+2. **Import drift:** convenience imports can silently create coupling debt.
+3. **Contract drift:** docs may diverge from actual CLI behavior.
+4. **Overloaded bridge packets:** context packets can become noisy without budget discipline.
 
-Mitigation: require boundary verification commands in every meaningful PR.
+Mitigations:
+
+- explicit domain map checks,
+- required docs updates for behavior changes,
+- routine command-help and smoke tests,
+- changelog/devlog continuity discipline.
 
 ---
 
-## 6) Change protocol
+## 8) Change protocol
 
-When a change introduces any of the following, update this file in the same PR:
+Update this architecture record when introducing any of:
 
 - new runtime entrypoint,
-- new persistence/state contract,
-- new external dependency path,
-- new cross-island integration,
-- significant command lifecycle change.
+- changed phase lifecycle model,
+- new persisted state contract,
+- cross-island integration,
+- new external dependency route.
 
-Also update related records:
+Companion updates usually required:
 
 - `docs/DOMAIN_MAP.md`
-- root `ARCHITECTURE.md`
-- `DATA_FLOW.md` (if data movement changed)
+- `docs/api.md`
+- root `ARCHITECTURE.md` / `DATA_FLOW.md` (if repository-wide flow changed)
+- root `CHANGELOG.md` and `DEVLOG.md`
 
 ---
 
-## 7) Related records
+## 9) Review checklist for architecture-affecting PRs
 
-- Root deep-dive: `ARCHITECTURE.md`
-- Ownership boundaries: `docs/DOMAIN_MAP.md`
-- System direction: `docs/SYSTEM_VISION.md`
-- Operational flow details: `DATA_FLOW.md`
+- [ ] Active runtime paths are unchanged or intentionally migrated.
+- [ ] No forbidden cross-domain imports introduced.
+- [ ] Command/API docs updated.
+- [ ] Examples remain executable.
+- [ ] Changelog + devlog entries added for meaningful changes.
+
+---
+
+## 10) Related records
+
+- `docs/DOMAIN_MAP.md`
+- `docs/api.md`
+- `docs/SYSTEM_VISION.md`
+- `docs/INDEX.md`
+- root `ARCHITECTURE.md`
+- root `DATA_FLOW.md`

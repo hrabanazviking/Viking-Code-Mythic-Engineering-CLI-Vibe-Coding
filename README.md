@@ -1,27 +1,78 @@
 # Mythic Vibe CLI
 
-An open-source vibe-coding CLI that **automatically follows the Mythic Engineering method** and is intentionally beginner-friendly.
+Mythic Vibe CLI is an open-source, method-first command-line tool for people who want to **ship software with continuity, architecture, and recoverable memory** rather than pure improvisation.
+
+It helps you run an explicit engineering loop:
+
+`intent -> constraints -> architecture -> plan -> build -> verify -> reflect`
+
+The project is designed to be useful for first-time builders and still disciplined enough for maintainers who care about clean handoffs, repeatability, and artifact-driven collaboration.
 
 Canonical Mythic Engineering source:
 - https://github.com/hrabanazviking/Mythic-Engineering
 
-## Why this is better now
+---
 
-This now supports a **ChatGPT Plus ($20/mo) friendly Codex workflow**:
-- Generate a structured prompt packet from your local project context.
-- Paste it into ChatGPT/Codex.
-- Log the assistant output back into Mythic tracking.
-- Configure packet sizing + auto-compaction with global/local config files.
+## What changed in this documentation pass
 
-No API key is required for this copy/paste flow.
+This repository now includes a much deeper documentation suite for active product paths:
 
-## What this CLI enforces
+- Expanded operator-facing docs for setup, commands, architecture, API contracts, and governance.
+- Added a durable `CHANGELOG.md` with semantic structure and release notes discipline.
+- Added `docs/INDEX.md` as a stable navigation hub for docs consumers and contributors.
+- Updated `DEVLOG.md` with this documentation sweep so future sessions inherit context instead of guesswork.
 
-- Architecture-first scaffolding aligned to Mythic Engineering docs.
-- Required documentation starter files (`docs/`, `tasks/`, `MYTHIC_ENGINEERING.md`, `mythic/`).
-- A phase-based execution loop:
-  `intent -> constraints -> architecture -> plan -> build -> verify -> reflect`
-- Progress tracking so you can keep collaborators in the loop with structured updates.
+If you are returning after a break, start at **`docs/INDEX.md`** first.
+
+---
+
+## Why Mythic Vibe CLI exists
+
+Many coding tools optimize for speed while underinvesting in continuity. Mythic Vibe CLI is opinionated about preserving reasoning in files so work can survive context loss, team turnover, and interrupted sessions.
+
+Core goals:
+
+1. **Reduce drift** between plans, code, and docs.
+2. **Improve AI-assisted execution** by packaging project context into explicit prompt packets.
+3. **Preserve intent and rationale** so later contributors can resume without reconstruction.
+4. **Keep the workflow beginner-safe** while still useful in complex projects.
+
+---
+
+## Core capabilities
+
+### 1) Method-first project initialization
+
+Scaffolds a project with opinionated documentation/task structure aligned to Mythic Engineering.
+
+### 2) Phase-oriented workflow operations
+
+Supports repeated movement through:
+- intent
+- constraints
+- architecture
+- plan
+- build
+- verify
+- reflect
+
+### 3) Prompt bridge for ChatGPT/Codex workflows
+
+Generates structured prompt packets from local context, for copy/paste usage with ChatGPT/Codex.
+
+### 4) Response logging for continuity
+
+Lets you persist summaries of AI output so context is retained in local artifacts.
+
+### 5) Diagnostics and status checks
+
+Surfaces missing files, invalid state, and method drift early.
+
+### 6) Configuration layering
+
+Supports user-level + project-level config plus environment overrides.
+
+---
 
 ## Install
 
@@ -29,13 +80,28 @@ No API key is required for this copy/paste flow.
 pip install -e .
 ```
 
-## Quick start (new project)
+### Prerequisites
+
+- Python 3.10+
+- Git
+- A shell environment (bash, zsh, PowerShell, etc.)
+
+Recommended:
+- A virtual environment (`venv`, `uv`, `conda`)
+- Linting/formatting tools in your editor
+
+---
+
+## Quick start
+
+Initialize a new project scaffold:
 
 ```bash
 mythic-vibe init --goal "Build a beginner-friendly TODO app" --noob
 ```
 
-This creates a Mythic-oriented scaffold including:
+This creates Mythic-oriented scaffolding such as:
+
 - `docs/PHILOSOPHY.md`
 - `docs/ARCHITECTURE.md`
 - `docs/DOMAIN_MAP.md`
@@ -47,43 +113,59 @@ This creates a Mythic-oriented scaffold including:
 - `mythic/status.json`
 - `MYTHIC_ENGINEERING.md`
 
-## Import full Mythic markdown corpus
+For complete onboarding, read `docs/quickstart.md`.
 
-To import **all `.md` files** from the canonical Mythic Engineering repo into your project:
+---
 
-```bash
-mythic-vibe import-md
-```
+## ChatGPT Plus / Codex bridge workflow
 
-By default this writes into `docs/mythic_source/` and creates an index file:
-- `docs/mythic_source/_import_index.json`
-
-Custom destination:
+1) Generate a context packet:
 
 ```bash
-mythic-vibe import-md --target docs/reference/mythic
+mythic-vibe codex-pack \
+  --phase plan \
+  --task "Implement the CLI command parser and file templates" \
+  --audience beginner
 ```
 
+2) Open `mythic/codex_prompt.md` and paste the `Prompt To Paste` section into ChatGPT/Codex.
 
-## Configuration (inspired by OpenCode-style layering)
+3) Log the assistant outcome:
 
-`mythic-vibe` resolves config from these files (low → high precedence):
-- `~/.mythic-vibe.json`
-- `$XDG_CONFIG_HOME/mythic-vibe/config.json`
-- `<project>/.mythic-vibe.json`
+```bash
+mythic-vibe codex-log --phase build --response "Implemented parser with subcommands and docs updates"
+```
 
-Environment variables override file values:
+4) Inspect status:
+
+```bash
+mythic-vibe status
+```
+
+---
+
+## Configuration model
+
+Config resolution precedence (low → high):
+
+1. `~/.mythic-vibe.json`
+2. `$XDG_CONFIG_HOME/mythic-vibe/config.json`
+3. `<project>/.mythic-vibe.json`
+4. Environment variable overrides
+
+Current supported environment overrides:
+
 - `MYTHIC_EXCERPT_LIMIT`
 - `MYTHIC_PACKET_CHAR_BUDGET`
 - `MYTHIC_AUTO_COMPACT`
 
-Inspect the effective config:
+Inspect effective configuration:
 
 ```bash
 mythic-vibe config --path .
 ```
 
-Example config file:
+Example config:
 
 ```json
 {
@@ -95,106 +177,95 @@ Example config file:
 }
 ```
 
-## ChatGPT Plus / Codex bridge flow
+---
 
-1) Generate a packet:
+## Command overview
 
-```bash
-mythic-vibe codex-pack \
-  --phase plan \
-  --task "Implement the CLI command parser and file templates" \
-  --audience beginner
-```
+Primary command families include:
 
-2) Open `mythic/codex_prompt.md` and paste the `Prompt To Paste` section into ChatGPT/Codex.
+- `init` / `imbue`
+- `codex-pack` / `evoke`
+- `doctor` / `scry`
+- `checkin`
+- `status`
+- `sync`
+- `method`
+- `weave`
+- `prune`
+- `heal`
+- `oath`
+- `grimoire add|list`
+- `config set`
+- `db migrate`
 
-3) Log the response summary:
-
-```bash
-mythic-vibe codex-log --phase build --response "Implemented parser with subcommands and docs updates"
-```
-
-4) Check current status:
-
-```bash
-mythic-vibe status
-```
-
-## Manual check-ins (without codex-log)
-
-```bash
-mythic-vibe checkin --phase intent --update "Defined user outcome and anti-goals"
-```
-
-## Project health diagnostics
-
-Run a quick structural + status validation:
-
-```bash
-mythic-vibe doctor
-```
-
-This checks required Mythic files, validates `mythic/status.json`, and reports any missing/invalid state.
-
-## Method sync commands
-
-Sync latest method notes from GitHub:
-
-```bash
-mythic-vibe sync
-```
-
-Print currently loaded method notes:
-
-```bash
-mythic-vibe method
-```
-
-## Ritual command aliases from the Mythic design doc
-
-The CLI now supports the design-doc style ritual commands in addition to existing commands:
-
-- `mythic imbue` (alias of `init`)
-- `mythic evoke` (alias of `codex-pack`)
-- `mythic scry` (alias of `doctor`)
-- `mythic weave`
-- `mythic prune`
-- `mythic heal`
-- `mythic oath`
-- `mythic grimoire add|list`
-- `mythic config set`
-- `mythic db migrate`
+For full command behavior and contracts, see `docs/api.md`.
 
 ---
 
-![https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/main/Viking_Apache_V2_1.jpg](https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/main/Viking_Apache_V2_1.jpg)
+## Repository posture (important)
+
+This repository contains multiple historical, research, and vendor islands. The active product path is:
+
+- **`mythic_vibe_cli/`**
+
+Supporting active paths include:
+
+- `tests/`
+- `docs/`
+- selected root governance records (`README`, `ARCHITECTURE`, `DATA_FLOW`, `DEVLOG`, `CHANGELOG`)
+
+Most other trees are not active CLI runtime dependencies and should be treated as reference or isolated experiments unless explicitly integrated by architecture decision.
+
+---
+
+## Documentation map
+
+Start here:
+
+1. `docs/INDEX.md` — canonical docs navigator
+2. `docs/quickstart.md` — setup + first loop
+3. `docs/ARCHITECTURE.md` — active runtime architecture
+4. `docs/DOMAIN_MAP.md` — ownership + boundaries
+5. `docs/api.md` — integration contracts
+6. `docs/SYSTEM_VISION.md` — product north star
+7. `DEVLOG.md` — chronological continuity record
+8. `CHANGELOG.md` — release-facing change history
+
+---
+
+## Development and quality checks
+
+Typical local checks:
+
+```bash
+pytest -q
+python -m mythic_vibe_cli.cli --help
+mythic-vibe doctor
+```
+
+(Availability depends on environment and install mode.)
+
+---
 
 ## License
 
 Copyright (c) 2026 Volmarr Wyrd
 
 Mythic Engineering is licensed under the Apache License, Version 2.0.
-See the [LICENSE](LICENSE) file for details.
+See `LICENSE` for details.
 
 Unless required by applicable law or agreed to in writing, this project is distributed on an "AS IS" BASIS, without warranties or conditions of any kind.
 
 ---
 
-## Distribution and Privacy Position
+## Distribution and privacy position
 
-Mythic-Engineering is published here as source code and project material.
+Mythic-Engineering is published as source code and project material.
 
-The author does not require users to provide age, identity, government ID, biometric data, or similar personal information in order to access or use the source code in this repository.
+The author does not require users to provide age, identity, government ID, biometric data, or similar personal information to access the source code in this repository.
 
-The author may decline to provide official binaries, installers, hosted services, app-store releases, or other official distribution channels where doing so would require age verification, identity verification, or similar personal-data collection.
+The author may decline official binaries/installers/hosted distribution channels where publication would require age or identity verification.
 
-Any third party who forks, packages, redistributes, deploys, hosts, or otherwise makes this software available does so independently and is solely responsible for compliance with applicable law, platform policy, and distribution requirements in their own jurisdiction and context.
+Any third party who forks, hosts, redistributes, or packages this software does so independently and is solely responsible for legal/platform compliance in their own context.
 
-See [LEGAL-NOTICE.md](LEGAL-NOTICE.md) for details.
-
----
-
-![https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/main/IMG_0407.jpeg](https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/main/IMG_0407.jpeg)
-
----
-
+See `LEGAL-NOTICE.md` for details.
