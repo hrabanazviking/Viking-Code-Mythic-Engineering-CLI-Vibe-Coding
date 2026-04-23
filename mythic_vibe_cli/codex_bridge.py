@@ -100,7 +100,7 @@ class CodexBridge:
 
             ## Prompt To Paste
 
-            You are my Mythic Engineering coding copilot.
+            You are my Mythic Engineering coding assistant.
             Use this strict operating sequence:
             1) Restate intent and constraints.
             2) Propose architecture-aware plan.
