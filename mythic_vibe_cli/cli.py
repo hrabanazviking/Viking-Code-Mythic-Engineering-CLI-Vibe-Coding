@@ -1,9 +1,15 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import json
 import sqlite3
 from pathlib import Path
 import sys
+import urllib.error
+import urllib.parse
+import urllib.request
+import os
 
 from . import __version__
 from .codex_bridge import CodexBridge, CodexPacketRequest
@@ -69,8 +75,8 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("method", help="Print active Mythic method notes")
 
 
-    config_cmd = sub.add_parser("config", help="Show resolved mythic-vibe configuration")
-    config_cmd.add_argument("--path", default=".", help="Project directory used for local overrides")
+    config_show = sub.add_parser("config-show", help="Show resolved mythic-vibe configuration")
+    config_show.add_argument("--path", default=".", help="Project directory used for local overrides")
 
     doctor = sub.add_parser("doctor", help="Validate Mythic project structure and status")
     doctor.add_argument("--path", default=".", help="Project directory (default: current directory)")
@@ -123,6 +129,20 @@ def build_parser() -> argparse.ArgumentParser:
     db_sub = db.add_subparsers(dest="db_command", required=True)
     db_migrate = db_sub.add_parser("migrate", help="Create/upgrade local weave database")
     db_migrate.add_argument("--path", default=".", help="Project directory (default: current directory)")
+
+    plunder = sub.add_parser(
+        "plunder",
+        help="Copy a single file from a GitHub repo into the local project (one file per run)",
+    )
+    plunder.add_argument("--repo", required=True, help="GitHub repo in owner/name form")
+    plunder.add_argument("--source", required=True, help="Source file path in the repo")
+    plunder.add_argument("--dest", required=True, help="Destination path in this project")
+    plunder.add_argument("--ref", default="main", help="Branch/tag/SHA in source repo (default: main)")
+    plunder.add_argument(
+        "--token-env",
+        default="GITHUB_TOKEN",
+        help="Environment variable holding a GitHub token (default: GITHUB_TOKEN)",
+    )
 
     return parser
 
@@ -241,6 +261,27 @@ def cmd_config(args: argparse.Namespace) -> int:
     return 0
 
 
+def _github_get_file(repo: str, source_path: str, ref: str, token: str) -> str:
+    encoded_path = urllib.parse.quote(source_path.strip("/"))
+    url = f"https://api.github.com/repos/{repo}/contents/{encoded_path}?ref={urllib.parse.quote(ref)}"
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": f"token {token}",
+            "Accept": "application/vnd.github+json",
+            "User-Agent": "mythic-vibe-cli",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=30) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+    if payload.get("type") != "file":
+        raise ValueError(f"Source is not a file: {source_path}")
+    raw = payload.get("content", "")
+    if payload.get("encoding") != "base64":
+        raise ValueError(f"Unsupported GitHub encoding for {source_path}: {payload.get('encoding')}")
+    return base64.b64decode(raw).decode("utf-8")
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
     workflow = MythicWorkflow(root)
@@ -330,7 +371,7 @@ def cmd_grimoire(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_config(args: argparse.Namespace) -> int:
+def cmd_config_set(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
     config_file = root / "mythic" / "config.toml"
     config_file.parent.mkdir(parents=True, exist_ok=True)
@@ -338,6 +379,35 @@ def cmd_config(args: argparse.Namespace) -> int:
         fh.write(f'{args.key} = "{args.value}"\n')
     print(f"Updated config: {config_file}")
     print(f"- {args.key} = {args.value}")
+    return 0
+
+
+def cmd_plunder(args: argparse.Namespace) -> int:
+    token = os.getenv(args.token_env, "").strip()
+    if not token:
+        print(
+            f"Missing token. Set {args.token_env} and retry (repo access is required).",
+            file=sys.stderr,
+        )
+        return 2
+
+    try:
+        text = _github_get_file(args.repo, args.source, args.ref, token)
+    except urllib.error.HTTPError as exc:
+        message = exc.read().decode("utf-8", errors="replace")
+        print(f"GitHub API error ({exc.code}): {message}", file=sys.stderr)
+        return 1
+    except Exception as exc:  # noqa: BLE001
+        print(f"Plunder failed: {exc}", file=sys.stderr)
+        return 1
+
+    out_path = Path(args.dest).resolve()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(text, encoding="utf-8")
+    print("Plunder complete.")
+    print(f"- Repo: {args.repo}@{args.ref}")
+    print(f"- Source: {args.source}")
+    print(f"- Destination: {out_path}")
     return 0
 
 
@@ -413,7 +483,7 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_sync()
     if args.command == "method":
         return cmd_method()
-    if args.command == "config":
+    if args.command == "config-show":
         return cmd_config(args)
     if args.command == "doctor":
         return cmd_doctor(args)
@@ -432,9 +502,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "grimoire":
         return cmd_grimoire(args)
     if args.command == "config":
-        return cmd_config(args)
+        return cmd_config_set(args)
     if args.command == "db":
         return cmd_db_migrate(args)
+    if args.command == "plunder":
+        return cmd_plunder(args)
 
     parser.error("Unknown command")
     return 2
