@@ -67,8 +67,36 @@ Both agents work the same repo in parallel. They write to **different files** (n
 - [x] Scribe's records written: INVENTORY.md (27KB), DEVLOG.md (5KB), ORIGINS.md (17KB) — 2026-04-23
 - [x] First-pass synthesis (Runa, 2026-04-23)
 - [x] First-pass results committed and pushed to development (2026-04-23)
-- [ ] Memory updated with findings
-- [ ] Second-pass deeper analysis (pending Volmarr's direction)
+- [x] Second-pass dispatched (2026-04-23) — Cartographer: IMPACT_integration.md, DUPLICATES.md, YGGDRASIL_COMPARISON.md; Scribe: RECOMMENDATIONS.md + DEVLOG second entry + ORIGINS corrections
+- [x] Second-pass pushed in three commits: 345d098 (Scribe), 6ddc121 (partial Cartographer), + final commit (Cartographer IMPACT + MAP.md update)
+- [ ] Memory updated with findings (pending)
+- [ ] Volmarr's direction on the five DEFER questions (see RECOMMENDATIONS.md)
+
+## Second-pass headline findings (2026-04-23)
+
+**The Yggdrasils coexist.** Verdict from YGGDRASIL_COMPARISON.md: `[COEXIST]` — pure name collision, no functional overlap. NSE's `yggdrasil/` is a Nine-Worlds cognitive router; WYRD's `wyrdforge.ecs.yggdrasil.YggdrasilTree` is a spatial ECS service. Namespaces don't collide. Both can stay.
+
+**Every seam from CLI to imports is currently unwired.** The CLI imports nothing from `yggdrasil/`, `thoughtforge/`, `wyrdforge/`, `ollama/`, `whisper/`, or `chatterbox/`. Integration is green-field from the CLI's perspective.
+
+**Two ghost imports blocking NSE boot** (H-13, H-17): `systems.character_memory_rag` referenced in `systems/unified_memory_facade.py:42` but file missing; `yggdrasil_core` similarly missing.
+
+**research_data/ has a latent install hazard** (H-14): its `pyproject.toml` declares `name = "wyrdforge"` (v0.1.0), colliding with real WYRD's v1.0.0. No `__init__.py` files so currently un-importable.
+
+**Hard numpy conflict** (H-16): chatterbox pins `numpy<1.26`, MindSpark `>=1.26`. Cannot co-install. Chatterbox must stay subprocess-only.
+
+**Doctrinal MD duplicates are byte-identical** across 3–4 locations: PHILOSOPHY, RULES.AI, Technical_Architecture, WORLD_MODELING_SKILL. All 27 docs/specs/ files and the 41-doc research_data/ corpus are byte-identical too. Zero-risk to dedupe.
+
+**wyrdforge sub-package duplication is messy** (H-15): 5 of 14 sub-packages duplicated; 3 files have accumulated 1-line drifts (`bond_graph_service.py`, `memory_store.py`, `demo_seed.py`). Needs merge-decision per file.
+
+**Recommended integration sequence** (from IMPACT_integration.md):
+1. Clean doctrinal duplicates (zero risk)
+2. Reconcile `research_data/pyproject.toml` name collision
+3. Resolve the two ghost imports
+4. Wire WYRD via its stdlib HTTP bridge (port 8765) — best first real integration
+5. Wire Ollama via urllib → `:11434` (stdlib only)
+6. Wire MindSpark via subprocess to its `thoughtforge` console script (avoids numpy conflict)
+7. NSE absorption — defer until a CLI feature actually demands it
+8. Chatterbox + whisper — opt-in extras forever, never core deps
 
 ## Key findings from first pass (2026-04-23)
 
