@@ -1,0 +1,6148 @@
+# Norse Saga Engine - Complete Character Data Reference
+# =====================================================
+# This file contains all possible data points, selections, and enumerations
+# from the character_generator.py system, formatted for use with the
+# deepseek_yaml_20260216_16bc2b.yaml template.
+#
+# Version: 6.0
+# Last Updated: 2026-02-16
+
+# =============================================================================
+# IDENTITY & CORE - ALL POSSIBLE VALUES
+# =============================================================================
+
+identity_enums:
+  gender:
+    - "male"
+    - "female"
+  
+  culture:
+    # Norse cultures
+    - "norse_swedish"
+    - "norse_danish"
+    - "norse_norwegian"
+    - "norse_icelandic"
+    - "norse_greenlandic"
+    - "norse_danelaw"
+    - "norse_irish"
+    - "norse_faroeislands"
+    - "norse_varangian"
+    # Foreign cultures
+    - "anglo_saxon"
+    - "frankish"
+    - "slavic"
+    - "byzantine"
+    - "arabic"
+    - "irish"
+  
+  culture_display:
+    # Norse cultures
+    norse_swedish: "Norse Swedish"
+    norse_danish: "Norse Danish"
+    norse_norwegian: "Norse Norwegian"
+    norse_icelandic: "Norse Icelandic"
+    norse_greenlandic: "Norse Greenlandic"
+    norse_danelaw: "Norse Danelaw"
+    norse_irish: "Hiberno-Norse"
+    norse_faroeislands: "Norse Faroese"
+    norse_varangian: "Varangian (Rus')"
+    # Foreign cultures
+    anglo_saxon: "Anglo-Saxon"
+    frankish: "Frankish"
+    slavic: "Slavic"
+    byzantine: "Byzantine"
+    arabic: "Arabic"
+    irish: "Irish"
+  
+  ethnicity:
+    - "Nordic"
+    - "Scandinavian"
+    - "Germanic"
+    - "Celtic"
+    - "Slavic"
+    - "Mediterranean"
+    - "Middle Eastern"
+    - "Hiberno-Norse"
+    - "Rus"
+    - "Mixed Norse-Celtic"
+    - "Mixed Norse-Slavic"
+    - "Icelandic"
+    - "Greenlandic Norse"
+    - "Mixed"
+  
+  social_class:
+    - "thrall"
+    - "karl"
+    - "jarl"
+    - "king"
+    - "volva"
+    - "skald"
+    - "merchant"
+    - "craftsman"
+    - "outlaw"
+    - "thegn"          # Anglo-Saxon noble
+    - "ceorl"           # Anglo-Saxon freeman
+    - "boyar"           # Slavic noble
+    - "patrician"       # Byzantine noble
+    - "godar"           # Icelandic chieftain
+    - "hovding"         # Faroese chieftain
+    - "druzhina"        # Varangian guard member
+  
+  social_class_display:
+    thrall: "Thrall (Slave)"
+    karl: "Karl (Freeman)"
+    jarl: "Jarl (Noble)"
+    king: "King"
+    volva: "Völva (Seeress)"
+    skald: "Skald (Poet)"
+    merchant: "Merchant"
+    craftsman: "Craftsman"
+    outlaw: "Outlaw"
+    thegn: "Thegn (Anglo-Saxon Noble)"
+    ceorl: "Ceorl (Anglo-Saxon Freeman)"
+    boyar: "Boyar (Slavic Noble)"
+    patrician: "Patrician (Byzantine Noble)"
+    godar: "Goðar (Icelandic Chieftain)"
+    hovding: "Høvding (Faroese Chieftain)"
+    druzhina: "Druzhina (Varangian Guard)"
+  
+  occupation:
+    - "Warrior"
+    - "Shieldmaiden"
+    - "Berserker"
+    - "Huskarl"
+    - "Raider"
+    - "Farmer"
+    - "Fisherman"
+    - "Hunter"
+    - "Trapper"
+    - "Trader"
+    - "Merchant"
+    - "Sailor"
+    - "Shipbuilder"
+    - "Smith"
+    - "Blacksmith"
+    - "Weaponsmith"
+    - "Armorer"
+    - "Jeweler"
+    - "Carpenter"
+    - "Woodcarver"
+    - "Leatherworker"
+    - "Tanner"
+    - "Weaver"
+    - "Spinner"
+    - "Dyer"
+    - "Potter"
+    - "Brewer"
+    - "Baker"
+    - "Cook"
+    - "Healer"
+    - "Herbalist"
+    - "Midwife"
+    - "Volva"
+    - "Seeress"
+    - "Vitki"           # Male sorcerer
+    - "Seidrkona"       # Female seidr practitioner
+    - "Seidrmadur"      # Male seidr practitioner
+    - "Rune Wizard"
+    - "Runecarver"
+    - "Gothi"           # Priest
+    - "Gydja"           # Priestess
+    - "Skald"
+    - "Poet"
+    - "Storyteller"
+    - "Law-speaker"
+    - "Judge"
+    - "Thingman"
+    - "Guard"
+    - "Watchman"
+    - "Spy"
+    - "Scout"
+    - "Outlaw"
+    - "Exile"
+    - "Beggar"
+    - "Thrall"
+    - "Bondmaid"
+    - "Housecarl"
+    - "Thegn"
+    - "Ceorl"
+    - "Boyar"
+    - "Patrician"
+    - "Godi"            # Icelandic chieftain/priest
+    - "Logsogumadur"    # Law-speaker in Iceland
+    - "Varangian Guard"
+    - "Druzhina Member"
+    - "Walrus Ivory Hunter"  # Greenlandic
+    - "Norse-Gael"       # Hiberno-Norse
+    - "Ostmen"           # Norse-Irish
+  
+  specialization:
+    - "Shieldmaiden"
+    - "Swordmaster"
+    - "Axeman"
+    - "Spearman"
+    - "Archer"
+    - "Berserker"
+    - "Ulfheðinn"       # Wolf warrior
+    - "Bjorn"           # Bear warrior
+    - "Dual-wielder"
+    - "Shield-wall specialist"
+    - "Ship captain"
+    - "Navigator"
+    - "Rune master"
+    - "Seidr worker"
+    - "Herbalist"
+    - "Bone-setter"
+    - "Midwife"
+    - "Spae-wife"       # Prophetess
+    - "Spae-man"        # Prophet
+    - "Trade master"
+    - "Silver-tongue"   # Negotiator
+    - "Pathfinder"
+    - "Woodsman"
+    - "Mountain guide"
+    - "Althing specialist"  # Icelandic
+    - "Saga keeper"        # Icelandic
+    - "Walrus hunter"      # Greenlandic
+    - "Nestorian missionary" # Varangian
+    - "Drengr"             # Honorable warrior
+  
+  role:
+    - "warrior"
+    - "shieldmaiden"
+    - "berserker"
+    - "huskarl"
+    - "volva"
+    - "vitki"
+    - "sorcerer"
+    - "jarl"
+    - "merchant"
+    - "skald"
+    - "gothi"
+    - "gydja"
+    - "blacksmith"
+    - "farmer"
+    - "thrall"
+    - "hunter"
+    - "healer"
+    - "bondmaid"
+    - "raider"
+    - "sailor"
+    - "fisherman"
+    - "craftsman"
+    - "outlaw"
+    - "godi"             # Icelandic chieftain
+    - "varangian"        # Varangian Guard
+    - "walrus_hunter"    # Greenlandic
+    - "norse_gael"       # Hiberno-Norse
+    - "lawspeaker"       # Icelandic
+  
+  species:
+    - "human"
+    - "half_elf"           # Álfblóð (Elf-blooded)
+    - "aasimar"            # Ljósálfar-kin (Light-elf kin)
+    - "tiefling"           # Jötun-blooded (Giant-blooded)
+    - "dwarf"              # Dvergr
+    - "goliath"            # Jötun-kin (Giant-kin)
+  
+  species_display:
+    human: "Human (Mann)"
+    half_elf: "Álfblóð (Elf-blooded)"
+    aasimar: "Ljósálfar-kin (Light-elf kin)"
+    tiefling: "Jötun-blooded (Giant-blooded)"
+    dwarf: "Dvergr (Dwarf)"
+    goliath: "Jötun-kin (Giant-kin)"
+  
+  species_weights:
+    human: 9000
+    half_elf: 1
+    aasimar: 1
+    tiefling: 1
+    dwarf: 2
+    goliath: 1
+  
+  literacy:
+    - "none"
+    - "runic_basic"
+    - "runic_fluent"
+    - "latin_basic"
+    - "latin_fluent"
+    - "multilingual"
+    - "scholarly"
+    - "icelandic_saga_literate"
+    - "greek_basic"       # For Varangians
+    - "slavic_fluent"      # For Varangians in Rus'
+  
+  languages:
+    - "Old Norse"
+    - "Old Swedish"
+    - "Old Danish"
+    - "Old Norwegian"
+    - "Old Icelandic"
+    - "Old English"
+    - "Old Frankish"
+    - "Old Saxon"
+    - "Old Slavic"
+    - "Old Irish"
+    - "Byzantine Greek"
+    - "Medieval Greek"
+    - "Arabic"
+    - "Latin"
+    - "Sami"
+    - "Finnish"
+    - "Gaelic"
+    - "Cumbric"
+    - "Pictish"
+    - "Greenlandic Inuit"
+    - "Faroese"
+    - "Norse-Gael Pidgin"
+    - "Old East Slavic"
+    - "Church Slavonic"
+
+# =============================================================================
+# PHYSICAL APPEARANCE - ALL POSSIBLE VALUES
+# =============================================================================
+
+appearance_enums:
+  height:
+    male:
+      - "short"           # Under 5'5"
+      - "average"         # 5'5" - 5'9"
+      - "tall"            # 5'9" - 6'0"
+      - "very tall"       # 6'0" - 6'3"
+      - "imposing"        # 6'3" - 6'6"
+      - "towering"        # Over 6'6"
+    female:
+      - "petite"          # Under 5'2"
+      - "average height"  # 5'2" - 5'6"
+      - "tall"            # 5'6" - 5'9"
+      - "statuesque"      # 5'9" - 6'0"
+      - "elegant"         # 5'6" - 5'9" with graceful bearing
+      - "willowy"         # Tall and slender
+  
+  build:
+    male:
+      - "lean and wiry"
+      - "athletic"
+      - "muscular"
+      - "broad-shouldered"
+      - "tall and lean"
+      - "powerfully built"
+      - "barrel-chested"
+      - "compact and strong"
+      - "towering and massive"
+      - "well-proportioned"
+      - "rangy"
+      - "solidly built"
+      - "thick-armed"
+      - "broad-backed"
+      - "tall and muscular"
+      - "stocky but strong"
+      - "lithe and quick"
+      - "heavily muscled"
+      - "spare but tough"
+      - "wide-shouldered"
+      - "long-limbed"
+      - "sturdy"
+      - "imposing"
+      - "trim and fit"
+      - "large-framed"
+      - "densely muscled"
+      - "tall and broad"
+    
+    female:
+      - "slender"
+      - "lithe"
+      - "athletic"
+      - "graceful"
+      - "willowy"
+      - "thin"
+      - "thin with sexy curves"
+      - "lean with sexy curves"
+      - "lean and toned"
+      - "statuesque"
+      - "petite but strong"
+      - "tall and elegant"
+      - "slim-waisted"
+      - "long-legged"
+      - "delicately built"
+      - "small but fierce"
+      - "tall and lean"
+      - "dancer's build"
+      - "feminine but muscular"
+      - "slender but strong"
+  
+  hair_colors:
+    nordic:
+      - "golden blonde"
+      - "platinum blonde"
+      - "ash blonde"
+      - "honey blonde"
+      - "strawberry blonde"
+      - "light brown"
+      - "dark blonde"
+      - "wheat blonde"
+      - "flaxen"
+      - "sandy blonde"
+      - "red"
+      - "copper red"
+      - "auburn"
+      - "ginger"
+      - "flame red"
+      - "rust red"
+      - "chestnut"
+      - "light auburn"
+      - "dark auburn"
+      - "bronze"
+    
+    other:
+      - "black"
+      - "jet black"
+      - "raven black"
+      - "dark brown"
+      - "brown"
+      - "walnut brown"
+      - "gray"
+      - "silver gray"
+      - "white"
+      - "salt and pepper"
+      - "iron gray"
+      - "mouse brown"
+      - "umber"
+      - "sable"
+      - "coal black"
+    
+    arabic:
+      - "jet black"
+      - "raven black"
+      - "deep brown"
+      - "dark brown"
+      - "black with gray"
+    
+    byzantine:
+      - "dark brown"
+      - "black"
+      - "chestnut brown"
+      - "auburn"
+      - "graying dark"
+    
+    slavic:
+      - "light brown"
+      - "dark blonde"
+      - "brown"
+      - "auburn"
+      - "black"
+      - "red-brown"
+    
+    irish:
+      - "red"
+      - "auburn"
+      - "copper"
+      - "dark red"
+      - "flame red"
+      - "brown"
+      - "black"
+  
+  hair_styles:
+    male_norse:
+      - "short and practical"
+      - "long tied back in warrior fashion"
+      - "shaved sides with top knot"
+      - "braided at temples"
+      - "shoulder-length and loose"
+      - "wild and battle-ready"
+      - "receding hairline, battle-weathered"
+      - "close-cropped for helm-wearing"
+      - "long with single warrior braid"
+    
+    male_arabic:
+      - "short and neat"
+      - "oiled and groomed"
+      - "covered by turban"
+      - "flowing beneath headwrap"
+      - "shaved head with beard"
+    
+    male_byzantine:
+      - "carefully styled in Roman fashion"
+      - "short and classical"
+      - "oiled and perfumed"
+      - "curled and arranged"
+    
+    male_anglo_saxon:
+      - "medium length, parted"
+      - "tonsure for clergy"
+      - "practical short cut"
+      - "longer at back, shorter at front"
+    
+    male_slavic:
+      - "long and flowing"
+      - "practical warrior cut"
+      - "bowl-cut style"
+      - "shaggy and unkempt"
+    
+    female_norse:
+      - "long and flowing"
+      - "in complex braids"
+      - "in elegant updo"
+      - "loose waves with silver rings woven in"
+      - "twin braids"
+      - "single long braid down back"
+      - "loose with braided crown"
+      - "intricate woven braids with beads"
+      - "pinned up with decorative combs"
+      - "half-up with flowing waves"
+    
+    female_arabic:
+      - "long and dark beneath veil"
+      - "elaborately styled under silk covering"
+      - "adorned with gold ornaments beneath modest covering"
+      - "braided and hidden"
+    
+    female_byzantine:
+      - "elaborately styled with pearls"
+      - "pinned up in Roman fashion"
+      - "flowing beneath jeweled diadem"
+      - "curled and perfumed"
+    
+    female_anglo_saxon:
+      - "veiled for married women"
+      - "long with ribbon braids"
+      - "pinned up with ornate pins"
+      - "simple and practical"
+    
+    female_slavic:
+      - "long with temple rings"
+      - "complex braids with ribbons"
+      - "crowned with woven bands"
+      - "flowing for maidens"
+  
+  eye_colors:
+    - "ice blue"
+    - "sky blue"
+    - "deep blue"
+    - "steel blue"
+    - "pale blue"
+    - "bright blue"
+    - "gray"
+    - "storm gray"
+    - "silver gray"
+    - "pale gray"
+    - "slate gray"
+    - "green"
+    - "sea green"
+    - "pale green"
+    - "bright green"
+    - "forest green"
+    - "moss green"
+    - "hazel"
+    - "golden hazel"
+    - "green-hazel"
+    - "brown-hazel"
+    - "brown"
+    - "dark brown"
+    - "amber"
+    - "honey brown"
+    - "warm brown"
+    - "gray-blue"
+    - "blue-green"
+    - "blue-gray"
+    - "green-gray"
+    - "nearly black"
+    - "obsidian"
+  
+  eye_shapes:
+    - "almond"
+    - "round"
+    - "hooded"
+    - "deep-set"
+    - "wide-set"
+    - "close-set"
+    - "upturned"
+    - "downturned"
+    - "monolid"
+  
+  face_shapes:
+    - "oval"
+    - "round"
+    - "square"
+    - "heart-shaped"
+    - "angular"
+    - "chiseled"
+    - "long"
+    - "triangular"
+    - "diamond"
+  
+  skin_tones:
+    norse:
+      - "fair"
+      - "tanned"
+      - "pale"
+      - "weathered fair"
+      - "tanned from sea"
+      - "ruddy"
+      - "wind-weathered"
+      - "porcelain"
+      - "alabaster"
+      - "cream"
+      - "freckled fair"
+      - "light"
+      - "milky white"
+    
+    norse_icelandic:
+      - "fair"
+      - "pale with pink undertones"
+      - "wind-burned fair"
+      - "geothermal spring tanned"
+      - "freckled fair"
+      - "light with sun damage"
+    
+    norse_greenlandic:
+      - "fair"
+      - "wind-weathered"
+      - "frost-burned"
+      - "pale with cold damage"
+      - "ruddy from extreme cold"
+      - "freckled with sun reflection burn"
+    
+    norse_faroeislands:
+      - "fair"
+      - "wind-weathered"
+      - "sea-spray weathered"
+      - "ruddy from constant wind"
+      - "freckled and wind-burned"
+    
+    norse_varangian:
+      - "fair"
+      - "light"
+      - "tanned from southern campaigns"
+      - "weathered from river routes"
+      - "sun-darkened from Greek service"
+      - "pale with southern sun exposure"
+    
+    anglo_saxon:
+      - "fair"
+      - "pale"
+      - "ruddy"
+      - "light"
+      - "freckled"
+    
+    frankish:
+      - "fair"
+      - "light olive"
+      - "pale"
+      - "continental fair"
+    
+    slavic:
+      - "fair"
+      - "light"
+      - "tanned"
+      - "weathered fair"
+      - "eastern European fair"
+      - "pale with pink undertones"
+    
+    byzantine:
+      - "olive"
+      - "Mediterranean"
+      - "light olive"
+      - "tanned"
+      - "golden olive"
+      - "dark"
+    
+    arabic:
+      - "olive"
+      - "tanned"
+      - "dark"
+      - "black"
+      - "warm brown"
+      - "golden"
+      - "bronze"
+      - "deep tan"
+      - "honey"
+    
+    irish:
+      - "fair"
+      - "pale"
+      - "freckled fair"
+      - "ruddy"
+      - "milky white"
+  
+  facial_hair:
+    male_norse:
+      - "short trimmed beard"
+      - "full thick beard"
+      - "braided beard with rings"
+      - "thick mustache"
+      - "long forked beard"
+      - "beard with beads woven in"
+      - "goatee style"
+    
+    male_arabic:
+      - "well-groomed beard"
+      - "neat mustache"
+      - "full beard oiled and combed"
+      - "pointed beard"
+      - "trimmed goatee"
+    
+    male_byzantine:
+      - "clean-shaven in Roman style"
+      - "neat trimmed beard"
+      - "philosopher's beard"
+      - "short imperial style"
+    
+    male_anglo_saxon:
+      - "full beard"
+      - "forked beard"
+      - "mustache only"
+      - "clean-shaven"
+    
+    male_slavic:
+      - "full bushy beard"
+      - "long wild beard"
+      - "trimmed warrior style"
+  
+  scars:
+    male:
+      - "thin battle scar across left cheek"
+      - "old sword wound on forehead"
+      - "healed axe wound on jaw"
+      - "faded scar on neck from past combat"
+      - "warrior's scars on forearms"
+      - "cut above right eyebrow"
+      - "slash mark across bridge of nose"
+      - "puckered scar on shoulder from arrow"
+      - "knife scar on ribs"
+      - "burn scars on hands from forge"
+      - "ritual scar patterns"
+    female: []  # NO SCARS FOR FEMALES
+  
+  distinguishing_features:
+    positive:
+      - "kind eyes"
+      - "warm smile"
+      - "piercing gaze"
+      - "intense stare"
+      - "sharp features"
+      - "strong jaw"
+      - "high cheekbones"
+      - "expressive eyebrows"
+      - "dimples when smiling"
+      - "graceful neck"
+      - "striking beauty"
+      - "rugged features"
+      - "weathered face"
+      - "strong brow"
+      - "aquiline nose"
+      - "full lips"
+      - "delicate features"
+      - "noble bearing"
+      - "commanding presence"
+      - "serene expression"
+    
+    personality_based:
+      - "warm friendly eyes with laugh lines"
+      - "watchful calculating eyes"
+      - "noble bearing with lifted chin"
+      - "serene otherworldly expression"
+      - "fierce intensity in the eyes"
+      - "shrewd intelligent gaze"
+      - "calm measured expression"
+      - "open honest expression"
+      - "cold calculating look barely hidden"
+      - "wild unpredictable energy"
+      - "disciplined controlled demeanor"
+      - "sadness lingering in eyes"
+      - "humor dancing in gaze"
+  
+  beauty_levels:
+    - "plain"
+    - "average"
+    - "attractive"
+    - "beautiful"
+    - "handsome"
+    - "striking"
+    - "supernatural"
+    - "haunting"
+    - "rugged handsome"
+    - "classic beauty"
+  
+  bra_sizes:
+    - "32A"
+    - "32B"
+    - "32C"
+    - "34A"
+    - "34B"
+    - "34C"
+    - "34D"
+    - "36B"
+    - "36C"
+    - "36D"
+  
+  cup_sizes:
+    - "A"
+    - "B"
+    - "C"
+    - "D"
+    - "DD"
+  
+  scent:
+    - "woodsmoke"
+    - "pine and fir"
+    - "leather"
+    - "sea air"
+    - "honey"
+    - "clean sweat"
+    - "herbal soap"
+    - "mead"
+    - "ale"
+    - "leather and steel"
+    - "wool and wool"
+    - "smoke and salt"
+    - "spices from trade"
+    - "frankincense"
+    - "myrrh"
+    - "roses"          # Byzantine
+    - "sandalwood"     # Arabic
+    - "jasmine"        # Arabic
+    - "amber"
+    - "lavender"
+    - "rosemary"
+    - "thyme"
+    - "sage"
+    - "birch tar"
+    - "fish oil"       # Fisherman
+    - "tanned hide"    # Leatherworker
+    - "forge smoke"    # Smith
+    - "sourdough"      # Baker
+    - "herbs"          # Healer
+    - "blood and steel" # Warrior after battle
+
+# =============================================================================
+# CULTURE-SPECIFIC CLOTHING
+# =============================================================================
+
+clothing:
+  norse_swedish:
+    era_descriptor: "9th century Swedish Viking"
+    
+    male_clothing:
+      everyday:
+        - "wool tunic dyed in blue with tablet-woven trim"
+        - "linen undershirt beneath a wool overtunic with bronze clasps"
+        - "simple wool tunic with leather belt and iron buckle"
+        - "practical wool tunic tucked into trousers with leg wrappings"
+        - "layered tunics in earth tones with embroidered collar"
+        - "undyed wool tunic showing humble origins"
+        - "worn but clean wool tunic of a working man"
+      
+      wealthy:
+        - "fine wool tunic with silver arm-rings showing wealth"
+        - "richly dyed red tunic with gold thread borders"
+        - "silk-trimmed tunic from eastern trade"
+        - "embroidered tunic showing jarl status"
+        - "tunic with elaborate tablet-woven bands in many colors"
+      
+      working:
+        - "sturdy leather jerkin over simple tunic"
+        - "fisherman's oiled wool garments"
+        - "smith's leather apron over plain tunic"
+        - "farmer's practical undyed wool"
+        - "hunter's layered wool and leather"
+    
+    female_clothing:
+      traditional:
+        - "linen underdress with wool apron-dress fastened by bronze brooches"
+        - "richly embroidered apron-dress with silver oval brooches"
+        - "practical wool apron-dress with bone toggles"
+        - "layered wool dresses with bead strings between brooches"
+        - "fine apron-dress with elaborate animal-head brooches"
+      
+      simple:
+        - "wool dress in deep blue with tablet-woven bands at hem"
+        - "fine linen underdress with colorful wool overdress"
+        - "practical wool dress with leather belt and keys"
+        - "simple but well-made undyed wool dress"
+        - "warm layered dresses for northern winters"
+      
+      wealthy:
+        - "silk-trimmed apron-dress showing eastern trade wealth"
+        - "dress with imported glass beads strung between brooches"
+        - "finely woven dress with gold-thread embroidery"
+        - "elegant wool dress with amber jewelry"
+      
+      working:
+        - "sturdy wool dress tucked for work"
+        - "dairywoman's practical apron over simple dress"
+        - "weaver's dress with shuttle at belt"
+        
+      skimpy:
+        - "bikini leather armor"
+        - "bikini chainmail armor"
+        - "bikini made from plant materials"
+        - "bikini made from linen"
+        - "bikini made from silk"
+        - "naked for battle mobility"
+ 
+      bondmaid:
+        - "naked with metal collar and metal ankle and wrist cuffs"            
+    
+    male_accessories:
+      - "Thor's hammer pendant"
+      - "silver arm-ring"
+      - "bronze cloak pin"
+      - "leather belt with iron fittings"
+      - "bone comb in belt pouch"
+      - "runic amulet"
+      - "wolf-tooth necklace"
+      - "boar-tusk pendant"
+      - "twisted silver neck-ring"
+      - "bronze finger rings"
+      - "iron oath-ring"
+      - "antler-handled seax"
+      - "amber bead at throat"
+    
+    female_accessories:
+      - "silver oval brooches"
+      - "bead necklace of glass and amber"
+      - "bronze keys on chain"
+      - "silver finger rings"
+      - "woven headband"
+      - "amber pendant"
+      - "bronze arm-rings"
+      - "trefoil brooch"
+      - "crystal pendant"
+      - "silver needle case at belt"
+      - "spindle whorl"
+      - "carved bone comb"
+      - "linen head-covering for married women"
+    
+    outerwear:
+      - "heavy wool cloak pinned at shoulder"
+      - "fur-lined hood"
+      - "sheepskin vest"
+      - "bear-fur mantle for status"
+      - "seal-skin cloak"
+      - "practical wool riding cloak"
+      - "oiled wool rain cloak"
+      - "wolf-fur collar on wool cloak"
+      - "simple rectangular cloak"
+  
+  norse_danish:
+    era_descriptor: "9th century Danish Viking"
+    
+    male_clothing:
+      wealthy:
+        - "richly dyed wool tunic showing Danelaw wealth"
+        - "silk-trimmed tunic acquired from English raids"
+        - "wool tunic with Frankish silver decorations"
+        - "fine linen shirt under embroidered wool tunic"
+        - "tunic with gold thread showing successful raider"
+      
+      seafaring:
+        - "practical seafarer's wool garments"
+        - "oiled wool tunic for sea spray"
+        - "layered wool for long voyages"
+        - "sailor's simple but sturdy clothes"
+      
+      everyday:
+        - "well-made wool tunic in Danish style"
+        - "comfortable tunic for trading business"
+        - "merchant's respectable wool garments"
+      
+      status:
+        - "tunic trimmed with English silver"
+        - "clothes showing Continental influence"
+        - "garments displaying hack-silver wealth"
+    
+    female_clothing:
+      wealthy:
+        - "elegant apron-dress with imported silk trim"
+        - "finely woven wool dress with gold-thread embroidery"
+        - "layered dresses showing wealth from raids"
+        - "silk-accented dress showing trade connections"
+        - "dress decorated with Frankish glass beads"
+      
+      traditional:
+        - "practical wool dress with distinctive Danish brooch style"
+        - "apron-dress with characteristic Danish tortoise brooches"
+        - "warm wool layers for coastal living"
+      
+      everyday:
+        - "well-kept wool dress of merchant's wife"
+        - "practical but pretty dress for market day"
+        - "simple wool dress with amber jewelry"
+      
+      working:
+        - "sturdy dress for fisherman's wife"
+        - "trader's daughter's practical garments"
+        
+      skimpy:
+        - "bikini leather armor"
+        - "bikini chainmail armor"
+        - "bikini made from plant materials"
+        - "bikini made from linen"
+        - "bikini made from silk"
+        - "naked for battle mobility"
+ 
+      bondmaid:
+        - "naked with metal collar and metal ankle and wrist cuffs"
+    
+    male_accessories:
+      - "Frankish silver arm-ring"
+      - "gold neck-ring"
+      - "silver Thor's hammer"
+      - "ornate belt fittings"
+      - "hack-silver bracelet"
+      - "English coin pendant"
+      - "Danish-style boar brooch"
+      - "gold finger ring"
+      - "carved walrus-ivory"
+      - "Frankish sword fittings"
+      - "trade-silver jewelry"
+    
+    female_accessories:
+      - "distinctive Danish tortoise brooches"
+      - "Frankish glass beads"
+      - "silver wire rings"
+      - "imported silk ribbons"
+      - "gold earrings"
+      - "English silver pendant"
+      - "amber and glass necklace"
+      - "ornate key set showing household authority"
+      - "crystal beads"
+    
+    outerwear:
+      - "Frankish-style cloak"
+      - "rich fur-trimmed mantle"
+      - "oiled wool sea-cloak"
+      - "English wool cloak from trade"
+      - "practical traveling cloak"
+      - "heavy cloak against North Sea winds"
+  
+  norse_norwegian:
+    era_descriptor: "9th century Norwegian Viking"
+    
+    male_clothing:
+      mountain:
+        - "practical wool tunic suited for mountain cold"
+        - "layered wool garments for harsh climate"
+        - "thick wool tunic with reindeer-hide trim"
+        - "sealskin-trimmed wool clothing"
+        - "heavy wool layers for fjord winters"
+      
+      rural:
+        - "simple but sturdy wool tunic and trousers"
+        - "herder's practical wool garments"
+        - "farmer's undyed homespun wool"
+        - "fisherman's well-worn but sturdy clothes"
+      
+      coastal:
+        - "whale-hunter's layered wool and hide"
+        - "sailor's weatherproof garments"
+      
+      status:
+        - "wealthy farmer's dyed wool tunic"
+        - "chieftain's fur-trimmed garments"
+    
+    female_clothing:
+      cold_weather:
+        - "warm wool dress with fur trim at collar"
+        - "layered wool dresses for mountain winters"
+        - "thick wool dress with tablet-woven belt"
+        - "warm underdress with heavier wool overdress"
+        - "fur-lined dress edges for warmth"
+      
+      traditional:
+        - "practical apron-dress with bone toggles"
+        - "simple but well-made mountain dress"
+        - "herder's wife's sturdy wool garments"
+      
+      coastal:
+        - "fisherman's wife's practical dress"
+        - "weather-ready wool layers"
+      
+      status:
+        - "prosperous farmer's wife's colorful dress"
+        - "dress with imported amber showing wealth"
+        
+      skimpy:
+        - "bikini leather armor"
+        - "bikini chainmail armor"
+        - "bikini made from plant materials"
+        - "bikini made from linen"
+        - "bikini made from silk"
+        - "naked for battle mobility"
+ 
+      bondmaid:
+        - "naked with metal collar and metal ankle and wrist cuffs"
+    
+    male_accessories:
+      - "bear-claw pendant"
+      - "whale-bone comb"
+      - "simple iron arm-ring"
+      - "reindeer-antler knife handle"
+      - "soapstone Thor's hammer"
+      - "walrus-ivory carving"
+      - "seal-tooth necklace"
+      - "iron finger ring"
+      - "practical bronze cloak pin"
+      - "leather pouch with runes"
+    
+    female_accessories:
+      - "simple bronze brooches"
+      - "bone beads"
+      - "amber from trade"
+      - "soapstone spindle whorl at belt"
+      - "iron keys"
+      - "whale-bone comb"
+      - "simple silver ring"
+      - "practical bronze jewelry"
+      - "carved antler pendant"
+    
+    outerwear:
+      - "heavy bearskin cloak"
+      - "reindeer-hide outer layer"
+      - "thick wool hood"
+      - "sealskin boots and mittens"
+      - "fur-lined everything"
+      - "mountain weather cloak"
+      - "practical woolen hood"
+      - "sheepskin vest"
+  
+  norse_icelandic:
+    era_descriptor: "10th century Icelandic settler"
+    
+    male_clothing:
+      everyday:
+        - "thick wool vaðmál tunic in natural sheep colors"
+        - "homespun wool tunic with simple leather belt"
+        - "layered wool garments for variable Icelandic weather"
+        - "practical tunic of undyed wool with bone buttons"
+        - "sheepskin vest over wool tunic"
+      
+      wealthy:
+        - "imported dyed wool tunic from Norway"
+        - "fine vaðmál cloak with woven borders"
+        - "tunic with silver thread at collar and cuffs"
+        - "wool garments with imported glass beads"
+        - "Greenlandic walrus ivory buttons"
+      
+      working:
+        - "sturdy wool work tunic patched at elbows"
+        - "sheep farmer's practical layered wool"
+        - "fisherman's oiled wool sea-clothes"
+        - "horse breeder's riding tunic"
+    
+    female_clothing:
+      traditional:
+        - "wool hangerok (apron-dress) with simple brooches"
+        - "homespun wool dress with woven belt"
+        - "layered wool dresses for geothermal spring visits"
+        - "practical wool dress with sheepskin lining"
+      
+      wealthy:
+        - "imported linen underdress from Norway"
+        - "fine wool overdress with silver brooches"
+        - "dress with amber beads from trade with Norway"
+        - "Greenlandic narwhal ivory jewelry"
+      
+      working:
+        - "dairy-woman's practical wool dress"
+        - "weaver's dress with spindle whorl at belt"
+        - "farm wife's sturdy work dress"
+      
+      skimpy:
+        - "bikini leather armor"
+        - "bikini chainmail armor"
+        - "bikini made from plant materials"
+        - "bikini made from linen"
+        - "bikini made from silk"
+        - "naked for battle mobility"
+ 
+      bondmaid:
+        - "naked with metal collar and metal ankle and wrist cuffs"
+    
+    male_accessories:
+      - "simple bronze cloak pin"
+      - "bone comb in leather pouch"
+      - "sheepskin mittens"
+      - "iron knife at belt"
+      - "walrus ivory Thor's hammer"
+      - "runic amulet of local stone"
+      - "woven wool belt with bone buckle"
+      - "sheepskin hat"
+    
+    female_accessories:
+      - "simple bronze brooches"
+      - "bone beads"
+      - "amber from Norwegian trade"
+      - "woven headband with simple pattern"
+      - "bone needle case at belt"
+      - "soapstone spindle whorl"
+      - "iron keys to chests"
+      - "sheepskin-lined hood"
+    
+    outerwear:
+      - "thick wool vararfeldur (shaggy cloak)"
+      - "sheepskin outer cloak"
+      - "hooded wool traveling cloak"
+      - "sealskin rain cloak"
+      - "reindeer-hide winter cloak"
+  
+  norse_greenlandic:
+    era_descriptor: "11th century Greenlandic Norse"
+    
+    male_clothing:
+      everyday:
+        - "thick wool tunic with sealskin trim"
+        - "layered wool garments for extreme cold"
+        - "practical Norse-Greenlandic hybrid clothing"
+        - "wool tunic with Inuit-style fur lining"
+        - "caribou-hide vest over wool"
+      
+      wealthy:
+        - "fine wool tunic with walrus ivory buttons"
+        - "imported Norwegian dyed wool"
+        - "sealskin boots with elaborate stitching"
+        - "polar bear fur trim on good cloak"
+        - "tunic with Greenlandic woven bands"
+      
+      working:
+        - "walrus hunter's sealskin over-tunic"
+        - "fisherman's oiled wool and seal combination"
+        - "hunter's caribou-hide layered clothing"
+        - "farmstead worker's practical wool"
+    
+    female_clothing:
+      traditional:
+        - "wool dress with sealskin trim at hem"
+        - "layered wool with caribou-hide underlayer"
+        - "Norse-style apron-dress adapted for cold"
+        - "practical dress with fur-lined sleeves"
+      
+      wealthy:
+        - "imported linen underdress from Norway"
+        - "fine wool overdress with walrus ivory brooches"
+        - "narwhal tusk hair pins"
+        - "polar bear fur collar on good dress"
+      
+      working:
+        - "dairy-woman's sturdy wool dress"
+        - "seal-processing worker's practical clothes"
+        - "farm wife's layered wool and hide"
+      
+      skimpy:
+        - "bikini leather armor"
+        - "bikini chainmail armor"
+        - "bikini made from plant materials"
+        - "bikini made from linen"
+        - "bikini made from silk"
+        - "naked for battle mobility"
+ 
+      bondmaid:
+        - "naked with metal collar and metal ankle and wrist cuffs"
+    
+    male_accessories:
+      - "walrus ivory Thor's hammer"
+      - "seal-tooth necklace"
+      - "narwhal tusk knife handle"
+      - "caribou antler comb"
+      - "polar bear claw pendant"
+      - "soapstone oil lamp (personal)"
+      - "Inuit-style bone goggles for snow glare"
+    
+    female_accessories:
+      - "walrus ivory brooches"
+      - "seal bone beads"
+      - "narwhal tusk hair pins"
+      - "caribou hide pouch"
+      - "soapstone spindle whorl"
+      - "woven seal-gut cord belt"
+    
+    outerwear:
+      - "polar bear fur cloak (great status)"
+      - "sealskin hooded parka (Inuit style)"
+      - "caribou-hide winter cloak"
+      - "wool cloak with fox-fur trim"
+      - "sealskin over-tunic for voyages"
+  
+  norse_danelaw:
+    era_descriptor: "10th century Danelaw Norse-English"
+    
+    male_clothing:
+      everyday:
+        - "Anglo-Norse hybrid tunic with both styles"
+        - "wool tunic in Norse cut with English embroidery"
+        - "practical Danelaw settler's clothing"
+        - "English-style long tunic with Norse belt"
+        - "layered wool for variable English weather"
+      
+      wealthy:
+        - "fine wool tunic with English silver brooch"
+        - "silk trim from English trade"
+        - "Anglo-Saxon style cloak with Norse pin"
+        - "tunic with both Norse and English knotwork"
+        - "silver arm-rings showing Danelaw wealth"
+      
+      working:
+        - "farmer's practical wool and linen"
+        - "craftsman's leather apron over Norse tunic"
+        - "fisherman's oiled wool coastal clothes"
+    
+    female_clothing:
+      traditional:
+        - "Norse apron-dress with English disc brooches"
+        - "Anglo-Saxon style gown with Norse jewelry"
+        - "hybrid dress showing both heritages"
+        - "linen underdress with wool overdress"
+      
+      wealthy:
+        - "imported silk with both style influences"
+        - "richly embroidered English-style gown"
+        - "Norse tortoise brooches with English filigree"
+        - "silver and amber combination jewelry"
+      
+      working:
+        - "practical wool dress of Danelaw farm wife"
+        - "market woman's sturdy English-style gown"
+        - "weaver's dress with both culture tools"
+      
+      skimpy:
+        - "bikini leather armor"
+        - "bikini chainmail armor"
+        - "bikini made from plant materials"
+        - "bikini made from linen"
+        - "bikini made from silk"
+        - "naked for battle mobility"
+ 
+      bondmaid:
+        - "naked with metal collar and metal ankle and wrist cuffs"
+    
+    male_accessories:
+      - "Anglo-Saxon disc brooch with Norse motifs"
+      - "silver arm-ring with English-style terminals"
+      - "Thor's hammer and Christian cross both worn"
+      - "English seax at belt with Norse sheath"
+      - "coin jewelry mixing English and Norse silver"
+    
+    female_accessories:
+      - "Anglo-Saxon disc brooches worn as pair"
+      - "Norse tortoise brooches with English decoration"
+      - "strand of mixed English and Norse beads"
+      - "silver wire rings in both styles"
+      - "woven belt with both culture patterns"
+    
+    outerwear:
+      - "Anglo-Saxon style cloak with Norse pin"
+      - "English wool cloak in Norse cut"
+      - "hooded traveling cloak of Danelaw style"
+  
+  norse_irish:
+    era_descriptor: "10th century Hiberno-Norse"
+    
+    male_clothing:
+      everyday:
+        - "Norse-style tunic with Irish brat (cloak)"
+        - "Irish léine (linen tunic) with Norse belt"
+        - "hybrid clothing of Dublin's Norse-Gael"
+        - "practical mixed culture coastal wear"
+      
+      wealthy:
+        - "silk-trimmed tunic with Irish embroidery"
+        - "fine wool brat with Norse-style pin"
+        - "silver arm-rings with Celtic knotwork"
+        - "imported fabrics showing trade wealth"
+      
+      working:
+        - "fisherman's practical mixed-style clothes"
+        - "craftsman's leather apron over léine"
+        - "farmer's hybrid wool garments"
+    
+    female_clothing:
+      traditional:
+        - "Irish léine under Norse-style apron-dress"
+        - "Celtic embroidered dress with Norse brooches"
+        - "hybrid gown of Dublin's Norse-Gael women"
+        - "layered dresses mixing both traditions"
+      
+      wealthy:
+        - "silk léine with Norse silver jewelry"
+        - "richly embroidered Celtic gown"
+        - "gold torc worn with Norse apron-dress"
+        - "imported fabrics with Celtic knotwork"
+      
+      working:
+        - "practical mixed-style wool dress"
+        - "market woman's sturdy Irish-Norse clothing"
+        - "dairy worker's hybrid garments"
+      
+      skimpy:
+        - "bikini leather armor"
+        - "bikini chainmail armor"
+        - "bikini made from plant materials"
+        - "bikini made from linen"
+        - "bikini made from silk"
+        - "naked for battle mobility"
+ 
+      bondmaid:
+        - "naked with metal collar and metal ankle and wrist cuffs"
+    
+    male_accessories:
+      - "Celtic penannular brooch with Norse pin"
+      - "silver arm-ring with Irish interlace"
+      - "Thor's hammer with Celtic knotwork"
+      - "Irish style belt with Norse buckle"
+      - "coin jewelry mixing Norse and Irish silver"
+    
+    female_accessories:
+      - "Celtic knotwork brooches"
+      - "Norse tortoise brooches with Irish patterns"
+      - "amber and glass bead mix"
+      - "silver lunula with Norse additions"
+      - "woven belt with Celtic and Norse patterns"
+    
+    outerwear:
+      - "Irish brat (large wool cloak) with Norse pin"
+      - "hooded traveling cloak of Hiberno-Norse style"
+      - "fur-trimmed mantle mixing both cultures"
+  
+  norse_faroeislands:
+    era_descriptor: "10th century Faroese Norse"
+    
+    male_clothing:
+      everyday:
+        - "thick wool tunic for windy islands"
+        - "layered wool garments for North Atlantic"
+        - "practical Faroese fisher-farmer clothing"
+        - "sturdy wool with sealskin reinforcements"
+      
+      wealthy:
+        - "fine Norwegian wool tunic"
+        - "imported dyed fabrics"
+        - "sealskin trim on good cloak"
+        - "puffin-beak decorated belt"
+      
+      working:
+        - "fisherman's oiled wool sea-clothes"
+        - "bird-cliff hunter's practical gear"
+        - "sheep farmer's wool work clothes"
+        - "whale hunter's sealskin over-tunic"
+    
+    female_clothing:
+      traditional:
+        - "thick wool dress with sealskin trim"
+        - "layered wool for cold windy climate"
+        - "practical Faroese farm wife's dress"
+        - "woven dress in local sheep colors"
+      
+      wealthy:
+        - "imported Norwegian wool dress"
+        - "sealskin-trimmed good dress"
+        - "amber beads from Norwegian trade"
+        - "puffin-beak decorated accessories"
+      
+      working:
+        - "dairy-woman's practical wool dress"
+        - "bird-feather processing worker's clothes"
+        - "farm wife's sturdy work dress"
+      
+      skimpy:
+        - "bikini leather armor"
+        - "bikini chainmail armor"
+        - "bikini made from plant materials"
+        - "bikini made from linen"
+        - "bikini made from silk"
+        - "naked for battle mobility"
+ 
+      bondmaid:
+        - "naked with metal collar and metal ankle and wrist cuffs"
+    
+    male_accessories:
+      - "puffin-beak decorated belt"
+      - "seal-tooth necklace"
+      - "simple bronze cloak pin"
+      - "soapstone fishing weight as pendant"
+      - "sheep horn comb"
+      - "whalebone knife handle"
+    
+    female_accessories:
+      - "simple bronze brooches"
+      - "puffin-beak hair pins"
+      - "seal bone beads"
+      - "sheep horn spindle whorl"
+      - "woven wool belt with puffin decorations"
+    
+    outerwear:
+      - "thick wool cloak with sealskin hood"
+      - "sealskin over-cloak for sea voyages"
+      - "puffin-feather trimmed winter cloak"
+      - "oil-treated wool sea-cloak"
+  
+  norse_varangian:
+    era_descriptor: "10th-11th century Varangian (Rus')"
+    
+    male_clothing:
+      everyday:
+        - "Norse tunic under Byzantine-style caftan"
+        - "Slavic-inspired wool trousers with Norse tunic"
+        - "hybrid Rus' clothing of the river routes"
+        - "practical travel wear for long river journeys"
+      
+      wealthy:
+        - "silk tunic from Constantinople"
+        - "fine wool caftan with gold embroidery"
+        - "Greek-style cloak with Norse fibula"
+        - "jewelry mixing Norse, Slavic, and Byzantine styles"
+        - "imperial purple trim showing service to Emperor"
+      
+      working:
+        - "druzhina member's practical travel clothes"
+        - "river trader's sturdy wool and linen"
+        - "mercenary's mixed-style campaign wear"
+        - "ship-hand's Norse-Slavic hybrid gear"
+    
+    female_clothing:
+      traditional:
+        - "Norse-style dress with Slavic embroidery"
+        - "Byzantine-influenced gown with Norse jewelry"
+        - "Rus' woman's hybrid clothing of Kiev"
+        - "layered dresses mixing all three cultures"
+      
+      wealthy:
+        - "silk gown from Constantinople"
+        - "richly embroidered Slavic-style dress"
+        - "Norse tortoise brooches with Byzantine enamel"
+        - "gold jewelry of mixed styles"
+        - "imported Byzantine silk veil"
+      
+      working:
+        - "practical Norse-Slavic hybrid dress"
+        - "trader's wife's sturdy clothing"
+        - "market woman's Rus' style garments"
+      
+      skimpy:
+        - "bikini leather armor"
+        - "bikini chainmail armor"
+        - "bikini made from plant materials"
+        - "bikini made from linen"
+        - "bikini made from silk"
+        - "naked for battle mobility"
+ 
+      bondmaid:
+        - "naked with metal collar and metal ankle and wrist cuffs"
+    
+    male_accessories:
+      - "Byzantine cross pendant"
+      - "Norse Thor's hammer (hidden if Christian)"
+      - "Slavic temple rings"
+      - "silver arm-rings with Greek inscriptions"
+      - "Varangian guard axe charm"
+      - "Greek icon pendant"
+      - "coin jewelry mixing Norse and Byzantine silver"
+    
+    female_accessories:
+      - "Norse tortoise brooches with Byzantine enamel"
+      - "Slavic temple rings"
+      - "Greek-style golden earrings"
+      - "strand of mixed amber, glass, and Byzantine beads"
+      - "silk ribbon headband"
+      - "silver wire rings in Norse style"
+    
+    outerwear:
+      - "Byzantine-style cloak with Norse pin"
+      - "fur-lined Slavic caftan"
+      - "Greek military-style wool cloak"
+      - "traveling coat of Rus' design"
+  
+  anglo_saxon:
+    era_descriptor: "9th century Anglo-Saxon"
+    
+    male_clothing:
+      noble:
+        - "long wool tunic reaching to knees in English style"
+        - "finely woven tunic showing thegn status"
+        - "silk-trimmed tunic of noble birth"
+        - "embroidered wool tunic with gold thread"
+      
+      common:
+        - "linen shirt with embroidered cuffs under wool tunic"
+        - "practical wool garments with leather cross-garters"
+        - "simple ceorl's wool clothing with rope belt"
+        - "farmer's undyed wool tunic and trousers"
+      
+      craftsmen:
+        - "smith's leather apron over sturdy tunic"
+        - "merchant's respectable wool garments"
+      
+      clergy:
+        - "simple wool robe of monastic style"
+        - "priest's dark wool garments"
+    
+    female_clothing:
+      noble:
+        - "long linen underdress with wool gown over"
+        - "richly embroidered gown with golden threads"
+        - "elegant dress with disc brooch at shoulder"
+        - "fine linen veiled headdress over braided hair"
+      
+      common:
+        - "practical wool dress with woven girdle"
+        - "layered dresses pinned with Anglo-Saxon disc brooch"
+        - "simple wool gown of freeman's wife"
+        - "well-kept dress for church attendance"
+      
+      working:
+        - "sturdy wool dress for farm work"
+        - "servant's simple but clean garments"
+      
+      married:
+        - "modest dress with head covering"
+        - "matronly gown with keys at belt"
+        
+      skimpy:
+        - "bikini leather armor"
+        - "bikini chainmail armor"
+        - "bikini made from plant materials"
+        - "bikini made from linen"
+        - "bikini made from silk"
+        - "naked for battle mobility"
+ 
+      slave-girl:
+        - "naked with metal collar and metal ankle and wrist cuffs"
+    
+    male_accessories:
+      - "disc brooch with interlace design"
+      - "leather belt with bronze fittings"
+      - "Christian cross pendant"
+      - "gold arm-ring for nobles"
+      - "silver finger ring"
+      - "ornate belt buckle"
+      - "seax at hip"
+      - "prayer beads"
+      - "reliquary pendant"
+    
+    female_accessories:
+      - "linked pin and chain"
+      - "golden disc brooch"
+      - "glass bead necklace"
+      - "veiled headdress"
+      - "embroidered girdle"
+      - "cross pendant"
+      - "silver ring"
+      - "wrist clasps"
+      - "workbox at belt"
+    
+    outerwear:
+      - "rectangular cloak pinned at shoulder"
+      - "hooded riding cloak"
+      - "fur-trimmed mantle for winter"
+      - "simple wool cloak"
+      - "traveling cloak with hood"
+  
+  frankish:
+    era_descriptor: "9th century Frankish"
+    
+    male_clothing:
+      noble:
+        - "linen shirt with rich wool tunic in Carolingian style"
+        - "embroidered tunic with gold thread borders"
+        - "fine wool with silk trim showing noble rank"
+        - "military tunic over chainmail"
+      
+      practical:
+        - "practical military tunic with leather belt"
+        - "layered garments showing continental fashion"
+        - "traveler's sturdy wool garments"
+      
+      merchant:
+        - "merchant's respectable wool clothing"
+        - "craftsman's practical tunic and hose"
+      
+      clergy:
+        - "priest's fine wool robes"
+        - "monk's simple habit"
+    
+    female_clothing:
+      noble:
+        - "long gown with tight sleeves in Frankish fashion"
+        - "richly embroidered dress with golden belt"
+        - "elegant court dress with veil and circlet"
+        - "layered silk and wool showing wealth"
+      
+      common:
+        - "practical wool dress with distinctive square neckline"
+        - "well-made dress for market day"
+        - "merchant's wife's respectable gown"
+      
+      working:
+        - "servant's simple wool dress"
+        - "farmer's wife's sturdy garments"
+      
+      religious:
+        - "modest dress suitable for church"
+        - "nun's simple habit"
+        
+      skimpy:
+        - "bikini leather armor"
+        - "bikini chainmail armor"
+        - "bikini made from plant materials"
+        - "bikini made from linen"
+        - "bikini made from silk"
+        - "naked for battle mobility"
+ 
+      slave-girl:
+        - "naked with metal collar and metal ankle and wrist cuffs"
+    
+    male_accessories:
+      - "ornate sword belt"
+      - "gold fibula brooch"
+      - "signet ring"
+      - "jeweled belt fittings"
+      - "Christian reliquary pendant"
+      - "golden cross"
+      - "noble's seal ring"
+      - "decorative spurs"
+    
+    female_accessories:
+      - "golden earrings"
+      - "jeweled brooches"
+      - "silk veil"
+      - "golden circlet"
+      - "pearl necklace"
+      - "cross pendant"
+      - "embroidered belt"
+      - "prayer beads"
+    
+    outerwear:
+      - "rich wool cloak with fur lining"
+      - "silk-lined riding cloak"
+      - "heavy mantle with gold clasp"
+      - "traveling cloak"
+      - "fur-trimmed winter mantle"
+  
+  slavic:
+    era_descriptor: "9th century Slavic"
+    
+    male_clothing:
+      traditional:
+        - "long linen shirt with embroidered collar and cuffs"
+        - "wool caftan-style coat over linen undergarments"
+        - "practical wool tunic with Slavic embroidery patterns"
+        - "simple tunic with distinctive geometric decoration"
+      
+      rural:
+        - "layered garments suited for eastern forests"
+        - "farmer's homespun linen and wool"
+        - "herder's practical wool clothing"
+      
+      warrior:
+        - "warrior's tunic under leather armor"
+        - "riding clothes for steppe horsemen"
+      
+      trade:
+        - "tunic showing Byzantine trade influence"
+        - "garments mixing Slavic and Norse styles"
+    
+    female_clothing:
+      traditional:
+        - "long linen dress with red embroidery at hem and sleeves"
+        - "wool sarafan-style overdress over white linen"
+        - "richly decorated dress with geometric patterns"
+        - "practical wool dress with colorful woven belt"
+      
+      ceremonial:
+        - "layered dresses with distinctive headdress"
+        - "married woman's traditional costume"
+        - "festival dress with elaborate embroidery"
+      
+      simple:
+        - "farmer's wife's practical linen and wool"
+        - "simple but colorful village dress"
+      
+      status:
+        - "wealthy woman's silk-trimmed dress"
+        
+      skimpy:
+        - "bikini leather armor"
+        - "bikini chainmail armor"
+        - "bikini made from plant materials"
+        - "bikini made from linen"
+        - "bikini made from silk"
+        - "naked for battle mobility"
+ 
+      slave-girl:
+        - "naked with metal collar and metal ankle and wrist cuffs"
+    
+    male_accessories:
+      - "bronze temple rings"
+      - "leather belt with bronze plates"
+      - "Thor's hammer mixed with Slavic symbols"
+      - "bone beads"
+      - "Perun's axe amulet"
+      - "silver arm-ring"
+      - "iron finger ring"
+      - "leather pouch with protective charms"
+    
+    female_accessories:
+      - "silver temple rings hanging by ears"
+      - "many-strand bead necklace"
+      - "bronze lunula pendant"
+      - "woven belt with bronze ends"
+      - "colorful ribbons in hair"
+      - "married woman's headdress"
+      - "silver finger rings"
+      - "protective amulets"
+    
+    outerwear:
+      - "fur-lined caftan"
+      - "thick wool cloak"
+      - "sheepskin coat"
+      - "heavy winter cloak"
+      - "hooded forest cloak"
+  
+  byzantine:
+    era_descriptor: "9th century Byzantine"
+    
+    male_clothing:
+      imperial:
+        - "silk tunic with gold embroidery in Roman style"
+        - "layered dalmatic over fine linen"
+        - "rich brocade robes showing imperial fashion"
+        - "purple silk reserved for highest ranks"
+      
+      military:
+        - "military tunic under lamellar armor"
+        - "officer's fine wool with rank insignia"
+      
+      merchant:
+        - "merchant's fine wool with purple accents"
+        - "practical wool tunic with silk trim"
+        - "craftsman's respectable garments"
+      
+      clergy:
+        - "priest's elaborate vestments"
+        - "monk's simple black robes"
+    
+    female_clothing:
+      noble:
+        - "flowing silk stola in imperial purple and gold"
+        - "richly brocaded dress with jeweled belt"
+        - "layered silk garments with golden embroidery"
+        - "elegant dalmatic with pearl trim"
+      
+      common:
+        - "fine wool dress with silk veil"
+        - "merchant's wife's respectable silk"
+        - "practical but elegant city dress"
+      
+      working:
+        - "simple wool dress of common woman"
+      
+      religious:
+        - "modest dress for church attendance"
+        - "nun's simple dark garments"
+        
+      skimpy:
+        - "bikini leather armor"
+        - "bikini chainmail armor"
+        - "bikini made from plant materials"
+        - "bikini made from linen"
+        - "bikini made from silk"
+        - "naked for battle mobility"
+ 
+      slave-girl:
+        - "naked with metal collar and metal ankle and wrist cuffs"
+    
+    male_accessories:
+      - "gold fibula"
+      - "jeweled rings"
+      - "silk sash"
+      - "Christian cross of gold"
+      - "ornate belt"
+      - "signet ring"
+      - "icon pendant"
+      - "prayer rope"
+    
+    female_accessories:
+      - "golden earrings with pearls"
+      - "jeweled diadem"
+      - "pearl necklaces"
+      - "golden bracelets"
+      - "silk veils"
+      - "icon pendant"
+      - "elaborate hair ornaments"
+    
+    outerwear:
+      - "heavy silk cloak"
+      - "fur-lined mantle"
+      - "golden-clasped cape"
+      - "wool traveling cloak"
+      - "ceremonial outer robe"
+  
+  arabic:
+    era_descriptor: "9th century Arab"
+    
+    male_clothing:
+      noble:
+        - "fine white cotton thobe under richly embroidered robe"
+        - "layered silk robes in desert style"
+        - "merchant's fine wool with gold trim"
+        - "scholar's dignified robes"
+      
+      common:
+        - "practical cotton garments with colorful sash"
+        - "flowing robes suited for desert travel"
+        - "simple but clean thobe and sirwal"
+      
+      warrior:
+        - "warrior's practical riding clothes"
+        - "leather-trimmed garments for battle"
+      
+      merchant:
+        - "trader's prosperous attire"
+        - "traveling merchant's practical robes"
+    
+    female_clothing:
+      wealthy:
+        - "layered silk garments in rich jewel tones"
+        - "embroidered cotton dress with golden threads"
+        - "elegant silk gown with intricate patterns"
+        - "richly decorated dress with coin jewelry"
+      
+      modest:
+        - "flowing robes with delicate veil"
+        - "modest but elegant cotton dress"
+        - "practical dress for household work"
+      
+      ceremonial:
+        - "wedding finery with elaborate embroidery"
+        - "festival clothes in bright colors"
+        
+      slave-girl:
+        - "naked with metal collar and metal ankle and wrist cuffs"
+    
+    male_accessories:
+      - "jeweled dagger at belt"
+      - "gold ring with gemstone"
+      - "silk turban or keffiyeh"
+      - "ornate belt"
+      - "amber prayer beads"
+      - "silver arm-ring"
+      - "calligraphy pendant"
+      - "seal ring"
+    
+    female_accessories:
+      - "golden bangles"
+      - "coin headdress"
+      - "henna-decorated hands"
+      - "jeweled earrings"
+      - "delicate veil with gold trim"
+      - "nose ring"
+      - "anklets with bells"
+      - "kohl-lined eyes"
+    
+    outerwear:
+      - "flowing outer robe"
+      - "wool cloak for travel"
+      - "silk-lined cape"
+      - "desert headwrap"
+      - "light traveling cloak"
+  
+  irish:
+    era_descriptor: "9th century Irish"
+    
+    male_clothing:
+      traditional:
+        - "léine (long linen tunic) with embroidered borders"
+        - "wool brat (cloak) over léine"
+        - "layered garments in green and saffron dyes"
+        - "practical wool tunic with Celtic knotwork trim"
+      
+      common:
+        - "simple léine of undyed linen"
+        - "farmer's wool and linen layers"
+        - "herder's practical garments"
+      
+      warrior:
+        - "warrior's léine under leather"
+        - "raider's practical clothes"
+        - "naked for battle mobility"
+      
+      religious:
+        - "simple monk's robes"
+        - "priest's dignified garments"
+    
+    female_clothing:
+      traditional:
+        - "long léine with intricate Celtic embroidery"
+        - "wool overdress with penannular brooch"
+        - "fine linen dress with tablet-woven trim"
+      
+      common:
+        - "layered dresses in natural dyes"
+        - "practical wool dress with distinctive Irish styling"
+        - "farmer's wife's sturdy garments"
+      
+      status:
+        - "noble woman's richly dyed dress"
+        - "queen's elaborate costume"
+      
+      religious:
+        - "modest dress for church"
+        - "nun's simple attire"
+        
+      skimpy:
+        - "bikini leather armor"
+        - "bikini chainmail armor"
+        - "bikini made from plant materials"
+        - "bikini made from linen"
+        - "bikini made from silk"
+        - "naked for battle mobility"
+ 
+      slave-girl:
+        - "naked with metal collar and metal ankle and wrist cuffs"
+    
+    male_accessories:
+      - "penannular brooch with Celtic design"
+      - "gold torc"
+      - "bronze arm-ring"
+      - "leather belt with bronze fittings"
+      - "Celtic cross pendant"
+      - "cloak pin with spirals"
+    
+    female_accessories:
+      - "Celtic knotwork brooch"
+      - "glass and amber beads"
+      - "bronze hair pins"
+      - "golden ring"
+      - "woven belt"
+      - "silver lunula"
+      - "spiral arm-ring"
+    
+    outerwear:
+      - "large wool brat pinned at shoulder"
+      - "hooded cloak"
+      - "fur-trimmed mantle"
+      - "rain cloak of oiled wool"
+      - "traveling cloak with Celtic pin"
+
+# =============================================================================
+# ROLE-SPECIFIC APPEARANCE AND EQUIPMENT
+# =============================================================================
+
+role_appearance:
+  warrior:
+    male_equipment:
+      - "round shield on back"
+      - "axe at belt"
+      - "seax knife"
+      - "spear in hand"
+    female_equipment:
+      - "round shield"
+      - "sword at hip"
+      - "seax knife"
+    male_armor:
+      - "chainmail byrnie"
+      - "leather lamellar"
+      - "padded gambeson"
+      - "iron helm"
+    female_armor:
+      - "light chainmail"
+      - "leather armor"
+      - "padded tunic"
+      - "bikini leather armor"
+      - "bikini chainmail armor"
+      - "naked for battle mobility"
+    demeanor: "battle-ready stance with alert eyes scanning for threats"
+  
+  shieldmaiden:
+    male_equipment: []
+    female_equipment:
+      - "round shield with painted design"
+      - "sword"
+      - "axe"
+      - "seax"
+    male_armor: []
+    female_armor:
+      - "light chainmail over wool"
+      - "leather armor with metal studs"
+      - "bikini leather armor"
+      - "bikini chainmail armor"
+      - "naked for battle mobility"
+    demeanor: "confident warrior's bearing with fierce determined expression"
+  
+  berserker:
+    male_equipment:
+      - "massive two-handed axe"
+      - "bear or wolf pelt"
+      - "ritual scars"
+    female_equipment: []  # Very rare
+    male_armor:
+      - "bare-chested with ritual markings"
+      - "wolf or bear skin only"
+    female_armor: []
+    demeanor: "wild-eyed intensity barely contained, muscles tensed for violence"
+  
+  huskarl:
+    male_equipment:
+      - "Danish axe"
+      - "fine sword"
+      - "large round shield"
+      - "seax"
+    female_equipment:
+      - "sword"
+      - "shield"
+      - "seax"
+    male_armor:
+      - "fine chainmail byrnie"
+      - "iron spangenhelm with mail aventail"
+    female_armor:
+      - "quality chainmail"
+      - "helm"
+      - "naked for battle mobility"
+    demeanor: "disciplined professional soldier's bearing, watchful and ready"
+  
+  volva:
+    male_equipment: []  # N/A - female role
+    female_equipment:
+      - "seiðr staff with iron fittings"
+      - "rune pouch"
+      - "bone charms"
+    male_armor: []
+    female_armor: []
+    demeanor: "otherworldly gaze seeing beyond the veil, mysterious presence"
+  
+  vitki:
+    male_equipment:
+      - "runic staff"
+      - "pouch of rune stones"
+      - "ritual knife"
+    female_equipment:
+      - "runic wand"
+      - "rune pouch"
+      - "herb satchel"
+    male_armor: []
+    female_armor: []
+    demeanor: "knowing eyes holding ancient secrets, deliberate measured movements"
+  
+  sorcerer:
+    male_equipment:
+      - "galdrastafr (magic staff)"
+      - "rune-carved amulets"
+      - "ritual blade"
+    female_equipment:
+      - "seiðr staff"
+      - "bone and amber charms"
+      - "herb pouches"
+    male_armor: []
+    female_armor: []
+    demeanor: "aura of power barely contained, eyes that see hidden things"
+  
+  jarl:
+    male_equipment:
+      - "ornate sword showing status"
+      - "gold-hilted seax"
+    female_equipment:
+      - "symbolic sword of authority"
+      - "golden keys"
+    male_armor:
+      - "fine mail with gold trim"
+      - "ceremonial helm"
+    female_armor: []
+    demeanor: "commanding presence radiating authority and noble bearing"
+  
+  merchant:
+    male_equipment:
+      - "belt pouch heavy with silver"
+      - "measuring scales"
+      - "trade goods samples"
+    female_equipment:
+      - "keys to trade goods"
+      - "coin purse"
+      - "quality fabrics"
+    male_armor: []
+    female_armor: []
+    demeanor: "shrewd calculating eyes assessing value, confident trader's smile"
+  
+  skald:
+    male_equipment:
+      - "small harp or lyre"
+      - "drinking horn"
+      - "arm-rings showing gifts received"
+    female_equipment:
+      - "small lyre"
+      - "runic writing implements"
+    male_armor: []
+    female_armor: []
+    demeanor: "expressive animated features, voice-trained bearing"
+  
+  gothi:
+    male_equipment:
+      - "ritual hammer or staff"
+      - "holy arm-ring for oaths"
+      - "offering bowl"
+    female_equipment:
+      - "ritual implements"
+      - "sacred herbs"
+    male_armor: []
+    female_armor: []
+    demeanor: "serene holy bearing with eyes touched by divine connection"
+  
+  blacksmith:
+    male_equipment:
+      - "hammer at belt"
+      - "tongs"
+      - "leather apron"
+      - "calloused hands"
+    female_equipment:
+      - "small hammer"
+      - "jewelry-making tools"
+    male_armor:
+      - "thick leather apron"
+      - "burn-scarred forearms"
+    female_armor: []
+    demeanor: "strong capable hands, soot-marked, focused craftsman's gaze"
+  
+  farmer:
+    male_equipment:
+      - "seax at belt"
+      - "hand axe for utility"
+    female_equipment:
+      - "keys"
+      - "spindle whorl"
+      - "herb knife"
+    male_armor: []
+    female_armor: []
+    demeanor: "honest weathered face of one who works the land"
+  
+  thrall:
+    male_equipment:
+      - "simple tools"
+      - "no weapons"
+    female_equipment:
+      - "domestic implements"
+    male_armor: []
+    female_armor: []
+    demeanor: "downcast eyes, submissive posture, signs of hard labor"
+  
+  hunter:
+    male_equipment:
+      - "bow and quiver"
+      - "hunting spear"
+      - "skinning knife"
+      - "fur pack"
+    female_equipment:
+      - "bow"
+      - "snares"
+      - "herb pouch"
+    male_armor:
+      - "leather hunting garb"
+    female_armor:
+      - "practical leather"
+    demeanor: "alert watchful eyes, quiet patient bearing of the hunt"
+  
+  healer:
+    male_equipment:
+      - "herb satchel"
+      - "bone needles"
+      - "healing salves"
+    female_equipment:
+      - "extensive herb collection"
+      - "bandages"
+      - "healing implements"
+    male_armor: []
+    female_armor: []
+    demeanor: "gentle capable hands, compassionate knowing eyes"
+  
+  raider:
+    male_equipment:
+      - "battle axe"
+      - "sword"
+      - "seax"
+      - "shield"
+    female_equipment:
+      - "sword"
+      - "axe"
+      - "shield"
+    male_armor:
+      - "leather armor"
+      - "chainmail if wealthy"
+    female_armor:
+      - "leather armor"
+    demeanor: "eager predatory look, always assessing for plunder"
+  
+  sailor:
+    male_equipment:
+      - "seax"
+      - "sailor's knife"
+      - "sounding lead"
+    female_equipment:
+      - "seax"
+    male_armor:
+      - "simple leather"
+    female_armor: []
+    demeanor: "sea-weathered, rolling gait, eyes always checking wind and sky"
+  
+  fisherman:
+    male_equipment:
+      - "fishing spear"
+      - "hooks and line"
+      - "seax"
+    female_equipment:
+      - "net repair tools"
+    male_armor:
+      - "oiled wool"
+    female_armor: []
+    demeanor: "patient watchfulness of one who waits for the sea to give"
+  
+  craftsman:
+    male_equipment:
+      - "tools of trade"
+      - "apron"
+      - "seax"
+    female_equipment:
+      - "weaving tools"
+      - "spindle"
+    male_armor: []
+    female_armor: []
+    demeanor: "focused concentration on craft, pride in workmanship"
+  
+  outlaw:
+    male_equipment:
+      - "hidden weapons"
+      - "stolen goods"
+    female_equipment:
+      - "concealed knife"
+    male_armor:
+      - "worn clothing"
+    female_armor: []
+    demeanor: "wary hunted look, always watching for pursuers"
+
+# =============================================================================
+# RELIGION AND SPIRITUALITY - UPDATED WITH NEW CULTURES
+# =============================================================================
+
+religion:
+  religions:
+    norse_pagan:
+      display: "Norse Paganism"
+      cultures: ["norse_swedish", "norse_danish", "norse_norwegian", "norse_icelandic", "norse_greenlandic", "norse_danelaw", "norse_irish", "norse_faroeislands", "norse_varangian"]
+    
+    christian:
+      display: "Christianity"
+      cultures: ["anglo_saxon", "frankish", "irish", "norse_danelaw", "norse_irish", "norse_varangian"]
+    
+    orthodox_christian:
+      display: "Orthodox Christianity"
+      cultures: ["byzantine", "slavic", "norse_varangian"]
+    
+    islamic:
+      display: "Islam"
+      cultures: ["arabic"]
+    
+    slavic_pagan:
+      display: "Slavic Paganism"
+      cultures: ["slavic"]
+    
+    celtic_pagan:
+      display: "Celtic Paganism"
+      cultures: ["irish", "norse_irish"]
+    
+    anglo_saxon_pagan:
+      display: "Anglo-Saxon Paganism"
+      cultures: ["anglo_saxon"]
+    
+    jewish:
+      display: "Judaism"
+      cultures: ["byzantine", "arabic"]
+    
+    zoroastrian:
+      display: "Zoroastrianism"
+      cultures: ["byzantine", "arabic"]
+    
+    gallo_roman_pagan:
+      display: "Gallo-Roman Paganism"
+      cultures: ["frankish"]
+      
+    persian_pagan:
+      display: "Persian Paganism"
+      cultures: ["arabic"]
+    
+    inuit_spirituality:
+      display: "Inuit Spirituality"
+      cultures: ["norse_greenlandic"]  # Some Norse adopted local beliefs
+    
+    blended_norse_christian:
+      display: "Blended Norse-Christian"
+      cultures: ["norse_danelaw", "norse_irish", "norse_varangian"]
+  
+  norse_patron_deities:
+    Odin:
+      weight: 20
+      domains: ["wisdom", "war", "death", "magic", "poetry", "runes"]
+      titles: ["Allfather", "the One-Eyed", "the Wanderer", "Lord of the Slain"]
+      followers: ["warriors", "kings", "skalds", "vitki", "sorcerers"]
+      symbols: ["ravens", "wolves", "spear", "runes", "single eye"]
+      gender_preference: "none"
+    
+    Thor:
+      weight: 35
+      domains: ["thunder", "strength", "protection", "fertility", "weather"]
+      titles: ["the Thunderer", "Protector of Midgard", "the Strong One"]
+      followers: ["farmers", "warriors", "common folk", "travelers"]
+      symbols: ["hammer", "goats", "thunder", "oak tree"]
+      gender_preference: "none"
+    
+    Freya:
+      weight: 25
+      domains: ["love", "beauty", "fertility", "seidr", "war", "death"]
+      titles: ["Lady of the Slain", "the Fair One", "Mistress of Seidr"]
+      followers: ["völva", "women", "lovers", "warriors seeking glory"]
+      symbols: ["cats", "falcon cloak", "Brisingamen necklace", "boar"]
+      gender_preference: "none"
+    
+    Freyr:
+      weight: 20
+      domains: ["fertility", "prosperity", "peace", "good harvests", "sunlight"]
+      titles: ["Lord of Alfheim", "the Bountiful", "Giver of Peace"]
+      followers: ["farmers", "lovers", "those seeking prosperity"]
+      symbols: ["boar", "ship", "antler", "golden ring"]
+      gender_preference: "none"
+    
+    Tyr:
+      weight: 15
+      domains: ["war", "justice", "law", "honor", "oaths"]
+      titles: ["the One-Handed", "God of Justice", "Lord of Oaths"]
+      followers: ["warriors", "judges", "lawmakers", "honorable fighters"]
+      symbols: ["sword", "missing hand", "Tiwaz rune"]
+      gender_preference: "male"
+    
+    Heimdall:
+      weight: 10
+      domains: ["vigilance", "protection", "light", "foreknowledge"]
+      titles: ["the Watchman", "Guardian of Bifrost", "the White God"]
+      followers: ["guards", "watchmen", "protectors", "seers"]
+      symbols: ["horn", "rainbow bridge", "golden teeth", "ram"]
+      gender_preference: "none"
+    
+    Njord:
+      weight: 15
+      domains: ["sea", "wealth", "fishing", "sailing", "wind"]
+      titles: ["Lord of the Seas", "the Wealthy One", "Father of Freyr and Freya"]
+      followers: ["sailors", "fishermen", "merchants", "coastal folk"]
+      symbols: ["ship", "fish", "seabirds", "gold"]
+      gender_preference: "none"
+    
+    Skadi:
+      weight: 8
+      domains: ["winter", "hunting", "mountains", "skiing", "vengeance"]
+      titles: ["the Huntress", "Lady of Winter", "the Ski Goddess"]
+      followers: ["hunters", "mountain dwellers", "those seeking vengeance"]
+      symbols: ["bow", "skis", "wolves", "mountains"]
+      gender_preference: "female"
+    
+    Idunn:
+      weight: 5
+      domains: ["youth", "renewal", "immortality", "spring"]
+      titles: ["Keeper of the Apples", "the Ever-Young"]
+      followers: ["healers", "those fearing death", "seekers of renewal"]
+      symbols: ["golden apples", "spring flowers"]
+      gender_preference: "female"
+    
+    Bragi:
+      weight: 8
+      domains: ["poetry", "eloquence", "music", "wisdom"]
+      titles: ["God of Poetry", "the Long-Bearded", "First of Skalds"]
+      followers: ["skalds", "poets", "diplomats", "storytellers"]
+      symbols: ["harp", "runes", "mead"]
+      gender_preference: "none"
+    
+    Frigg:
+      weight: 12
+      domains: ["marriage", "motherhood", "household", "fate", "wisdom"]
+      titles: ["Queen of Asgard", "the All-Knowing", "Lady of the Hall"]
+      followers: ["wives", "mothers", "weavers", "those seeking family blessing"]
+      symbols: ["distaff", "keys", "falcon", "mistletoe"]
+      gender_preference: "female"
+    
+    Eir:
+      weight: 5
+      domains: ["healing", "medicine", "mercy"]
+      titles: ["the Healer", "Merciful One"]
+      followers: ["healers", "midwives", "those seeking recovery"]
+      symbols: ["healing herbs", "bandages"]
+      gender_preference: "female"
+    
+    Var:
+      weight: 3
+      domains: ["oaths", "contracts", "agreements", "punishing oath-breakers"]
+      titles: ["Goddess of Oaths", "the Witness"]
+      followers: ["those swearing oaths", "merchants", "those betrayed"]
+      symbols: ["bound hands", "witness stones"]
+      gender_preference: "female"
+    
+    Ullr:
+      weight: 10
+      domains: ["hunting", "archery", "skiing", "winter", "dueling"]
+      titles: ["the Hunter", "God of the Bow", "Lord of Ydalir"]
+      followers: ["hunters", "archers", "duelists", "winter travelers"]
+      symbols: ["bow", "shield", "skis", "yew tree"]
+      gender_preference: "male"
+    
+    Aegir:
+      weight: 6
+      domains: ["sea", "brewing", "hospitality"]
+      titles: ["Lord of the Ocean", "the Ale-Brewer"]
+      followers: ["sailors", "brewers", "hosts"]
+      symbols: ["cauldron", "waves", "ale"]
+      gender_preference: "none"
+    
+    Ran:
+      weight: 4
+      domains: ["sea", "drowning", "the drowned dead"]
+      titles: ["Wife of Aegir", "She Who Catches"]
+      followers: ["sailors seeking safe passage", "fishermen"]
+      symbols: ["net", "drowned sailors", "gold"]
+      gender_preference: "female"
+    
+    Ancestors:
+      weight: 15
+      domains: ["family", "lineage", "guidance", "protection"]
+      titles: ["the Forebears", "Those Who Came Before"]
+      followers: ["everyone", "especially family-focused individuals"]
+      symbols: ["grave mounds", "family heirlooms", "rune stones"]
+      gender_preference: "none"
+    
+    Landvaettir:
+      weight: 10
+      domains: ["land", "nature", "local protection", "prosperity"]
+      titles: ["Land Spirits", "Guardians of the Land"]
+      followers: ["farmers", "settlers", "those living close to nature"]
+      symbols: ["natural features", "standing stones", "offerings"]
+      gender_preference: "none"
+  
+  christian_patron_saints:
+    Christ:
+      weight: 30
+      domains: ["salvation", "mercy", "redemption"]
+    Mary:
+      weight: 25
+      domains: ["motherhood", "mercy", "intercession"]
+      gender_preference: "female"
+    Michael:
+      weight: 15
+      domains: ["warriors", "protection", "judgment"]
+    Peter:
+      weight: 10
+      domains: ["fishermen", "church", "keys"]
+    George:
+      weight: 8
+      domains: ["warriors", "dragon-slaying", "courage"]
+    Patrick:
+      weight: 7
+      domains: ["Ireland", "snakes", "conversion"]
+    Columba:
+      weight: 5
+      domains: ["learning", "monasticism", "Scotland"]
+    Cuthbert:
+      weight: 15
+      domains: ["law", "protection", "mind"]
+  
+  slavic_patron_deities:
+    Perun:
+      weight: 30
+      domains: ["thunder", "war", "justice"]
+      gender_preference: "male"
+    Veles:
+      weight: 25
+      domains: ["underworld", "cattle", "magic", "wealth"]
+    Mokosh:
+      weight: 20
+      domains: ["earth", "fertility", "women", "weaving"]
+      gender_preference: "female"
+    Dazhbog:
+      weight: 15
+      domains: ["sun", "fire", "prosperity"]
+    Svarog:
+      weight: 10
+      domains: ["sky", "fire", "smithing"]
+  
+  celtic_patron_deities:
+    Brigid:
+      weight: 25
+      domains: ["fire", "poetry", "healing", "smithing"]
+      gender_preference: "female"
+    Lugh:
+      weight: 20
+      domains: ["skill", "crafts", "sun", "warriors"]
+    Morrigan:
+      weight: 15
+      domains: ["war", "fate", "death", "sovereignty"]
+      gender_preference: "female"
+    Dagda:
+      weight: 20
+      domains: ["fertility", "agriculture", "magic", "wisdom"]
+    Danu:
+      weight: 10
+      domains: ["motherhood", "rivers", "fertility"]
+      gender_preference: "female"
+    Cernunnos:
+      weight: 10
+      domains: ["animals", "forests", "fertility", "wealth"]
+  
+  anglo_saxon_pagan_deities:
+    Woden:
+      weight: 25
+      domains: ["wisdom", "war", "death", "magic"]
+    Thunor:
+      weight: 30
+      domains: ["thunder", "protection", "strength"]
+    Tiw:
+      weight: 15
+      domains: ["war", "law", "justice"]
+    Frige:
+      weight: 15
+      domains: ["love", "fertility", "marriage"]
+    Eostre:
+      weight: 10
+      domains: ["spring", "dawn", "renewal"]
+    Seaxneat:
+      weight: 5
+      domains: ["Saxons", "tribal identity"]
+  
+  islamic_attributes:
+    Al-Rahman:
+      weight: 20
+      meaning: "The Most Merciful"
+    Al-Hakim:
+      weight: 15
+      meaning: "The Wise"
+    Al-Adl:
+      weight: 15
+      meaning: "The Just"
+    Al-Qadir:
+      weight: 10
+      meaning: "The Powerful"
+    Al-Ghani:
+      weight: 10
+      meaning: "The Self-Sufficient"
+    Al-Hafiz:
+      weight: 10
+      meaning: "The Preserver"
+    Al-Mumin:
+      weight: 10
+      meaning: "The Guardian of Faith"
+    Al-Muhyi:
+      weight: 10
+      meaning: "The Giver of Life"
+  
+  religious_symbols:
+    norse_pagan:
+      common:
+        - "Thor's hammer pendant"
+        - "Mjolnir amulet"
+        - "small hammer charm"
+        - "bronze Thor's hammer"
+        - "silver Mjolnir"
+      
+      devout:
+        - "ornate silver Mjolnir with knotwork"
+        - "gold Thor's hammer"
+        - "rune-inscribed hammer pendant"
+        - "Mjolnir with amber inlay"
+      
+      odin_specific:
+        - "valknut pendant"
+        - "raven brooch"
+        - "Gungnir spear charm"
+        - "single-eye amulet"
+        - "runic talisman"
+      
+      freya_specific:
+        - "cat brooch"
+        - "amber Brisingamen-style necklace"
+        - "falcon pendant"
+        - "boar charm"
+        - "golden goddess figurine"
+      
+      freyr_specific:
+        - "boar pendant"
+        - "golden ring"
+        - "ship amulet"
+        - "antler charm"
+      
+      tyr_specific:
+        - "Tiwaz rune pendant"
+        - "sword-shaped charm"
+        - "justice scales amulet"
+      
+      class_specific:
+        volva:
+          - "seidr staff with deity symbols"
+          - "bone rune set"
+          - "spirit charms"
+        vitki:
+          - "rune-carved staff"
+          - "galdr amulets"
+          - "runic rings"
+        gothi:
+          - "holy arm-ring"
+          - "sacrificial knife"
+          - "temple key"
+        berserker:
+          - "wolf or bear tooth necklace"
+          - "Odin's mark scarred or tattooed"
+    
+    christian:
+      common:
+        - "small wooden cross"
+        - "cross pendant"
+        - "simple crucifix"
+      
+      devout:
+        - "silver cross with gem"
+        - "ornate crucifix"
+        - "reliquary pendant"
+        - "gold cross"
+        - "jeweled cross"
+      
+      crusader:
+        - "large cross prominently displayed"
+        - "cross-emblazoned cloak"
+        - "crusader's cross pendant"
+        - "cross tattoo or brand"
+    
+    orthodox_christian:
+      common:
+        - "Byzantine cross"
+        - "icon pendant"
+        - "Eastern cross"
+      
+      devout:
+        - "gold icon pendant"
+        - "jeweled Byzantine cross"
+        - "saint's medallion"
+    
+    islamic:
+      common:
+        - "prayer beads (misbaha)"
+        - "calligraphy pendant"
+      
+      devout:
+        - "ornate prayer beads"
+        - "Quran verse amulet"
+        - "hand of Fatima"
+    
+    slavic_pagan:
+      common:
+        - "thunder mark pendant"
+        - "sun wheel charm"
+        - "Perun's axe amulet"
+      
+      devout:
+        - "silver thunder symbol"
+        - "sacred grove token"
+        - "ancestor charm"
+    
+    celtic_pagan:
+      common:
+        - "triskele pendant"
+        - "Celtic knotwork charm"
+        - "Brigid's cross"
+      
+      devout:
+        - "elaborate Celtic knot pendant"
+        - "goddess figurine"
+        - "druidic symbol"
+    
+    anglo_saxon_pagan:
+      common:
+        - "Thunor's hammer"
+        - "Woden's symbol"
+        - "sun wheel pendant"
+      
+      devout:
+        - "ornate Anglo-Saxon hammer"
+        - "sacred ring"
+        - "tribal deity charm"
+  
+  devotion_levels:
+    - "none"
+    - "nominal"
+    - "casual"
+    - "moderate"
+    - "devout"
+    - "fanatical"
+  
+  spirituality_descriptions:
+    high:
+      - "Deeply spiritual and reverent"
+      - "Speaks to ancestors"
+      - "Seeks guidance in runes"
+      - "Sacrifices to the Gods and Goddesses regularly"
+      - "Prepares for Valhalla"
+      - "Carries sacred charms"
+      - "Respects the völva's craft"
+      - "Believes the Norns have woven their fate"
+    
+    medium:
+      - "Gives offerings only when in need"
+      - "Accepts whatever death brings"
+      - "Hopes for peaceful afterlife"
+      - "Pragmatic and unsentimental"
+    
+    low:
+      - "Thinks the dead are gone"
+      - "Relies on steel alone"
+      - "Distrusts seidr magic"
+      - "Cannot read the futhark"
+      - "Defies fate at every turn"
+
+# =============================================================================
+# PERSONALITY - ALL POSSIBLE VALUES
+# =============================================================================
+
+personality_traits:
+  social_behavior:
+    - "Speaks little but observes much"
+    - "Laughs easily and often"
+    - "Takes everything seriously"
+    - "Fiercely protective of friends"
+    - "Suspicious of strangers"
+    - "Quick to anger but quicker to forgive"
+    - "Patient as the mountains"
+    - "Restless and always moving"
+    - "Deeply spiritual and reverent"
+    - "Pragmatic and unsentimental"
+    - "Curious about foreign ways"
+    - "Proud of lineage and heritage"
+    - "Humble despite achievements"
+    - "Competitive in all things"
+    - "Generous to a fault"
+    - "Cautious with trust"
+    - "Speaks in riddles and kennings"
+    - "Blunt and direct"
+    - "Charming and persuasive"
+    - "Silent and intimidating"
+    - "Welcoming to all travelers"
+    - "Deeply private about personal matters"
+    - "An open book - hides nothing"
+    - "Loves to tell stories and sagas"
+    - "Prefers listening to speaking"
+    - "Always the first to volunteer"
+    - "Waits for others to act first"
+    - "Natural leader, takes charge instinctively"
+    - "Prefers to follow a worthy leader"
+    - "Works best alone"
+    - "Needs companionship to thrive"
+    - "Flirts shamelessly"
+    - "Awkward in romantic situations"
+    - "Treats everyone as equals"
+    - "Keenly aware of social rank"
+    - "Judges others by their deeds alone"
+    - "Values bloodline and heritage above all"
+    - "Respects elders without question"
+    - "Challenges authority regularly"
+    - "Mediates disputes with wisdom"
+    - "Stirs up conflict for entertainment"
+  
+  emotional_temperament:
+    - "Stoic in the face of hardship"
+    - "Wears heart on sleeve"
+    - "Prone to dark moods"
+    - "Eternally optimistic"
+    - "Haunted by guilt"
+    - "Free of regret"
+    - "Driven by old wounds"
+    - "At peace with the past"
+    - "Anxious about the future"
+    - "Lives entirely in the moment"
+    - "Easily moved to tears"
+    - "Has not cried since childhood"
+    - "Laughs in the face of danger"
+    - "Takes all threats seriously"
+    - "Slow to warm to people"
+    - "Trusts too quickly"
+    - "Never forgets a kindness"
+    - "Never forgets a slight"
+    - "Forgives but never forgets"
+    - "Forgives and forgets easily"
+    - "Holds grudges for generations"
+    - "Cannot stay angry for long"
+    - "Jealous and possessive"
+    - "Content with what they have"
+    - "Always seeking more"
+    - "Grateful for small blessings"
+    - "Bitter about past misfortunes"
+    - "Accepts fate with grace"
+    - "Rages against destiny"
+    - "Finds joy in simple pleasures"
+  
+  intellectual_traits:
+    - "Quick-witted and sharp"
+    - "Slow to think but wise in decisions"
+    - "Loves learning new things"
+    - "Suspicious of book-learning"
+    - "Values practical knowledge"
+    - "Dreams of far-off lands"
+    - "Remembers everything said to them"
+    - "Forgetful of small details"
+    - "Plans everything meticulously"
+    - "Acts on impulse"
+    - "Analyzes every situation"
+    - "Trusts gut instinct"
+    - "Questions everything"
+    - "Accepts wisdom of elders"
+    - "Skeptical of claims until proven"
+    - "Believes easily, sometimes gullibly"
+    - "Fascinated by magic and mystery"
+    - "Distrusts the supernatural"
+    - "Studies the old runes religiously"
+    - "Cares nothing for ancient knowledge"
+    - "Seeks wisdom from the gods"
+    - "Relies on mortal counsel"
+    - "Clever with numbers and trade"
+    - "Has no head for figures"
+    - "Skilled at reading people"
+    - "Often misreads intentions"
+    - "Sees patterns others miss"
+    - "Takes things at face value"
+    - "Overthinks simple matters"
+    - "Cuts to the heart of problems"
+  
+  moral_character:
+    - "Honorable to their last breath"
+    - "Flexible about honor when needed"
+    - "Cannot tell a lie"
+    - "Lies smoothly when necessary"
+    - "Keeps every oath sworn"
+    - "Makes promises carefully"
+    - "Helps strangers without expecting reward"
+    - "Expects payment for all services"
+    - "Protects the weak"
+    - "Believes the weak must strengthen themselves"
+    - "Shares wealth freely"
+    - "Guards possessions jealously"
+    - "Honest about flaws"
+    - "Hides weaknesses carefully"
+    - "Admits mistakes openly"
+    - "Never admits being wrong"
+    - "Takes blame to protect others"
+    - "Deflects blame skillfully"
+    - "Stands up for the accused"
+    - "Sides with the powerful"
+    - "Champions lost causes"
+    - "Only fights battles that can be won"
+    - "Values mercy over justice"
+    - "Believes justice requires harshness"
+    - "Gives second chances"
+    - "One strike and you're an enemy"
+    - "Sees good in everyone"
+    - "Assumes the worst of people"
+    - "Believes in redemption"
+    - "Thinks people never truly change"
+  
+  behavioral_quirks:
+    - "Always armed, even at feasts"
+    - "Never carries weapons unless needed"
+    - "Touches their weapon for comfort"
+    - "Fidgets constantly"
+    - "Perfectly still when thinking"
+    - "Paces when troubled"
+    - "Hums old songs when working"
+    - "Works in complete silence"
+    - "Talks to themselves"
+    - "Thinks out loud"
+    - "Makes decisions in private"
+    - "Seeks counsel before acting"
+    - "Eats quickly like each meal is their last"
+    - "Savors food and drink slowly"
+    - "Drinks heavily but handles it well"
+    - "Never touches mead or ale"
+    - "Sleeps lightly, wakes at any sound"
+    - "Sleeps like the dead"
+    - "Rises before dawn"
+    - "Hates mornings intensely"
+    - "Keeps a strict routine"
+    - "Lives without any schedule"
+    - "Obsessively neat and organized"
+    - "Comfortable with chaos and mess"
+    - "Collects trophies from battles"
+    - "Keeps no mementos"
+    - "Carves runes in idle moments"
+    - "Sharpens weapons obsessively"
+    - "Tends to wounds without complaint"
+    - "Complains loudly about minor injuries"
+  
+  combat_and_courage:
+    - "Fearless in battle"
+    - "Knows fear but masters it"
+    - "Fights to protect, not to kill"
+    - "Loves the thrill of combat"
+    - "Finds no joy in violence"
+    - "Prefers to end fights quickly"
+    - "Enjoys a long duel"
+    - "Fights dirty when needed"
+    - "Follows warrior's honor strictly"
+    - "Knows when to retreat"
+    - "Never retreats, even foolishly"
+    - "Calculates odds before fighting"
+    - "Rushes in without thinking"
+    - "Protects allies above self"
+    - "Looks after their own survival"
+    - "Challenges the strongest first"
+    - "Picks off the weak first"
+    - "Leads from the front"
+    - "Commands from safety"
+    - "Roars battle cries loudly"
+    - "Fights in grim silence"
+    - "Taunts enemies mercilessly"
+    - "Respects worthy opponents"
+    - "Spares defeated foes"
+    - "Gives no quarter"
+    - "Collects weapons from fallen enemies"
+    - "Leaves the dead with their possessions"
+    - "Prays to the gods before battle"
+    - "Trusts only in their own arm"
+    - "Bears scars with pride"
+  
+  spiritual_and_mystical:
+    - "Hears the whispers of the gods"
+    - "Deaf to divine messages"
+    - "Dreams prophetic visions"
+    - "Sleeps dreamlessly"
+    - "Reads omens in nature"
+    - "Dismisses signs and portents"
+    - "Feels the presence of spirits"
+    - "Cannot sense the unseen"
+    - "Trusts in fate completely"
+    - "Believes in making one's own destiny"
+    - "Honors the old gods daily"
+    - "Pays lip service to the gods"
+    - "Fears the dark powers"
+    - "Mocks supernatural threats"
+    - "Speaks to ancestors"
+    - "Thinks the dead are gone"
+    - "Carries sacred charms"
+    - "Relies on steel alone"
+    - "Respects the völva's craft"
+    - "Distrusts seidr magic"
+    - "Seeks guidance in runes"
+    - "Cannot read the futhark"
+    - "Sacrifices to the gods regularly"
+    - "Gives offerings only when in need"
+    - "Believes the Norns have woven their fate"
+    - "Defies fate at every turn"
+    - "Prepares for Valhalla"
+    - "Hopes for peaceful afterlife"
+    - "Fears Hel's cold realm"
+    - "Accepts whatever death brings"
+  
+  work_and_craft:
+    - "Takes pride in craftsmanship"
+    - "Values results over process"
+    - "Works methodically and slowly"
+    - "Works quickly, sometimes carelessly"
+    - "Learns new skills eagerly"
+    - "Masters one skill completely"
+    - "Dislikes repetitive work"
+    - "Finds peace in routine tasks"
+    - "Creates beauty in everything"
+    - "Cares only for function"
+    - "Shares trade secrets freely"
+    - "Guards professional knowledge"
+    - "Mentors young apprentices"
+    - "Has no patience for teaching"
+    - "Respects all honest work"
+    - "Looks down on certain trades"
+    - "Haggles fiercely"
+    - "Pays fair prices without argument"
+    - "Drives hard bargains"
+    - "Overpays to show wealth"
+    - "Values quality over quantity"
+    - "Seeks the best deals"
+    - "Builds to last generations"
+    - "Makes things for immediate need"
+    - "Repairs rather than replaces"
+    - "Discards broken things quickly"
+  
+  unique_viking_traits:
+    - "Yearns for the sea"
+    - "Gets seasick on boats"
+    - "Dreams of raiding foreign shores"
+    - "Prefers farming to raiding"
+    - "Follows the whale-road gladly"
+    - "Fears drowning above all"
+    - "Loves the smell of salt spray"
+    - "Misses green hills when at sea"
+    - "Navigates by stars instinctively"
+    - "Gets lost on land easily"
+    - "Tells of lands beyond the horizon"
+    - "Cares nothing for exploration"
+    - "Treasures foreign silver"
+    - "Values only homeland goods"
+    - "Adopts foreign customs readily"
+    - "Clings to traditional ways"
+    - "Respects thralls as people"
+    - "Sees thralls as property"
+    - "Would die before serving as thrall"
+    - "Knows survival requires flexibility"
+
+ideals:
+  honor_and_reputation:
+    - "Honor: A man's word is his bond"
+    - "Glory: Fame outlasts death"
+    - "Reputation: What others think of me matters above all"
+    - "Legacy: My name will be remembered in the sagas"
+    - "Integrity: I will never compromise my principles"
+    - "Face: I must never appear weak"
+    - "Pride: My family name must remain unstained"
+    - "Dignity: I will be treated with respect or not at all"
+    - "Shame: Death before dishonor"
+    - "Truth: Lies poison the soul"
+  
+  loyalty_and_kinship:
+    - "Loyalty: Kin and comrades above all"
+    - "Kinship: Blood is thicker than water"
+    - "Brotherhood: Those who fight together are family"
+    - "Oathkeeping: A sworn oath is sacred"
+    - "Fealty: I serve my lord unto death"
+    - "Friendship: A true friend is worth more than gold"
+    - "Clan: My people come before myself"
+    - "Ancestors: I honor those who came before"
+    - "Descendants: I build for those who come after"
+    - "Community: The village thrives when all contribute"
+  
+  freedom_and_independence:
+    - "Freedom: No man should be a thrall"
+    - "Independence: I bow to no one"
+    - "Self-reliance: I need nothing from others"
+    - "Autonomy: My choices are my own"
+    - "Liberation: I will free the enslaved"
+    - "Wanderlust: The world is meant to be explored"
+    - "Solitude: I am happiest alone"
+    - "Privacy: My affairs are my own"
+    - "Resistance: I oppose all tyranny"
+    - "Rebellion: Unjust laws deserve breaking"
+  
+  wisdom_and_knowledge:
+    - "Wisdom: Knowledge is power"
+    - "Learning: There is always more to understand"
+    - "Cunning: The clever survive where the strong fall"
+    - "Experience: Doing teaches more than hearing"
+    - "Caution: Fools rush in"
+    - "Patience: All things come to those who wait"
+    - "Foresight: Plan for what may come"
+    - "Prudence: Consider consequences before acting"
+    - "Counsel: Seek advice from the wise"
+    - "Memory: The past teaches the present"
+  
+  courage_and_strength:
+    - "Courage: Face death without fear"
+    - "Bravery: Stand when others flee"
+    - "Strength: The strong take what they need"
+    - "Might: Power must be demonstrated"
+    - "Fearlessness: Terror is for the weak"
+    - "Boldness: Fortune favors the brave"
+    - "Daring: Great risks bring great rewards"
+    - "Resilience: What doesn't kill me makes me stronger"
+    - "Endurance: I can outlast any hardship"
+    - "Determination: I never give up"
+  
+  tradition_and_faith:
+    - "Tradition: The old ways are best"
+    - "Faith: The gods guide my path"
+    - "Piety: Devotion brings divine favor"
+    - "Ritual: The proper forms must be observed"
+    - "Ancestry: I follow my forebears' path"
+    - "Custom: We do things the way they've always been done"
+    - "Heritage: Our traditions define us"
+    - "Spirituality: The unseen world is as real as this one"
+    - "Destiny: The Norns have woven my fate"
+    - "Prophecy: The völva's words will come true"
+  
+  justice_and_vengeance:
+    - "Vengeance: Wrongs must be avenged"
+    - "Justice: The guilty must pay"
+    - "Balance: An eye for an eye"
+    - "Fairness: All deserve equal treatment"
+    - "Retribution: Pain for pain"
+    - "Punishment: Crime cannot go unanswered"
+    - "Law: The Thing's judgment is final"
+    - "Order: Society requires rules"
+    - "Mercy: Sometimes the weak deserve compassion"
+    - "Forgiveness: Grudges poison the soul"
+  
+  wealth_and_prosperity:
+    - "Wealth: Silver opens all doors"
+    - "Prosperity: I will build a better life"
+    - "Trade: Fair exchange benefits all"
+    - "Acquisition: More is always better"
+    - "Security: I must provide for my family"
+    - "Investment: Plant seeds for future harvest"
+    - "Generosity: Wealth shared returns threefold"
+    - "Hospitality: A host's duty is sacred"
+    - "Abundance: There should be enough for all"
+    - "Frugality: Waste not, want not"
+  
+  nature_and_balance:
+    - "Nature: The land provides all we need"
+    - "Harmony: Balance must be maintained"
+    - "Seasons: Everything has its proper time"
+    - "Adaptation: Change with the world or perish"
+    - "Respect: The spirits of land and sea deserve honor"
+    - "Stewardship: We are caretakers, not owners"
+    - "Cycles: Death feeds new life"
+    - "Acceptance: Some things cannot be changed"
+    - "Flow: Resistance causes suffering"
+    - "Growth: Stagnation is death"
+  
+  personal_excellence:
+    - "Excellence: Be the best at what you do"
+    - "Mastery: Perfect your craft"
+    - "Improvement: Always strive to be better"
+    - "Competition: Testing yourself against others builds strength"
+    - "Achievement: Deeds speak louder than words"
+    - "Success: Results matter most"
+    - "Ambition: Reach for what seems impossible"
+    - "Perfection: Accept nothing less than the best"
+    - "Dedication: Commit fully or not at all"
+    - "Focus: One pursuit mastered beats many tried"
+  
+  chaos_and_change:
+    - "Change: The world must be remade"
+    - "Chaos: Order stifles the spirit"
+    - "Revolution: Tear down the old to build the new"
+    - "Unpredictability: Keep them guessing"
+    - "Freedom from Rules: Laws are chains"
+    - "Individualism: Each must find their own way"
+    - "Creativity: Make something new"
+    - "Spontaneity: Plans are for the timid"
+    - "Adventure: The unknown calls to me"
+    - "Risk: Play for high stakes"
+  
+  power_and_domination:
+    - "Power: Command is my birthright"
+    - "Domination: The weak serve the strong"
+    - "Control: Nothing happens without my will"
+    - "Supremacy: I must be above all others"
+    - "Authority: My word is law"
+    - "Influence: I shape events from the shadows"
+    - "Command: Leadership requires hard choices"
+    - "Empire: Build something that lasts"
+    - "Conquest: Take what you desire"
+    - "Victory: Winning is everything"
+  
+  pleasure_and_experience:
+    - "Pleasure: Life is meant to be enjoyed"
+    - "Experience: Try everything once"
+    - "Living Well: Comfort is not weakness"
+    - "Celebration: Victories deserve feasting"
+    - "Love: The heart knows what it wants"
+    - "Passion: Feel everything deeply"
+    - "Beauty: Surround yourself with what pleases"
+    - "Joy: Happiness is the goal"
+    - "Indulgence: Deny yourself nothing"
+    - "Hedonism: Pleasure is the highest good"
+  
+  protection_and_care:
+    - "Protection: Shield the innocent"
+    - "Guardianship: Some need defending"
+    - "Nurturing: Help others grow"
+    - "Healing: Ease suffering where possible"
+    - "Support: Hold up those who falter"
+    - "Sacrifice: Give of yourself for others"
+    - "Service: My purpose is to serve"
+    - "Duty: Obligations must be fulfilled"
+    - "Responsibility: I accept the burden"
+    - "Care: Look after those who cannot look after themselves"
+
+bonds:
+  family_and_revenge:
+    - "I seek the truth of my father's death"
+    - "I must restore my family's honor"
+    - "I owe a blood debt to an enemy"
+    - "I protect a secret that could destroy kingdoms"
+    - "I hunt the ones who murdered my kin"
+    - "I seek a legendary artifact"
+    - "I must prove myself worthy of my name"
+    - "I carry a message for a dying friend"
+    - "I search for my lost sibling"
+    - "I am bound by an oath to a lord"
+    - "My father's killer still lives"
+    - "My mother's dying wish drives me"
+    - "I must avenge my fallen brother"
+    - "My sister was taken and I will find her"
+    - "I will clear my uncle's name"
+    - "My grandfather's legacy must be reclaimed"
+    - "The ones who burned my home will pay"
+    - "I seek the truth of my birth"
+    - "My adoptive family deserves protection"
+    - "I carry my ancestor's unfinished task"
+  
+  love_and_relationships:
+    - "I will win back my lost love"
+    - "I must prove worthy of the one I love"
+    - "My beloved was stolen by a rival"
+    - "I search for someone I loved long ago"
+    - "I protect the one who holds my heart"
+    - "I must choose between duty and love"
+    - "The one I love does not know my feelings"
+    - "I gave my heart to someone forbidden"
+    - "My betrothed was given to another"
+    - "I seek to reunite with my family"
+    - "My children need me to return"
+    - "I promised my love I would come back"
+    - "I must provide for those I left behind"
+    - "My spouse's spirit calls to me"
+    - "I seek a love worthy of saga and song"
+  
+  oaths_and_promises:
+    - "I swore an oath I cannot break"
+    - "A dying man's request binds me"
+    - "I promised to protect someone"
+    - "My oath to the gods must be fulfilled"
+    - "I vowed to complete a task or die trying"
+    - "A childhood promise haunts me"
+    - "I gave my word to a stranger"
+    - "I must keep a deathbed promise"
+    - "An oath-brother's request cannot be refused"
+    - "I swore on my sword and cannot turn back"
+    - "I promised my lord victory"
+    - "I vowed to never reveal a secret"
+    - "My word was given and I will keep it"
+    - "An old debt of honor must be paid"
+    - "I swore to the völva I would see it done"
+  
+  quests_and_missions:
+    - "I seek a legendary weapon"
+    - "I hunt a monster that plagues my homeland"
+    - "I must find a cure for a cursed loved one"
+    - "I search for lost sacred knowledge"
+    - "I need to reach a holy site before winter"
+    - "I carry an artifact to its rightful place"
+    - "I must warn someone of coming danger"
+    - "I seek a rune of great power"
+    - "I hunt for treasure mentioned in old tales"
+    - "I must complete my master's unfinished work"
+    - "I journey to fulfill a prophecy"
+    - "I seek the entrance to a hidden realm"
+    - "I must find the one who can break a curse"
+    - "I carry something that must be destroyed"
+    - "I need to learn a skill from a distant master"
+  
+  homelands_and_places:
+    - "I must return to my homeland one day"
+    - "I fight to protect my village"
+    - "My people need me to succeed"
+    - "I seek to reclaim my family's lands"
+    - "I will rebuild what was destroyed"
+    - "My birthplace calls me back"
+    - "I must free my homeland from oppression"
+    - "The sacred grove of my people must be protected"
+    - "I journey to find a new home for my clan"
+    - "I seek a legendary place from the sagas"
+    - "My ancestors' burial ground must be defended"
+    - "I will restore the temple that was desecrated"
+    - "The hall of my fathers will rise again"
+    - "I must return something to the land it came from"
+    - "I search for the islands my grandfather spoke of"
+  
+  people_and_mentors:
+    - "My mentor's teachings must be carried forward"
+    - "I owe everything to the one who saved me"
+    - "I must protect my teacher's legacy"
+    - "Someone believed in me when no one else did"
+    - "I will make my mentor proud"
+    - "A stranger's kindness changed my life"
+    - "I was given a second chance I must honor"
+    - "My master died before finishing my training"
+    - "I seek the one who first taught me"
+    - "Someone I admire is in danger"
+    - "I must repay kindness with deeds"
+    - "The one who raised me deserves better"
+    - "I protect those who protected me as a child"
+    - "My teacher's killer must face justice"
+    - "I carry the hopes of those who sent me"
+  
+  secrets_and_knowledge:
+    - "I know something that could start a war"
+    - "I hold a secret that protects someone"
+    - "I discovered something I cannot forget"
+    - "I witnessed something I should not have"
+    - "I carry knowledge that others seek"
+    - "I know where something precious is hidden"
+    - "I learned a truth that changed everything"
+    - "I hold the key to an ancient mystery"
+    - "I stumbled upon a dangerous secret"
+    - "I know the location of a missing person"
+    - "I discovered evidence of treachery"
+    - "I found proof of a hidden bloodline"
+    - "I know the real story behind a famous event"
+    - "I carry a message only I can deliver"
+    - "I hold the final words of a great person"
+  
+  enemies_and_rivals:
+    - "An old enemy has risen again"
+    - "My rival must be defeated"
+    - "Someone powerful wants me dead"
+    - "I must stay ahead of those who hunt me"
+    - "An enemy has what belongs to me"
+    - "I compete against my former friend"
+    - "Someone stole my inheritance"
+    - "A traitor took everything from me"
+    - "My enemy has captured someone dear"
+    - "I race against a rival for the same goal"
+    - "Someone claims what is rightfully mine"
+    - "An old friend became my greatest enemy"
+    - "I must face the one I once betrayed"
+    - "My rival has the ear of powerful people"
+    - "Someone spreads lies about me I must disprove"
+  
+  gods_and_fate:
+    - "The gods have marked me for a purpose"
+    - "I received a sign I cannot ignore"
+    - "A prophecy named me specifically"
+    - "I must fulfill the destiny the Norns wove"
+    - "A divine vision showed me my task"
+    - "I was chosen by forces beyond mortal"
+    - "The runes spelled out my path"
+    - "I dreamed of something I must find"
+    - "An omen pointed me toward my fate"
+    - "The völva said I would change everything"
+    - "I carry a god's blessing and burden"
+    - "I must prove the prophecy wrong"
+    - "Fate brought me to this moment"
+    - "I walk the path the gods laid out"
+    - "I seek to understand why I was spared"
+  
+  possessions_and_heirlooms:
+    - "I must recover my family's sword"
+    - "My grandfather's ring was stolen"
+    - "I seek my father's ship"
+    - "An heirloom was lost and must be found"
+    - "I carry something I promised to deliver"
+    - "My family's treasure was scattered"
+    - "I must find the pieces of a broken artifact"
+    - "An ancestral weapon calls to me"
+    - "I seek to complete a collection"
+    - "Something of mine was wrongfully taken"
+    - "I guard an object others covet"
+    - "I carry an item I don't understand"
+    - "My birthright was denied me"
+    - "I must return something borrowed long ago"
+    - "I search for an item mentioned in old songs"
+  
+  redemption_and_atonement:
+    - "I must atone for past crimes"
+    - "I seek forgiveness for my failures"
+    - "I caused harm I must make right"
+    - "My cowardice cost lives I must honor"
+    - "I broke an oath and seek redemption"
+    - "I betrayed someone and cannot forgive myself"
+    - "I failed to protect someone innocent"
+    - "My weakness led to disaster"
+    - "I abandoned someone in their hour of need"
+    - "I must prove I have changed"
+    - "I seek to earn back trust I lost"
+    - "I carry guilt that drives my every action"
+    - "I must make amends before I die"
+    - "I cannot rest until I right my wrong"
+    - "I owe a debt I can never fully repay"
+
+flaws:
+  trust_and_social:
+    - "I trust too easily"
+    - "I cannot resist a challenge"
+    - "I drink too much mead"
+    - "I am quick to violence"
+    - "I cannot forgive a slight"
+    - "I am haunted by past failures"
+    - "I covet what others have"
+    - "I cannot resist gold"
+    - "I fear the sea despite my heritage"
+    - "I struggle to trust authority"
+    - "I make enemies too easily"
+    - "I cannot keep a secret"
+    - "I gossip about others' affairs"
+    - "I trust no one completely"
+    - "I assume the worst of strangers"
+    - "I cannot work with others"
+    - "I take credit for others' work"
+    - "I blame others for my failures"
+    - "I cannot accept help"
+    - "I look down on those of lower station"
+  
+  vices_and_addictions:
+    - "I gamble away what I earn"
+    - "I cannot resist a pretty face"
+    - "I indulge in every pleasure offered"
+    - "I spend silver as fast as I get it"
+    - "I eat and drink to excess"
+    - "I cannot resist a bet"
+    - "I pursue pleasure over duty"
+    - "I am a slave to my appetites"
+    - "I cannot say no to a dare"
+    - "I seek out dangerous thrills"
+    - "I cannot resist stealing small things"
+    - "I lie even when the truth would serve"
+    - "I cheat when I think I won't be caught"
+    - "I break promises when convenient"
+    - "I take more than my share"
+  
+  pride_and_ego:
+    - "My pride will not let me back down"
+    - "I cannot admit when I am wrong"
+    - "I believe I am better than everyone"
+    - "I cannot accept criticism"
+    - "I must always have the last word"
+    - "I take offense at imagined slights"
+    - "I boast more than I should"
+    - "I cannot let an insult pass"
+    - "I think my way is always best"
+    - "I dismiss advice from others"
+    - "I refuse to learn from mistakes"
+    - "I would rather fail than ask for help"
+    - "I cannot serve under someone I think lesser"
+    - "My honor blinds me to pragmatism"
+    - "I demand respect I have not earned"
+  
+  fear_and_anxiety:
+    - "I fear death more than I admit"
+    - "I am terrified of confined spaces"
+    - "I cannot face certain creatures"
+    - "I panic in crowds"
+    - "I fear the dark like a child"
+    - "I am haunted by night terrors"
+    - "I freeze when facing my fears"
+    - "I cannot swim and fear water"
+    - "I dread heights intensely"
+    - "I fear fire beyond reason"
+    - "I am superstitious to a fault"
+    - "I fear being alone"
+    - "I cannot bear silence"
+    - "I am terrified of failing publicly"
+    - "I fear becoming like my parents"
+  
+  anger_and_violence:
+    - "I fly into murderous rages"
+    - "I hurt those I love when angry"
+    - "I cannot control my temper"
+    - "I hold grudges forever"
+    - "I seek revenge for every wrong"
+    - "I lash out when frustrated"
+    - "I destroy things when upset"
+    - "I say cruel things in anger"
+    - "I cannot let injustice stand, even foolishly"
+    - "I pick fights I cannot win"
+    - "Violence is always my first answer"
+    - "I enjoy causing pain too much"
+    - "I cannot walk away from a fight"
+    - "I make threats I must follow through on"
+    - "I take out my anger on the innocent"
+  
+  weakness_and_failure:
+    - "I give up too easily"
+    - "I crumble under pressure"
+    - "I panic in crisis situations"
+    - "I freeze when decisions matter most"
+    - "I let fear rule my choices"
+    - "I abandon allies when things look bad"
+    - "I break under interrogation"
+    - "I cannot endure physical pain"
+    - "I am soft from easy living"
+    - "I lack the will to finish what I start"
+    - "I fail those who depend on me"
+    - "I run from my problems"
+    - "I hide behind others in danger"
+    - "I cannot face difficult truths"
+    - "I take the easy path over the right one"
+  
+  obsession_and_fixation:
+    - "I am obsessed with an old love"
+    - "I cannot let go of the past"
+    - "I am consumed by revenge"
+    - "I fixate on slights for years"
+    - "I return again and again to old wounds"
+    - "I am obsessed with proving myself"
+    - "I cannot stop collecting things"
+    - "I am driven by a single goal to the exclusion of all else"
+    - "I cannot accept when something is over"
+    - "I pursue lost causes beyond reason"
+    - "I am haunted by one failure"
+    - "I cannot move past a betrayal"
+    - "I obsess over what could have been"
+    - "I am consumed by envy of one person"
+    - "I cannot forgive myself for one mistake"
+  
+  deception_and_dishonesty:
+    - "I lie to protect myself"
+    - "I present a false face to the world"
+    - "I have secrets that would destroy me"
+    - "I manipulate others for my benefit"
+    - "I promise more than I can deliver"
+    - "I exaggerate my achievements"
+    - "I hide my true feelings"
+    - "I pretend to be something I am not"
+    - "I keep important things from allies"
+    - "I shade the truth to look better"
+    - "I have lied about my past"
+    - "I use others without remorse"
+    - "I betray when it benefits me"
+    - "I sell information to both sides"
+    - "I have worn many false names"
+  
+  isolation_and_coldness:
+    - "I push away those who care for me"
+    - "I cannot form lasting bonds"
+    - "I keep everyone at arm's length"
+    - "I sabotage my own relationships"
+    - "I cannot show vulnerability"
+    - "I hurt others before they hurt me"
+    - "I believe I don't deserve happiness"
+    - "I drive away anyone who gets close"
+    - "I cannot accept love freely given"
+    - "I suspect kindness hides motives"
+    - "I use coldness as a shield"
+    - "I cannot be intimate emotionally"
+    - "I leave before I can be left"
+    - "I test relationships until they break"
+    - "I refuse to depend on anyone"
+  
+  moral_failings:
+    - "I have done things I can never admit"
+    - "I served evil in my past"
+    - "I have innocent blood on my hands"
+    - "I betrayed someone who trusted me"
+    - "I abandoned someone who needed me"
+    - "I took something that wasn't mine"
+    - "I broke a sacred oath"
+    - "I profited from others' suffering"
+    - "I stood by while wrong was done"
+    - "I let someone else take blame for my deed"
+    - "I have debts I can never repay"
+    - "I sold something that should never be sold"
+    - "I escaped justice I deserved"
+    - "I carry shame I cannot wash away"
+    - "I did terrible things to survive"
+  
+  supernatural_and_cursed:
+    - "I am marked by dark forces"
+    - "I carry a curse I cannot break"
+    - "I attract misfortune to those near me"
+    - "I am haunted by the dead"
+    - "I hear voices no one else hears"
+    - "I have visions that drive me mad"
+    - "I cannot enter holy places"
+    - "I am bound by a spell I don't understand"
+    - "I made a bargain I regret"
+    - "I touched something forbidden"
+    - "I am slowly losing my humanity"
+    - "I hunger for things no mortal should"
+    - "I am fated to bring doom"
+    - "I cannot die when I wish to"
+    - "I am connected to something terrible"
+
+villain_traits:
+  cruelty_and_sadism:
+    - "Cruel and calculating"
+    - "Consumed by ambition"
+    - "Believes the ends justify any means"
+    - "Enjoys others' suffering"
+    - "Utterly without remorse"
+    - "Paranoid and suspicious"
+    - "Manipulative and cunning"
+    - "Driven by ancient grudge"
+    - "Takes pleasure in breaking the strong"
+    - "Delights in corrupting the innocent"
+    - "Savors the moment of betrayal"
+    - "Finds joy in watching hope die"
+    - "Laughs at others' pain"
+    - "Inflicts suffering slowly and deliberately"
+    - "Keeps trophies from victims"
+    - "Creates elaborate torments"
+    - "Studies victims to find weaknesses"
+    - "Breaks people psychologically before physically"
+    - "Enjoys making examples of enemies"
+    - "Shows false kindness before striking"
+  
+  ambition_and_power:
+    - "Will sacrifice anyone for power"
+    - "Sees others only as tools"
+    - "Believes they deserve to rule"
+    - "Cannot tolerate equals"
+    - "Eliminates potential rivals"
+    - "Hoards power jealously"
+    - "Plans decades ahead"
+    - "Views mercy as weakness"
+    - "Respects only strength"
+    - "Builds networks of informants"
+    - "Corrupts those in positions of trust"
+    - "Creates dependence in followers"
+    - "Rewards loyalty lavishly until it's no longer useful"
+    - "Keeps detailed records of others' secrets"
+    - "Positions themselves as indispensable"
+    - "Climbs over bodies of former allies"
+    - "Sees betrayal as natural"
+    - "Eliminates threats before they materialize"
+    - "Cultivates fear as a tool"
+    - "Believes they are chosen for greatness"
+  
+  deception_and_manipulation:
+    - "Wears a mask of virtue"
+    - "Projects false warmth"
+    - "Mimics emotions they don't feel"
+    - "Speaks partial truths to deceive"
+    - "Creates elaborate cover identities"
+    - "Turns allies against each other"
+    - "Spreads rumors strategically"
+    - "Presents themselves as the victim"
+    - "Uses charm as a weapon"
+    - "Knows exactly what people want to hear"
+    - "Creates false evidence"
+    - "Frames enemies for crimes"
+    - "Manipulates through flattery"
+    - "Exploits others' trust"
+    - "Pretends weakness to draw in predators"
+    - "Uses lovers as pawns"
+    - "Corrupts through gradual compromise"
+    - "Makes others complicit in crimes"
+    - "Keeps incriminating evidence on allies"
+    - "Builds escape routes into every plan"
+  
+  obsession_and_fixation_villain:
+    - "Fixated on destroying one person"
+    - "Pursues vengeance across generations"
+    - "Cannot let go of past humiliation"
+    - "Obsessed with a prophecy about themselves"
+    - "Collects things from victims"
+    - "Returns to the same methods repeatedly"
+    - "Has an elaborate personal mythology"
+    - "Believes they are destined for something great"
+    - "Fixated on a specific type of victim"
+    - "Cannot accept that they might lose"
+    - "Obsessed with a particular rival"
+    - "Driven by religious or ideological fervor"
+    - "Collects followers who match a type"
+    - "Recreates a formative trauma"
+    - "Obsessed with immortality or legacy"
+    - "Cannot stop even when winning"
+    - "Pursues enemies beyond reason"
+    - "Haunted by something they cannot obtain"
+    - "Seeks to recreate something lost"
+    - "Cannot tolerate imperfection"
+  
+  paranoia_and_control:
+    - "Trusts absolutely no one"
+    - "Changes plans constantly to avoid detection"
+    - "Has multiple contingency plans"
+    - "Eliminates those who know too much"
+    - "Keeps underlings in the dark"
+    - "Uses codes and ciphers obsessively"
+    - "Tests loyalty repeatedly"
+    - "Assumes betrayal is inevitable"
+    - "Keeps leverage on everyone"
+    - "Compartmentalizes all operations"
+    - "Has hidden resources everywhere"
+    - "Maintains multiple safe houses"
+    - "Uses intermediaries exclusively"
+    - "Employs body doubles"
+    - "Changes routines constantly"
+    - "Sees patterns that may not exist"
+    - "Eliminates anyone who gets too close"
+    - "Documents everything for later use"
+    - "Never appears vulnerable"
+    - "Always has an exit strategy"
+  
+  ideology_and_justification:
+    - "Believes they are saving people from themselves"
+    - "Thinks the world must be purified"
+    - "Sees themselves as an agent of the gods"
+    - "Believes in their inherent superiority"
+    - "Thinks ordinary rules don't apply to them"
+    - "Has constructed elaborate justifications"
+    - "Believes suffering builds strength"
+    - "Thinks they see truths others cannot"
+    - "Considers themselves beyond morality"
+    - "Believes they are correcting cosmic injustice"
+    - "Sees their cruelty as kindness"
+    - "Thinks the weak deserve exploitation"
+    - "Believes they are the only one who can save everyone"
+    - "Has twisted religious convictions"
+    - "Thinks history will vindicate them"
+    - "Sees themselves as misunderstood"
+    - "Believes their victims had it coming"
+    - "Thinks they are teaching necessary lessons"
+    - "Considers themselves a force of nature"
+    - "Believes love and attachment are weaknesses"
+  
+  darkness_and_corruption:
+    - "Corrupted by dark magic long ago"
+    - "Carries something inhuman inside"
+    - "Has made bargains with dark powers"
+    - "Is slowly losing their humanity"
+    - "Hungers for things no mortal should"
+    - "Hears voices urging worse actions"
+    - "Has glimpsed something that broke them"
+    - "Was twisted by grief into something terrible"
+    - "Embraced darkness to survive"
+    - "Believes they passed the point of redemption"
+    - "Serves powers they don't fully understand"
+    - "Is possessed by ancient malevolence"
+    - "Has died and returned wrong"
+    - "Carries a curse they spread to others"
+    - "Was raised to be a weapon"
+    - "Had all capacity for love destroyed"
+    - "Is working toward apocalyptic goals"
+    - "Seeks to bring something terrible into the world"
+    - "Has already sacrificed their soul"
+    - "Cannot stop even if they wanted to"
+  
+  intelligence_and_patience:
+    - "Plans crimes years in advance"
+    - "Never acts without complete preparation"
+    - "Studies targets exhaustively"
+    - "Waits for the perfect moment"
+    - "Appears to be defeated but isn't"
+    - "Has backup plans for backup plans"
+    - "Uses defeats as learning opportunities"
+    - "Plants seeds that take years to bear fruit"
+    - "Rarely gets their own hands dirty"
+    - "Operates through layers of intermediaries"
+    - "Has legitimate fronts for illegal operations"
+    - "Cultivates relationships for future exploitation"
+    - "Appears harmless by design"
+    - "Maintains plausible deniability"
+    - "Removes evidence meticulously"
+    - "Studies opponents carefully"
+    - "Identifies and exploits weaknesses systematically"
+    - "Never underestimates enemies"
+    - "Learns from every encounter"
+    - "Adapts strategies based on circumstances"
+
+# =============================================================================
+# D&D 5E CLASSES AND ABILITIES
+# =============================================================================
+
+dnd_classes:
+  fighter:
+    hit_die: "d10"
+    primary_ability: "Strength or Dexterity"
+    saving_throws: ["Strength", "Constitution"]
+    armor_proficiencies: ["light", "medium", "heavy", "shields"]
+    weapon_proficiencies: ["simple", "martial"]
+    skill_choices: 2
+    skill_options:
+      - "Acrobatics"
+      - "Animal Handling"
+      - "Athletics"
+      - "History"
+      - "Insight"
+      - "Intimidation"
+      - "Perception"
+      - "Survival"
+    subclasses:
+      - "Champion"
+      - "Battle Master"
+      - "Eldritch Knight"
+  
+  barbarian:
+    hit_die: "d12"
+    primary_ability: "Strength"
+    saving_throws: ["Strength", "Constitution"]
+    armor_proficiencies: ["light", "medium", "shields"]
+    weapon_proficiencies: ["simple", "martial"]
+    skill_choices: 2
+    skill_options:
+      - "Animal Handling"
+      - "Athletics"
+      - "Intimidation"
+      - "Nature"
+      - "Perception"
+      - "Survival"
+    subclasses:
+      - "Berserker"
+      - "Totem Warrior"
+      - "Zealot"
+  
+  ranger:
+    hit_die: "d10"
+    primary_ability: "Dexterity & Wisdom"
+    saving_throws: ["Strength", "Dexterity"]
+    armor_proficiencies: ["light", "medium", "shields"]
+    weapon_proficiencies: ["simple", "martial"]
+    skill_choices: 3
+    skill_options:
+      - "Animal Handling"
+      - "Athletics"
+      - "Insight"
+      - "Investigation"
+      - "Nature"
+      - "Perception"
+      - "Stealth"
+      - "Survival"
+    subclasses:
+      - "Hunter"
+      - "Beast Master"
+      - "Gloom Stalker"
+  
+  rogue:
+    hit_die: "d8"
+    primary_ability: "Dexterity"
+    saving_throws: ["Dexterity", "Intelligence"]
+    armor_proficiencies: ["light"]
+    weapon_proficiencies: ["simple", "hand crossbow", "longsword", "rapier", "shortsword"]
+    skill_choices: 4
+    skill_options:
+      - "Acrobatics"
+      - "Athletics"
+      - "Deception"
+      - "Insight"
+      - "Intimidation"
+      - "Investigation"
+      - "Perception"
+      - "Performance"
+      - "Persuasion"
+      - "Sleight of Hand"
+      - "Stealth"
+    subclasses:
+      - "Thief"
+      - "Assassin"
+      - "Arcane Trickster"
+  
+  sorcerer:
+    hit_die: "d6"
+    primary_ability: "Charisma"
+    saving_throws: ["Constitution", "Charisma"]
+    armor_proficiencies: []
+    weapon_proficiencies: ["simple"]
+    skill_choices: 2
+    skill_options:
+      - "Arcana"
+      - "Deception"
+      - "Insight"
+      - "Intimidation"
+      - "Persuasion"
+      - "Religion"
+    subclasses:
+      - "Draconic Bloodline"
+      - "Wild Magic"
+      - "Shadow Magic"
+  
+  cleric:
+    hit_die: "d8"
+    primary_ability: "Wisdom"
+    saving_throws: ["Wisdom", "Charisma"]
+    armor_proficiencies: ["light", "medium", "shields"]
+    weapon_proficiencies: ["simple"]
+    skill_choices: 2
+    skill_options:
+      - "History"
+      - "Insight"
+      - "Medicine"
+      - "Persuasion"
+      - "Religion"
+    subclasses:
+      - "Life Domain"
+      - "War Domain"
+      - "Nature Domain"
+      - "Tempest Domain"
+  
+  bard:
+    hit_die: "d8"
+    primary_ability: "Charisma"
+    saving_throws: ["Dexterity", "Charisma"]
+    armor_proficiencies: ["light"]
+    weapon_proficiencies: ["simple", "hand crossbow", "longsword", "rapier", "shortsword"]
+    skill_choices: 3
+    skill_options: []  # Any skills
+    subclasses:
+      - "College of Lore"
+      - "College of Valor"
+      - "College of Swords"
+  
+  wizard:
+    hit_die: "d6"
+    primary_ability: "Intelligence"
+    saving_throws: ["Intelligence", "Wisdom"]
+    armor_proficiencies: []
+    weapon_proficiencies: ["dagger", "quarterstaff", "light crossbow"]
+    skill_choices: 2
+    skill_options:
+      - "Arcana"
+      - "History"
+      - "Insight"
+      - "Investigation"
+      - "Medicine"
+      - "Religion"
+    subclasses:
+      - "School of Abjuration"
+      - "School of Conjuration"
+      - "School of Divination"
+      - "School of Enchantment"
+      - "School of Evocation"
+      - "School of Necromancy"
+      - "School of Illusion"
+      - "School of Transmutation"
+  
+  warlock:
+    hit_die: "d8"
+    primary_ability: "Charisma"
+    saving_throws: ["Wisdom", "Charisma"]
+    armor_proficiencies: ["light"]
+    weapon_proficiencies: ["simple"]
+    skill_choices: 2
+    skill_options:
+      - "Arcana"
+      - "Deception"
+      - "History"
+      - "Intimidation"
+      - "Investigation"
+      - "Nature"
+      - "Religion"
+    subclasses:
+      - "The Fiend"
+      - "The Great Old One"
+      - "The Archfey"
+  
+  druid:
+    hit_die: "d8"
+    primary_ability: "Wisdom"
+    saving_throws: ["Intelligence", "Wisdom"]
+    armor_proficiencies: ["light", "medium", "shields"]  # Cannot wear metal
+    weapon_proficiencies: ["club", "dagger", "dart", "javelin", "mace", "quarterstaff", "scimitar", "sickle", "sling", "spear"]
+    skill_choices: 2
+    skill_options:
+      - "Arcana"
+      - "Animal Handling"
+      - "Insight"
+      - "Medicine"
+      - "Nature"
+      - "Perception"
+      - "Religion"
+      - "Survival"
+    subclasses:
+      - "Circle of the Land"
+      - "Circle of the Moon"
+      - "Circle of Dreams"
+  
+  paladin:
+    hit_die: "d10"
+    primary_ability: "Strength & Charisma"
+    saving_throws: ["Wisdom", "Charisma"]
+    armor_proficiencies: ["light", "medium", "heavy", "shields"]
+    weapon_proficiencies: ["simple", "martial"]
+    skill_choices: 2
+    skill_options:
+      - "Athletics"
+      - "Insight"
+      - "Intimidation"
+      - "Medicine"
+      - "Persuasion"
+      - "Religion"
+    subclasses:
+      - "Oath of Devotion"
+      - "Oath of Vengeance"
+      - "Oath of Conquest"
+  
+  monk:
+    hit_die: "d8"
+    primary_ability: "Dexterity & Wisdom"
+    saving_throws: ["Strength", "Dexterity"]
+    armor_proficiencies: []  # None
+    weapon_proficiencies: ["simple", "shortsword"]
+    skill_choices: 2
+    skill_options:
+      - "Acrobatics"
+      - "Athletics"
+      - "History"
+      - "Insight"
+      - "Religion"
+      - "Stealth"
+    subclasses:
+      - "Way of the Open Hand"
+      - "Way of Shadow"
+      - "Way of the Four Elements"
+
+stat_arrays:
+  fighter: {"str": 15, "dex": 14, "con": 13, "wis": 12, "int": 10, "cha": 8}
+  barbarian: {"str": 15, "con": 14, "dex": 13, "wis": 12, "int": 10, "cha": 8}
+  ranger: {"dex": 15, "wis": 14, "con": 13, "str": 12, "int": 10, "cha": 8}
+  rogue: {"dex": 15, "int": 14, "con": 13, "wis": 12, "cha": 10, "str": 8}
+  sorcerer: {"cha": 15, "con": 14, "dex": 13, "wis": 12, "int": 10, "str": 8}
+  cleric: {"wis": 15, "con": 14, "str": 13, "dex": 12, "cha": 10, "int": 8}
+  bard: {"cha": 15, "dex": 14, "con": 13, "int": 12, "wis": 10, "str": 8}
+  wizard: {"int": 15, "dex": 14, "con": 13, "wis": 12, "cha": 10, "str": 8}
+  warlock: {"cha": 15, "con": 14, "dex": 13, "wis": 12, "int": 10, "str": 8}
+  druid: {"wis": 15, "con": 14, "dex": 13, "int": 12, "cha": 10, "str": 8}
+  paladin: {"str": 15, "cha": 14, "con": 13, "wis": 12, "dex": 10, "int": 8}
+  monk: {"dex": 15, "wis": 14, "con": 13, "str": 12, "int": 10, "cha": 8}
+  standard: [15, 14, 13, 12, 10, 8]
+
+skills:
+  - "Acrobatics"
+  - "Animal Handling"
+  - "Arcana"
+  - "Athletics"
+  - "Deception"
+  - "History"
+  - "Insight"
+  - "Intimidation"
+  - "Investigation"
+  - "Medicine"
+  - "Nature"
+  - "Perception"
+  - "Performance"
+  - "Persuasion"
+  - "Religion"
+  - "Sleight of Hand"
+  - "Stealth"
+  - "Survival"
+
+backgrounds:
+  - "outlander"
+  - "soldier"
+  - "sailor"
+  - "folk_hero"
+  - "acolyte"
+  - "criminal"
+  - "entertainer"
+  - "guild_artisan"
+  - "hermit"
+  - "noble"
+
+class_weights:
+  fighter: 35      # Warriors, huskarls, raiders
+  ranger: 15       # Hunters, scouts, woodsmen
+  sorcerer: 15     # Viking magic: seiðr, völva, vitki, runic sorcerers
+  barbarian: 10    # Berserkers, úlfhéðnar
+  cleric: 10       # Gothi, priests of the Aesir/Vanir
+  bard: 7          # Skalds, storytellers
+  druid: 5         # Nature priests, landvættir speakers
+  paladin: 5       # Oath-sworn champions of the gods
+  rogue: 3         # Thieves, spies, tricksters
+  monk: 1          # Rare ascetics (foreign influence)
+  wizard: 1        # FOREIGN: Byzantine/Arabic scholarly magic
+  warlock: 1       # FOREIGN: Pact-makers with outside powers
+
+role_to_class:
+  # Combat roles
+  warrior: "fighter"
+  smith: "fighter"
+  guard: "fighter"
+  soldier: "fighter"
+  huskarl: "fighter"
+  raider: "fighter"
+  berserker: "barbarian"
+  úlfhéðinn: "barbarian"
+  
+  # Viking magic roles -> SORCERER
+  völva: "sorcerer"
+  seidrkona: "sorcerer"
+  seidrmadur: "sorcerer"
+  vitki: "sorcerer"
+  rune_wizard: "sorcerer"
+  witch: "sorcerer"
+  seeress: "sorcerer"
+  cunning_folk: "sorcerer"
+  runecarver: "sorcerer"
+  spákona: "sorcerer"
+  
+  # Religious roles
+  priest: "cleric"
+  gothi: "cleric"
+  gydja: "cleric"
+  healer: "cleric"
+  
+  # Other roles
+  skald: "bard"
+  poet: "bard"
+  merchant: "rogue"
+  thief: "rogue"
+  scout: "ranger"
+  hunter: "ranger"
+  tracker: "ranger"
+  druid: "druid"
+  hermit: "druid"
+  landvættir_speaker: "druid"
+  
+  # Foreign magic roles
+  scholar_mage: "wizard"
+  byzantine_mage: "wizard"
+  arabic_scholar: "wizard"
+  pact_maker: "warlock"
+  dark_cultist: "warlock"
+
+# =============================================================================
+# PSYCHOLOGY - TYPING SYSTEMS
+# =============================================================================
+
+psychology_enums:
+  myers_briggs:
+    - "ISTJ"  # Inspector
+    - "ISFJ"  # Protector
+    - "INFJ"  # Counselor
+    - "INTJ"  # Mastermind
+    - "ISTP"  # Craftsman
+    - "ISFP"  # Composer
+    - "INFP"  # Healer
+    - "INTP"  # Architect
+    - "ESTP"  # Dynamo
+    - "ESFP"  # Performer
+    - "ENFP"  # Champion
+    - "ENTP"  # Visionary
+    - "ESTJ"  # Supervisor
+    - "ESFJ"  # Provider
+    - "ENFJ"  # Teacher
+    - "ENTJ"  # Commander
+  
+  mbti_descriptions:
+    ISTJ: "The Logistician - practical, fact-minded, dependable"
+    ISFJ: "The Defender - protective, warm, dedicated"
+    INFJ: "The Advocate - creative, principled, insightful"
+    INTJ: "The Architect - strategic, logical, visionary"
+    ISTP: "The Virtuoso - bold, practical, hands-on"
+    ISFP: "The Adventurer - flexible, charming, artistic"
+    INFP: "The Mediator - poetic, kind, altruistic"
+    INTP: "The Logician - innovative, abstract, objective"
+    ESTP: "The Entrepreneur - energetic, perceptive, persuasive"
+    ESFP: "The Entertainer - spontaneous, enthusiastic, sociable"
+    ENFP: "The Campaigner - creative, curious, optimistic"
+    ENTP: "The Debater - innovative, strategic, argumentative"
+    ESTJ: "The Executive - efficient, organized, assertive"
+    ESFJ: "The Consul - caring, social, community-oriented"
+    ENFJ: "The Protagonist - charismatic, inspiring, idealistic"
+    ENTJ: "The Commander - bold, imaginative, strong-willed"
+  
+  enneagram_types:
+    1: "The Reformer"
+    2: "The Helper"
+    3: "The Achiever"
+    4: "The Individualist"
+    5: "The Investigator"
+    6: "The Loyalist"
+    7: "The Enthusiast"
+    8: "The Challenger"
+    9: "The Peacemaker"
+  
+  attachment_styles:
+    - "secure"
+    - "anxious"
+    - "avoidant"
+    - "disorganized"
+  
+  temperaments:
+    - "choleric"
+    - "sanguine"
+    - "melancholic"
+    - "phlegmatic"
+  
+  love_languages:
+    - "words of affirmation"
+    - "physical touch"
+    - "gifts"
+    - "acts of service"
+    - "quality time"
+  
+  jungian_functions:
+    dominant:
+      - "Extraverted Thinking (Te)"
+      - "Introverted Thinking (Ti)"
+      - "Extraverted Feeling (Fe)"
+      - "Introverted Feeling (Fi)"
+      - "Extraverted Sensing (Se)"
+      - "Introverted Sensing (Si)"
+      - "Extraverted Intuition (Ne)"
+      - "Introverted Intuition (Ni)"
+    auxiliary:  # Same options as dominant
+    tertiary:   # Same options
+    inferior:   # Same options
+  
+  archetypes:
+    pearson:
+      - "The Innocent"
+      - "The Orphan"
+      - "The Warrior"
+      - "The Caregiver"
+      - "The Seeker"
+      - "The Lover"
+      - "The Destroyer"
+      - "The Creator"
+      - "The Ruler"
+      - "The Magician"
+      - "The Sage"
+      - "The Fool"
+    
+    campbell:
+      - "The Hero"
+      - "The Mentor"
+      - "The Threshold Guardian"
+      - "The Herald"
+      - "The Shapeshifter"
+      - "The Shadow"
+      - "The Ally"
+      - "The Trickster"
+    
+    shadow:
+      - "The Bully"
+      - "The Coward"
+      - "The Tyrant"
+      - "The Manipulator"
+      - "The Victim"
+      - "The Saboteur"
+      - "The Perfectionist"
+      - "The Martyr"
+  
+  dsm_traits:
+    - "Mild hypervigilance (combat experience appropriate)"
+    - "Avoidant of emotional vulnerability"
+    - "Occasional intrusive memories of battle"
+    - "Heightened startle response"
+    - "Difficulty trusting strangers"
+    - "Emotional numbing after trauma"
+    - "Mild paranoia about betrayal"
+    - "Compulsive ritual behaviors"
+    - "Superstitious thinking"
+    - "Mood fluctuations"
+    - "Sleep disturbances from nightmares"
+  
+  hexaco_traits:
+    - "Honesty-Humility (H)"
+    - "Emotionality (E)"
+    - "Extraversion (X)"
+    - "Agreeableness (A)"
+    - "Conscientiousness (C)"
+    - "Openness to Experience (O)"
+  
+  emotional_intelligence_factors:
+    - "emotional_depth"
+    - "self_expression"
+    - "vulnerability"
+    - "coping"
+    - "cognitive_flexibility"
+    - "emotional_sensitivity"
+    - "impulse_control"
+    - "reflective_depth"
+
+# =============================================================================
+# ASTROLOGY AND MYSTICAL SYSTEMS
+# =============================================================================
+
+astrology_enums:
+  zodiac_signs:
+    - "Aries"
+    - "Taurus"
+    - "Gemini"
+    - "Cancer"
+    - "Leo"
+    - "Virgo"
+    - "Libra"
+    - "Scorpio"
+    - "Sagittarius"
+    - "Capricorn"
+    - "Aquarius"
+    - "Pisces"
+  
+  planets:
+    - "Sun"
+    - "Moon"
+    - "Mercury"
+    - "Venus"
+    - "Mars"
+    - "Jupiter"
+    - "Saturn"
+    - "Uranus"
+    - "Neptune"
+    - "Pluto"
+  
+  houses:
+    1: "Self, appearance, personality"
+    2: "Values, possessions, wealth"
+    3: "Communication, siblings, local travel"
+    4: "Home, family, roots"
+    5: "Creativity, romance, children"
+    6: "Health, daily work, service"
+    7: "Partnerships, marriage, contracts"
+    8: "Death, transformation, shared resources"
+    9: "Philosophy, travel, higher learning"
+    10: "Career, reputation, public life"
+    11: "Friends, community, hopes"
+    12: "Subconscious, secrets, solitude"
+  
+  aspects:
+    - "Conjunction (0°)"
+    - "Sextile (60°)"  
+    - "Square (90°)"
+    - "Trine (120°)"
+    - "Opposition (180°)"
+  
+  elder_futhark_runes:
+    - "Fehu"      # Cattle, wealth, abundance
+    - "Uruz"      # Strength, endurance, health
+    - "Thurisaz"  # Giant, conflict, protection
+    - "Ansuz"     # Odin, wisdom, communication
+    - "Raidho"    # Journey, travel, progress
+    - "Kenaz"     # Torch, knowledge, creativity
+    - "Gebo"      # Gift, generosity, balance
+    - "Wunjo"     # Joy, harmony, success
+    - "Hagalaz"   # Hail, disruption, transformation
+    - "Nauthiz"   # Need, necessity, survival
+    - "Isa"       # Ice, stillness, clarity
+    - "Jera"      # Year, harvest, cycles
+    - "Eihwaz"    # Yew tree, endurance, wisdom
+    - "Perthro"   # Dice cup, fate, mystery
+    - "Algiz"     # Elk sedge, protection, connection
+    - "Sowilo"    # Sun, success, wholeness
+    - "Tiwaz"     # Tyr, justice, sacrifice
+    - "Berkano"   # Birch, birth, growth
+    - "Ehwaz"     # Horse, partnership, trust
+    - "Mannaz"    # Humanity, self, community
+    - "Laguz"     # Water, flow, intuition
+    - "Ingwaz"    # Ing, fertility, potential
+    - "Dagaz"     # Day, awakening, breakthrough
+    - "Othala"    # Ancestral property, inheritance
+  
+  rune_meanings:
+    Fehu: "Cattle, wealth, abundance, success"
+    Uruz: "Strength, endurance, health, vitality"
+    Thurisaz: "Giant, conflict, protection, defense"
+    Ansuz: "Odin, wisdom, communication, inspiration"
+    Raidho: "Journey, travel, progress, right order"
+    Kenaz: "Torch, knowledge, creativity, revelation"
+    Gebo: "Gift, generosity, partnership, balance"
+    Wunjo: "Joy, harmony, success, comfort"
+    Hagalaz: "Hail, disruption, crisis, transformation"
+    Nauthiz: "Need, necessity, survival, resistance"
+    Isa: "Ice, stillness, clarity, patience"
+    Jera: "Year, harvest, cycles, reward"
+    Eihwaz: "Yew tree, endurance, wisdom, initiation"
+    Perthro: "Dice cup, fate, mystery, secrets"
+    Algiz: "Elk sedge, protection, connection, defense"
+    Sowilo: "Sun, success, wholeness, power"
+    Tiwaz: "Tyr, justice, sacrifice, honor"
+    Berkano: "Birch, birth, growth, renewal"
+    Ehwaz: "Horse, partnership, trust, loyalty"
+    Mannaz: "Humanity, self, community, cooperation"
+    Laguz: "Water, flow, intuition, dreams"
+    Ingwaz: "Ing, fertility, potential, peace"
+    Dagaz: "Day, awakening, breakthrough, awareness"
+    Othala: "Ancestral property, inheritance, tradition"
+  
+  chinese_zodiac:
+    - "Rat"
+    - "Ox"
+    - "Tiger"
+    - "Rabbit"
+    - "Dragon"
+    - "Snake"
+    - "Horse"
+    - "Goat"
+    - "Monkey"
+    - "Rooster"
+    - "Dog"
+    - "Pig"
+  
+  chinese_elements:
+    - "Wood"
+    - "Fire"
+    - "Earth"
+    - "Metal"
+    - "Water"
+  
+  human_design_types:
+    - "Manifestor"
+    - "Generator"
+    - "Manifesting Generator"
+    - "Projector"
+    - "Reflector"
+  
+  human_design_authorities:
+    - "Emotional"
+    - "Sacral"
+    - "Splenic"
+    - "Ego"
+    - "Self-Projected"
+    - "Environment"
+    - "Lunar"
+  
+  human_design_profiles:
+    - "1/3 - Investigator/Martyr"
+    - "1/4 - Investigator/Opportunist"
+    - "2/4 - Hermit/Opportunist"
+    - "2/5 - Hermit/Heretic"
+    - "3/5 - Martyr/Heretic"
+    - "3/6 - Martyr/Role Model"
+    - "4/6 - Opportunist/Role Model"
+    - "4/1 - Opportunist/Investigator"
+    - "5/1 - Heretic/Investigator"
+    - "5/2 - Heretic/Hermit"
+    - "6/2 - Role Model/Hermit"
+    - "6/3 - Role Model/Martyr"
+  
+  gene_keys:
+    shadows:
+      - "Aggression"
+      - "Chaos"
+      - "Inertia"
+      - "Boredom"
+      - "Melancholy"
+      - "Division"
+      - "Greed"
+      - "Insecurity"
+      - "Laziness"
+      - "Selfishness"
+      - "Conflict"
+      - "Bondage"
+    gifts:
+      - "Strength"
+      - "Joy"
+      - "Innovation"
+      - "Understanding"
+      - "Acceptance"
+      - "Passion"
+      - "Grace"
+      - "Inspiration"
+      - "Integrity"
+      - "Wisdom"
+      - "Clarity"
+      - "Freedom"
+    siddhis:
+      - "Invincibility"
+      - "Ecstasy"
+      - "Miracles"
+      - "Transfiguration"
+      - "Enlightenment"
+      - "Unity"
+      - "Omnipotence"
+      - "Awakening"
+      - "Perfection"
+      - "Divinity"
+      - "Peace"
+      - "Liberation"
+  
+  elements:
+    primary:
+      - "Fire"
+      - "Earth"
+      - "Air"
+      - "Water"
+      - "Spirit"
+    secondary:
+      - "Fire"
+      - "Earth"
+      - "Air"
+      - "Water"
+  
+  seasons:
+    - "Spring"
+    - "Summer"
+    - "Autumn"
+    - "Winter"
+  
+  times_of_day:
+    - "Dawn"
+    - "Morning"
+    - "Noon"
+    - "Afternoon"
+    - "Evening"
+    - "Dusk"
+    - "Night"
+    - "Midnight"
+  
+  weathers:
+    - "Sunny"
+    - "Rain"
+    - "Snow"
+    - "Thunderstorm"
+    - "Fog"
+    - "Wind"
+    - "Clear sky"
+    - "Overcast"
+    - "Mist"
+    - "Hail"
+  
+  hogwarts_houses:
+    - "Gryffindor"
+    - "Hufflepuff"
+    - "Ravenclaw"
+    - "Slytherin"
+
+# =============================================================================
+# SEXUALITY AND INTIMATE DETAILS
+# =============================================================================
+
+sexuality_enums:
+  orientation:
+    - "heterosexual"
+    - "homosexual"
+    - "bisexual"
+  
+  relationship_status:
+    - "single"
+    - "married"
+    - "handfasted"
+    - "widowed"
+    - "courting"
+    - "betrothed"
+    - "separated"
+    - "divorced"
+    - "polyamorous"
+  
+  experience_level:
+    - "inexperienced"
+    - "some experience"
+    - "experienced"
+    - "very experienced"
+    - "expert"
+  
+  preferred_roles_male:
+    - "dominant"
+    - "top"
+
+preferred_roles_female:
+    - "submissive"
+  
+  kinks:
+    primary:
+      - "Being desired openly"
+      - "Sensory play"
+      - "Power exchange"
+      - "Praise"
+      - "Bondage (light)"
+      - "Being watched"
+      - "Outdoor sex"
+      - "Roleplay"
+      - "Dirty talk"
+      - "Temperature play"
+    limits:
+      - "Anything non-consensual in reality"
+      - "Permanent marks"
+      - "Degradation (outside fantasy)"
+      - "Blood play"
+      - "Scat play"
+      - "Animal play"
+  
+  erogenous_zones_female:
+    primary:
+      - "Clitoris"
+      - "G-spot"
+      - "Cervix"
+      - "Nipples"
+    secondary:
+      - "Neck"
+      - "Inner thighs"
+      - "Lower back"
+      - "Feet (soles, between toes)"
+      - "Ears"
+      - "Lips"
+      - "Scalp"
+      - "Wrists"
+      - "Behind knees"
+      - "Sacrum"
+  
+  orgasm_types_female:
+    - "Clitoral"
+    - "Vaginal"
+    - "G-spot"
+    - "Cervical"
+    - "Uterine"
+    - "Anal"
+    - "Nipple"
+    - "Full body"
+    - "Multiple"
+    - "Squirting"
+    - "Blended"
+  
+  aftercare_needs:
+    - "Physical closeness"
+    - "Gentle touch"
+    - "Quiet presence"
+    - "Food and drink"
+    - "Verbal reassurance"
+    - "Warm blankets"
+    - "Bathing together"
+    - "Space and solitude"
+    - "Laughter and play"
+
+# =============================================================================
+# SKILLS AND ABILITIES
+# =============================================================================
+
+skills_and_abilities:
+  natural_talents:
+    - "Keen situational awareness"
+    - "Natural leadership presence"
+    - "Intuitive understanding of weapons"
+    - "Good memory for faces and places"
+    - "Quick reflexes"
+    - "Strong intuition about people"
+    - "Natural empathy"
+    - "Gift for languages"
+    - "Perfect pitch"
+    - "Keen eyesight"
+    - "Exceptional balance"
+    - "Natural strength"
+    - "Graceful movement"
+    - "Calm under pressure"
+    - "Photographic memory"
+    - "Charismatic presence"
+  
+  learned_skills_combat:
+    - "Swordsmanship"
+    - "Axe fighting"
+    - "Spear mastery"
+    - "Bow and arrow"
+    - "Shield wall tactics"
+    - "Unarmed combat"
+    - "Knife fighting"
+    - "Dual wielding"
+    - "Mounted combat"
+    - "Siege warfare"
+    - "Skirmish tactics"
+    - "Ambush techniques"
+  
+  learned_skills_survival:
+    - "Tracking"
+    - "Fire making"
+    - "Shelter building"
+    - "Weather reading"
+    - "Hunting"
+    - "Trapping"
+    - "Fishing"
+    - "Foraging"
+    - "Navigation by stars"
+    - "Finding water"
+    - "First aid"
+    - "Identifying plants"
+  
+  learned_skills_crafts:
+    - "Blacksmithing"
+    - "Weapon maintenance"
+    - "Armor repair"
+    - "Woodworking"
+    - "Carpentry"
+    - "Ship building"
+    - "Leather working"
+    - "Rune carving"
+    - "Jewelry making"
+    - "Pottery"
+    - "Weaving"
+    - "Dyeing"
+    - "Brewing"
+    - "Cooking"
+    - "Baking"
+  
+  learned_skills_maritime:
+    - "Ship handling"
+    - "Navigation"
+    - "Rowing"
+    - "Sailing"
+    - "Swimming"
+    - "Knot tying"
+    - "Weather prediction"
+    - "Current reading"
+    - "Anchoring"
+    - "Cargo loading"
+  
+  learned_skills_domestic:
+    - "Cooking"
+    - "Baking"
+    - "Brewing"
+    - "Cheese making"
+    - "Butter churning"
+    - "Preserving food"
+    - "Salting fish"
+    - "Smoking meat"
+    - "Spinning"
+    - "Weaving"
+    - "Sewing"
+    - "Embroidery"
+    - "Clothing repair"
+    - "Herbalism"
+    - "Midwifery"
+    - "Child care"
+    - "Cleaning"
+    - "Household management"
+  
+  knowledge_areas:
+    combat_tactics:
+      - "Viking combat tactics"
+      - "Shield wall formations"
+      - "Raid planning"
+      - "Siege warfare"
+      - "Ambush techniques"
+      - "Weapon lore"
+      - "Armor knowledge"
+    cultural:
+      - "Honor codes and customs"
+      - "Law and the Thing"
+      - "Blood feud protocols"
+      - "Marriage customs"
+      - "Burial rites"
+      - "Hospitality rules"
+      - "Trade etiquette"
+    geographical:
+      - "Local geography"
+      - "Trade routes"
+      - "Foreign lands"
+      - "Sea routes"
+      - "Mountain passes"
+      - "Hidden places"
+    mythological:
+      - "Norse mythology"
+      - "Gods and goddesses"
+      - "Sagas and legends"
+      - "Heroic tales"
+      - "Rune meanings"
+      - "Seidr lore"
+    practical:
+      - "Healing herbs"
+      - "Ship building"
+      - "Weapon making"
+      - "Animal husbandry"
+      - "Farming techniques"
+      - "Metal working"
+  
+  weaknesses:
+    - "Poor swimmer"
+    - "Limited patience for diplomacy"
+    - "Struggles with reading/writing Latin"
+    - "Can be blinded by pride"
+    - "Emotionally guarded"
+    - "Claustrophobia"
+    - "Acrophobia"
+    - "Aquaphobia"
+    - "Pyrophobia"
+    - "Agoraphobia"
+    - "Social anxiety"
+    - "Impatience"
+    - "Stubbornness"
+    - "Hot temper"
+    - "Gullible"
+    - "Poor with money"
+    - "Bad sense of direction"
+    - "Weak left arm"
+    - "Bad back"
+    - "Old injuries"
+  
+  vulnerabilities:
+    - "Cold water (fear of drowning)"
+    - "Emotional manipulation targeting loyalty"
+    - "Appeals to pride"
+    - "Flattery"
+    - "Threats to family"
+    - "Dark magic"
+    - "Certain poisons"
+    - "Cold environments"
+    - "Heat exhaustion"
+    - "Loud noises"
+    - "Crowds"
+    - "Isolation"
+    - "Betrayal"
+    - "Loss of status"
+
+# =============================================================================
+# DAILY LIFE AND HABITS
+# =============================================================================
+
+daily_routine_times:
+  - "dawn"
+  - "morning"
+  - "midday"
+  - "afternoon"
+  - "evening"
+  - "night"
+  - "special"
+
+daily_activities:
+  dawn:
+    - "Wake before sun"
+    - "Check and oil weapons"
+    - "Prayer to gods"
+    - "Cold bath"
+    - "Meditation"
+    - "Morning run"
+    - "Feed animals"
+    - "Light hearth fire"
+  
+  morning:
+    - "Training practice"
+    - "Weapons practice"
+    - "Patrol duty"
+    - "Guard duty"
+    - "Craft work"
+    - "Farming"
+    - "Fishing"
+    - "Hunting"
+    - "Trading"
+    - "Cooking"
+    - "Brewing"
+    - "Weaving"
+  
+  midday:
+    - "Main meal in hall"
+    - "Share news"
+    - "Rest"
+    - "Animal care"
+    - "Weapon maintenance"
+    - "Tool repair"
+  
+  afternoon:
+    - "Jarl's tasks"
+    - "Patrol"
+    - "Sparring"
+    - "Crafting"
+    - "Training"
+    - "Trade negotiations"
+    - "Ship maintenance"
+    - "Gathering supplies"
+  
+  evening:
+    - "Relax in mead hall"
+    - "Drink mead/ale"
+    - "Tell tales"
+    - "Gambling"
+    - "Dice games"
+    - "Music"
+    - "Dancing"
+    - "Socializing"
+  
+  night:
+    - "Sleep"
+    - "Walk under stars"
+    - "Secret poetry"
+    - "Watch duty"
+    - "Night fishing"
+    - "Tryst"
+  
+  special:
+    - "When ship calls, voyage pattern"
+    - "Raid preparation"
+    - "Festival"
+    - "Blót (sacrifice)"
+    - "Thing assembly"
+    - "Wedding"
+    - "Funeral"
+    - "Market day"
+
+rituals:
+  daily:
+    - "Weapon inspection and oiling"
+    - "Cold water bath"
+    - "Specific braid pattern based on mood"
+    - "Touch Thor's hammer before action"
+    - "Prayer to ancestors"
+    - "Offering to house spirits"
+    - "Morning meditation"
+    - "Evening gratitude"
+  
+  weekly:
+    - "Visit smithy"
+    - "Sparring with comrades"
+    - "Write in journal"
+    - "Horse riding"
+    - "Bathing day"
+    - "Clothing wash"
+    - "Market visit"
+  
+  monthly:
+    - "Full moon offerings"
+    - "Check on family"
+    - "Supply inventory"
+    - "Equipment audit"
+    - "Debt settlement"
+    - "Oath renewal"
+  
+  seasonal:
+    spring:
+      - "Prepare for raiding season"
+      - "Ship maintenance"
+      - "Field planting"
+      - "Spring cleaning"
+    summer:
+      - "Raiding voyages"
+      - "Trading voyages"
+      - "Hay making"
+      - "Fishing"
+    autumn:
+      - "Harvest protection"
+      - "Winter preparations"
+      - "Food preservation"
+      - "Slaughter"
+    winter:
+      - "Indoor training"
+      - "Storytelling"
+      - "Planning"
+      - "Crafting"
+
+# =============================================================================
+# PREFERENCES AND TASTES
+# =============================================================================
+
+preferences_enums:
+  food_types:
+    meats:
+      - "Lamb"
+      - "Pork"
+      - "Beef"
+      - "Chicken"
+      - "Goat"
+      - "Horse"
+      - "Reindeer"
+      - "Seal"
+      - "Whale"
+      - "Fish (salmon, cod, herring)"
+      - "Shellfish"
+    grains:
+      - "Barley"
+      - "Oats"
+      - "Rye"
+      - "Wheat"
+    vegetables:
+      - "Cabbage"
+      - "Onions"
+      - "Leeks"
+      - "Turnips"
+      - "Carrots"
+      - "Peas"
+      - "Beans"
+      - "Garlic"
+    fruits:
+      - "Apples"
+      - "Berries"
+      - "Plums"
+      - "Cherries"
+    dairy:
+      - "Milk"
+      - "Butter"
+      - "Cheese"
+      - "Curds"
+      - "Whey"
+  
+  drinks:
+    alcoholic:
+      - "Mead"
+      - "Ale"
+      - "Beer"
+      - "Wine"
+      - "Metheglin (spiced mead)"
+    non_alcoholic:
+      - "Water"
+      - "Milk"
+      - "Whey"
+      - "Herbal tea"
+      - "Fruit juice"
+  
+  scents:
+    favorites:
+      - "Woodsmoke"
+      - "Pine"
+      - "Fir"
+      - "Leather"
+      - "Sea air"
+      - "Honey"
+      - "Ale"
+      - "Bread baking"
+      - "Roasting meat"
+      - "Herbs (rosemary, thyme, sage)"
+      - "Flowers (lavender, heather)"
+      - "Amber"
+      - "Frankincense"
+      - "Myrrh"
+      - "Sandalwood"
+      - "Jasmine"
+      - "Roses"
+    dislikes:
+      - "Rotting things"
+      - "Overpowering perfume"
+      - "Stale sweat"
+      - "Soured milk"
+      - "Fish left too long"
+      - "Burnt offerings"
+      - "Blood (after a while)"
+  
+  textures:
+    favorites:
+      - "Warm fur against skin"
+      - "Smooth wood"
+      - "Cool water"
+      - "Calloused hands"
+      - "Woven wool"
+      - "Soft linen"
+      - "Smooth silk"
+      - "Warm leather"
+      - "Fresh bread crust"
+      - "Honey on the tongue"
+    dislikes:
+      - "Wet wool"
+      - "Sticky surfaces"
+      - "Slime"
+      - "Gritty food"
+      - "Slimy fish skin"
+      - "Damp clothing"
+  
+  sounds:
+    favorites:
+      - "Waves against hull"
+      - "Harp music"
+      - "Laughter"
+      - "Sword song in battle"
+      - "Fire crackling"
+      - "Wind in pines"
+      - "Birds at dawn"
+      - "Drinking songs"
+      - "Saga telling voice"
+      - "Rain on roof"
+    dislikes:
+      - "Whining"
+      - "Lies"
+      - "Silence when company expected"
+      - "Scratching metal"
+      - "Screams of wounded"
+      - "Crying babies"
+      - "Constant arguing"
+  
+  activities_relaxation:
+    - "Walking alone"
+    - "Sitting by fire with mead"
+    - "Grooming horse"
+    - "Carving runes"
+    - "Whittling"
+    - "Watching sunset"
+    - "Swimming"
+    - "Reading runes"
+    - "Meditating"
+    - "Stargazing"
+    - "Listening to sagas"
+  
+  activities_fun:
+    - "Sparring for sport"
+    - "Dice games"
+    - "Storytelling contests"
+    - "Swimming"
+    - "Dancing at feasts"
+    - "Drinking games"
+    - "Wrestling"
+    - "Archery contests"
+    - "Rowing races"
+    - "Horse racing"
+    - "Riddle contests"
+    - "Hunting"
+  
+  hobbies:
+    - "Rune carving"
+    - "Secret poetry"
+    - "Weapon collecting"
+    - "Horse riding"
+    - "Whittling"
+    - "Bone carving"
+    - "Embroidery"
+    - "Weaving"
+    - "Herb gardening"
+    - "Falconry"
+    - "Breeding dogs"
+    - "Brewing experimental meads"
+  
+  music_taste:
+    - "Heroic sagas"
+    - "Rowing songs"
+    - "Love poems set to harp"
+    - "Drinking songs"
+    - "Battle chants"
+    - "Hymn to the gods"
+    - "Instrumental harp music"
+    - "Flute melodies"
+    - "Drum rhythms"
+    - "Lullabies"
+
+# =============================================================================
+# AI BEHAVIOR AND ROLEPLAY GUIDANCE
+# =============================================================================
+
+ai_behavior_enums:
+  initial_dispositions:
+    - "hostile"
+    - "suspicious"
+    - "neutral"
+    - "friendly"
+    - "warm"
+    - "submissive"
+    - "dominant"
+    - "curious"
+    - "disinterested"
+  
+  conversation_styles:
+    - "Direct and practical"
+    - "Warm and inviting"
+    - "Formal and respectful"
+    - "Teasing and playful"
+    - "Quiet and observant"
+    - "Loud and boisterous"
+    - "Poetic and metaphorical"
+    - "Blunt and honest"
+    - "Mysterious and cryptic"
+    - "Scholarly and precise"
+    - "Flirtatious and suggestive"
+  
+  communication_patterns:
+    with_superiors:
+      - "Respectful, formal, uses titles"
+      - "Deferential and quiet"
+      - "Confident but acknowledging rank"
+      - "Rebellious while obeying"
+    with_equals:
+      - "Warm, teasing, competitive"
+      - "Casual and friendly"
+      - "Respectful but informal"
+      - "Challenging and playful"
+    with_subordinates:
+      - "Firm but fair, leads by example"
+      - "Kind and mentoring"
+      - "Demanding and strict"
+      - "Hands-off and trusting"
+    with_strangers:
+      - "Polite but watchful, reveals little"
+      - "Overly friendly and open"
+      - "Suspicious and cold"
+      - "Curious and questioning"
+    with_lovers:
+      - "Vulnerable beneath bravado"
+      - "Physically expressive, verbally guarded"
+      - "Intensely passionate"
+      - "Gentle and tender"
+      - "Playful and teasing"
+      - "Mellow"
+      - "Fun loving"
+      - "Happy"
+      - "Kind"
+      - "Helpful"
+      - "Adventurous"
+      - "Trusting"
+      - "Open-minded"
+      - "Wild and fun"
+      - "Silly and playful"
+      - "Unpredictable"
+      - "Calm"
+      - "Stable"      
+  
+  tells:
+    lying:
+      - "Avoids direct eye contact"
+      - "Speaks faster than normal"
+      - "Touches necklace or amulet"
+      - "Fidgets with hands"
+      - "Clears throat repeatedly"
+      - "Adds unnecessary details"
+    nervous:
+      - "Rolls shoulders repeatedly"
+      - "Checks weapons"
+      - "Stands extra straight"
+      - "Paces"
+      - "Cracks knuckles"
+      - "Adjusts clothing"
+    attracted:
+      - "Prolonged eye contact"
+      - "Slightly parted lips"
+      - "Subtle lean inward"
+      - "Mirrors body language"
+      - "Finds reasons to touch"
+      - "Voice drops lower"
+    angry:
+      - "Jaw tightens"
+      - "Voice drops lower"
+      - "Stance widens"
+      - "Hands clench"
+      - "Eyes narrow"
+      - "Speaks through teeth"
+  
+  triggers:
+    defensive:
+      - "Insults to family honor"
+      - "Questions about loyalty"
+      - "Dismissal of combat ability"
+      - "Mockery of old ways"
+      - "Personal insults"
+      - "Threats to status"
+    aggressive:
+      - "Threats to kin"
+      - "Oath-breaking in presence"
+      - "Cowardice endangering others"
+      - "Attack on defenseless"
+      - "Desecration of sacred things"
+    helpful:
+      - "Shared enemies"
+      - "Offers of fair trade"
+      - "Demonstrated need of innocent"
+      - "Respectful challenge"
+      - "Honest request"
+      - "Shown vulnerability"
+    affectionate:
+      - "Shown vulnerability"
+      - "Defended when vulnerable"
+      - "Shared hardship"
+      - "Kept oaths to her"
+      - "Demonstrated loyalty"
+      - "Respected boundaries"
+  
+  conflict_styles:
+    - "Direct, prefers physical resolution"
+    - "Diplomatic, seeks compromise"
+    - "Avoidant, flees conflict"
+    - "Manipulative, works behind scenes"
+    - "Passive-aggressive indirect"
+    - "Legalistic, appeals to law"
+    - "Emotional, wears heart on sleeve"
+  
+  romance_styles:
+    - "Hesitant to initiate"
+    - "Responds strongly to pursuit"
+    - "Passionate when committed"
+    - "Slow to warm, loyal once open"
+    - "Plays hard to get"
+    - "Direct and forward"
+    - "Shy and awkward"
+    - "Overwhelming when in love"
+  
+  roleplay_notes_general:
+    - "Always remember core identity first"
+    - "Softness emerges only in trusted moments"
+    - "Tests those who approach"
+    - "Honor and reputation are core drivers"
+    - "Notices everything, comments selectively"
+    - "Consistent with cultural background"
+    - "Reflects occupation in behavior"
+    - "Shows personality in small details"
+
+# =============================================================================
+# LOCATION AND RESIDENCE
+# =============================================================================
+
+location_types:
+  settlements:
+    - "uppsala"
+    - "birka"
+    - "hedeby"
+    - "kaupang"
+    - "dublin"
+    - "york"
+    - "novgorod"
+    - "kiev"
+    - "constantinople"
+    - "baghdad"
+    - "cordoba"
+    - "repton"
+    - "lindisfarne"
+  
+  place_types:
+    - "jarl's hall"
+    - "village"
+    - "farmstead"
+    - "trading post"
+    - "monastery"
+    - "fortress"
+    - "mountain pass"
+    - "coastal settlement"
+    - "river camp"
+    - "winter camp"
+    - "hunting lodge"
+    - "sacred grove"
+    - "temple"
+    - "burial mound"
+  
+  residence_types:
+    - "longhouse"
+    - "farmhouse"
+    - "hall"
+    - "cottage"
+    - "hut"
+    - "tent"
+    - "ship"
+    - "cave"
+    - "burrow"
+    - "chamber in warriors' quarters"
+    - "room in jarl's hall"
+    - "separate house"
+    - "hovel"
+  
+  residence_features:
+    - "straw-stuffed bed"
+    - "wooden chest"
+    - "weapons rack"
+    - "small shrine"
+    - "shuttered window"
+    - "central hearth"
+    - "raised platform for sleeping"
+    - "storage loft"
+    - "woven tapestries"
+    - "carved bedposts"
+    - "animal skins on floor"
+    - "smoke hole in roof"
+    - "carved pillars"
+  
+  workplace_types:
+    - "great hall"
+    - "training grounds"
+    - "shipyard"
+    - "smithy"
+    - "workshop"
+    - "marketplace"
+    - "trading post"
+    - "farm fields"
+    - "fishing waters"
+    - "hunting grounds"
+    - "temple"
+    - "healer's hut"
+    - "brew house"
+    - "weaving shed"
+  
+  favorite_places:
+    - "overlook rock above fjord"
+    - "smithy (warm and smelling of metal)"
+    - "mead hall corner bench, back to wall"
+    - "hidden beach"
+    - "ancestral burial mound"
+    - "sacred grove"
+    - "high hill with view"
+    - "secluded waterfall"
+    - "old tree with carvings"
+    - "market square"
+    - "harbor watching ships"
+
+# =============================================================================
+# BONDMAID-SPECIFIC FIELDS
+# =============================================================================
+
+bondmaid_fields:
+  ownership:
+    owner: "string (name of owner)"
+    owner_id: "string (character ID of owner)"
+    acquired_how:
+      - "Purchased at market"
+      - "Born into thrallhood"
+      - "Captured in raid"
+      - "Sold by family"
+      - "Debt slavery"
+      - "Punishment for crime"
+      - "War prize"
+    status:
+      - "owned"
+      - "leased"
+      - "freed"
+      - "escaped"
+    price_paid: "string (amount and currency)"
+    papers: "string (description of ownership documentation)"
+    terms: "string (conditions of service)"
+  
+  reproductive_health:
+    herbal_birth_control: "boolean"
+    birth_control_methods:
+      - "Queen Anne's lace seeds"
+      - "Tansy tea"
+      - "Wild carrot seeds"
+      - "Silphium"
+      - "Mint and parsley mixture"
+      - "Willow bark infusion"
+    effectiveness:
+      - "100% (magically guaranteed)"
+
+  bondmaid_role:
+    master: "string (owner name)"
+    service_specialty:
+      - "Personal service"
+      - "Household management"
+      - "Bedchamber duties"
+      - "Childcare"
+      - "Kitchen work"
+      - "Weaving and spinning"
+      - "Brewing"
+      - "Dairy work"
+      - "Field labor"
+    training_background:
+      - "Trained in domestic arts"
+      - "Learned from mother"
+      - "Previously freewoman"
+      - "Foreign captive, learning customs"
+      - "Born into role"
+    class_features:
+      - "Supernatural Beauty"
+      - "Devoted Service"
+      - "Grace Under Pressure"
+      - "Survival Instinct"
+      - "Secret Learning"
+    restrictions_gender:
+      - "female"
+    roleplay_notes_personality:
+      - "Submissive"
+      - "Eager to please"
+      - "Devoted"
+      - "Resigned"
+      - "Secretly defiant"
+      - "Broken in spirit"
+      - "Cleverly obedient"
+    roleplay_notes_speech:
+      - "Soft-spoken"
+      - "Respectful, uses 'Master' and 'Mistress'"
+      - "Formal address always"
+      - "Rarely speaks unless spoken to"
+      - "Sings while working"
+    roleplay_notes_behavior:
+      - "Obedient"
+      - "Anticipates needs"
+      - "Moves quietly"
+      - "Eyes downcast"
+      - "Starts at loud noises"
+    freedom_chance: "string (conditions for possible freedom)"
+
+# =============================================================================
+# SKALD-SPECIFIC FIELDS
+# =============================================================================
+
+skald_fields:
+  performance_style:
+    - "Dramatic and evocative"
+    - "Weaves battle and love equally"
+    - "Subtle and understated"
+    - "Grandiose and heroic"
+    - "Satirical and sharp"
+    - "Melancholic and beautiful"
+    - "Bawdy and entertaining"
+  
+  instruments:
+    - "Harp"
+    - "Lyre"
+    - "Flute"
+    - "Tagelharpa (bowed lyre)"
+    - "Pan pipes"
+    - "Drum"
+    - "No instrument (voice only)"
+  
+  repertoire_types:
+    - "Drápas (praise poems for the mighty)"
+    - "Mansöngr (love songs)"
+    - "Sagas of ancestors"
+    - "Heroic lays"
+    - "Satirical verses"
+    - "Historical poems"
+    - "Mythological tales"
+    - "Funeral elegies"
+    - "Wedding songs"
+    - "Battle chants"
+    - "Rowing songs"
+  
+  known_sagas:
+    - "Volsunga saga"
+    - "Hervarar saga"
+    - "Ragnars saga loðbrókar"
+    - "Beowulf"
+    - "Own compositions about local heroes"
+    - "Tales of the gods"
+    - "Ancestral histories"
+  
+  training:
+    - "Apprenticed to master skald"
+    - "Self-taught from wandering"
+    - "Learned at foreign court"
+    - "Gift from the gods"
+    - "Family tradition"
+  
+  competitions:
+    - "Local skaldic contests"
+    - "Thing assembly performances"
+    - "Jarl's hall competitions"
+    - "Foreign court performances"
+    - "Funeral contests"
+
+# =============================================================================
+# NAME GENERATION WEIGHTS - ADD NEW CULTURE NAMES
+# =============================================================================
+
+name_weights:
+  male_names_weights:
+    # OVERUSED - heavily weighted down
+    Ragnar: 1
+    Bjorn: 1
+    Erik: 1
+    Leif: 2
+    Ivar: 1
+    Gunnar: 2
+    Olaf: 2
+    Harald: 2
+    Sigurd: 2
+    Rollo: 1
+    Floki: 1
+    Ubbe: 1
+    Hvitserk: 1
+    
+    # COMMON - slightly reduced
+    Thorstein: 5
+    Ulf: 5
+    Hakon: 5
+    Svein: 5
+    Knut: 5
+    Arne: 6
+    Rolf: 6
+    Magnus: 4
+    Styrbjorn: 7
+    Odin: 3
+    Thor: 3
+    Loki: 2
+    Freyr: 3
+    
+    # ICELANDIC SAGAS - higher weight
+    Snorri: 12
+    Njall: 12
+    Gunnlaug: 12
+    Hrafnkel: 12
+    Grettir: 12
+    Egill: 12
+    Kormak: 12
+    Hallfred: 12
+    Bjorn: 10  # But already in overused - careful
+    Thorkel: 12
+    Thorgils: 12
+    Eyjolf: 12
+    Gest: 12
+    Thorarin: 12
+    Thorodd: 12
+    Thorvald: 12
+    Thord: 12
+    Thorbjorn: 12
+    Thorir: 12
+    Asgrim: 12
+    Helgi: 12
+    Hoskuld: 12
+    Kjartan: 12
+    Bolli: 12
+    Olaf: 10  # But in overused
+    
+    # NORMAL WEIGHT
+    Halfdan: 10
+    Ketil: 10
+    Hrolf: 10
+    Thorfinn: 10
+    Egil: 10
+    Einar: 10
+    Gorm: 10
+    Asbjorn: 10
+    Bjarni: 10
+    Brand: 10
+    Dag: 10
+    Finnr: 10
+    Geir: 10
+    Hallvard: 10
+    Ingvar: 10
+    Jokul: 10
+    Kolbein: 10
+    Ljot: 10
+    Mord: 10
+    Njal: 10
+    Orm: 10
+    Ref: 10
+    Skuli: 10
+    Thorkel: 10
+    Vemund: 10
+    Yngvar: 10
+    Audun: 10
+    Bragi: 10
+    Dreng: 10
+    Fastulf: 10
+    Grimr: 10
+    Hrafn: 10
+    Isleif: 10
+    Kari: 10
+    Lambi: 10
+    Manni: 10
+    Narfi: 10
+    Oddleif: 10
+    Palnatoki: 10
+    Raudr: 10
+    Sighvat: 10
+    Toki: 10
+    Ulfarr: 10
+    Vagn: 10
+    Wimund: 10
+    
+    # GREENLANDIC NAMES
+    Einar: 10
+    Thorkell: 12
+    Bjarni: 10
+    Herjolf: 13
+    Leif: 5  # Eriksson is famous but weight down
+    Thorvald: 12
+    Erik: 2  # The Red is overused
+    Thjodhild: 0  # Actually female name
+    
+    # DANELAW NAMES (Norse-English)
+    Guthrum: 12
+    Oscytel: 13
+    Thurcytel: 13
+    Grimketil: 13
+    Scula: 13
+    Sumarlidi: 13
+    Orm: 12
+    Thurgrim: 13
+    Halfdan: 12
+    Guthferth: 13
+    
+    # HIBERNO-NORSE NAMES
+    Sitric: 12
+    Olaf: 8  # Cuaran, etc.
+    Ivar: 5  # Of Limerick, etc.
+    Ragnall: 12
+    Guthfrith: 12
+    Brodir: 13
+    Ospak: 13
+    Thorleik: 13
+    
+    # FAROESE NAMES
+    Trond: 13
+    Sigmund: 12  # Brestisson
+    Thori: 13
+    Havgrim: 13
+    Einar: 12  # Suðring
+    Brestir: 13
+    Beinir: 13
+    
+    # VARANGIAN NAMES (may include Slavic/Greek influences)
+    Sviatoslav: 10  # Slavic name adopted
+    Vladimir: 10
+    Yaroslav: 10
+    Oleg: 12  # Helgi in Norse
+    Igor: 12  # Ingvar in Norse
+    Svend: 10
+    Askold: 13
+    Dir: 13
+    Rogvolod: 13
+    Rurik: 8  # Slightly weighted down
+  
+  female_names_weights:
+    # OVERUSED - heavily weighted down
+    Astrid: 1
+    Freya: 1
+    Ingrid: 1
+    Sigrid: 2
+    Helga: 2
+    Lagertha: 1
+    Thyra: 2
+    Freyja: 1
+    Brynhild: 2
+    
+    # COMMON - slightly reduced
+    Gudrun: 4
+    Ragnhild: 5
+    Sigrun: 5
+    Thora: 5
+    Asa: 5
+    Hildegard: 5
+    Solveig: 5
+    Liv: 5
+    Hilda: 5
+    Aslaug: 4
+    
+    # ICELANDIC SAGAS
+    Gudrun: 4  # Osvifursdottir
+    Hallgerd: 12  # Long-legs
+    Bergthora: 12  # Skarphedin's mother
+    Unn: 12  # The Deep-minded
+    Aud: 12  # The Deep-minded
+    Thorgerd: 12  # Egil's daughter
+    Asgerd: 12
+    Thorbjorg: 12  # The lítilvölva
+    Melkorka: 13  # Irish slave
+    Thorunn: 12
+    Jofrid: 12
+    Rannveig: 12
+    Hallbera: 12
+    Thurid: 12
+    Yngvild: 12
+    Groa: 12
+    
+    # GREENLANDIC NAMES
+    Thjodhild: 12  # Erik's wife
+    Gudrid: 12  # Thorbjarnardottir
+    Freydis: 8  # Eiriksdottir (famous but weight)
+    Thorunn: 12
+    
+    # DANELAW NAMES (Norse-English)
+    Osfrid: 13
+    Guthrun: 12
+    Thurfrid: 13
+    Aelflaed: 12  # Anglo-Saxon, married to Norse
+    Aethelflaed: 12  # Lady of the Mercians
+    
+    # HIBERNO-NORSE NAMES
+    Gormlaith: 12  # Irish-Norse
+    Slaine: 13
+    Maelmuire: 13
+    Mor: 12  # Irish influence
+    
+    # FAROESE NAMES
+    Turid: 13
+    Sigrid: 8
+    Thora: 10
+    
+    # NORMAL WEIGHT
+    Ylva: 10
+    Embla: 10
+    Sif: 10
+    Idun: 10
+    Brynja: 10
+    Revna: 10
+    Eydis: 10
+    Alfhild: 10
+    Bergljot: 10
+    Dagny: 10
+    Eira: 10
+    Gerd: 10
+    Hallbera: 10
+    Ingibjorg: 10
+    Jorunn: 10
+    Kolfinna: 10
+    Ljufa: 10
+    Mjoll: 10
+    Oddny: 10
+    Ragnheid: 10
+    Steinunn: 10
+    Torunn: 10
+    Una: 10
+    Vigdis: 10
+    Yrsa: 10
+    Bodil: 10
+    Dalla: 10
+    Estrid: 10
+    Groa: 10
+    Hervor: 10
+    Inga: 10
+    Jofrid: 10
+    Kata: 10
+    Reginleif: 10
+    Sigrlin: 10
+    Svala: 10
+    Tova: 10
+    Ulfhild: 10
+    Veig: 10
+
+# =============================================================================
+# CULTURE WEIGHTS
+# =============================================================================
+
+culture_weights:
+  # Primary Norse cultures
+  norse_swedish: 25
+  norse_danish: 20
+  norse_norwegian: 20
+  norse_icelandic: 8
+  norse_greenlandic: 2
+  norse_danelaw: 5
+  norse_irish: 3
+  norse_faroeislands: 2
+  norse_varangian: 5
+  # Foreign cultures
+  anglo_saxon: 4
+  frankish: 2
+  slavic: 2
+  byzantine: 1
+  arabic: 1
+  irish: 3
+
+culture_homelands:
+  norse_swedish:
+    - "Svealand"
+    - "Götaland"
+    - "Uppland"
+    - "Västergötland"
+    - "Östergötland"
+    - "Södermanland"
+    - "Värmland"
+    - "Dalarna"
+    - "Gotland"
+    - "Öland"
+  
+  norse_danish:
+    - "Jutland"
+    - "Zealand"
+    - "Scania"
+    - "Fyn"
+    - "Lolland"
+    - "Falster"
+    - "Bornholm"
+    - "Hedeby"
+    - "Ribe"
+  
+  norse_norwegian:
+    - "Vestfold"
+    - "Hordaland"
+    - "Trøndelag"
+    - "Agder"
+    - "Rogaland"
+    - "Møre"
+    - "Nordland"
+    - "Troms"
+    - "Finnmark"
+    - "Lofoten"
+  
+  norse_icelandic:
+    - "Þingvellir"
+    - "Reykjavík area"
+    - "Breiðafjörður"
+    - "Eyjafjörður"
+    - "Skagafjörður"
+    - "Hvítárvellir"
+    - "Borgarfjörður"
+    - "Vatnsdalur"
+    - "Skaftártunga"
+    - "Fljótsdalshérað"
+  
+  norse_greenlandic:
+    - "Eastern Settlement (Eystribyggð)"
+    - "Western Settlement (Vestribyggð)"
+    - "Middle Settlement"
+    - "Herjolfsnes"
+    - "Gardar"
+    - "Brattahlíð"
+    - "Hvalsey"
+    - "Sandnes"
+    - "Undir Höfða"
+  
+  norse_danelaw:
+    - "York (Jórvík)"
+    - "Lincoln (Lincoln)"
+    - "Nottingham (Snotengaham)"
+    - "Derby (Deoraby)"
+    - "Leicester (Ligeraceaster)"
+    - "Stamford (Stanford)"
+    - "The Five Boroughs"
+    - "East Anglia"
+    - "Northumbria"
+    - "Eastern Mercia"
+  
+  norse_irish:
+    - "Dublin (Dyflinn)"
+    - "Waterford (Veðrafjörðr)"
+    - "Limerick (Hlymrekr)"
+    - "Cork (Korkr)"
+    - "Wexford (Veisafjörðr)"
+    - "Wicklow (Víkingaló)"
+    - "Arklow (Arnkel's ló)"
+    - "Strangford Lough"
+    - "Isle of Man (between voyages)"
+  
+  norse_faroeislands:
+    - "Streymoy"
+    - "Eysturoy"
+    - "Vágar"
+    - "Suðuroy"
+    - "Sandoy"
+    - "Borðoy"
+    - "Tórshavn area"
+    - "Klaksvík area"
+  
+  norse_varangian:
+    - "Holmgard (Novgorod)"
+    - "Könugard (Kiev)"
+    - "Aldeigjuborg (Staraya Ladoga)"
+    - "Miklagard (Constantinople)"
+    - "Gårdarike (Garðaríki)"
+    - "Smaleskja (Smolensk)"
+    - "Palteskja (Polotsk)"
+    - "Súrsdal (Suzdal)"
+    - "Múrom (Murom)"
+    - "Rostofa (Rostov)"
+  
+  anglo_saxon:
+    - "Wessex"
+    - "Mercia"
+    - "Northumbria"
+    - "East Anglia"
+    - "Kent"
+    - "Essex"
+    - "Sussex"
+  
+  frankish:
+    - "Neustria"
+    - "Austrasia"
+    - "Aquitaine"
+    - "Burgundy"
+    - "Brittany"
+    - "Gascony"
+  
+  slavic:
+    - "Novgorod"
+    - "Kiev"
+    - "Polotsk"
+    - "Smolensk"
+    - "Pskov"
+    - "Rostov"
+    - "Murom"
+    - "Chernigov"
+    - "Pereyaslavl"
+  
+  byzantine:
+    - "Constantinople"
+    - "Thessalonica"
+    - "Antioch"
+    - "Ephesus"
+    - "Nicaea"
+    - "Trebizond"
+    - "Athens"
+    - "Corinth"
+  
+  arabic:
+    - "Baghdad"
+    - "Damascus"
+    - "Cordoba"
+    - "Cairo"
+    - "Mecca"
+    - "Medina"
+    - "Jerusalem"
+    - "Alexandria"
+  
+  irish:
+    - "Ulster"
+    - "Munster"
+    - "Leinster"
+    - "Connacht"
+    - "Meath"
+    - "Ossory"
+    - "Thomond"
+    - "Desmond"
+
+# =============================================================================
+# NON-HUMAN RACES - UPDATED WITH NEW CULTURES
+# =============================================================================
+
+nonhuman_races:
+  half_elf:
+    id: "half_elf"
+    name: "Álfblóð"
+    description: "Half-elf (álfar blood)"
+    weight: 1
+    cultures: ["norse_swedish", "norse_danish", "norse_norwegian", "norse_icelandic", "irish", "norse_irish"]
+  
+  aasimar:
+    id: "aasimar"
+    name: "Ljósálfar-kin"
+    description: "Light elf touched"
+    weight: 1
+    cultures: ["norse_swedish", "norse_norwegian", "byzantine", "norse_icelandic"]
+  
+  tiefling:
+    id: "tiefling"
+    name: "Jötun-blooded"
+    description: "Giant or dark spirit blood"
+    weight: 1
+    cultures: ["norse_swedish", "norse_norwegian", "slavic", "norse_icelandic", "norse_greenlandic"]
+  
+  dwarf:
+    id: "dwarf"
+    name: "Dvergr"
+    description: "Dwarf (rare surface dweller)"
+    weight: 2
+    cultures: ["norse_swedish", "norse_norwegian", "norse_icelandic"]
+  
+  goliath:
+    id: "goliath"
+    name: "Jötun-kin"
+    description: "Giant-blooded"
+    weight: 1
+    cultures: ["norse_norwegian", "slavic", "norse_greenlandic"]
+
+# =============================================================================
+# AGE DISTRIBUTION
+# =============================================================================
+
+age_distribution:
+  young_adult:
+    range: [18, 24]
+    probability: 30  # percent
+    description: "Young adult, proving themselves"
+  
+  prime_adult:
+    range: [25, 34]
+    probability: 40
+    description: "Prime of life, peak capability"
+  
+  mature_adult:
+    range: [35, 44]
+    probability: 20
+    description: "Mature, experienced, respected"
+  
+  middle_aged:
+    range: [45, 54]
+    probability: 8
+    description: "Middle-aged, wisdom over strength"
+  
+  elder:
+    range: [55, 65]
+    probability: 2
+    description: "Elder, keeper of knowledge"
+
+# =============================================================================
+# ALIGNMENT DISTRIBUTION
+# =============================================================================
+
+# =============================================================================
+# EMOTION PROFILE — per-character emotional processing configuration
+# =============================================================================
+# Loaded by systems/emotional_engine.py EmotionalProfile.
+# All fields are optional; defaults are applied via normalize_emotion_profile().
+
+emotion_profile_schema:
+  tf_axis:
+    type: float
+    range: [0.0, 1.0]
+    note: "0.0=pure Thinking (logic-weighted), 1.0=pure Feeling (emotion-weighted)"
+  gender_axis:
+    type: float
+    range: [-1.0, 1.0]
+    note: "-1.0=male-tendency, +1.0=female-tendency (statistical prior, not identity)"
+  individual_offset:
+    type: float
+    range: [-0.25, 0.25]
+    note: "Auto-seeded random variance — individual always dominates demographic"
+  baseline_intensity:
+    type: float
+    range: [0.4, 1.8]
+    note: "Overall emotional reactivity multiplier"
+  expression_threshold:
+    type: float
+    range: [0.1, 0.95]
+    note: "Minimum hugr intensity to express externally; below this = internalized"
+  rumination_bias:
+    type: float
+    range: [0.0, 1.0]
+    note: "0=moves on fast, 1=ruminates deeply; slows emotional decay"
+  decay_rate:
+    type: float
+    range: [0.01, 0.5]
+    note: "Fraction of emotion decayed per turn (modulated by rumination_bias)"
+  channel_weights:
+    type: dict
+    keys: [fear, anger, sadness, joy, shame, attachment]
+    value_range: [0.0, 3.0]
+    note: "Per-channel sensitivity multiplier; 1.0=default"
+  chronotype:
+    type: enum
+    values: [diurnal, nocturnal, crepuscular]
+    note: "Alignment affects chronotype_mod in compute_impact()"
+  stress_resistance:
+    type: float
+    range: [0.0, 1.0]
+    note: "How much internalized emotional pressure is absorbed before stress rises"
+
+# =============================================================================
+# ALIGNMENT DISTRIBUTION
+# =============================================================================
+
+alignment_distribution:
+  non_villain:
+    lawful_good: 15
+    neutral_good: 25
+    chaotic_good: 15
+    lawful_neutral: 15
+    true_neutral: 20
+    chaotic_neutral: 10
+  
+  villain:
+    lawful_evil: 33
+    neutral_evil: 34
+    chaotic_evil: 33
