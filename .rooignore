@@ -1,0 +1,23 @@
+# ᚱ RUNA'S BOUNDARIES (Forbidden Zones)
+
+# Prevent searching the entire drive (The absolute path killers)
+C:/**
+D:/**
+/Users/**
+C:/NorseSagaEngine/CURRENT version to upload for upgrades TEMP/VS_Code_DEVELOPMENT_BRANCH_MIRROR/
+C:/NorseSagaEngine/CURRENT version to upload for upgrades TEMP/
+C:/NorseSagaEngine/
+
+# Ignore common bloat to save OpenRouter gold
+node_modules/
+__pycache__/
+*.exe
+*.dll
+.git/
+.venv/
+venv/
+
+# Protect your secrets
+.env
+secrets.json
+*.pem
