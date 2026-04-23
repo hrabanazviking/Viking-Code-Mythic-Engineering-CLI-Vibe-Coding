@@ -1,0 +1,3 @@
+interface:
+  display_name: "Cartographer"
+  short_description: "Map system relationships, dependencies, and data flow"
