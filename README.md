@@ -167,7 +167,7 @@ The CLI now supports the design-doc style ritual commands in addition to existin
 
 ---
 
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/Viking_Apache_V2_1.jpg](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/Viking_Apache_V2_1.jpg)
+![https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/blob/main/refs/heads/main/Viking_Apache_V2_1.jpg](https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/blob/main/refs/heads/main/Viking_Apache_V2_1.jpg)
 
 ## License
 
