@@ -1,18 +1,22 @@
 # Quickstart
 
-Get Mythic Vibe CLI running quickly and complete your first structured workflow loop.
+This guide gets Mythic Vibe CLI running and walks you through one clean, end-to-end workflow cycle with artifact continuity.
 
 ---
 
 ## 1) Prerequisites
 
+### Required
+
 - Python 3.10+
 - Git
-- A shell environment (bash, zsh, PowerShell, or equivalent)
+- A shell (`bash`, `zsh`, `fish`, PowerShell, etc.)
 
-Optional but useful:
-- A virtual environment tool (`venv`, `uv`, or `conda`)
-- An editor with Python linting and formatting support
+### Recommended
+
+- A virtual environment (`venv`, `uv`, or `conda`)
+- An editor with Python linting/formatting
+- `pytest` for local verification loops
 
 ---
 
@@ -26,69 +30,143 @@ source .venv/bin/activate  # Windows PowerShell: .\.venv\Scripts\Activate.ps1
 pip install -e .
 ```
 
-If editable install is not configured in your environment, install dependencies from the project’s packaging files and run the module directly.
+If editable install is unavailable in your environment, run the CLI via module mode:
+
+```bash
+python -m mythic_vibe_cli.cli --help
+```
 
 ---
 
-## 3) Verify the CLI is available
+## 3) Verify installation
 
-Run one of the following (depending on your setup):
+Run one of:
 
 ```bash
 mythic --help
 # or
+mythic-vibe --help
+# or
 python -m mythic_vibe_cli.cli --help
 ```
 
-You should see command help text and available workflow operations.
+Expected result: command list and option help text.
 
 ---
 
-## 4) Initialize a working loop
+## 4) Initialize a project scaffold
 
-Use the CLI to initialize/adopt a project and enter the method loop:
+Example:
+
+```bash
+mythic-vibe init --goal "Build a beginner-friendly TODO app" --noob
+```
+
+This initializes a method-aligned project skeleton with core artifacts in `docs/`, `tasks/`, and `mythic/`.
+
+---
+
+## 5) Run your first loop
+
+The canonical sequence is:
 
 `intent -> constraints -> architecture -> plan -> build -> verify -> reflect`
 
-At each phase, capture outputs in project artifacts (for example, docs and task notes) so the next session starts with context.
+At each step:
+
+1. Decide and document.
+2. Execute a narrow action.
+3. Verify before moving forward.
+4. Preserve rationale in artifacts.
+
+This keeps AI interactions useful without losing your own design intent.
 
 ---
 
-## 5) Daily operating pattern (recommended)
+## 6) Bridge workflow for ChatGPT/Codex
 
-1. **Check current status** (what phase, what’s blocked, what’s next).
-2. **Run the next phase command**.
-3. **Record decisions and rationale** in artifacts.
-4. **Verify outcomes** with tests/checks.
-5. **Log reflection** so future sessions resume cleanly.
+Generate a prompt packet:
 
-This operating pattern is the fastest way to avoid drift and repeated rework.
+```bash
+mythic-vibe codex-pack \
+  --phase plan \
+  --task "Implement parser and template generation" \
+  --audience beginner
+```
+
+Then:
+
+1. Open `mythic/codex_prompt.md`.
+2. Paste the packet into ChatGPT/Codex.
+3. Execute/curate resulting changes.
+4. Log outcomes:
+
+```bash
+mythic-vibe codex-log --phase build --response "Implemented parser and tests"
+```
 
 ---
 
-## 6) Troubleshooting
+## 7) Daily operating ritual (recommended)
 
-### CLI not found
+1. **Status:** run status command before edits.
+2. **Decide:** choose one phase objective.
+3. **Execute:** make the smallest meaningful change.
+4. **Verify:** run checks/tests.
+5. **Record:** update task/docs/devlog.
 
-- Confirm virtual environment is active.
+This rhythm minimizes drift and protects continuity across sessions.
+
+---
+
+## 8) Common commands
+
+```bash
+mythic-vibe status
+mythic-vibe checkin --phase intent --update "Defined target users and anti-goals"
+mythic-vibe doctor
+mythic-vibe sync
+mythic-vibe method
+```
+
+Ritual aliases may also be available (`mythic imbue`, `mythic evoke`, `mythic scry`, etc.).
+
+---
+
+## 9) Troubleshooting
+
+### CLI command not found
+
+- Ensure virtual environment is active.
 - Re-run `pip install -e .`.
-- Fall back to `python -m mythic_vibe_cli.cli --help`.
+- Use module mode: `python -m mythic_vibe_cli.cli --help`.
 
-### Phase confusion or state mismatch
+### Status or phase mismatch
 
-- Inspect generated artifacts in `docs/`, `tasks/`, and `mythic/`.
-- Re-run the status/check command before making edits.
+- Inspect generated `mythic/`, `docs/`, and `tasks/` artifacts.
+- Run status/doctor commands before additional edits.
 
-### Import/boundary errors
+### Configuration confusion
 
-- Review [Architecture](ARCHITECTURE.md) and [Domain Map](DOMAIN_MAP.md).
-- Ensure runtime code changes stay in `mythic_vibe_cli/` unless an explicit architecture decision says otherwise.
+- Inspect resolved config:
+
+```bash
+mythic-vibe config --path .
+```
+
+- Check environment variables overriding config files.
+
+### Architecture boundary uncertainty
+
+- Read `ARCHITECTURE.md` and `DOMAIN_MAP.md`.
+- Keep runtime edits in `mythic_vibe_cli/` unless explicitly approved by architecture change.
 
 ---
 
-## 7) Next reads
+## 10) Next documents
 
-- [System Vision](SYSTEM_VISION.md)
-- [Architecture](ARCHITECTURE.md)
-- [Domain Map](DOMAIN_MAP.md)
-- [API Reference](api.md)
+- `SYSTEM_VISION.md`
+- `ARCHITECTURE.md`
+- `DOMAIN_MAP.md`
+- `api.md`
+- `INDEX.md`

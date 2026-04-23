@@ -1,18 +1,20 @@
 # Mythic Vibe CLI Documentation Hub
 
-Welcome to the canonical documentation hub for **Mythic Vibe CLI**, a method-driven command-line tool for building software through explicit engineering phases.
+Welcome to the active documentation hub for **Mythic Vibe CLI**, a method-driven command-line system for building software with explicit phases, durable artifacts, and cleaner collaboration handoffs.
 
-> If you are new, start with **Quickstart**. If you are contributing, read **Architecture** and **Domain Map** next.
+If you are new, begin with `quickstart.md`. If you are contributing, begin with `ARCHITECTURE.md` and `DOMAIN_MAP.md`.
+
+> Canonical navigation map: `docs/INDEX.md`.
 
 ---
 
-## What this project is
+## What this project does
 
-Mythic Vibe CLI helps you move from idea to implementation with a repeatable workflow:
+Mythic Vibe CLI helps builders move from idea to implementation via a repeatable engineering loop:
 
 `intent -> constraints -> architecture -> plan -> build -> verify -> reflect`
 
-Instead of relying on implicit memory, the CLI writes decisions into durable artifacts so you can pause, resume, and collaborate with less confusion.
+Rather than relying on memory alone, the CLI writes structured artifacts so sessions can pause and resume without losing rationale.
 
 ---
 
@@ -20,58 +22,65 @@ Instead of relying on implicit memory, the CLI writes decisions into durable art
 
 ### Start here
 
-1. **[Quickstart](quickstart.md)**
-   Install, initialize, and run your first project loop.
-2. **[System Vision](SYSTEM_VISION.md)**
-   Product intent, quality bar, and long-term direction.
-3. **[Architecture](ARCHITECTURE.md)**
-   Active runtime boundaries and dependency direction.
+1. **[Quickstart](quickstart.md)**  
+   Installation, setup, first operational loop, and troubleshooting.
+2. **[System Vision](SYSTEM_VISION.md)**  
+   Product goals, promises, anti-goals, and evolution strategy.
+3. **[Architecture](ARCHITECTURE.md)**  
+   Active runtime boundaries, component responsibilities, and dependency direction.
 
 ### Governance and boundaries
 
-- **[Domain Map](DOMAIN_MAP.md)** — source-of-truth ownership map for active vs dormant domains.
-- **[API Reference](api.md)** — public Python and CLI integration surfaces.
-- **[Hardware Profiles](hardware_profiles.md)** — deployment guidance for constrained and high-end machines.
+- **[Domain Map](DOMAIN_MAP.md)** — authoritative ownership map for active vs dormant domains.
+- **[API Reference](api.md)** — CLI/module interfaces and filesystem contracts.
+- **[Hardware Profiles](hardware_profiles.md)** — execution guidance for constrained and high-end environments.
 
----
+### Continuity and release history
 
-## Who this is for
-
-- **Solo builders** who need a reliable workflow, not just command sprawl.
-- **Small teams** who want traceable decisions and better handoffs.
-- **AI-assisted developers** who need structured context packets and method continuity.
+- **[Root DEVLOG](../DEVLOG.md)** — chronological record of meaningful decisions and sessions.
+- **[Root CHANGELOG](../CHANGELOG.md)** — release-facing summary of what changed and why it matters.
 
 ---
 
 ## Recommended reading paths
 
-### Path A: New user (10–15 minutes)
+### Path A — First-time user (10–15 minutes)
 
-1. Read [Quickstart](quickstart.md)
-2. Run one full CLI loop
-3. Scan [System Vision](SYSTEM_VISION.md)
+1. Read [Quickstart](quickstart.md).
+2. Run one complete phase loop.
+3. Skim [System Vision](SYSTEM_VISION.md).
+4. Bookmark [API Reference](api.md) for commands and contracts.
 
-### Path B: Contributor / maintainer (20–30 minutes)
+### Path B — Contributor (20–30 minutes)
 
-1. Read [Architecture](ARCHITECTURE.md)
-2. Read [Domain Map](DOMAIN_MAP.md)
-3. Review [API Reference](api.md)
-4. Verify boundaries before opening a PR
+1. Read [Architecture](ARCHITECTURE.md).
+2. Read [Domain Map](DOMAIN_MAP.md).
+3. Read [API Reference](api.md).
+4. Review [Root DEVLOG](../DEVLOG.md) for recent decisions.
+
+### Path C — Maintainer / release owner
+
+1. Review [Root CHANGELOG](../CHANGELOG.md).
+2. Validate docs remain synchronized with behavior.
+3. Verify boundary and dependency rules before merge.
 
 ---
 
-## Documentation standards
+## Documentation discipline
 
-When you update runtime behavior, update docs in the same PR:
+When behavior changes, update documentation in the same PR:
 
-- **Behavior change** -> `api.md` and/or `quickstart.md`
-- **Boundary/ownership change** -> `ARCHITECTURE.md` and `DOMAIN_MAP.md`
-- **Product direction change** -> `SYSTEM_VISION.md`
+- Behavior or command contract changes -> `api.md` and/or `quickstart.md`
+- Architecture or flow changes -> `ARCHITECTURE.md`
+- Ownership/boundary changes -> `DOMAIN_MAP.md`
+- Product intent changes -> `SYSTEM_VISION.md` and `README.md`
+- Session continuity context -> `DEVLOG.md`
+- User-facing release summary -> `CHANGELOG.md`
 
 If docs and behavior diverge, treat it as a bug.
 
 ---
 
-## Project status note
+## Active product status note
 
-This repository is a multi-project monorepo. The active product path is **`mythic_vibe_cli/`**. Other trees include research, vendor mirrors, and historical/runtime experiments that are not primary CLI execution paths.
+This repository is a multi-project monorepo. The active product runtime path is **`mythic_vibe_cli/`**. Other trees include research material, vendor mirrors, and isolated historical/runtime experiments.

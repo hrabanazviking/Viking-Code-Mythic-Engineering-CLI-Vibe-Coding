@@ -88,3 +88,45 @@ The five upstream decisions named above are the only real open questions. Until 
 This is the second entry of the exploration phase. The register is laid; the decisions wait. Future entries will mark each integration motion as it is taken — one rune cut at a time.
 
 _May the record hold, and may the choices, when they come, be clear._
+
+## 2026-04-23 — Scribe Sweep: Documentation Polished and Expanded
+
+**Session:** Documentation consolidation and expansion pass.
+**Status:** Markdown-only change set across active docs. No runtime Python code modified.
+**Hands on the wheel:** Eirwyn Rúnblóm, The Scribe, performed a repository-facing continuity pass focused on the active Mythic Vibe CLI documentation suite.
+
+### What was changed
+
+This session executed a deep rewrite of the active documentation surfaces so they can function as durable, navigable, and contributor-safe records rather than short-form placeholders.
+
+Updated/added artifacts:
+
+- `README.md` — rewritten as a full operator/contributor guide with command orientation, repository posture notes, configuration model, and active-doc map.
+- `docs/INDEX.md` — newly added canonical navigation index and maintenance protocol.
+- `docs/index.md` — expanded user-facing hub with role-based reading paths.
+- `docs/quickstart.md` — expanded onboarding flow with bridge usage and troubleshooting depth.
+- `docs/ARCHITECTURE.md` — expanded component contracts, dependency law, risks, and architecture review checklist.
+- `docs/DOMAIN_MAP.md` — expanded ownership matrix, dependency boundaries, escalation path, and drift indicators.
+- `docs/api.md` — expanded command/module contracts, compatibility policy, and integration examples.
+- `docs/SYSTEM_VISION.md` — expanded mission, scope, design principles, UX expectations, and evolution horizons.
+- `CHANGELOG.md` — created release-facing history ledger.
+
+### Why it matters
+
+Before this pass, several docs were concise but shallow. The repository now has a clearer archival spine for:
+
+- onboarding new contributors,
+- preventing boundary drift in a large monorepo,
+- preserving release/session continuity,
+- and recovering intent after long pauses.
+
+### Continuity note
+
+This entry marks the beginning of explicit dual-record discipline:
+
+- `DEVLOG.md` for narrative chronology and rationale,
+- `CHANGELOG.md` for user/release-facing deltas.
+
+The two records should now evolve together when meaningful behavior or governance changes occur.
+
+_May the record hold._
