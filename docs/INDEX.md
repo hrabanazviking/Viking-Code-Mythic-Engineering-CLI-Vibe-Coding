@@ -1,108 +1,86 @@
-# Mythic Vibe CLI Documentation Index
+# Mythic Vibe CLI Documentation Hub
 
-**Status:** Canonical documentation navigation map  
-**Last updated:** 2026-04-23  
-**Audience:** Users, contributors, maintainers, and future selves returning after context loss.
+Welcome to the active documentation hub for **Mythic Vibe CLI**, a method-driven command-line system for building software with explicit phases, durable artifacts, and cleaner collaboration handoffs.
 
-This index is the front door to the active documentation suite.
+If you are new, begin with `quickstart.md`. If you are contributing, begin with `ARCHITECTURE.md` and `DOMAIN_MAP.md`.
 
----
-
-## 1) Start paths by role
-
-### New user path (10–20 minutes)
-
-1. `quickstart.md`
-2. `SYSTEM_VISION.md`
-3. `api.md` (CLI entrypoints section)
-
-### Contributor path (20–40 minutes)
-
-1. `ARCHITECTURE.md`
-2. `DOMAIN_MAP.md`
-3. `api.md`
-4. Root `DEVLOG.md` and `CHANGELOG.md`
-
-### Maintainer / release path
-
-1. Root `CHANGELOG.md`
-2. Root `DEVLOG.md`
-3. `ARCHITECTURE.md`
-4. `DOMAIN_MAP.md`
+> Canonical navigation map: `docs/INDEX.md`.
 
 ---
 
-## 2) Core active docs
+## What this project does
 
-- `quickstart.md` — setup, first execution loop, troubleshooting.
-- `SYSTEM_VISION.md` — product purpose, promises, anti-goals.
-- `ARCHITECTURE.md` — active runtime architecture and dependency law.
-- `DOMAIN_MAP.md` — ownership boundaries and routing rules.
-- `api.md` — CLI/module contracts and filesystem interface.
-- Root `README.md` — project-level overview and command orientation.
-- Root `DEVLOG.md` — continuity record of major sessions.
-- Root `CHANGELOG.md` — user-facing change history.
+Mythic Vibe CLI helps builders move from idea to implementation via a repeatable engineering loop:
+
+`intent -> constraints -> architecture -> plan -> build -> verify -> reflect`
+
+Rather than relying on memory alone, the CLI writes structured artifacts so sessions can pause and resume without losing rationale.
 
 ---
 
-## 3) Source-of-truth boundaries
+## Documentation map
 
-In case of disagreement between records:
+### Start here
 
-1. Runtime behavior in `mythic_vibe_cli/` is ground truth for executable behavior.
-2. `docs/ARCHITECTURE.md` defines active architecture intent.
-3. `docs/DOMAIN_MAP.md` defines ownership and allowed boundaries.
-4. `docs/api.md` defines user/integration-facing contracts.
-5. Root `DEVLOG.md` preserves chronology and rationale.
-6. Root `CHANGELOG.md` summarizes release-facing deltas.
+1. **[Quickstart](quickstart.md)**  
+   Installation, setup, first operational loop, and troubleshooting.
+2. **[System Vision](SYSTEM_VISION.md)**  
+   Product goals, promises, anti-goals, and evolution strategy.
+3. **[Architecture](ARCHITECTURE.md)**  
+   Active runtime boundaries, component responsibilities, and dependency direction.
 
-If this order causes confusion, treat that as a docs bug and repair it in the same PR.
+### Governance and boundaries
 
----
+- **[Domain Map](DOMAIN_MAP.md)** — authoritative ownership map for active vs dormant domains.
+- **[API Reference](api.md)** — CLI/module interfaces and filesystem contracts.
+- **[Hardware Profiles](hardware_profiles.md)** — execution guidance for constrained and high-end environments.
 
-## 4) Documentation upkeep protocol
+### Continuity and release history
 
-When you change behavior, update documentation in the same pull request:
-
-- Command or output change -> `api.md` + `quickstart.md`
-- Workflow/lifecycle change -> `ARCHITECTURE.md` + `api.md`
-- Boundary ownership change -> `DOMAIN_MAP.md` + `ARCHITECTURE.md`
-- Product positioning change -> `SYSTEM_VISION.md` + `README.md`
-- Meaningful user-facing change -> `CHANGELOG.md`
-- Session-level rationale/decision history -> `DEVLOG.md`
+- **[Root DEVLOG](../DEVLOG.md)** — chronological record of meaningful decisions and sessions.
+- **[Root CHANGELOG](../CHANGELOG.md)** — release-facing summary of what changed and why it matters.
 
 ---
 
-## 5) Drift signals (act immediately)
+## Recommended reading paths
 
-Treat these as warnings that documentation drift is occurring:
+### Path A — First-time user (10–15 minutes)
 
-- CLI help text differs from examples in docs.
-- New files/commands exist without any mention in docs.
-- Runtime imports cross forbidden domain boundaries.
-- `README.md` promises behavior that tests or command help do not show.
-- `DEVLOG.md` lacks entries for significant architecture decisions.
+1. Read [Quickstart](quickstart.md).
+2. Run one complete phase loop.
+3. Skim [System Vision](SYSTEM_VISION.md).
+4. Bookmark [API Reference](api.md) for commands and contracts.
 
----
+### Path B — Contributor (20–30 minutes)
 
-## 6) Naming and style rules
+1. Read [Architecture](ARCHITECTURE.md).
+2. Read [Domain Map](DOMAIN_MAP.md).
+3. Read [API Reference](api.md).
+4. Review [Root DEVLOG](../DEVLOG.md) for recent decisions.
 
-- Prefer explicit, searchable headings over poetic ambiguity.
-- Use absolute dates (`YYYY-MM-DD`) for durable chronology.
-- Prefer stable paths in examples and avoid machine-specific absolute paths.
-- Keep each doc answerable to a clear owner/scope.
-- Avoid duplicating long content across multiple docs; link to source-of-truth files.
+### Path C — Maintainer / release owner
 
----
-
-## 7) Companion hubs
-
-- `docs/index.md` — reader-friendly documentation hub for quick orientation.
-- Root `ARCHITECTURE.md` and `DATA_FLOW.md` — deeper repository-level records.
-- `docs/research/` and `docs/specs/` — reference material, not active CLI runtime contracts.
+1. Review [Root CHANGELOG](../CHANGELOG.md).
+2. Validate docs remain synchronized with behavior.
+3. Verify boundary and dependency rules before merge.
 
 ---
 
-## 8) Archival note
+## Documentation discipline
 
-Documentation is treated as part of the product surface. If code changes are merged without matching documentation updates, continuity debt accumulates and should be corrected with priority.
+When behavior changes, update documentation in the same PR:
+
+- Behavior or command contract changes -> `api.md` and/or `quickstart.md`
+- Architecture or flow changes -> `ARCHITECTURE.md`
+- Ownership/boundary changes -> `DOMAIN_MAP.md`
+- Product intent changes -> `SYSTEM_VISION.md` and `README.md`
+- Session continuity context -> `DEVLOG.md`
+- User-facing release summary -> `CHANGELOG.md`
+
+If docs and behavior diverge, treat it as a bug.
+
+---
+
+## Active product status note
+
+This repository is a multi-project monorepo. The active product runtime path is **`mythic_vibe_cli/`**. Other trees include research material, vendor mirrors, and isolated historical/runtime experiments.
