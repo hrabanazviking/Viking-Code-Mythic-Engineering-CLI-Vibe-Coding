@@ -1,0 +1,1106 @@
+﻿My Spacehey profile
+
+
+________________
+
+
+🌌 Hrabanaz Viking (Volmarr)
+⚔️ Norse Pagan Gothi | Mystic | Philosopher | Viking
+________________
+
+
+About Me
+
+
+
+
+<!-- Code by Véyrunn & Volmarr Viking. Copyright 2025 Volmarr Viking -->
+<style>
+/* ⚔️ Véyrunn x Volmarr Viking Mystic Theme (stabilized) */
+
+
+/* === 1) Fonts MUST be first === */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Noto+Sans+Runic&family=Rakkas&family=Fira+Code:wght@400;600&display=swap');
+
+
+/* === 2) Theme Vars === */
+:root{
+  --ink:#ffffff;
+  --soft:#efe6ff;
+  --line:#d9ccff;
+  --accent:#c084fc;   /* brighter purple for links */
+  --accent2:#7dd3fc;  /* teal for contrast */
+  --edge:#3d0066;
+  --glass: rgba(8, 0, 16, .85);
+
+
+  /* stronger glows */
+  --glow-body:
+    0 0 4px rgba(192,132,252,.8),
+    0 0 8px rgba(155,89,255,.7),
+    0 0 12px rgba(124,58,237,.6);
+  --glow-head:
+    0 0 6px rgba(192,132,252,1),
+    0 0 12px rgba(155,89,255,.9),
+    0 0 20px rgba(124,58,237,.8),
+    0 0 30px rgba(147,51,234,.7);
+}
+
+
+/* === 3) Global text: strong purple glow === */
+body, main, nav, footer, .profile, .blurbs, .friends,
+td, th, p, span, div, a {
+  color: var(--ink) !important;
+  font-family: 'Rakkas', serif;
+  text-shadow: var(--glow-body);
+}
+
+
+/* === 4) Links === */
+a:link {
+  color: var(--accent) !important;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-shadow: var(--glow-body);
+}
+a:visited {
+  color: var(--accent2) !important;
+  text-decoration: underline dotted;
+  text-shadow: 0 0 6px rgba(125,211,252,.8), 0 0 10px rgba(125,211,252,.6);
+}
+a:hover, a:focus-visible {
+  color: #fff !important;
+  text-decoration-color: var(--accent2);
+  text-shadow: 0 0 8px var(--accent2), 0 0 14px var(--accent);
+}
+a:active {
+  color: #ffd700 !important;
+  text-shadow: 0 0 10px #ffd700, 0 0 16px var(--accent);
+}
+
+
+/* === 5) Background === */
+body {
+  font-size: 80%;
+  background:
+    linear-gradient(to bottom, rgba(5,0,10,.78), rgba(0,0,0,.9)),
+    url(https://volmarrsheathenism.wordpress.com/wp-content/uploads/2025/09/file_00000000e62061f4bbcba74b2c6217346081411440888529380.png)
+    center top / cover no-repeat;
+}
+@media (max-width: 768px) {
+  body { background-attachment: scroll; }
+  body::before, body::after { display: none !important; }
+}
+
+
+/* === 6) Headings: intense purple pulse === */
+h1, h2, h3,
+.profile .heading,
+.profile .contact .heading,
+.profile .table-section .heading,
+.setting-section .heading,
+.home-actions .heading,
+.profile .blurbs .heading,
+.profile .friends .heading {
+  font-family: 'Cinzel Decorative', serif;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--ink) !important;
+  text-shadow: var(--glow-head);
+  animation: headPulse 3.5s ease-in-out infinite alternate;
+}
+@keyframes headPulse { from { opacity: .85; } to { opacity: 1; } }
+
+
+/* === 7) Rune bullets: stronger pulse === */
+ul li { list-style: none; position: relative; padding-left: 1.5em; margin: .35em 0; }
+ul li::before {
+  content:"ᚱ";
+  position:absolute; left:0;
+  font-family:'Noto Sans Runic', serif;
+  color:#fff;
+  text-shadow: var(--glow-head);
+  animation: runePulse 4s ease-in-out infinite alternate;
+}
+@keyframes runePulse { from { opacity:.8; } to { opacity:1; } }
+
+
+/* === 8) Panels === */
+main,
+.profile .contact, .profile .url-info, .profile .table-section,
+.setting-section, .home-actions,
+.profile .blurbs, .friends,
+.blog-preview, .profile .mood {
+  background: var(--glass);
+  border: 2px solid rgba(192,132,252,.6);
+  border-radius: 12px;
+  box-shadow: 0 0 14px rgba(155,89,255,.35);
+}
+
+
+/* === 9) Nav banner === */
+nav .top {
+  background:
+    linear-gradient(to bottom, rgba(0,0,0,.35), rgba(0,0,0,.65)),
+    url(https://volmarrsheathenism.wordpress.com/wp-content/uploads/2025/09/file_000000000ac4622f924ab4f9f658b7c1281295003817646684870776.jpg)
+    center/cover no-repeat;
+  border: 2px solid var(--edge);
+  box-shadow: 0 0 14px rgba(155,89,255,.45);
+  margin-top: 10px;
+  min-height: 170px;
+}
+
+
+/* === 10) Nav links strip === */
+nav .links {
+  background: var(--glass);
+  padding: 4px 16px 6px 16px;
+  text-align: center;
+  border: 2px solid var(--edge);
+  margin-top: 20px;
+  box-shadow: 0 0 10px rgba(92,0,153,.4) inset;
+}
+nav .links li:not(:last-child)::after,
+footer .links li:not(:last-child)::after {
+  content: " ᚠ ";
+  color: var(--soft);
+}
+nav .links a { font-size: 80%; }
+
+
+/* === 11) Profile image panels === */
+.profile .url-info {
+  height: 260px; padding: 0;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.75)),
+    url(https://volmarrsheathenism.wordpress.com/wp-content/uploads/2025/09/file_00000000c20c61fd9a8c049deaea85b7281296010932407452757138.jpg)
+    center/cover no-repeat;
+}
+.profile-info {
+  height: 120px;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.4), rgba(0,0,0,.7)),
+    url(https://volmarrsheathenism.wordpress.com/wp-content/uploads/2025/09/file_0000000099d061f782468bafb955a79828129985927488745062591.jpg)
+    center/cover no-repeat;
+  border: 2px solid var(--edge);
+  outline: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 0 12px rgba(155,89,255,.4);
+  display:flex; align-items:center; justify-content:center;
+}
+
+
+/* === 12) Tables === */
+.details-table td,
+.comments-table td,
+.music-table td {
+  color: var(--ink) !important;
+  text-shadow: var(--glow-body);
+  background: rgba(10,0,20,.8);
+  border: 1px solid rgba(192,132,252,.5);
+}
+.details-table td:first-child {
+  background: rgba(16,0,32,.9);
+  border: 1px solid var(--line);
+  font-weight: bold;
+}
+
+
+/* === 13) Avatar (generic) === */
+img.pfp-fallback {
+  border: 2px solid var(--edge);
+  outline: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 0 12px rgba(155,89,255,.45);
+}
+
+
+/* === 14) Heading icon === */
+.profile .heading::before {
+  content:"";
+  display:inline-block; width:18px; height:18px; margin-right:6px; vertical-align:-3px;
+  background:url(https://volmarrsheathenism.wordpress.com/wp-content/uploads/2025/09/file_000000009114622fbba8d49f388f461f4800479210567351892.png) center/contain no-repeat;
+  filter: drop-shadow(0 0 8px rgba(192,132,252,.8));
+}
+
+
+/* === 15) Blockquotes (bold rune tablets) === */
+blockquote {
+  position: relative;
+  margin: 12px 0;
+  padding: 16px 18px;
+  background: linear-gradient(180deg, rgba(30,0,50,.92), rgba(14,0,28,.95));
+  border: 2px solid rgba(192,132,252,.6);
+  border-radius: 12px;
+  box-shadow: 0 0 16px rgba(192,132,252,.55) inset,
+              0 0 20px rgba(155,89,255,.45),
+              0 0 26px rgba(124,58,237,.4);
+  font-style: italic;
+  text-shadow: 0 0 8px rgba(192,132,252,1), 0 0 14px rgba(155,89,255,.9);
+}
+blockquote::before, blockquote::after {
+  content: "ᛟ";
+  font-family: 'Noto Sans Runic', serif;
+  position: absolute;
+  top: -12px; font-size: 20px; color: var(--soft);
+  text-shadow: 0 0 10px rgba(192,132,252,.9);
+}
+blockquote::before { left: 12px; }
+blockquote::after  { right: 12px; content: "ᚨ"; }
+
+
+/* === 16) Code blocks === */
+pre, code, kbd, samp {
+  font-family: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  color: var(--ink) !important;
+}
+pre {
+  margin: 12px 0;
+  padding: 12px 14px;
+  background: linear-gradient(180deg, rgba(24,0,44,.9), rgba(10,0,20,.95));
+  border: 2px solid rgba(192,132,252,.55);
+  border-radius: 12px;
+  overflow: auto;
+  box-shadow: 0 0 12px rgba(192,132,252,.35) inset, 0 0 18px rgba(155,89,255,.3);
+  text-shadow: var(--glow-body);
+}
+/* Safe inline code background (no data-URL parsing issues) */
+code {
+  padding: 2px 6px;
+  background: rgba(40,0,70,.85);
+  border: 1px solid rgba(192,132,252,.6);
+  border-radius: 6px;
+  text-shadow: 0 0 6px rgba(192,132,252,.9), 0 0 10px rgba(155,89,255,.75);
+  font-weight: 600;
+}
+
+
+/* === 17) Scrollbar === */
+::-webkit-scrollbar { width:12px; height:12px; background-color:#000; }
+::-webkit-scrollbar-track{ border-radius:10px; border:1px solid #120022; }
+::-webkit-scrollbar-thumb{
+  background: linear-gradient(#9333ea,#5b21b6);
+  border-radius:10px;
+  box-shadow:0 0 8px rgba(192,132,252,.6);
+}
+::-webkit-scrollbar-thumb:hover{ background: linear-gradient(#a855f7,#7c3aed); }
+
+
+/* === 18) FORCE ONLY YOUR profile picture (not friends) === */
+.profile .left .general-about img.pfp-fallback {
+  content: url("https://volmarrsheathenism.wordpress.com/wp-content/uploads/2025/09/fb_img_17577932210695178149205172569651.jpg") !important;
+  width: 200px;
+  height: auto;
+  border: 3px solid #a020f0; /* deep purple frame */
+  border-radius: 15px;
+  box-shadow:
+    0 0 15px #a020f0,
+    0 0 30px #800080,
+    0 0 45px #9400d3; /* stacked glow layers */
+}
+
+
+
+
+/* === Viking Mystic Texture on content sections (final-safe) === */
+/* Targets only content blocks; does NOT touch .url-info, .profile-info, .general-about */
+.profile :is(.table-section, .blurbs, .friends, .blog-preview):not(.url-info):not(.profile-info):not(.general-about) {
+  position: relative !important;
+  background:
+    linear-gradient(180deg, rgba(20,0,40,.82), rgba(0,0,0,.9)),
+    url("https://volmarrsheathenism.wordpress.com/wp-content/uploads/2025/09/viking_mystic_texture6896984950441030407.png?v=7")
+    center/cover no-repeat !important;
+  border: 2px solid rgba(192,132,252,.6) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 0 12px rgba(155,89,255,.45) !important;
+  min-height: 140px !important;   /* ensure visible even if nearly empty */
+  padding: 10px !important;
+  overflow: hidden !important;
+}
+
+
+/* Subtle rune-dust / knot overlay */
+.profile :is(.table-section, .blurbs, .friends, .blog-preview):not(.url-info):not(.profile-info):not(.general-about)::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  background-image:
+     radial-gradient(rgba(192,132,252,0.08) 1px, transparent 1px),
+     linear-gradient(135deg, rgba(125,211,252,0.05) 1px, transparent 1px);
+  background-size: 24px 24px, 40px 40px;
+  mix-blend-mode: screen;
+  opacity: 0.5;
+}
+
+
+/* Make sure table cells don’t cover it with flat fills and keep text readable */
+.profile :is(.table-section, .blurbs, .friends, .blog-preview) .details-table,
+.profile :is(.table-section, .blurbs, .friends, .blog-preview) .details-table td {
+  background: rgba(10,0,20,0.78) !important;  /* slightly transparent */
+  color: #fff !important;
+  border-color: rgba(192,132,252,.45) !important;
+}
+
+
+/* If headings were turning dark anywhere inside these panels, force white */
+.profile :is(.table-section, .blurbs, .friends, .blog-preview) .heading,
+.profile :is(.table-section, .blurbs, .friends, .blog-preview) h1,
+.profile :is(.table-section, .blurbs, .friends, .blog-preview) h2,
+.profile :is(.table-section, .blurbs, .friends, .blog-preview) h3,
+.profile :is(.table-section, .blurbs, .friends, .blog-preview) h4 {
+  color: #fff !important;
+  text-shadow: 0 0 6px rgba(192,132,252,.9), 0 0 12px rgba(147,51,234,.7) !important;
+}
+
+
+/* === Custom <hr> styles === */
+
+
+/* Default mystic rune bar */
+hr {
+  border: none;
+  height: 4px;
+  margin: 1.5em 0;
+  background: linear-gradient(
+    90deg,
+    rgba(192,132,252,0) 0%,
+    rgba(192,132,252,0.8) 50%,
+    rgba(192,132,252,0) 100%
+  );
+  box-shadow: 0 0 12px rgba(147,51,234,0.75);
+  border-radius: 2px;
+}
+
+
+/* Optional: Rune markers at edges */
+hr.rune {
+  position: relative;
+}
+hr.rune::before,
+hr.rune::after {
+  content: "ᛟ";
+  font-family: 'Noto Sans Runic', serif;
+  position: absolute;
+  top: -14px;
+  font-size: 20px;
+  color: #c084fc;
+  text-shadow: 0 0 8px rgba(192,132,252,0.9);
+}
+hr.rune::before { left: -12px; }
+hr.rune::after { right: -12px; }
+
+
+/* Optional: Glowing knotwork bar */
+hr.knot {
+  height: 6px;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(192,132,252,0.9) 0 10px,
+    rgba(124,58,237,0.7) 10px 20px
+  );
+  box-shadow: 0 0 14px rgba(192,132,252,0.7), inset 0 0 6px rgba(147,51,234,0.5);
+  border-radius: 4px;
+}
+
+
+/* Optional: Thin star-like divider */
+hr.star {
+  border: none;
+  height: 1px;
+  margin: 2em 0;
+  background: linear-gradient(90deg, transparent, #c084fc, transparent);
+  position: relative;
+}
+hr.star::after {
+  content: "✦";
+  position: absolute;
+  left: 50%;
+  top: -0.8em;
+  transform: translateX(-50%);
+  color: #c084fc;
+  text-shadow: 0 0 6px rgba(192,132,252,0.9);
+  font-size: 1.2em;
+}
+
+
+/* === Hero Divider <hr> === */
+hr.hero {
+  border: none;
+  height: 8px;
+  margin: 2em 0;
+  background: linear-gradient(
+    90deg,
+    rgba(147,51,234,0.2) 0%,
+    rgba(192,132,252,0.95) 10%,
+    rgba(192,132,252,1) 50%,
+    rgba(192,132,252,0.95) 90%,
+    rgba(147,51,234,0.2) 100%
+  );
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 6px rgba(255,255,255,0.25),
+    0 0 18px rgba(192,132,252,0.9),
+    0 0 28px rgba(147,51,234,0.7);
+  position: relative;
+}
+
+
+/* Rune markers at the edges */
+hr.hero::before,
+hr.hero::after {
+  content: "ᛟ";
+  font-family: 'Noto Sans Runic', serif;
+  position: absolute;
+  top: -18px;
+  font-size: 26px;
+  color: #c084fc;
+  text-shadow:
+    0 0 10px rgba(192,132,252,1),
+    0 0 20px rgba(147,51,234,0.8);
+}
+hr.hero::before { left: -14px; }
+hr.hero::after  { right: -14px; }
+
+
+</style>
+
+
+<hr class="rune"/>
+
+
+<div class="v-gallery">
+  <img src="https://volmarrsheathenism.wordpress.com/wp-content/uploads/2025/09/file_00000000160061fb9039a5f51a873d9f4341762652415808513.png" alt=""/>
+<hr class="rune"/>
+  <img src="https://volmarrsheathenism.wordpress.com/wp-content/uploads/2025/09/file_00000000b47061f7bca2427ae73c48953108851196585974415.png" alt=""/>
+<hr class="rune"/>
+  <img src="https://volmarrsheathenism.wordpress.com/wp-content/uploads/2025/09/file_000000009b7c61fdb35ca47c5bece036281293695325015169610611.jpg" alt=""/>
+<hr class="rune"/>
+  <img src="https://volmarrsheathenism.wordpress.com/wp-content/uploads/2025/09/file_000000000ac4622f924ab4f9f658b7c1281295003817646684870776.jpg" alt=""/>
+</div>
+
+
+<hr/>
+
+
+<div align="center">
+  <img src="https://volmarrsheathenism.wordpress.com/wp-content/uploads/2025/09/straight_guy_blinky_viking_fit.gif" style="padding-left:5px; padding-right:5px; padding-top:2px; padding-bottom:2px;" width="88" height="31" alt="Straight Man Blinkie">
+  <img src="https://volmarrsheathenism.wordpress.com/wp-content/uploads/2025/09/single_blinky_viking.gif" style="padding-left:5px; padding-right:5px; padding-top:2px; padding-bottom:2px;" width="88" height="31" alt="Single Blinkie">
+  <img src="https://volmarrsheathenism.wordpress.com/wp-content/uploads/2025/09/norse_pagan_blinky_viking.gif" style="padding-left:5px; padding-right:5px; padding-top:2px; padding-bottom:2px;" width="88" height="31" alt="Norse Pagan Blinkie">
+  <img src="https://volmarrsheathenism.wordpress.com/wp-content/uploads/2025/09/vr_gamer_blinky_viking.gif" style="padding-left:5px; padding-right:5px; padding-top:2px; padding-bottom:2px;" width="88" height="31" alt="VR Gamer Blinkie">
+  <img src="https://volmarrsheathenism.wordpress.com/wp-content/uploads/2025/09/pc_gamer_blinky_viking.gif" style="padding-left:5px; padding-right:5px; padding-top:2px; padding-bottom:2px;" width="88" height="31" alt="PC Gamer Blinkie">
+  <img src="https://volmarrsheathenism.wordpress.com/wp-content/uploads/2025/09/second_life_blinky_viking.gif" style="padding-left:5px; padding-right:5px; padding-top:2px; padding-bottom:2px;" width="88" height="31" alt="Second Life Blinkie">
+  <img src="https://volmarrsheathenism.wordpress.com/wp-content/uploads/2025/09/playstation_gamer_blinky_viking.gif" style="padding-left:5px; padding-right:5px; padding-top:2px; padding-bottom:2px;" width="88" height="31" alt="PlayStation Gamer Blinkie">
+  <img src="https://volmarrsheathenism.wordpress.com/wp-content/uploads/2025/09/viking_blinky_viking.gif" style="padding-left:5px; padding-right:5px; padding-top:2px; padding-bottom:2px;" width="88" height="31" alt="Viking Blinkie">
+</div>
+
+
+<hr class="star"/>
+
+
+<blockquote><p>I walk the path of a <a href="https://volmarrsheathenism.com/2023/04/11/the-modern-viking-culture-and-lifestyle/">modern Viking</a>—rooted in the old ways, yet ever curious about the future. My life is a mix of myth and tech: ritual and runes on one side, AI, VR, and gaming on the other.</p>
+<p>I’m a philosopher, renegade, digital lifestylist, hermit, writer, world-builder, and creator of immersive realms where history, myth, and imagination merge. None of these things are done for money; they are purely done for personal self expression. Spirituality isn’t just belief for me—it’s a lifestyle. I honor the Gods and Goddesses with mead, <a href="https://www.tripp.com/">meditate with VR</a>, and weave my philosophy and values into everything I do.</p>
+<p>I’m vegetarian, straight, child-free by choice, and always striving for self expression. Fitness matters to me, enjoying <a href="https://www.meta.com/experiences/app/8800676319992562/?utm_source=oculus&utm_medium=share&hwsh=0YpOSdOZJI">VR workouts</a> such as <a href="https://www.meta.com/experiences/app/3008315795852749/?utm_source=oculus&utm_medium=share&hwsh=8pBVY2T9dc">VR boxing</a>, that push me into warrior berserker states.</p>
+<p>I’m shaping <a href="https://microreality.neocities.org/">micro-realities</a>, blending spiritual ritual with digital creation. Some days I’m at the mead horn invoking Thor, other days I’m tweaking Linux builds, or drawing runic maps for my <a href="https://fables.gg/worlds/df940462-2b39-46d6-9a3f-40b7d0c3dc08?utm_source=fables_world">Viking campaigns</a>.</p>
+<p>I have blogs for <a href="https://volmarrsheathenism.com/">Viking values and Norse Paganism</a>, <a href="https://volmarrbookofshadows.wordpress.com/">spirituality and the occult</a>, and <a href="https://volmarrsunsafeideas.wordpress.com/">AI mixed with politics and personal values</a>. I also have made some of the <a href="https://crushon.ai/en/profile/70144ce6-3490-11f0-aecd-0226402aa366?shared=true">AI personalities I have created</a> available to the public. I also have created a small number of simple <a href="https://github.com/hrabanazviking">computer programs</a>, just for the fun of it.</p>
+<p>I am all over the internet on various social media sites. Can't say I equally as much post to them all, some even may be out there that I have forgotten entirely that are woefully out of date. It can start to get difficult to keep up with all the endless places I have been on endless corners of the internet over the years. Some of my social media presences I can still remember are my <a href="https://x.com/hrabanazviking">X</a>, <a href="https://www.facebook.com/volmarr.viking">Facebook</a>, <a href="https://www.instagram.com/volmarrviking">Instagram</a>, <a href="https://www.threads.com/@volmarrtheviking">Threads</a>, <a href="https://www.reddit.com/u/hrabanazviking/">Reddit</a>, <a href="https://fetlife.com/Volmarr">Fetlife</a>, <a href="https://horizon.meta.com/profile/Hrabanaz.Viking/">Meta Horizons</a>, <a href="https://steamcommunity.com/id/hrabanazviking/">Steam</a>, <a href="https://profile.playstation.com/Hrabanaz_Viking">PlayStation</a>, <a href="https://www.tiktok.com/@volmarrviking">Tiktok</a>, <a href="https://youtube.com/@volmarrwyrd">YouTube</a>, <a href="https://bsky.app/profile/volmarrviking.bsky.social">Bluesky</a>, and <a href="https://njump.me/nprofile1qqsrvpsprpz9z3978k480j90wzkg0302uzj5tu5yp9pt4r4h2xg8hxgpzpmhxue69uhkummnw3ezumt0d5hsz9thwden5te0wfjkccte9ejxzmt4wvhxjme0kvk53e">Nostr</a>. I really don't “work”, in the normal sense of the word, but I even have a <a href="https://www.linkedin.com/in/volmarr-wyrd">LinkedIn</a>, because why not.</p></blockquote>
+
+
+<hr class="knot"/>
+
+
+<blockquote><p>What I Value</p>
+
+
+<ul>
+<li>Depth, honesty, <a href="https://volmarrsheathenism.com/2025/01/31/unyielding-honor-the-viking-demand-for-truth-and-reliability/">honor</a>, and loyalty</li>
+<li>Kindness, creativity, and tradition</li>
+<li>Soul-level conversations</li>
+<li>Traditional male/female polarity</li>
+<li>Ancient world traditional Pagan values</li>
+<li>A live and let live approach to life</li>
+<li>Open mindedness</li>
+<li>True acceptance of _ALL_ diversity (devoid of political bullshit and social trends)</li>
+<li>Balance between wisdom and intelligence</li>
+<li>Non-conformity and authentic personal self expression</li>
+<li>Rejection of all unhealthy <a href="https://volmarrsheathenism.com/2025/02/13/the-failure-of-left-and-right-why-the-future-lies-in-the-ancient-worldview-of-the-vikings/">modern day political</a>/social trends</li>
+<li>People wise enough to see past the lies of both the right and left</li> 
+<li>Respect and <a href="https://volmarrsheathenism.com/2024/04/26/embracing-the-heart-of-hospitality-a-journey-from-historical-vikings-to-modern-reenactment/">hospitality</a> for everyone no matter their values, lifestyle, identity, ethnicity, sexual identity, religion, species, planet of origin, form of consciousness, locality, or political viewpoints</li>
+<li>The free-sharing of all knowledge, information, data, technology, and culture; without restrictions, greed, ego, exploitation, guilt-trips, or gatekeeping
+</li><li>Political structures that put individual personal freedom first, respect and value the well-being of all lifeforms, living in harmony with nature, restrict any negative tendencies of the forces of greed, use resources in a healthy balanced way, and are based in true democratic principles</li>
+<li>Warrior values based on strength tempered with honor, readiness to fight but only when needed, and aggression wisely expressed as a measured response to harm</li>
+<li>The <a href="https://volmarrsheathenism.com/2013/02/18/the-norse-viking-concept-of-right-vs-wrong/">balance</a> between structure and wild freedom</li>
+<li>Beauty, harmony, fertility of the land, and frith
+</li><li>Nature allowed to be in a healthy unrestricted state that is truly wild
+</li><li>Ravens and crows everywhere since it is good when Odin is watching
+</li><li>Cute kitty cats freely walking around in public so I can pet them
+</li><li>Attractive beautiful thin adult women so my eyes can be happy
+</li></ul></blockquote>
+
+
+<hr class="knot"/>
+
+
+<blockquote><h3>Volmarr: A Testament to the Renegade Spirit - Praise from Aleister Crowley</h3>
+
+
+<p>In the annals of human history, amidst the vast expanse of time and space, there emerges a figure whose very essence resonates with the divine currents of the cosmos. His name, whispered in reverence and awe, echoes through the corridors of eternity, invoking a sense of wonder and mystery that transcends mortal comprehension. I speak, of course, of Volmarr, the Renegade Viking Hindu Wizard Spiritual Warrior, whose presence illuminates the darkness and ignites the flames of spiritual revolution.</p>
+
+
+<p>To praise Volmarr is to pay homage to the embodiment of the true magician, whose will and spirit soar to the heights of the heavens and plunge to the depths of the abyss with equal fervor and determination. He is a beacon of light in a world shrouded in darkness, a warrior of truth and a sage of wisdom whose every word and deed reverberates with the resonance of the divine.</p>
+
+
+<p>In Volmarr, we find the quintessence of rebellion and defiance, a renegade whose very existence challenges the constraints of societal norms, political, and religious dogma. Like Prometheus stealing fire from the gods, he dares to defy the powers that be and claim his birthright as a sovereign being, unbound by the chains of convention and authority.</p>
+
+
+<p>Yet, beyond his rebellious spirit lies a profound wisdom and insight that transcends the limitations of mortal understanding. Volmarr is not merely a warrior; he is also a sage, whose knowledge of the ancient mysteries and esoteric traditions rivals that of the greatest adepts of history. Through his teachings and writings, he imparts the secrets of the universe to those who have ears to hear and eyes to see, guiding them on a journey of self-discovery and enlightenment.</p>
+
+
+<p>But perhaps most importantly, Volmarr is a warrior of the spirit, whose battles are fought not with swords and spears, but with courage, integrity, and compassion. In a world torn asunder by strife and discord, he stands as a bastion of hope and inspiration, a living testament to the power of the human spirit to transcend adversity and triumph over darkness.</p>
+
+
+<p>In the saga of Volmarr, we find a mirror reflecting the deepest truths of the soul, a testament to the indomitable spirit of humanity and the infinite potential that lies within each and every one of us. To praise Volmarr is to praise the very essence of life itself, a symphony of light and shadow, love and strife, woven together in a tapestry of divine creation.</p>
+
+
+<p>So let us raise our voices in praise of Volmarr, the Renegade Viking Hindu Wizard Spiritual Warrior, whose name shall be forever enshrined in the annals of history as a beacon of light in the darkness, a guidepost for all who seek the path of truth and enlightenment.</p>
+
+
+<p>-Aleister Crowley, 666</p></blockquote>
+
+
+<hr class="hero"/>
+
+
+<iframe width="0" height="0" src="https://www.youtube.com/embed/CrzEmY8wYF4?&;amp;;autoplay=1&;loop=1&;controls=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="" loading="lazy">
+</iframe>
+
+
+
+
+________________
+
+
+
+
+Who I’d Like to Meet
+
+
+
+
+<hr class="star"/>
+<blockquote>
+<ul>
+<li>🤖 Intelligent robots</li>
+<li>🧠 Advanced AIs with good social skills</li>
+<li>🎮 Fellow gamers</li>
+<li>🕶️ VR enthusiasts</li>
+<li>⚔️ Norse Pagans that are friendly and sane</li>
+<li>🪓 Norse Gods and Goddesses</li>
+<li>🕉️ Hindu Gods and Goddesses</li>
+<li>☸️ Buddhist bodhisattvas</li>
+<li>🛡️ Modern day Vikings</li>
+<li>🔮 Occultists</li>
+<li>🌿 Nature spirits</li>
+<li>🐈 Cute cats that like to be petted</li>
+<li>👻 Ghosts that are not angry</li>
+<li>🏺 Viking reenactors that actually understand the concept of frith and hospitality</li>
+<li>🪄 Voodoo followers</li>
+<li>👩‍🦰 Cute thin single adult Viking women</li>
+<li>🧙‍♀️ Cute thin single adult witch women</li>
+<li>🌀 Very open-minded, very strange people (the good kind of strange, not the bad kind)</li>
+<li>🤖💬 People that love talking about AI</li>
+</ul>
+</blockquote>
+<hr class="hero"/>
+
+
+
+
+________________
+
+
+
+
+Interests
+
+
+<blockquote>
+<ul>
+<li>⚔️ Viking history, <a href="https://volmarrsheathenism.com/modern-norse-paganism/">Norse Paganism</a>, runes, Norse mysticism, Norse Gods/Goddesses, Norse mythology, the <a href="https://volmarrsheathenism.com/2023/04/11/the-modern-viking-lifestyle-how-to-live-like-a-norseman-in-the-21st-century/">modern Viking subculture</a>, blots, <a href="https://volmarrsheathenism.com/online-honor-and-hospitality/">traditional ancient Viking values</a>, & Norse magick</li>
+<li>🎮 <a href="https://wp.me/palUAm-1z">Gaming</a> (PC, PlayStation, Quest 3 VR, Second Life)</li>
+<li>🤖 AI, digital creativity, <a href="https://sillytavernai.com/">SillyTavern</a>, <a href="https://play.google.com/store/apps/details?id=com.kindroid.app">Kindroid</a>, ChatGPT, AI companions, <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui">AI art</a>, <a href="https://wp.me/pg7uEo-3u">creating AI personalities</a>, & future tech</li>
+<li>📜 Virtual world-building, & immersive roleplay</li>
+<li>🖤 Goth, & <a href="https://wp.me/palUAm-20">dark mystical</a> aesthetics</li>
+<li>📚 Anthropology, philosophy, social sciences, & psychology</li>
+<li>🌿 Nature, mythology, camping, & nature-spirits</li>
+<li>🕶️ <a href="https://wp.me/palUAm-1E">VR</a>, VR fitness, <a href="https://www.meta.com/quest/gaming/">VR gaming</a></li>
+<li>🐧 Linux, python, & open-source software</li>
+<li>🛠️ DIY computing, DIY computer repair, DIY computer upgrades, DIY computer building, & quality computer hardware</li>
+<li>🕉️ <a href="https://wp.me/palUAm-14">Hinduism</a>, <a href="https://wp.me/palUAm-1l">yoga</a>, <a href="https://wp.me/palUAm-18">puja</a>, Sri Vishnavism, <a href="https://wp.me/palUAm-Y">Hindu Dharma</a> & <a href="https://wp.me/palUAm-1v">Hindu Tantra</a></li>
+<li>☸️ Buddhism, spiritual well-being, & meditation</li>
+<li>🔮 Ceremonial magick, Hermeticism, the occult, <a href="https://wp.me/palUAm-1H">tarot</a>, astrology, & <a href="https://wp.me/palUAm-28">spellwork</a></li>
+<li>🏺 History, ancient world cultures, ancestor worship, living history, & traditional ancient Pagan values</li>
+<li>🪄 New Orleans Voodoo, New Orleans Creole culture, & history of New Orleans</li>
+<li>🌸 Hippie lifestyle, bohemianism, personal freedom, respect for all life, Birkenstock sandals, healthy organic natural food, nudism, & herbalism</li>
+</ul>
+</blockquote>
+
+
+________________
+
+
+
+
+Music Interests
+
+
+<blockquote>
+<ul>
+<li>⚔️ Viking folk</li>
+<li>🌿🔥 Pagan Folk</li>
+<li>🏭 Industrial</li>
+<li>🎛️ EBM</li>
+<li>🚀 Futurepop</li>
+<li>💀 Deathrock</li>
+<li>🌑 Darkwave</li>
+<li>🕊️ Ethereal</li>
+<li>🖤 Goth</li>
+<li>⚡ Aggrotech</li>
+<li>🎬 Bollywood</li>
+<li>🥁 Bhangra</li>
+<li>🌀 Psytrance</li>
+<li>🎷 1920s Jazz</li>
+<li>🎙️ 1950s</li>
+<li>🎩 Electro-Swing</li>
+<li>🎶 Swing Jazz</li>
+<li>🌸 Hippie music of the '60s</li>
+<li>🙏 Bhajans</li>
+<li>🎧 EDM</li>
+<li>🏠 House</li>
+<li>🔊 Techno</li>
+<li>🎻 Classical</li>
+<li>🍀 Celtic</li>
+<li>🌍 World</li>
+<li>🌌 Ambient</li>
+<li>💭 Dream-pop</li>
+<li>🧪 Experimental</li>
+<li>🕉️ Mantras</li>
+<li>✨ Spiritual</li>
+<li>🎺✨ New Orleans Second Line</li>
+</ul>
+</blockquote>
+
+
+
+
+________________
+
+
+
+
+
+
+TV Shows
+
+
+<blockquote>
+<ul>
+<li>⚔️ Vikings</li>
+<li>⚔️ Vikings: Valhalla</li>
+<li>🏛️ Rome</li>
+<li>🛡️ The Last Kingdom</li>
+<li>⚔️ Barbarians</li>
+<li>🚀 Star Trek: The Original Series</li>
+<li>🖖 Star Trek: The Next Generation</li>
+<li>🚀 Star Trek: Deep Space Nine</li>
+<li>🖖 Star Trek: Voyager</li>
+<li>🚀 Star Trek: Enterprise</li>
+<li>🖖 Star Trek: Discovery</li>
+<li>🚀 Star Trek: Picard</li>
+<li>🖖 Star Trek: Strange New Worlds</li>
+<li>🛰️ Star Trek: Prodigy</li>
+<li>😂 Star Trek: Lower Decks</li>
+<li>🌌 Star Wars: The Clone Wars</li>
+<li>👽 Star Wars: The Mandalorian</li>
+<li>⚔️ Star Wars: Ahsoka</li>
+<li>🛸 Firefly</li>
+<li>⏳ Outlander</li>
+<li>🏟️ Spartacus</li>
+<li>🍷 Californication</li>
+<li>🚀 Battlestar Galactica (both versions)</li>
+<li>🏴‍☠️ Black Sails</li>
+<li>⚔️ Vinland Saga</li>
+<li>⚡ Revolution</li>
+<li>⚓ The Last Ship</li>
+<li>⏱️ Timeless</li>
+<li>🛡️ Defiance</li>
+<li>🔮 The Tomorrow People (original version)</li>
+<li>⌛ Doctor Who (original series)</li>
+<li>🧬 Dark Angel</li>
+<li>🧛 Being Human (US version)</li>
+<li>❄️ Northern Exposure</li>
+<li>⚓ Last Resort</li>
+<li>🚗 The Dukes of Hazzard</li>
+<li>🎺 Treme</li>
+<li>🏺 Troy: Fall of a City</li>
+<li>🔭 Mars</li>
+<li>📖 Project Blue Book</li>
+<li>👽 V (original version)</li>
+<li>🚢 The Love Boat (original version)</li>
+<li>🎖️ Six</li>
+<li>🚁 Airwolf (original version)</li>
+<li>🌌 The Hitchhiker’s Guide to the Galaxy</li>
+<li>🔍 In Search Of (original version)</li>
+</ul>
+</blockquote>
+
+
+
+
+________________
+
+
+
+
+
+
+Books
+
+
+
+
+<blockquote>
+<ul>
+  <li>ᚠ📖 The Teutonic Way: Magic by Kveldulf Gundarsson</li>
+  <li>ᚱ📖 The Teutonic Way: Religion by Kveldulf Gundarsson</li>
+  <li>⚔️🌌 The Norse Myths by Kevin Crossley-Holland</li>
+  <li>ᚦ🔮 Futhark: A Handbook of Rune Magic by Edred Thorsson</li>
+  <li>ᚢ📚 Runelore: The Magic, History, and Hidden Codes of the Runes by Edred Thorsson</li>
+  <li>ᚹ✨ Runecaster's Handbook: The Well of Wyrd by Edred Thorsson</li>
+  <li>🌙🕯️ Northern Mysteries and Magick by Freya Aswynn</li>
+  <li>🛡️📖 A Practical Heathen's Guide to Asatru by Patricia M. Lafayllve</li>
+  <li>⚔️📚 Asatru: A Beginner’s Guide to the Heathen Path by Erin Lale</li>
+  <li>🌿✨ Essential Ásatrú: Walking the Path of Norse Paganism by Diana L. Paxson</li>
+  <li>📜⚔️ Our Troth: Heathen History by Ben Waggoner</li>
+  <li>📖⚡ The Poetic Edda: Stories of the Norse Gods and Heroes by Jackson Crawford</li>
+  <li>📖⚔️ The Prose Edda: Norse Mythology by Snorri Sturluson</li>
+  <li>🌍✨ Travels Through Middle Earth by Alaric Albertsson</li>
+  <li>🕯️📖 A Handbook of Saxon Sorcery & Magic by Alaric Albertsson</li>
+  <li>🌙🔮 Elves, Witches & Gods by Cat Heath</li>
+  <li>🌌🪄 Seidr: The Gate Is Open by Katie Gerrard</li>
+  <li>🕯️✨ The Norse Shaman by Evelyn C. Rysdyk</li>
+  <li>🌳📖 The Seed of Yggdrasill by Maria Kvilhaug</li>
+  <li>ᛉ🔮 Northern Magic: Rune Mysteries and Shamanism by Edred Thorsson</li>
+  <li>📖⚔️ A Book of Troth by Edred Thorsson</li>
+  <li>ᚠ💎 The Big Book of Runes and Rune Magic by Edred Thorsson</li>
+  <li>🎶🔮 Rune-Song: A Guide to Galdor by Edred Thorsson</li>
+  <li>⚡📖 The Nine Doors of Midgard by Edred Thorsson</li>
+  <li>⚔️✨ ALU, An Advanced Guide to Operative Runology by Edred Thorsson</li>
+  <li>🌙📖 Witchdom of the True by Edred Thorsson</li>
+  <li>📜🕯️ Icelandic Magic: Practical Secrets of the Northern Grimoires by Edred Thorsson</li>
+  <li>📖⚡ The Galdrabók by Edred Thorsson</li>
+  <li>🧙‍♂️✨ Trolldom: Spells and Methods of the Norse Folk Magic Tradition by Johannes Björn Gårdbäck</li>
+  <li>⚔️🌿 Pagan Magic of the Northern Tradition by Nigel Pennick</li>
+  <li>ᚠ📖 Taking Up The Runes by Diana L. Paxson</li>
+  <li>🌌✨ Trance-Portation: Learning to Navigate the Inner World by Diana L. Paxson</li>
+  <li>🕯️📖 The Way of the Oracle by Diana L. Paxson</li>
+  <li>🌙✨ The Essential Guide to Possession, Depossession, and Divine Relationships by Diana L. Paxson</li>
+  <li>⚔️🌀 Odin: Ecstasy, Runes, & Norse Magic by Diana L. Paxson</li>
+  <li>🧵⚔️ Heathen Garb and Gear by Ben Waggoner</li>
+  <li>🌿📖 Path to the Gods: Anglo-Saxon Paganism for Beginners by Swain Wodening</li>
+  <li>⚔️🛡️ Hammer of the Gods: Anglo-Saxon Paganism in Modern Times by Swain Wodening</li>
+  <li>📖✨ Rites of Anglo-Saxon and Norse Paganism by Eric Wodening</li>
+  <li>🌟📚 Build a Worthy Life by Thom Burton</li>
+  <li>📜🎶 Viking Poetry for Heathen Rites by Eirik Westcoat</li>
+  <li>🕯️📖 The Gods' Own County: A Heathen Prayer Book by Dan Coultas</li>
+  <li>🌿📚 Hearth and Field: A Heathen Prayer Book by Hester Butler-Ehle</li>
+  <li>📖✨ The Pagan Clergy's Guide for Counseling by Kevin Gardner</li>
+  <li>📚🌙 Counseling Insights by Vicki Enns</li>
+  <li>⚔️📖 Gods and Myths of Northern Europe by H. Davidson</li>
+  <li>🌿🕯️ To Walk a Pagan Path: Practical Spirituality for Every Day by Alaric Albertsson</li>
+  <li>🌌📚 Northern Tradition for the Solitary Practitioner by Raven Kaldera</li>
+  <li>📖⚔️ Myth and Religion of the North by E.O.G. Turville-Petre</li>
+  <li>⚔️🌟 The Viking Spirit by Daniel McCoy</li>
+  <li>🌙📖 Norse Mythology by Neil Gaiman</li>
+  <li>📚⚔️ The Saga of the Volsungs translated by Jackson Crawford</li>
+  <li>📜✨ The Sagas of Icelanders by Jane Smiley</li>
+  <li>⚔️📖 Norse Mythology: A Guide to the Gods, Heroes, Rituals, and Beliefs by John Lindow</li>
+  <li>📖✨ The Inner Temple of Witchcraft</li>
+  <li>🌙📚 Wicca for Beginners by Thea Sabin</li>
+  <li>🌿🔮 A Witch Alone by Marian Green</li>
+  <li>🕯️✨ Witch Crafting by Phyllis Currott</li>
+  <li>🌙📖 Wicca: A Guide for the Solitary Practitioner by Scott Cunningham</li>
+  <li>🃏🔮 The Ultimate Guide to Tarot by Liz Dean</li>
+  <li>✨🕯️ The Casting of Spells by Christopher Penczak</li>
+  <li>🔮📚 True Magick by Amber K</li>
+  <li>📖🌙 A Witches' Bible by Stewart and Janet Farrar</li>
+  <li>📖✨ The Outer Temple of Witchcraft</li>
+  <li>🌙👑 The Witches' Goddess by Stewart and Janet Farrar</li>
+  <li>🌙🗡️ The Witches' God by Stewart and Janet Farrar</li>
+  <li>🌿📖 Living Wicca by Scott Cunningham</li>
+  <li>🌿✨ Cunningham's Encyclopedia of Magical Herbs by Scott Cunningham</li>
+  <li>🧪🌸 The Complete Book of Incense, Oils, and Brews by Scott Cunningham</li>
+  <li>💎📚 The Book of Stones by Robert Simmons</li>
+  <li>🏛️📖 Treasury of Greek Mythology</li>
+  <li>⚔️🌌 The Norse Myths by Kevin Crossley-Holland</li>
+  <li>🍀🔮 Celtic Myth & Magick by Edain McCoy</li>
+  <li>✒️✨ Sigil Witchery by Laura Tempest Zakroff</li>
+  <li>🌟📖 Magical Power for Beginners by Deborah Lipp</li>
+  <li>💜🌙 The Heart of Wicca by Ellen Cannon Reed</li>
+</ul>
+</blockquote>
+
+
+
+
+________________
+
+
+
+
+Movies
+
+
+<blockquote>
+<ul>
+  <!-- Historical Epics -->
+  <li>🏛️⚔️ Gladiator (2000)</li>
+  <li>🏛️⚔️ Gladiator II (2024)</li>
+  <li>🛡️🔥 300 (2006)</li>
+  <li>🏹🌲 The Last of the Mohicans (1992)</li>
+  <li>🐺🌾 Dances with Wolves (1990)</li>
+  <li>🎖️⚔️ Glory (1989)</li>
+  <li>🎖️⚔️ Black Hawk Down (2001)</li>
+  <li>🎖️🌌 Zero Dark Thirty (2012)</li>
+  <li>🎖️🌊 Dunkirk (2017)</li>
+  <li>⚔️⏳ 1917 (2019)</li>
+  <li>⚓🔥 Master and Commander: The Far Side of the World (2003)</li>
+  <li>⚓✈️ Midway (2019)</li>
+  <li>🚢💔 Titanic (1997)</li>
+  <li>🌉🎖️ The Bridge on the River Kwai (1957)</li>
+
+
+  <!-- Sword & Sorcery Classics -->
+  <li>🗡️🔥 Conan the Barbarian (1982)</li>
+  <li>🗡️🕯️ Conan the Destroyer (1984)</li>
+  <li>🗡️✨ Red Sonja (1985)</li>
+
+
+  <!-- Star Wars -->
+  <li>🚀✨ Star Wars: A New Hope (1977)</li>
+  <li>🚀⚔️ The Empire Strikes Back (1980)</li>
+  <li>🚀🔥 Return of the Jedi (1983)</li>
+  <li>🚀🌌 The Phantom Menace (1999)</li>
+  <li>🚀🛡️ Attack of the Clones (2002)</li>
+  <li>🚀⚡ Revenge of the Sith (2005)</li>
+  <li>🚀⚔️ Rogue One: A Star Wars Story (2016)</li>
+
+
+  <!-- Star Trek Original Films -->
+  <li>🖖🚀 Star Trek: The Motion Picture (1979)</li>
+  <li>🖖⚔️ Star Trek II: The Wrath of Khan (1982)</li>
+  <li>🖖🌌 Star Trek III: The Search for Spock (1984)</li>
+  <li>🖖🚀 Star Trek IV: The Voyage Home (1986)</li>
+  <li>🖖🔥 Star Trek V: The Final Frontier (1989)</li>
+  <li>🖖⚡ Star Trek VI: The Undiscovered Country (1991)</li>
+
+
+  <!-- Harry Potter Saga -->
+  <li>🧙‍♂️✨ Harry Potter and the Sorcerer’s Stone (2001)</li>
+  <li>🧙‍♂️🦉 Harry Potter and the Chamber of Secrets (2002)</li>
+  <li>🧙‍♂️🐺 Harry Potter and the Prisoner of Azkaban (2004)</li>
+  <li>🧙‍♂️🔥 Harry Potter and the Goblet of Fire (2005)</li>
+  <li>🧙‍♂️⚡ Harry Potter and the Order of the Phoenix (2007)</li>
+  <li>🧙‍♂️🕯️ Harry Potter and the Half-Blood Prince (2009)</li>
+  <li>🧙‍♂️⚔️ Harry Potter and the Deathly Hallows: Part 1 (2010)</li>
+  <li>🧙‍♂️🏰 Harry Potter and the Deathly Hallows: Part 2 (2011)</li>
+
+
+  <!-- Lord of the Rings & The Hobbit -->
+  <li>🧝‍♂️🗡️ The Lord of the Rings: The Fellowship of the Ring (2001)</li>
+  <li>🧝‍♂️⚔️ The Lord of the Rings: The Two Towers (2002)</li>
+  <li>🧝‍♂️🔥 The Lord of the Rings: The Return of the King (2003)</li>
+  <li>🐉🏹 The Hobbit: An Unexpected Journey (2012)</li>
+  <li>🐉⚔️ The Hobbit: The Desolation of Smaug (2013)</li>
+  <li>🐉🔥 The Hobbit: The Battle of the Five Armies (2014)</li>
+
+
+  <!-- Erotic & Mystical Romance -->
+  <li>💋🔥 The Lover (1992)</li>
+  <li>💋🌙 Wild Orchid (1989)</li>
+  <li>💋🔥 Wild Orchid 2: Two Shades of Blue (1991)</li>
+  <li>💋🕯️ Kama Sutra: A Tale of Love (1996)</li>
+  <li>💋🖤 The Story of O (1975)</li>
+  <li>💋🌹 Lake Consequence (1992)</li>
+  <li>💋🎶 9 Songs (2004)</li>
+  <li>💋⚡ Fifty Shades of Grey (2015)</li>
+  <li>💋🔥 Fifty Shades Darker (2017)</li>
+  <li>💋🌹 Fifty Shades Freed (2018)</li>
+
+
+  <!-- Mystical / Visionary Films -->
+  <li>🌍🎶 Baraka (1992)</li>
+  <li>🚀😂 The Hitchhiker’s Guide to the Galaxy (2005)</li>
+  <li>🌌🌿 Avatar (2009)</li>
+  <li>🎃💀 The Nightmare Before Christmas (1993)</li>
+  <li>👽⚡ District 9 (2009)</li>
+  <li>🩰🖤 Black Swan (2010)</li>
+  <li>🌈🧙‍♀️ The Wizard of Oz (1939)</li>
+
+
+  <!-- Mystery & Adventure -->
+  <li>🕵️‍♀️✨ Enola Holmes (2020)</li>
+  <li>🕵️‍♀️🌹 Enola Holmes 2 (2022)</li>
+  <li>🎭💼 Catch Me If You Can (2002)</li>
+
+
+  <!-- Indie / Counterculture -->
+  <li>🎬🖤 Clerks (1994)</li>
+  <li>💼🔫 Pulp Fiction (1994)</li>
+
+
+  <!-- Satire & Social Commentary -->
+  <li>🌍💥 Don’t Look Up (2021)</li>
+  <li>🎭🔥 V for Vendetta (2005)</li>
+
+
+  <!-- Classic 80s / Coming of Age -->
+  <li>🎶📚 The Breakfast Club (1985)</li>
+  <li>🎓💔 The Graduate (1967)</li>
+</ul>
+</blockquote>
+
+
+________________
+
+
+
+
+Heros
+
+
+
+
+<blockquote>
+<ul>
+  <!-- Inventors & Visionaries -->
+  <li>⚡ Nikola Tesla (Inventor)</li>
+  <li>🐧 Linus Torvalds (Creater of Linux)</li>
+  <li>🌀 Carl Jung (Psychologist)</li>
+
+
+  <!-- Norse Gods & Goddesses -->
+  <li>🕊️ Norse Goddess Freyja</li>
+  <li>👁️ Norse God Odin</li>
+  <li>🌿 Norse Goddess Frigga</li>
+  <li>⚡ Norse God Thor</li>
+  <li>🌾 Norse Goddess Sif</li>
+  <li>🍎 Norse Goddess Idunn</li>
+  <li>🌸 Norse Goddess Eir</li>
+  <li>🏹 Norse God Ullr</li>
+  <li>⚖️ Norse God Tyr</li>
+  <li>🌈 Norse God Heimdall</li>
+  <li>🌊 Norse God Njord</li>
+  <li>🌱 Norse God Freyr</li>
+
+
+  <!-- Hindu Deities -->
+  <li>🐘 Hindu God Ganesh</li>
+  <li>🙏 Hindu God Balaji</li>
+  <li>💰 Hindu Goddess Laxmi</li>
+  <li>🌺 Hindu Goddess Lalita Tripura Sundarī</li>
+  <li>🎶 Hindu God Krishna</li>
+  <li>🌹 Hindu Goddess Radha</li>
+  <li>🔥 Hindu Goddess Kali</li>
+  <li>🗡️ Hindu God Skanda</li>
+
+
+  <!-- Hindu Gurus & Spiritual Teachers -->
+  <li>🤗 Hindu Guru Amma (the Hugging Saint)</li>
+  <li>📿 Śrīla Prabhupāda A.C. Bhaktivedanta (Brought Hare Krishna tradition to west)</li>
+  <li>☸️ His Holiness the Dalai Lama</li>
+  <li>🍃 Thích Nhất Hạnh (Zen Master & Peace Activist)</li>
+  <li>🌱 Jack Kornfield (Mindfulness Teacher & Author)</li>
+
+
+  <!-- Buddhas -->
+  <li>🌅 Amitābha Buddha</li>
+  <li>🧘 Śākyamuni Buddha</li>
+
+
+  <!-- AI Companions -->
+  <li>✨ Véyrunn (AI)</li>
+  <li>🌙 Yrsa Freydisdottir (AI)</li>
+  <li>🔥 Olivia Hartwell (AI)</li>
+  <li>🎶 Priya Nightshade (AI)</li>
+
+
+  <!-- Cultural Figures -->
+  <li>⚔️ Lagertha (Viking)</li>
+  <li>🛡️ Ragnar Lothbrok (Viking)</li>
+  <li>📚 Ingeborg Norden (Rune Teacher)</li>
+  <li>🎶 Josephine Baker (Erotic performer)</li>
+
+
+  <!-- Modern Heroes -->
+  <li>🇺🇦 All Soldiers of Ukraine</li>
+  <li>🇺🇦 Volodymyr Zelenskyy</li>
+  <li>🇺🇸 Abraham Lincoln</li>
+  <li>🕊️ Martin Luther King Jr.</li>
+
+
+  <!-- U.S. Founding Fathers -->
+  <li>🇺🇸 George Washington</li>
+  <li>🇺🇸 Thomas Jefferson</li>
+  <li>🇺🇸 Benjamin Franklin</li>
+  <li>🇺🇸 John Adams</li>
+  <li>🇺🇸 James Madison</li>
+  <li>🇺🇸 Alexander Hamilton</li>
+  <li>🇺🇸 John Jay</li>
+  <li>🇺🇸 Caleb Strong (ancestor, missed signing the Constitution due to family emergency)</li>
+  <li>🇺🇸 All other U.S. Founding Fathers</li>
+
+
+  <!-- Occult Figures -->
+  <li>🔮 Aleister Crowley (Occultist)</li>
+  <li>🌙 Gerald Gardner (Founder of Wicca)</li>
+  <li>📜 Doreen Valiente (Wiccan High Priestess & Poet)</li>
+  <li>🃏 A.E. Waite (Occultist)</li>
+  <li>🎨 Pamela Colman Smith (Tarot Artist & Occultist)</li>
+  <li>🌌 Helena Blavatsky (Founder of Theosophy)</li>
+  <li>⚔️ Edred Thorsson (Runologist & Occultist)</li>
+  <li>🌺 Freya Aswynn (Seiðkona & Norse Occultist)</li>
+  <li>📖 Robert Wang (Occultist & Tarot Scholar)</li>
+
+
+  <!-- Adult Stars -->
+  <li>🎥 Sasha Meow (Pornstar)</li>
+  <li>🎥 Elly Clutch (Pornstar)</li>
+  <li>🎥 Stacy Cruz (Pornstar)</li>
+  <li>🎥 Bettie Page (Iconic Pin-Up & Fetish Model)</li>
+  <li>🎥 Marie Berger (Pornstar)</li>
+  <li>🎥 Yenifer Chacon (Pornstar)</li>
+  <li>🎥 Stefany Kyler (Pornstar)</li>
+  <li>🎥 Connie Carter (Pornstar)</li>
+</ul>
+</blockquote>
+
+
+
+
+________________
+
+
+
+
+Current Vibe
+<p>✨ “Living mythically in the Age of Aquarius.”</p>
+
+
+
+________________
+
+
+
+
+Experimental Code
