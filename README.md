@@ -179,6 +179,20 @@ Example config:
 
 ---
 
+
+## Documentation governance and continuity
+
+This project now keeps an explicit documentation governance layer to reduce drift in long-lived sessions:
+
+- `docs/INDEX.md` is the canonical documentation map.
+- `docs/DOCUMENTATION_STANDARDS.md` defines writing and update obligations.
+- `docs/SESSION_HANDOFF_TEMPLATE.md` provides a structured end-of-session handoff.
+- `DEVLOG.md` and `CHANGELOG.md` are maintained as paired historical records (narrative + release-facing).
+
+When changing behavior, update docs in the same commit or PR. Treat documentation drift as a functional bug, not an editorial nicety.
+
+---
+
 ## Command overview
 
 Primary command families include:
