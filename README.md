@@ -167,7 +167,7 @@ The CLI now supports the design-doc style ritual commands in addition to existin
 
 ---
 
-![https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/blob/main/refs/heads/main/Viking_Apache_V2_1.jpg](https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/blob/main/refs/heads/main/Viking_Apache_V2_1.jpg)
+![https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/main/Viking_Apache_V2_1.jpg](https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/main/Viking_Apache_V2_1.jpg)
 
 ## License
 
@@ -194,10 +194,7 @@ See [LEGAL-NOTICE.md](LEGAL-NOTICE.md) for details.
 
 ---
 
-![https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0407.jpeg](https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/refs/heads/main/IMG_0407.jpeg)
+![https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/main/IMG_0407.jpeg]
 
 ---
 
-[Back to main](https://github.com/hrabanazviking/Mythic-Engineering)
-
----
