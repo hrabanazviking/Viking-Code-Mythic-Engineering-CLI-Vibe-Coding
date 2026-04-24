@@ -1,0 +1,936 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viking Engineering, Act 0: High-Level Design Plan for Mythic Engineering CLI Coding Tool</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .font-playfair { font-family: 'Playfair Display', serif; }
+        .font-inter { font-family: 'Inter', sans-serif; }
+        .smooth-scroll { scroll-behavior: smooth; }
+        .nav-item.active { background-color: #3B82F6; color: white; }
+        .nav-item:hover { background-color: #E5E7EB; }
+        .nav-item.active:hover { background-color: #2563EB; }
+        .cite-link { color: #007bff; }
+        .cite-link:hover { text-decoration: underline; }
+        
+        /* Hide left sidebar on mobile */
+        @media (max-width: 768px) {
+            nav.fixed.left-0 {
+                display: none !important;
+            }
+            
+            main {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+            
+            main.ml-64, main.ml-80 {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-inter smooth-scroll">
+    <!-- Left Navigation -->
+    <nav class="fixed left-0 top-0 w-64 h-full bg-white shadow-lg overflow-y-auto z-10">
+        <div class="p-6">
+            <h2 class="text-lg font-bold text-gray-800 mb-6">Table of Contents</h2>
+            <ul class="space-y-2">
+                <li><a href="#intro" class="nav-item block px-3 py-2 rounded text-sm text-gray-700 transition-colors">Introduction</a></li>
+                <li><a href="#section1" class="nav-item block px-3 py-2 rounded text-sm text-gray-700 transition-colors">Analysis of Existing Asset Domains</a>
+                    <ul class="ml-4 mt-2 space-y-1">
+                        <li><a href="#section1-1" class="nav-item block px-3 py-1 rounded text-xs text-gray-600 transition-colors">Deconstructing the Viking Repository</a></li>
+                        <li><a href="#section1-2" class="nav-item block px-3 py-1 rounded text-xs text-gray-600 transition-colors">Mythic Engineering Philosophy</a></li>
+                        <li><a href="#section1-3" class="nav-item block px-3 py-1 rounded text-xs text-gray-600 transition-colors">Asset Inventory Assessment</a></li>
+                    </ul>
+                </li>
+                <li><a href="#section2" class="nav-item block px-3 py-2 rounded text-sm text-gray-700 transition-colors">Mythic Engineering Domain Model</a>
+                    <ul class="ml-4 mt-2 space-y-1">
+                        <li><a href="#section2-1" class="nav-item block px-3 py-1 rounded text-xs text-gray-600 transition-colors">Domain Sacred Geometry</a></li>
+                        <li><a href="#section2-2" class="nav-item block px-3 py-1 rounded text-xs text-gray-600 transition-colors">Core Domain Contexts</a></li>
+                        <li><a href="#section2-3" class="nav-item block px-3 py-1 rounded text-xs text-gray-600 transition-colors">Domain Laws and Constraints</a></li>
+                    </ul>
+                </li>
+                <li><a href="#section3" class="nav-item block px-3 py-2 rounded text-sm text-gray-700 transition-colors">High-Level Python Architecture Blueprint</a>
+                    <ul class="ml-4 mt-2 space-y-1">
+                        <li><a href="#section3-1" class="nav-item block px-3 py-1 rounded text-xs text-gray-600 transition-colors">System Architecture Overview</a></li>
+                        <li><a href="#section3-2" class="nav-item block px-3 py-1 rounded text-xs text-gray-600 transition-colors">Mythic Core</a></li>
+                        <li><a href="#section3-3" class="nav-item block px-3 py-1 rounded text-xs text-gray-600 transition-colors">Interface Sanctum</a></li>
+                        <li><a href="#section3-4" class="nav-item block px-3 py-1 rounded text-xs text-gray-600 transition-colors">Tool Covenant</a></li>
+                    </ul>
+                </li>
+                <li><a href="#section4" class="nav-item block px-3 py-2 rounded text-sm text-gray-700 transition-colors">Refactoring Strategy for Transformation</a>
+                    <ul class="ml-4 mt-2 space-y-1">
+                        <li><a href="#section4-1" class="nav-item block px-3 py-1 rounded text-xs text-gray-600 transition-colors">Code Transition</a></li>
+                        <li><a href="#section4-2" class="nav-item block px-3 py-1 rounded text-xs text-gray-600 transition-colors">Building Pillar Layers</a></li>
+                        <li><a href="#section4-3" class="nav-item block px-3 py-1 rounded text-xs text-gray-600 transition-colors">Long-Term Consistency</a></li>
+                    </ul>
+                </li>
+                <li><a href="#conclusion" class="nav-item block px-3 py-2 rounded text-sm text-gray-700 transition-colors">Conclusion</a></li>
+                <li><a href="#references" class="nav-item block px-3 py-2 rounded text-sm text-gray-700 transition-colors">References</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="ml-64 min-h-screen">
+        <!-- Cover Page -->
+        <section class="bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900 text-white min-h-screen flex items-center justify-center">
+            <div class="text-center px-12 py-24 max-w-5xl">
+                <h1 class="font-playfair text-6xl font-bold italic mb-8 leading-tight">
+                    Viking Engineering, Act 0
+                </h1>
+                <h2 class="font-playfair text-3xl italic mb-12 text-blue-200">
+                    High-Level Design Plan for Mythic Engineering CLI Coding Tool
+                </h2>
+                <div class="space-y-6 text-lg text-blue-100">
+                    <p class="font-medium">A Strategic Blueprint from Chaos to Order</p>
+                    <p class="text-base">Build a robust, coherent, and delightful command-line interface</p>
+                    <div class="mt-12 p-6 bg-white bg-opacity-10 rounded-lg backdrop-blur-sm">
+                        <p class="text-sm italic">A deliberate "Mythic Engineering" transformation</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Introduction -->
+        <section id="intro" class="px-12 py-12 max-w-6xl mx-auto">
+            <h2 class="font-playfair text-4xl font-bold text-gray-800 mb-8">Introduction: From Chaos to Order</h2>
+            <div class="prose prose-lg max-w-none text-gray-700 leading-relaxed">
+                <p class="text-xl mb-6 text-gray-600 italic">
+                    In the realm of AI engineering, a repository called "Viking" is mired in a classic case of "growing pains."
+                </p>
+                <div class="space-y-6">
+                    <p>Built by a group of energetic "Viking" programmers, it is filled with experimental code, diverse configuration files, and a series of powerful tools capable of executing independent tasks. However, as ambitions have swelled, the system has gradually evolved into a chaotic collection of spaghetti structures, isolated code fragments, and tangled logic.</p>
+                    
+                    <div class="bg-blue-50 border-l-4 border-blue-400 p-6 my-8">
+                        <p class="font-semibold text-blue-800 mb-2">The Essence of the Problem</p>
+                        <p class="text-blue-700">The repository is littered with uncleaned temporary files and arbitrary modifications to global state, like a battlefield after a fierce raid. The root of the problem is not a lack of code, but an <strong>absence of architecture</strong>.</p>
+                    </div>
+
+                    <p>The current predicament stems from inevitable friction when the "Viking" spirit is unleashed without discipline or foresight. Viking expeditions are legendary, but their ability to return home and build the foundation of an era relied not only on the passion for plunder, but on masterful shipbuilding, a deep understanding of currents, and a clear division of roles among the crew.</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 my-12">
+                        <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                            <h4 class="font-bold text-indigo-600 mb-3">Mythic Narrative</h4>
+                            <p class="text-sm text-gray-600">Create a unified, meaningful design story for the system that transcends mere code functionality</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                            <h4 class="font-bold text-blue-600 mb-3">Domain-Driven Design</h4>
+                            <p class="text-sm text-gray-600">Partition complex problem spaces into bounded, contextual domains</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                            <h4 class="font-bold text-purple-600 mb-3">Ambient Developer Experience</h4>
+                            <p class="text-sm text-gray-600">Make the CLI feel like epic equipment in the eyes of developers</p>
+                        </div>
+                    </div>
+
+                    <p class="text-lg font-medium text-gray-800 bg-gray-100 p-6 rounded-lg">
+                        This report is not a typical to-do list. It is a strategic blueprint aimed at reshaping the "Viking" project into a robust, coherent, and delightful <strong>command-line interface</strong> in the eyes of developers.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Chapter 1 -->
+        <section id="section1" class="px-12 py-8 max-w-6xl mx-auto">
+            <h2 class="font-playfair text-4xl font-bold text-gray-800 mb-8">I. Analysis of Existing Asset Domains</h2>
+            
+            <div id="section1-1" class="mb-12">
+                <h3 class="font-inter text-2xl font-semibold text-gray-700 mb-6">1.1 Deconstructing the "Viking" Repository</h3>
+                
+                <div class="bg-white border border-gray-200 rounded-lg p-6 mb-8">
+                    <h4 class="font-semibold text-gray-800 mb-4">Inferred Directory Structure & Core Technologies</h4>
+                    <div class="bg-gray-900 text-green-400 p-4 rounded font-mono text-sm overflow-x-auto">
+                        <pre>viking-repo/
+├── .github/                     # GitHub Actions workflows
+├── src/ or viking/              # Main source code directory
+│   ├── cli.py                   # CLI entry point
+│   ├── tools/                   # Collection of various standalone tools
+│   │   ├── scraper.py
+│   │   ├── parser.py
+│   │   └── ...
+│   ├── utils.py                 # Global utility functions
+│   └── config.py                # Configuration management
+├── tests/                       # Tests directory
+├── docs/ or README.md           # Project documentation
+├── requirements.txt or pyproject.toml
+└── viking-logo.png              # Project logo</pre>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-6">
+                        <h4 class="font-bold text-red-700 mb-3">Monolithic Script</h4>
+                        <p class="text-red-600 text-sm">A single Python file routing commands directly via if __name__ == "__main__" blocks. Simple but prone to bloat.</p>
+                    </div>
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                        <h4 class="font-bold text-yellow-700 mb-3">Manual Registration</h4>
+                        <p class="text-yellow-600 text-sm">Manually manages subcommands and arguments using argparse or sys.argv, lacking the elegance of modern CLI frameworks.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section1-2" class="mb-12">
+                <h3 class="font-inter text-2xl font-semibold text-gray-700 mb-6">1.2 Philosophy of Mythic Engineering and Vibe Coding</h3>
+                
+                <p class="text-gray-700 mb-6">
+                    The "Viking" project has already nurtured a strong, informal engineering philosophy: "Vibe Coding." As defined by <cite><a href="#ref20" class="cite-link" target="_blank">[20]</a></cite>, this is a new LLM-driven programming paradigm.
+                </p>
+
+                <div class="overflow-x-auto mb-8">
+                    <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dimension</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vibe Coding</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mythic Engineering</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Core Goal</td>
+                                <td class="px-6 py-4 text-sm text-gray-500">Rapid prototyping & proof of concept</td>
+                                <td class="px-6 py-4 text-sm text-gray-500">Build maintainable, scalable production-grade systems</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Workflow</td>
+                                <td class="px-6 py-4 text-sm text-gray-500">Exploratory, iterative, conversation-based</td>
+                                <td class="px-6 py-4 text-sm text-gray-500">Structured, plan-based, specification-driven</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Constraint Mechanism</td>
+                                <td class="px-6 py-4 text-sm text-gray-500">Almost zero, relies on developer intuition</td>
+                                <td class="px-6 py-4 text-sm text-gray-500">Engineering discipline: DDD, SDD, TDD, etc.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="bg-indigo-50 border-l-4 border-indigo-400 p-6">
+                    <h4 class="font-bold text-indigo-800 mb-3">Pillars of Mythic Engineering Philosophy</h4>
+                    <ul class="space-y-2 text-indigo-700">
+                        <li><strong>Developer as Hero</strong>: Every CLI command should feel as powerful, reliable, and enjoyable to use as a legendary weapon</li>
+                        <li><strong>Intent-Driven Action</strong>: The system should provide a smooth path from fuzzy idea to concrete execution</li>
+                        <li><strong>Constrained Creativity</strong>: Introduce necessary "constraints" to tame AI's powerful creativity</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div id="section1-3" class="mb-12">
+                <h3 class="font-inter text-2xl font-semibold text-gray-700 mb-6">1.3 Asset Inventory and Strategic Assessment</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <h4 class="font-bold text-green-700 mb-2">Code Assets</h4>
+                        <p class="text-green-600 text-sm">Tool collection, CLI entry, configuration & test code</p>
+                    </div>
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 class="font-bold text-blue-700 mb-2">Documentation Assets</h4>
+                        <p class="text-blue-600 text-sm">README, usage guides, code comments</p>
+                    </div>
+                    <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                        <h4 class="font-bold text-purple-700 mb-2">Cultural Assets</h4>
+                        <p class="text-purple-600 text-sm">Viking brand, DX vision</p>
+                    </div>
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <h4 class="font-bold text-yellow-700 mb-2">Community Assets</h4>
+                        <p class="text-yellow-600 text-sm">Developer base, contribution potential</p>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aspect</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Risk</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Opportunity</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Code & Architecture</td>
+                                <td class="px-6 py-4 text-sm text-red-600">Architectural drift, high contributor barrier</td>
+                                <td class="px-6 py-4 text-sm text-green-600">Empower community, predictability</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Developer Experience</td>
+                                <td class="px-6 py-4 text-sm text-red-600">Tool friction, missing documentation</td>
+                                <td class="px-6 py-4 text-sm text-green-600">Heroic experience, mental model</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">AI Integration</td>
+                                <td class="px-6 py-4 text-sm text-red-600">Agent uncontrollability, context fragmentation</td>
+                                <td class="px-6 py-4 text-sm text-green-600">Controlled generation, automated workflows</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Chapter 2 -->
+        <section id="section2" class="px-12 py-8 max-w-6xl mx-auto">
+            <h2 class="font-playfair text-4xl font-bold text-gray-800 mb-8">II. Mythic Engineering Domain Model</h2>
+            
+            <div id="section2-1" class="mb-12">
+                <h3 class="font-inter text-2xl font-semibold text-gray-700 mb-6">2.1 Domain Sacred Geometry</h3>
+                
+                <div class="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg p-8 mb-8">
+                    <h4 class="font-bold text-indigo-800 mb-6 text-center">System Sacred Geometry Entities</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                            <h5 class="font-bold text-blue-600 mb-2">Runes</h5>
+                            <p class="text-sm text-gray-600">Every executable instruction in the CLI, the direct medium for user interaction</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                            <h5 class="font-bold text-green-600 mb-2">Altars</h5>
+                            <p class="text-sm text-gray-600">Core objects the system operates on, such as projects, tools, configs, queries</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                            <h5 class="font-bold text-purple-600 mb-2">Oracles</h5>
+                            <p class="text-sm text-gray-600">The behind-the-scenes power executing commands and manipulating resources, handling business logic</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                            <h5 class="font-bold text-indigo-600 mb-2">Yggdrasil</h5>
+                            <p class="text-sm text-gray-600">The link connecting all parts, responsible for passing state and sharing dependencies</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                            <h5 class="font-bold text-red-600 mb-2">Runestones</h5>
+                            <p class="text-sm text-gray-600">Parameter info and result contracts exchanged between hero and oracle</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                            <h5 class="font-bold text-yellow-600 mb-2">Pacts</h5>
+                            <p class="text-sm text-gray-600">Formatted output recording execution results or error messages</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section2-2" class="mb-12">
+                <h3 class="font-inter text-2xl font-semibold text-gray-700 mb-6">2.2 Core Domains and Bounded Contexts</h3>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 class="font-bold text-blue-600 mb-4">Tool Summoning Domain</h4>
+                        <p class="text-gray-600 text-sm mb-4">Responsible for tool discovery, loading, validation, and execution</p>
+                        <ul class="text-xs text-gray-500 space-y-1">
+                            <li>• ToolRegistry</li>
+                            <li>• ToolLoader</li>
+                            <li>• ToolValidator</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 class="font-bold text-green-600 mb-4">Configuration Domain</h4>
+                        <p class="text-gray-600 text-sm mb-4">Manages user settings, project configuration, and sensitive credentials</p>
+                        <ul class="text-xs text-gray-500 space-y-1">
+                            <li>• ConfigurationManager</li>
+                            <li>• SecretsManager</li>
+                            <li>• EnvironmentManager</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 class="font-bold text-purple-600 mb-4">Project Domain</h4>
+                        <p class="text-gray-600 text-sm mb-4">Manages project or workspace lifecycle</p>
+                        <ul class="text-xs text-gray-500 space-y-1">
+                            <li>• Project</li>
+                            <li>• Workspace</li>
+                            <li>• Manifest</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 class="font-bold text-indigo-600 mb-4">Query & Search Domain</h4>
+                        <p class="text-gray-600 text-sm mb-4">Parses user queries, performs searches, processes and formats results</p>
+                        <ul class="text-xs text-gray-500 space-y-1">
+                            <li>• QueryParser</li>
+                            <li>• SearchEngine</li>
+                            <li>• ResultFormatter</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                    <h4 class="font-bold text-gray-800 mb-4">Context Mapping Example: Search Command Execution Flow</h4>
+                    <div class="flex flex-wrap items-center justify-between text-sm">
+                        <div class="bg-blue-100 px-3 py-2 rounded mb-2">UI/UX Domain<br/>Receive command</div>
+                        <div class="text-gray-400">→</div>
+                        <div class="bg-green-100 px-3 py-2 rounded mb-2">Query Domain<br/>Parse query</div>
+                        <div class="text-gray-400">→</div>
+                        <div class="bg-purple-100 px-3 py-2 rounded mb-2">Project Domain<br/>Provide context</div>
+                        <div class="text-gray-400">→</div>
+                        <div class="bg-indigo-100 px-3 py-2 rounded mb-2">Search Domain<br/>Execute search</div>
+                        <div class="text-gray-400">→</div>
+                        <div class="bg-blue-100 px-3 py-2 rounded mb-2">UI/UX Domain<br/>Render results</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section2-3" class="mb-12">
+                <h3 class="font-inter text-2xl font-semibold text-gray-700 mb-6">2.3 Domain Laws and Invariant Constraints</h3>
+                
+                <div class="space-y-6">
+                    <div class="bg-red-50 border-l-4 border-red-400 p-6">
+                        <h4 class="font-bold text-red-800 mb-3">Tool Summoning Domain Laws</h4>
+                        <ul class="text-red-700 space-y-2 text-sm">
+                            <li><strong>Invariant 1</strong>: Tools must pass strict validation before being added to the Registry</li>
+                            <li><strong>Business Rule 1</strong>: All declared dependencies must be satisfied before execution</li>
+                            <li><strong>Error Handling Pact</strong>: Must return a structured ExecutionResult object on failure</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-blue-50 border-l-4 border-blue-400 p-6">
+                        <h4 class="font-bold text-blue-800 mb-3">Configuration Domain Laws</h4>
+                        <ul class="text-blue-700 space-y-2 text-sm">
+                            <li><strong>Invariant 1</strong>: Secrets must be stored encrypted in memory, plaintext values never logged</li>
+                            <li><strong>Business Rule 1</strong>: Configuration merging must follow a well-defined priority order</li>
+                            <li><strong>Validation Rule</strong>: All config items must be validated against a predefined JSON Schema</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-green-50 border-l-4 border-green-400 p-6">
+                        <h4 class="font-bold text-green-800 mb-3">Project Domain Laws</h4>
+                        <ul class="text-green-700 space-y-2 text-sm">
+                            <li><strong>Invariant 1</strong>: Project root directory must physically exist in the filesystem</li>
+                            <li><strong>Business Rule 1</strong>: New workspace creation must generate a Manifest file with necessary metadata</li>
+                            <li><strong>Lifecycle Rule</strong>: All state changes must be recorded as traceable ProjectEvents</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-purple-50 border-l-4 border-purple-400 p-6">
+                        <h4 class="font-bold text-purple-800 mb-3">Query & Search Domain Laws</h4>
+                        <ul class="text-purple-700 space-y-2 text-sm">
+                            <li><strong>Invariant 1</strong>: Empty query cannot return a wildcard query matching all results</li>
+                            <li><strong>Business Rule 1</strong>: Search results must include relevance scores and highlight metadata</li>
+                            <li><strong>Pagination Rule</strong>: Must support pagination with complete pagination info</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Chapter 3 -->
+        <section id="section3" class="px-12 py-8 max-w-6xl mx-auto">
+            <h2 class="font-playfair text-4xl font-bold text-gray-800 mb-8">III. High-Level Python Architecture Blueprint</h2>
+            
+            <div id="section3-1" class="mb-12">
+                <h3 class="font-inter text-2xl font-semibold text-gray-700 mb-6">3.1 System Architecture Overview</h3>
+                
+                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-8 mb-8">
+                    <h4 class="font-bold text-blue-800 mb-6 text-center">Hexagonal Architecture (Ports & Adapters)</h4>
+                    <div class="text-center">
+                        <div class="inline-block bg-white p-6 rounded-lg shadow-md border border-gray-200 mb-4">
+                            <h5 class="font-bold text-red-600 mb-2">Domain Layer</h5>
+                            <p class="text-xs text-gray-600">Core domain models & business logic</p>
+                        </div>
+                        <div class="block text-gray-400 mb-4">↑↓</div>
+                        <div class="inline-block bg-white p-6 rounded-lg shadow-md border border-gray-200 mb-4">
+                            <h5 class="font-bold text-blue-600 mb-2">Application Layer</h5>
+                            <p class="text-xs text-gray-600">Use case coordination & interface definitions</p>
+                        </div>
+                        <div class="block text-gray-400 mb-4">↑↓</div>
+                        <div class="inline-block bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                            <h5 class="font-bold text-green-600 mb-2">Infrastructure Layer</h5>
+                            <p class="text-xs text-gray-600">External implementations & adapters</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-6">
+                    <h4 class="font-bold text-yellow-800 mb-3">Dependency Rule</h4>
+                    <p class="text-yellow-700">Dependencies point strictly inward: outer layers depend on inner layers, and inner layers know nothing of the outer layers. This makes the system extremely flexible, testable, and maintainable.</p>
+                </div>
+            </div>
+
+            <div id="section3-2" class="mb-12">
+                <h3 class="font-inter text-2xl font-semibold text-gray-700 mb-6">3.2 Mythic Core (mythic_core/)</h3>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 class="font-bold text-indigo-600 mb-4">Domain Models Package (domain/)</h4>
+                        <div class="space-y-4">
+                            <div>
+                                <h5 class="font-semibold text-gray-700 mb-2">Shared Kernel (_shared/)</h5>
+                                <ul class="text-sm text-gray-600 space-y-1">
+                                    <li>• Entity: Base class with unique ID and version</li>
+                                    <li>• ValueObject: Immutable value object base class</li>
+                                    <li>• AggregateRoot: Aggregate root base class</li>
+                                    <li>• DomainEvent: Domain event base class</li>
+                                    <li>• Result[T]: Generic result object</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h5 class="font-semibold text-gray-700 mb-2">Tool Summoning Domain (tool_summoning/)</h5>
+                                <ul class="text-sm text-gray-600 space-y-1">
+                                    <li>• Tool: Tool entity</li>
+                                    <li>• ToolMetadata: Tool metadata value object</li>
+                                    <li>• ToolService: Tool execution service</li>
+                                    <li>• ToolValidator: Tool validator</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 class="font-bold text-blue-600 mb-4">Application Services Package (application/)</h4>
+                        <div class="space-y-4">
+                            <div>
+                                <h5 class="font-semibold text-gray-700 mb-2">Tool Application Service</h5>
+                                <p class="text-sm text-gray-600 mb-2">Provides high-level use case interface SummonToolUseCase</p>
+                                <ul class="text-sm text-gray-600 space-y-1">
+                                    <li>• execute(command) → Result[ToolResult]</li>
+                                    <li>• Coordinates domain layer services</li>
+                                    <li>• Publishes domain events</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h5 class="font-semibold text-gray-700 mb-2">Other Application Services</h5>
+                                <ul class="text-sm text-gray-600 space-y-1">
+                                    <li>• SearchUseCase</li>
+                                    <li>• ConfigureUseCase</li>
+                                    <li>• ProjectUseCase</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-red-50 border border-red-200 rounded-lg p-6">
+                    <h4 class="font-bold text-red-800 mb-3">Error Handling Design</h4>
+                    <p class="text-red-700 mb-3">VikingError is the base class for all custom errors, providing structured error_code, message, and context.</p>
+                    <div class="bg-white p-4 rounded border">
+                        <code class="text-sm text-gray-800">
+                            The Result[T] generic object is used for service method returns, forcing callers to perform explicit error checking and avoiding exception-driven spaghetti code.
+                        </code>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section3-3" class="mb-12">
+                <h3 class="font-inter text-2xl font-semibold text-gray-700 mb-6">3.3 Interface Sanctum (interface_sanctum/)</h3>
+                
+                <div class="space-y-8">
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 class="font-bold text-green-600 mb-4">CLI Implementation (cli/)</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <h5 class="font-semibold text-gray-700 mb-2">Core App Construction</h5>
+                                <p class="text-sm text-gray-600">Creates CLI app instance, integrates middleware and global error handlers</p>
+                            </div>
+                            <div>
+                                <h5 class="font-semibold text-gray-700 mb-2">Context & Dependency Injection</h5>
+                                <p class="text-sm text-gray-600">CLIContext class encapsulation, provides access to core services</p>
+                            </div>
+                            <div>
+                                <h5 class="font-semibold text-gray-700 mb-2">Command Modules</h5>
+                                <p class="text-sm text-gray-600">Each subcommand becomes a separate module, e.g., summon, search, etc.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 class="font-bold text-blue-600 mb-4">Rendering & Experience Package (ui/)</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="bg-blue-50 p-4 rounded">
+                                <h5 class="font-semibold text-blue-700 mb-2">Advanced Renderers</h5>
+                                <ul class="text-sm text-blue-600 space-y-1">
+                                    <li>• TableRenderer: Interactive tables</li>
+                                    <li>• SyntaxHighlighter: Syntax highlighting</li>
+                                </ul>
+                            </div>
+                            <div class="bg-green-50 p-4 rounded">
+                                <h5 class="font-semibold text-green-700 mb-2">Prompts & Interactions</h5>
+                                <ul class="text-sm text-green-600 space-y-1">
+                                    <li>• ConfirmationPrompt</li>
+                                    <li>• SelectionPrompt</li>
+                                </ul>
+                            </div>
+                            <div class="bg-purple-50 p-4 rounded">
+                                <h5 class="font-semibold text-purple-700 mb-2">Output Formatting</h5>
+                                <ul class="text-sm text-purple-600 space-y-1">
+                                    <li>• format_short_result: concise format</li>
+                                    <li>• format_long_result: detailed format</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 class="font-bold text-indigo-600 mb-4">External Service Adapters (adapters/)</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h5 class="font-semibold text-gray-700 mb-2">Tool Backends</h5>
+                                <ul class="text-sm text-gray-600 space-y-1">
+                                    <li>• NativeToolAdapter: Native Python tools</li>
+                                    <li>• MCPToolAdapter: MCP protocol tools</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h5 class="font-semibold text-gray-700 mb-2">Persistence & Search</h5>
+                                <ul class="text-sm text-gray-600 space-y-1">
+                                    <li>• SQLiteProjectRepository: Project persistence</li>
+                                    <li>• MeilisearchAdapter: Full-text search</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section3-4" class="mb-12">
+                <h3 class="font-inter text-2xl font-semibold text-gray-700 mb-6">3.4 Tool Covenant (tool_covenant/)</h3>
+                
+                <div class="bg-gradient-to-r from-yellow-50 to-green-50 border border-yellow-200 rounded-lg p-8 mb-8">
+                    <h4 class="font-bold text-yellow-800 mb-6">viking.yml Manifest Schema</h4>
+                    <p class="text-yellow-700 mb-6">The tool manifest file is like the "blueprint" a blacksmith uses to forge a weapon, specifying the tool's form, capabilities, and usage in detail.</p>
+                    
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h5 class="font-semibold text-gray-700 mb-3">Core Configuration Items</h5>
+                                <ul class="text-sm text-gray-600 space-y-2">
+                                    <li><strong>tool</strong>: Tool identity metadata (id, name, version)</li>
+                                    <li><strong>requirements</strong>: Dependencies & environment config</li>
+                                    <li><strong>input</strong>: Input contract (JSON Schema)</li>
+                                    <li><strong>execution</strong>: Execution logic definition</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h5 class="font-semibold text-gray-700 mb-3">Extended Configuration Items</h5>
+                                <ul class="text-sm text-gray-600 space-y-2">
+                                    <li><strong>output</strong>: Output contract (JSON Schema)</li>
+                                    <li><strong>ui</strong>: UI prompts & help information</li>
+                                    <li><strong>docker</strong>: Containerized execution config</li>
+                                    <li><strong>inline</strong>: Inline script support</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto mb-8">
+                    <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Section</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Key</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Example</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <tr>
+                                <td class="px-4 py-4 text-sm font-medium text-gray-900">tool</td>
+                                <td class="px-4 py-4 text-sm text-gray-500">id, name, version</td>
+                                <td class="px-4 py-4 text-sm text-gray-500">Tool identity metadata</td>
+                                <td class="px-4 py-4 text-sm text-gray-500">myorg.python-linter</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-4 text-sm font-medium text-gray-900">requirements</td>
+                                <td class="px-4 py-4 text-sm text-gray-500">tools, environment</td>
+                                <td class="px-4 py-4 text-sm text-gray-500">Dependencies & environment needs</td>
+                                <td class="px-4 py-4 text-sm text-gray-500">python: "3.10"</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-4 text-sm font-medium text-gray-900">input</td>
+                                <td class="px-4 py-4 text-sm text-gray-500">schema</td>
+                                <td class="px-4 py-4 text-sm text-gray-500">Input parameter definition</td>
+                                <td class="px-4 py-4 text-sm text-gray-500">JSON Schema</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-4 text-sm font-medium text-gray-900">execution</td>
+                                <td class="px-4 py-4 text-sm text-gray-500">command, docker</td>
+                                <td class="px-4 py-4 text-sm text-gray-500">Execution method config</td>
+                                <td class="px-4 py-4 text-sm text-gray-500">python -m my_tool</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-6">
+                    <h4 class="font-bold text-indigo-800 mb-4">Tool Lifecycle Management</h4>
+                    <div class="flex flex-wrap items-center justify-between">
+                        <div class="bg-white p-3 rounded shadow-sm mb-2">
+                            <div class="font-semibold text-indigo-600 text-sm">Discovery</div>
+                            <div class="text-xs text-gray-500">Scan viking.yml</div>
+                        </div>
+                        <div class="text-indigo-400 text-xl mb-2">→</div>
+                        <div class="bg-white p-3 rounded shadow-sm mb-2">
+                            <div class="font-semibold text-blue-600 text-sm">Validation</div>
+                            <div class="text-xs text-gray-500">Validate metadata</div>
+                        </div>
+                        <div class="text-blue-400 text-xl mb-2">→</div>
+                        <div class="bg-white p-3 rounded shadow-sm mb-2">
+                            <div class="font-semibold text-green-600 text-sm">Registration</div>
+                            <div class="text-xs text-gray-500">Add to Registry</div>
+                        </div>
+                        <div class="text-green-400 text-xl mb-2">→</div>
+                        <div class="bg-white p-3 rounded shadow-sm mb-2">
+                            <div class="font-semibold text-purple-600 text-sm">Execution</div>
+                            <div class="text-xs text-gray-500">Run tool</div>
+                        </div>
+                        <div class="text-purple-400 text-xl mb-2">→</div>
+                        <div class="bg-white p-3 rounded shadow-sm mb-2">
+                            <div class="font-semibold text-red-600 text-sm">Audit</div>
+                            <div class="text-xs text-gray-500">Log execution</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Chapter 4 -->
+        <section id="section4" class="px-12 py-8 max-w-6xl mx-auto">
+            <h2 class="font-playfair text-4xl font-bold text-gray-800 mb-8">IV. Refactoring Strategy for Transformation</h2>
+            
+            <div id="section4-1" class="mb-12">
+                <h3 class="font-inter text-2xl font-semibold text-gray-700 mb-6">4.1 Transitioning from Existing Code</h3>
+                
+                <div class="bg-red-50 border-l-4 border-red-400 p-6 mb-8">
+                    <h4 class="font-bold text-red-800 mb-3">Strangler Fig Pattern</h4>
+                    <p class="text-red-700">Gradually and incrementally replace old code with the new architecture, ensuring the system remains functional throughout the refactoring process.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="space-y-6">
+                        <div class="bg-white border border-gray-200 rounded-lg p-6">
+                            <h4 class="font-bold text-blue-600 mb-3">Step 1: Establish a Safety Net</h4>
+                            <p class="text-gray-600 text-sm">Create integration tests covering core functionality as a "safety net" during refactoring.</p>
+                        </div>
+                        <div class="bg-white border border-gray-200 rounded-lg p-6">
+                            <h4 class="font-bold text-green-600 mb-3">Step 2: Extract Core Domain</h4>
+                            <p class="text-gray-600 text-sm">Identify core business logic from existing code, extract into mythic_core/domain/ modules.</p>
+                        </div>
+                    </div>
+                    <div class="space-y-6">
+                        <div class="bg-white border border-gray-200 rounded-lg p-6">
+                            <h4 class="font-bold text-purple-600 mb-3">Step 3: Create an Anti-Corruption Layer</h4>
+                            <p class="text-gray-600 text-sm">Provide translation and isolation between new and old code to prevent "corruption" spread.</p>
+                        </div>
+                        <div class="bg-white border border-gray-200 rounded-lg p-6">
+                            <h4 class="font-bold text-indigo-600 mb-3">Step 4: Parallel Development</h4>
+                            <p class="text-gray-600 text-sm">Adopt feature freeze or parallel development strategies to ensure refactoring and new feature development don't interfere.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section4-2" class="mb-12">
+                <h3 class="font-inter text-2xl font-semibold text-gray-700 mb-6">4.2 Building Pillars and Abstraction Layers</h3>
+                
+                <div class="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-8 mb-8">
+                    <h4 class="font-bold text-green-800 mb-6">AI-Assisted Architecture Implementation Workflow</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="space-y-4">
+                            <div class="bg-white p-4 rounded-lg shadow-sm">
+                                <h5 class="font-semibold text-blue-600 mb-2">1. Define Core Interfaces</h5>
+                                <p class="text-sm text-gray-600">Turn application service interfaces into executable Python abstract base classes</p>
+                            </div>
+                            <div class="bg-white p-4 rounded-lg shadow-sm">
+                                <h5 class="font-semibold text-green-600 mb-2">2. AI-Assisted Generation</h5>
+                                <p class="text-sm text-gray-600">Leverage AI to create initial implementation adapters for interfaces</p>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="bg-white p-4 rounded-lg shadow-sm">
+                                <h5 class="font-semibold text-purple-600 mb-2">3. Constraint Testing</h5>
+                                <p class="text-sm text-gray-600">Write behavior-driven tests defining the contracts adapters must satisfy</p>
+                            </div>
+                            <div class="bg-white p-4 rounded-lg shadow-sm">
+                                <h5 class="font-semibold text-red-600 mb-2">4. AI Iterative Refinement</h5>
+                                <p class="text-sm text-gray-600">Guide AI to refine code under the "tests as law" constraint</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                    <h4 class="font-bold text-yellow-800 mb-3">New Human-AI Collaboration Model</h4>
+                    <p class="text-yellow-700 mb-3">Humans become the system's architects and quality assurance officers, while AI becomes a powerful but rule-bound "executive agent."</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h5 class="font-semibold text-gray-700 mb-2">Human Role</h5>
+                            <ul class="text-sm text-gray-600 space-y-1">
+                                <li>• Set goals and constraints</li>
+                                <li>• Define interfaces and tests</li>
+                                <li>• Review results and decisions</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h5 class="font-semibold text-gray-700 mb-2">AI Role</h5>
+                            <ul class="text-sm text-gray-600 space-y-1">
+                                <li>• Code generation and modification</li>
+                                <li>• Handle implementation details</li>
+                                <li>• Rapid iteration and optimization</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section4-3" class="mb-12">
+                <h3 class="font-inter text-2xl font-semibold text-gray-700 mb-6">4.3 Ensuring Long-Term Consistency</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 class="font-bold text-indigo-600 mb-4">Architecture Decision Records</h4>
+                        <p class="text-gray-600 text-sm mb-4">Create ADR documents for every major architectural decision, recording context and rationale.</p>
+                        <div class="bg-indigo-50 p-3 rounded">
+                            <p class="text-xs text-indigo-600">Provides "institutional memory" for future maintainers and AI agents</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 class="font-bold text-blue-600 mb-4">Continuous Integration Guardian</h4>
+                        <p class="text-gray-600 text-sm mb-4">Use tools like import-linter to automate architecture constraint checks.</p>
+                        <div class="bg-blue-50 p-3 rounded">
+                            <p class="text-xs text-blue-600">Commits violating architectural rules are automatically rejected from merging</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 class="font-bold text-green-600 mb-4">Developer Onboarding Optimization</h4>
+                        <p class="text-gray-600 text-sm mb-4">A clear architecture blueprint provides excellent teachability.</p>
+                        <div class="bg-green-50 p-3 rounded">
+                            <p class="text-xs text-green-600">New developers understand system structure within days</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Conclusion -->
+        <section id="conclusion" class="px-12 py-12 max-w-6xl mx-auto">
+            <h2 class="font-playfair text-4xl font-bold text-gray-800 mb-8">Conclusion: The CLI's Awakening Summons</h2>
+            
+            <div class="prose prose-lg max-w-none text-gray-700 leading-relaxed">
+                <p class="text-xl mb-6 text-gray-600 italic">
+                    The current state of the "Viking" project is not a desperate predicament, but a foundation of immense, untapped potential.
+                </p>
+                
+                <div class="space-y-6">
+                    <p>It began as a passionate experiment, and now has the opportunity to evolve into a truly exceptional platform through a deliberate "Mythic Engineering" transformation. The path outlined in this report is clear and determined: shift from a code-centric, chaotic collection of tools to a domain-centric, organic, and extensible platform.</p>
+
+                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-8 my-8">
+                        <h3 class="font-bold text-blue-800 mb-4 text-center">Core Driver: Awakening at the Philosophical Level</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="text-center">
+                                <div class="bg-white p-4 rounded-lg shadow-sm mb-3">
+                                    <h4 class="font-bold text-blue-600">Embrace Discipline</h4>
+                                </div>
+                                <p class="text-sm text-gray-600">Tame complexity via Domain-Driven Design</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="bg-white p-4 rounded-lg shadow-sm mb-3">
+                                    <h4 class="font-bold text-indigo-600">Build Clarity</h4>
+                                </div>
+                                <p class="text-sm text-gray-600">Craft developer experience with unprecedented clarity</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="bg-white p-4 rounded-lg shadow-sm mb-3">
+                                    <h4 class="font-bold text-purple-600">Mythic Engineering</h4>
+                                </div>
+                                <p class="text-sm text-gray-600">An engineering philosophy combining discipline and creativity</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="text-lg font-medium text-gray-800 bg-gray-100 p-6 rounded-lg">
+                        For the leaders of "Viking," the ultimate blueprint is not a rigid set of instructions, but a shift in mindset: transferring trust from individual, unbridled "vibe coding" abilities to a collective, structured "Mythic Engineering" framework.
+                    </p>
+
+                    <div class="bg-green-50 border-l-4 border-green-400 p-6 my-8">
+                        <h4 class="font-bold text-green-800 mb-3">Final Summons</h4>
+                        <p class="text-green-700">Courageously embrace this awakening. Boldly refactor the past, and build the future with confidence. In the name of "Mythic Engineering," forge this project from a chaotic pirate ship into an unsinkable aircraft carrier capable of carrying countless heroic developers as they explore the digital world.</p>
+                    </div>
+
+                    <p class="text-lg text-gray-700">This will not only be a technical success, but a powerful contribution to the entire developer tooling landscape.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- References -->
+        <section id="references" class="px-12 py-12 max-w-6xl mx-auto bg-gray-50">
+            <h2 class="font-playfair text-4xl font-bold text-gray-800 mb-8">References</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-3">
+                    <p class="text-sm text-gray-700" id="ref1">[1] <cite><a href="https://m.blog.csdn.net/gitblog_00323/article/details/146939647" class="cite-link" target="_blank">Viking Usage and Configuration Tutorial</a></cite></p>
+                    <p class="text-sm text-gray-700" id="ref2">[2] <cite><a href="https://m.blog.csdn.net/gitblog_00498/article/details/141385201" class="cite-link" target="_blank">Vike Open Source Project Tutorial</a></cite></p>
+                    <p class="text-sm text-gray-700" id="ref7">[7] <cite><a href="https://m.blog.csdn.net/gitblog_00507/article/details/141586756" class="cite-link" target="_blank">Mythic Project Usage Tutorial</a></cite></p>
+                    <p class="text-sm text-gray-700" id="ref15">[15] <cite><a href="https://gitcode.csdn.net/69bbc1e60a2f6a37c59898b6.html" class="cite-link" target="_blank">AI Coding is Rewriting Software Engineering: From Vibe Coding to Harness Engineering</a></cite></p>
+                    <p class="text-sm text-gray-700" id="ref16">[16] <cite><a href="https://zhuanlan.zhihu.com/p/2010126186634834430" class="cite-link" target="_blank">How to Fully Unleash the Coding Potential of AI Agents?</a></cite></p>
+                    <p class="text-sm text-gray-700" id="ref17">[17] <cite><a href="https://m.blog.csdn.net/gitblog_00556/article/details/153503161" class="cite-link" target="_blank">Ultimate Guide: Building Autonomous Navigation Robot Systems with Context Engineering and PRP Techniques</a></cite></p>
+                    <p class="text-sm text-gray-700" id="ref20">[20] <cite><a href="https://view.inews.qq.com/a/20250818A03QMR00" class="cite-link" target="_blank">Game-Changing Open Source Tool! Unleash Claude Code Model Freedom, Smooth and Efficient</a></cite></p>
+                    <p class="text-sm text-gray-700" id="ref23">[23] <cite><a href="https://wenku.csdn.net/doc/g591u1tinb" class="cite-link" target="_blank">Victor Bjorklund Personal Tech Homepage</a></cite></p>
+                    <p class="text-sm text-gray-700" id="ref41">[41] <cite><a href="https://blog.csdn.net/re1_zf/article/details/128857663" class="cite-link" target="_blank">Vulnhub-VIKINGS: 1</a></cite></p>
+                    <p class="text-sm text-gray-700" id="ref42">[42] <cite><a href="https://blog.csdn.net/qq_39324391/article/details/160331623" class="cite-link" target="_blank">Vibe Coding Deep Dive (Part 2): Core Technical Architecture Supporting Paradigm Implementation</a></cite></p>
+                </div>
+                <div class="space-y-3">
+                    <p class="text-sm text-gray-700" id="ref38">[38] <cite><a href="https://wenku.csdn.net/doc/dt0yj9ndz6" class="cite-link" target="_blank">HTML Page Creation Tutorial: Parsing MYTHIC-TOAD.github.io</a></cite></p>
+                    <p class="text-sm text-gray-700" id="ref43">[43] <cite><a href="https://zhuanlan.zhihu.com/p/1977418667277975795" class="cite-link" target="_blank">Claude Code Architecture Deep Dive and the Vibe Coding Paradigm Shift</a></cite></p>
+                    <p class="text-sm text-gray-700" id="ref13">[13] <cite><a href="https://store.steampowered.com/app/2584630/Legendary_Slide_2__Platinum_Edition/?curator_clanid=42222452" class="cite-link" target="_blank">Legendary Slide 2 - Platinum Edition</a></cite></p>
+                    <p class="text-sm text-gray-700" id="ref19">[19] <cite><a href="https://m.blog.csdn.net/gitblog_00467/article/details/153494161" class="cite-link" target="_blank">Test-Driven Development: How to Make AI Follow TDD Processes When Writing Code</a></cite></p>
+                    <p class="text-sm text-gray-700" id="ref21">[21] <cite><a href="https://m.php.cn/faq/2275053.html" class="cite-link" target="_blank">Claude Mythos Developer Platform Usage Tutorial</a></cite></p>
+                    <p class="text-sm text-gray-700" id="ref22">[22] <cite><a href="https://m.blog.csdn.net/gitblog_00288/article/details/143710321" class="cite-link" target="_blank">Mythic Scripting Operations Guide: Ultimate Tutorial for Automating Red Team Tasks with Python and Go</a></cite></p>
+                    <p class="text-sm text-gray-700" id="ref40">[40] <cite><a href="https://blog.csdn.net/gitblog_00968/article/details/142543488" class="cite-link" target="_blank">Apollo Project Installation and Usage Tutorial</a></cite></p>
+                    <p class="text-sm text-gray-700" id="ref11">[11] <cite><a href="https://m.blog.csdn.net/gitblog_00050/article/details/146638013" class="cite-link" target="_blank">Mythic Open Source Project Tutorial</a></cite></p>
+                    <p class="text-sm text-gray-700" id="ref9">[9] <cite><a href="https://m.blog.csdn.net/gitblog_01002/article/details/146638485" class="cite-link" target="_blank">Open Source Project Mythic Installation and Configuration Guide</a></cite></p>
+                    <p class="text-sm text-gray-700" id="ref5">[5] <cite><a href="https://gitee.com/Kaiova/vibecraft" class="cite-link" target="_blank">vibecraft</a></cite></p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Smooth scrolling and navigation highlighting
+        document.addEventListener('DOMContentLoaded', function() {
+            const navLinks = document.querySelectorAll('.nav-item');
+            const sections = document.querySelectorAll('section[id]');
+
+            // Smooth scroll on navigation link click
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetSection = document.getElementById(targetId);
+                    if (targetSection) {
+                        targetSection.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+
+            // Update active nav link on scroll
+            function updateActiveNav() {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.clientHeight;
+                    if (window.pageYOffset >= sectionTop - 100) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === '#' + current) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+
+            window.addEventListener('scroll', updateActiveNav);
+            updateActiveNav(); // initialize
+        });
+    </script>
+</body>
+</html>
+```
