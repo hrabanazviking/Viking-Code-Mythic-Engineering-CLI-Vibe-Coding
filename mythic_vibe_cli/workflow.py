@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import json
@@ -16,6 +17,19 @@ PHASES = [
     "verify",
     "reflect",
 ]
+
+FORBIDDEN_RUNTIME_IMPORT_ROOTS = {
+    "ai",
+    "core",
+    "systems",
+    "sessions",
+    "yggdrasil",
+    "imports",
+    "mindspark_thoughtform",
+    "ollama",
+    "whisper",
+    "chatterbox",
+}
 
 
 @dataclass
@@ -109,7 +123,7 @@ class MythicWorkflow:
             """
         ).strip()
 
-    def doctor(self) -> tuple[list[str], list[str]]:
+    def doctor(self, repo_boundary: bool = False) -> tuple[list[str], list[str]]:
         errors: list[str] = []
         warnings: list[str] = []
 
@@ -152,7 +166,60 @@ class MythicWorkflow:
                 if not state.get("history"):
                     warnings.append("No check-in history yet. Run `mythic-vibe checkin` after your next milestone.")
 
+        if repo_boundary:
+            self._doctor_repo_boundary(errors, warnings)
+
         return errors, warnings
+
+    def _doctor_repo_boundary(self, errors: list[str], warnings: list[str]) -> None:
+        required_boundary_docs = [
+            self.root / "REPO_BOUNDARY.md",
+            self.docs_dir / "ACTIVE_PRODUCT_BOUNDARY.md",
+            self.docs_dir / "DORMANT_ISLANDS.md",
+            self.docs_dir / "ADRS" / "ADR-0001-active-runtime-boundary.md",
+            self.docs_dir / "ADRS" / "ADR-0002-no-direct-vendor-imports.md",
+        ]
+
+        for path in required_boundary_docs:
+            if not path.exists():
+                errors.append(f"Missing repo boundary file: {path.relative_to(self.root)}")
+
+        readme = self.root / "README.md"
+        if readme.exists() and "Active Runtime Path" not in readme.read_text(encoding="utf-8", errors="replace"):
+            warnings.append("README.md does not include an 'Active Runtime Path' section.")
+
+        active_package = self.root / "mythic_vibe_cli"
+        if not active_package.exists():
+            errors.append("Missing active runtime package: mythic_vibe_cli")
+            return
+
+        for path in sorted(active_package.rglob("*.py")):
+            try:
+                tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            except SyntaxError as exc:
+                errors.append(f"Cannot parse active runtime file {path.relative_to(self.root)}: {exc.msg}")
+                continue
+
+            for module_name, line_no in self._absolute_imports(tree):
+                root_name = module_name.split(".", 1)[0]
+                if root_name in FORBIDDEN_RUNTIME_IMPORT_ROOTS:
+                    errors.append(
+                        "Forbidden active runtime import "
+                        f"in {path.relative_to(self.root)}:{line_no}: {module_name}"
+                    )
+
+    def _absolute_imports(self, tree: ast.AST) -> list[tuple[str, int]]:
+        imports: list[tuple[str, int]] = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    imports.append((alias.name, node.lineno))
+            elif isinstance(node, ast.ImportFrom):
+                if node.level:
+                    continue
+                if node.module:
+                    imports.append((node.module, node.lineno))
+        return imports
 
     def _load_status(self, status_path: Path) -> dict:
         if not status_path.exists():

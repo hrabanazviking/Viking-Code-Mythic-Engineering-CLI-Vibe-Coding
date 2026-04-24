@@ -21,6 +21,17 @@ The hall is wide enough for a first-time builder finding their footing, and disc
 Canonical Mythic Engineering source:
 - https://github.com/hrabanazviking/Mythic-Engineering
 
+## Active Runtime Path
+
+This repository is a large mythic engineering workspace, but the installable CLI product lives in a deliberately narrow boundary:
+
+- `mythic_vibe_cli/` for active runtime code
+- `tests/` for active product verification
+- `pyproject.toml` for packaging and command entrypoints
+- `docs/` plus root governance records for architecture, boundary, and continuity
+
+Dormant runtime islands, vendor mirrors, and research corpora are source material until an ADR and adapter contract say otherwise. Start with `REPO_BOUNDARY.md` and `docs/ACTIVE_PRODUCT_BOUNDARY.md` before wiring any cross-island dependency.
+
 ---
 
 ![https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/development/ee5643a3-eb8a-4100-98ad-d4e8b9eeb1b0.jpg](https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/development/ee5643a3-eb8a-4100-98ad-d4e8b9eeb1b0.jpg)
