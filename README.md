@@ -257,29 +257,41 @@ python -m mythic_vibe_cli.cli --help
 mythic-vibe doctor
 ```
 
-(Availability depends on environment and install mode.)
-
 ---
+---
+
+![https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/development/Viking_Apache_V2_1.jpg](https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/development/Viking_Apache_V2_1.jpg)
 
 ## License
 
 Copyright (c) 2026 Volmarr Wyrd
 
 Mythic Engineering is licensed under the Apache License, Version 2.0.
-See `LICENSE` for details.
+See the [LICENSE](LICENSE) file for details.
 
 Unless required by applicable law or agreed to in writing, this project is distributed on an "AS IS" BASIS, without warranties or conditions of any kind.
 
 ---
 
-## Distribution and privacy position
+## Distribution and Privacy Position
 
-Mythic-Engineering is published as source code and project material.
+Mythic-Engineering is published here as source code and project material.
 
-The author does not require users to provide age, identity, government ID, biometric data, or similar personal information to access the source code in this repository.
+The author does not require users to provide age, identity, government ID, biometric data, or similar personal information in order to access or use the source code in this repository.
 
-The author may decline official binaries/installers/hosted distribution channels where publication would require age or identity verification.
+The author may decline to provide official binaries, installers, hosted services, app-store releases, or other official distribution channels where doing so would require age verification, identity verification, or similar personal-data collection.
 
-Any third party who forks, hosts, redistributes, or packages this software does so independently and is solely responsible for legal/platform compliance in their own context.
+Any third party who forks, packages, redistributes, deploys, hosts, or otherwise makes this software available does so independently and is solely responsible for compliance with applicable law, platform policy, and distribution requirements in their own jurisdiction and context.
 
-See `LEGAL-NOTICE.md` for details.
+See [LEGAL-NOTICE.md](LEGAL-NOTICE.md) for details.
+
+---
+
+![https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/development/image-23-RuneForgeAI.jpg](https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/development/image-23-RuneForgeAI.jpg)
+
+---
+
+![https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/development/IMG_0407.jpeg](https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/development/IMG_0407.jpeg)
+
+---
+
