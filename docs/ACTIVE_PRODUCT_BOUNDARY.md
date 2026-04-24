@@ -20,7 +20,10 @@ The active CLI must remain independently executable without importing dormant ru
 
 | Module | Owns |
 |---|---|
-| `mythic_vibe_cli/cli.py` | Argument parsing, command dispatch, command compatibility aliases |
+| `mythic_vibe_cli/__main__.py` | Package-module execution for `python -m mythic_vibe_cli` |
+| `mythic_vibe_cli/cli.py` | Public compatibility entrypoint for `mythic_vibe_cli.cli:main` |
+| `mythic_vibe_cli/app.py` | Argument parsing, command dispatch, command compatibility aliases |
+| `mythic_vibe_cli/exit_codes.py` | Shared CLI return-code policy |
 | `mythic_vibe_cli/workflow.py` | Mythic phases, scaffolding, status, check-ins, diagnostics |
 | `mythic_vibe_cli/codex_bridge.py` | AI prompt packet rendering and context compaction |
 | `mythic_vibe_cli/config.py` | Layered config resolution and env overrides |

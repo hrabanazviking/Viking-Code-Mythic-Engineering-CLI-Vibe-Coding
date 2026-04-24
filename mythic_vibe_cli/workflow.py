@@ -123,48 +123,49 @@ class MythicWorkflow:
             """
         ).strip()
 
-    def doctor(self, repo_boundary: bool = False) -> tuple[list[str], list[str]]:
+    def doctor(self, repo_boundary: bool = False, project_scaffold: bool = True) -> tuple[list[str], list[str]]:
         errors: list[str] = []
         warnings: list[str] = []
 
-        required = [
-            self.root / "MYTHIC_ENGINEERING.md",
-            self.root / "SYSTEM_VISION.md",
-            self.docs_dir / "PHILOSOPHY.md",
-            self.docs_dir / "ARCHITECTURE.md",
-            self.docs_dir / "DOMAIN_MAP.md",
-            self.docs_dir / "DATA_FLOW.md",
-            self.docs_dir / "DEVLOG.md",
-            self.tasks_dir / "current_GOALS.md",
-            self.mythic_dir / "plan.md",
-            self.mythic_dir / "loop.md",
-            self.mythic_dir / "status.json",
-        ]
+        if project_scaffold:
+            required = [
+                self.root / "MYTHIC_ENGINEERING.md",
+                self.root / "SYSTEM_VISION.md",
+                self.docs_dir / "PHILOSOPHY.md",
+                self.docs_dir / "ARCHITECTURE.md",
+                self.docs_dir / "DOMAIN_MAP.md",
+                self.docs_dir / "DATA_FLOW.md",
+                self.docs_dir / "DEVLOG.md",
+                self.tasks_dir / "current_GOALS.md",
+                self.mythic_dir / "plan.md",
+                self.mythic_dir / "loop.md",
+                self.mythic_dir / "status.json",
+            ]
 
-        for path in required:
-            if not path.exists():
-                errors.append(f"Missing required file: {path.relative_to(self.root)}")
+            for path in required:
+                if not path.exists():
+                    errors.append(f"Missing required file: {path.relative_to(self.root)}")
 
-        status_path = self.mythic_dir / "status.json"
-        if status_path.exists():
-            try:
-                state = json.loads(status_path.read_text(encoding="utf-8"))
-            except json.JSONDecodeError:
-                errors.append("Invalid JSON in mythic/status.json")
-                state = None
+            status_path = self.mythic_dir / "status.json"
+            if status_path.exists():
+                try:
+                    state = json.loads(status_path.read_text(encoding="utf-8"))
+                except json.JSONDecodeError:
+                    errors.append("Invalid JSON in mythic/status.json")
+                    state = None
 
-            if state:
-                current = state.get("current_phase")
-                if current and current not in PHASES:
-                    errors.append(f"Invalid current_phase in status.json: {current}")
+                if state:
+                    current = state.get("current_phase")
+                    if current and current not in PHASES:
+                        errors.append(f"Invalid current_phase in status.json: {current}")
 
-                completed = state.get("completed_phases", [])
-                invalid = [phase for phase in completed if phase not in PHASES]
-                if invalid:
-                    errors.append(f"Invalid completed_phases values: {', '.join(invalid)}")
+                    completed = state.get("completed_phases", [])
+                    invalid = [phase for phase in completed if phase not in PHASES]
+                    if invalid:
+                        errors.append(f"Invalid completed_phases values: {', '.join(invalid)}")
 
-                if not state.get("history"):
-                    warnings.append("No check-in history yet. Run `mythic-vibe checkin` after your next milestone.")
+                    if not state.get("history"):
+                        warnings.append("No check-in history yet. Run `mythic-vibe checkin` after your next milestone.")
 
         if repo_boundary:
             self._doctor_repo_boundary(errors, warnings)

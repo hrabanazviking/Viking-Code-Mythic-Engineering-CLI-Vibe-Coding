@@ -9,6 +9,7 @@ This hub orients contributors to the active Mythic Vibe CLI product and the surr
 - `docs/DORMANT_ISLANDS.md` - quarantined reference, research, and vendor surfaces.
 - `docs/ARCHITECTURE.md` - active runtime architecture and dependency direction.
 - `docs/DOMAIN_MAP.md` - ownership map and routing rules.
+- `docs/COMMAND_CONTRACTS.md` - CLI entrypoints, dispatch registry, aliases, and exit codes.
 - `docs/DATA_FLOW.md` - state and artifact movement through the active CLI.
 
 ## Architecture Decisions

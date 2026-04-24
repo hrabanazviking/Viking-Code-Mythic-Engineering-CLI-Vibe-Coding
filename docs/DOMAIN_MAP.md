@@ -70,7 +70,7 @@ Forbidden:
 
 | Subdomain | Canonical owner |
 |---|---|
-| Command surface and aliases | `mythic_vibe_cli/cli.py` |
+| Command surface and aliases | `mythic_vibe_cli/__main__.py`, `mythic_vibe_cli/cli.py`, `mythic_vibe_cli/app.py`, `mythic_vibe_cli/exit_codes.py` |
 | Workflow lifecycle and phase transitions | `mythic_vibe_cli/workflow.py` |
 | Configuration precedence and coercion | `mythic_vibe_cli/config.py` |
 | Prompt packet synthesis and budget logic | `mythic_vibe_cli/codex_bridge.py` |
@@ -80,7 +80,8 @@ Forbidden:
 
 ## 5) Routing rules for new work
 
-- New CLI command/alias -> `mythic_vibe_cli/cli.py`
+- New CLI command/alias -> `mythic_vibe_cli/app.py` with compatibility preserved through `mythic_vibe_cli/cli.py`
+- New CLI entrypoint or exit-code policy -> `mythic_vibe_cli/__main__.py`, `mythic_vibe_cli/exit_codes.py`, and `docs/COMMAND_CONTRACTS.md`
 - New phase/state logic -> `mythic_vibe_cli/workflow.py`
 - New config option or precedence behavior -> `mythic_vibe_cli/config.py`
 - New prompt packet section/format -> `mythic_vibe_cli/codex_bridge.py`
