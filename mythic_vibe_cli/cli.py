@@ -77,6 +77,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     doctor = sub.add_parser("doctor", help="Validate Mythic project structure and status")
     doctor.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    doctor.add_argument(
+        "--repo-boundary",
+        action="store_true",
+        help="Also validate active runtime boundary docs and forbidden dormant-island imports",
+    )
 
     # Mythic ritual aliases from design doc.
     imbue = sub.add_parser("imbue", help="Initialize project vision and Mythic scaffolding")
@@ -283,10 +288,12 @@ def _github_get_file(repo: str, source_path: str, ref: str, token: str) -> str:
 def cmd_doctor(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
     workflow = MythicWorkflow(root)
-    errors, warnings = workflow.doctor()
+    errors, warnings = workflow.doctor(repo_boundary=args.repo_boundary)
 
     print("Mythic project diagnostics")
     print(f"- Path: {root}")
+    if args.repo_boundary:
+        print("- Repo boundary checks: enabled")
 
     if errors:
         print("- Errors:")
