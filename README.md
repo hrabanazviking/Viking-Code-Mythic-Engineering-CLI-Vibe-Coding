@@ -295,7 +295,7 @@ mythic-vibe doctor
 
 Copyright (c) 2026 Volmarr Wyrd
 
-Mythic Engineering is licensed under the Apache License, Version 2.0.
+Mythic Vibe CLI is licensed under the Apache License, Version 2.0.
 See the [LICENSE](LICENSE) file for details.
 
 Unless required by applicable law or agreed to in writing, this project is distributed on an "AS IS" BASIS, without warranties or conditions of any kind.
