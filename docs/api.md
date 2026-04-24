@@ -25,7 +25,7 @@ python -m mythic_vibe_cli.cli --help
 
 The package entrypoint (`python -m mythic_vibe_cli`) is preferred for install/path debugging. The `cli` module entrypoint remains supported for compatibility.
 
-Command dispatch lives in `mythic_vibe_cli.app` and is re-exported through `mythic_vibe_cli.cli` for compatibility. The dispatch and exit-code policy are recorded in `docs/COMMAND_CONTRACTS.md`.
+Argument parsing and top-level dispatch live in `mythic_vibe_cli.app`. Command implementations and the registry live in `mythic_vibe_cli.commands`. Compatibility re-exports remain available through `mythic_vibe_cli.cli`. The dispatch and exit-code policy are recorded in `docs/COMMAND_CONTRACTS.md`.
 
 ---
 
@@ -73,6 +73,17 @@ Depending on implementation state, additional commands may be exposed:
 
 Use `--help` for current option details and defaults.
 
+### Shared runtime options
+
+The active command surface now supports shared runtime controls where useful:
+
+| Option | Use |
+|---|---|
+| `--json` | Return structured machine-readable output. Supported by reporting/structured commands including `status`, `doctor`, `config`, `codex-pack`, `grimoire`, `db migrate`, and `plunder`. |
+| `--quiet` | Suppress non-error human text output. |
+| `--verbose` | Show additional operational detail when the command provides it. |
+| `--dry-run` | Preview write/sync operations without changing files, registries, databases, or remote state. |
+
 ---
 
 ## 3) Core module contracts
@@ -81,15 +92,55 @@ Use `--help` for current option details and defaults.
 
 Responsibility:
 
+- public compatibility entrypoint,
+- stable import surface for `main`, `build_parser`, and `COMMAND_HANDLERS`.
+
+Contract expectations:
+
+- stays thin and side-effect free,
+- preserves installed script compatibility.
+
+### `mythic_vibe_cli.app`
+
+Responsibility:
+
 - command definitions,
 - argument parsing,
-- dispatch boundaries.
+- top-level dispatch boundaries.
 
 Contract expectations:
 
 - published flags remain stable where practical,
 - aliases avoid ambiguity,
 - error output is actionable.
+
+### `mythic_vibe_cli.commands`
+
+Responsibility:
+
+- command implementations,
+- command registry,
+- compatibility alias mapping.
+
+Contract expectations:
+
+- each command returns a documented exit-code constant,
+- user-facing text goes through `mythic_vibe_cli.output`,
+- actionable errors use `mythic_vibe_cli.errors` where structured context is needed.
+- JSON-mode commands emit JSON without leading human text.
+- dry-run paths avoid writes and avoid remote fetches.
+
+### `mythic_vibe_cli.output` and `mythic_vibe_cli.errors`
+
+Responsibility:
+
+- shared plain-text terminal rendering,
+- structured CLI error payloads and formatting.
+
+Contract expectations:
+
+- no command-specific business logic,
+- stable formatting helpers for future `--json`, `--quiet`, and `--verbose` modes.
 
 ### `mythic_vibe_cli.workflow`
 

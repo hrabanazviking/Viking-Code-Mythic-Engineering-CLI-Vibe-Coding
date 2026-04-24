@@ -1,6 +1,6 @@
 # Domain Map
 
-**Last updated:** 2026-04-23  
+**Last updated:** 2026-04-24
 **Owner:** Architecture + Documentation maintainers  
 **Scope:** Entire repository
 
@@ -70,7 +70,8 @@ Forbidden:
 
 | Subdomain | Canonical owner |
 |---|---|
-| Command surface and aliases | `mythic_vibe_cli/__main__.py`, `mythic_vibe_cli/cli.py`, `mythic_vibe_cli/app.py`, `mythic_vibe_cli/exit_codes.py` |
+| Command surface and aliases | `mythic_vibe_cli/__main__.py`, `mythic_vibe_cli/cli.py`, `mythic_vibe_cli/app.py`, `mythic_vibe_cli/commands.py`, `mythic_vibe_cli/exit_codes.py` |
+| Terminal output and CLI error formatting | `mythic_vibe_cli/output.py`, `mythic_vibe_cli/errors.py` |
 | Workflow lifecycle and phase transitions | `mythic_vibe_cli/workflow.py` |
 | Configuration precedence and coercion | `mythic_vibe_cli/config.py` |
 | Prompt packet synthesis and budget logic | `mythic_vibe_cli/codex_bridge.py` |
@@ -80,8 +81,9 @@ Forbidden:
 
 ## 5) Routing rules for new work
 
-- New CLI command/alias -> `mythic_vibe_cli/app.py` with compatibility preserved through `mythic_vibe_cli/cli.py`
+- New CLI command/alias -> parser wiring in `mythic_vibe_cli/app.py`, implementation and registry wiring in `mythic_vibe_cli/commands.py`, with compatibility preserved through `mythic_vibe_cli/cli.py`
 - New CLI entrypoint or exit-code policy -> `mythic_vibe_cli/__main__.py`, `mythic_vibe_cli/exit_codes.py`, and `docs/COMMAND_CONTRACTS.md`
+- New terminal rendering or command error format -> `mythic_vibe_cli/output.py`, `mythic_vibe_cli/errors.py`, and command tests where behavior is user-visible
 - New phase/state logic -> `mythic_vibe_cli/workflow.py`
 - New config option or precedence behavior -> `mythic_vibe_cli/config.py`
 - New prompt packet section/format -> `mythic_vibe_cli/codex_bridge.py`
