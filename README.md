@@ -4,6 +4,10 @@
 
 ---
 
+![https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/development/image-18-viking-code-cli.jpg]
+
+---
+
 # Mythic Vibe CLI
 
 Mythic Vibe CLI is an open-source, method-first command-line tool for builders who want to **ship software with continuity, architecture, and recoverable memory** — not just momentum.
