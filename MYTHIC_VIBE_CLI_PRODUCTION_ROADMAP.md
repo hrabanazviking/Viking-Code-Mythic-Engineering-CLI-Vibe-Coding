@@ -590,21 +590,21 @@ Turn `cli.py` from a broad command file into a maintainable command surface.
 
 ### Build tasks
 
-- [ ] Add `__main__.py` so `python -m mythic_vibe_cli` works.
-- [ ] Split command handlers out of `cli.py`.
-- [ ] Add `cli/output.py` with consistent terminal rendering.
-- [ ] Add `cli/errors.py` with structured error formatting.
-- [ ] Add command registry pattern.
-- [ ] Replace direct `print()` calls in command logic with output functions.
-- [ ] Add return-code policy:
+- [x] Add `__main__.py` so `python -m mythic_vibe_cli` works.
+- [x] Split command handlers out of `cli.py`.
+- [x] Add `mythic_vibe_cli/output.py` with consistent terminal rendering.
+- [x] Add `mythic_vibe_cli/errors.py` with structured error formatting.
+- [x] Add command registry pattern.
+- [x] Replace direct `print()` calls in command logic with output functions.
+- [x] Add return-code policy:
   - `0` success,
   - `1` operational failure,
   - `2` user input/config error,
   - `3` verification failure,
   - `4` unsafe operation blocked.
-- [ ] Add `--json` output mode to machine-readable commands.
-- [ ] Add `--quiet` and `--verbose`.
-- [ ] Add `--dry-run` to commands that write files.
+- [x] Add `--json` output mode to machine-readable commands.
+- [x] Add `--quiet` and `--verbose`.
+- [x] Add `--dry-run` to commands that write files.
 - [ ] Add shell completion later as Stage 13.
 
 ### Target command kernel

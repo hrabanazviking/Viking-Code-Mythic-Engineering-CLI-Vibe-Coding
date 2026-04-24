@@ -1,7 +1,7 @@
 # Architecture
 
 **Status:** Active architecture record  
-**Last updated:** 2026-04-23  
+**Last updated:** 2026-04-24
 **Owner:** Architecture + Documentation maintainers  
 **Scope:** Active product runtime (`mythic_vibe_cli/`) and its governance boundaries in this monorepo.
 
@@ -38,7 +38,9 @@ Default rule: islands are independent unless explicit adapter contracts are docu
 ```text
 User
     -> CLI Entrypoints (mythic_vibe_cli/__main__.py, mythic_vibe_cli/cli.py)
-    -> CLI Kernel (mythic_vibe_cli/app.py)
+    -> Parser + Dispatch Kernel (mythic_vibe_cli/app.py)
+    -> Command Handlers (mythic_vibe_cli/commands.py)
+    -> Terminal/Error Helpers (mythic_vibe_cli/output.py, mythic_vibe_cli/errors.py)
     -> Workflow Orchestrator (workflow.py)
     -> Prompt Bridge (codex_bridge.py)
     -> Config Resolver (config.py)
@@ -65,8 +67,25 @@ User
 ### `mythic_vibe_cli/app.py`
 
 - Defines command surface and argument contracts.
-- Dispatches behavior through `COMMAND_HANDLERS`.
+- Dispatches parsed commands through `COMMAND_HANDLERS`.
 - Maintains user-facing ergonomics and stability.
+
+### `mythic_vibe_cli/commands.py`
+
+- Owns command implementations and compatibility alias registry.
+- Translates parsed arguments into workflow/config/bridge/method operations.
+- Keeps command behavior isolated from parser construction.
+
+### `mythic_vibe_cli/output.py`
+
+- Owns shared plain-text terminal rendering helpers.
+- Keeps command output formatting consistent without coupling commands to `print()`.
+- Coordinates quiet/verbose behavior for command output.
+
+### `mythic_vibe_cli/errors.py`
+
+- Owns structured CLI error payloads and formatting.
+- Keeps command error messages actionable and compatible with the exit-code policy.
 
 ### `mythic_vibe_cli/exit_codes.py`
 
@@ -101,11 +120,13 @@ User
 
 Allowed primary direction:
 
-1. `cli.py` -> `workflow`, `codex_bridge`, `config`, `mythic_data`
-2. `workflow.py` -> `config` + local artifact IO
-3. `codex_bridge.py` -> `config` + prepared context
-4. `config.py` -> minimal dependencies only
-5. `mythic_data.py` -> provider/sync/cache concerns
+1. `__main__.py` and `cli.py` -> `app`
+2. `app.py` -> `commands` + argument contract constants
+3. `commands.py` -> `workflow`, `codex_bridge`, `config`, `mythic_data`, `output`, `errors`, `exit_codes`
+4. `workflow.py` -> `config` + local artifact IO
+5. `codex_bridge.py` -> `config` + prepared context
+6. `config.py` -> minimal dependencies only
+7. `mythic_data.py` -> provider/sync/cache concerns
 
 Forbidden by default:
 
@@ -151,6 +172,7 @@ Renaming or relocating these without migration strategy is considered a breaking
 2. **Import drift:** convenience imports can silently create coupling debt.
 3. **Contract drift:** docs may diverge from actual CLI behavior.
 4. **Overloaded bridge packets:** context packets can become noisy without budget discipline.
+5. **Output-mode drift:** human, quiet, dry-run, and JSON modes can diverge if command output bypasses shared helpers.
 
 Mitigations:
 
@@ -158,6 +180,7 @@ Mitigations:
 - required docs updates for behavior changes,
 - routine command-help and smoke tests,
 - changelog/devlog continuity discipline.
+- command output through `output.py` and structured errors through `errors.py`.
 
 ---
 

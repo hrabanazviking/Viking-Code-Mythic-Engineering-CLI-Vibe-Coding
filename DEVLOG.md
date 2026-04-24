@@ -7,6 +7,44 @@
 
 ---
 
+## 2026-04-24 - Stage 1 CLI Command Extraction and Runtime Controls
+
+**Session:** Third implementation pass from `MYTHIC_VIBE_CLI_PRODUCTION_ROADMAP.md`.
+**Status:** Runtime, tests, roadmap, and command-boundary documentation updated on `development`.
+**Scope:** Completion-oriented slice of Stage 1 CLI kernel hardening.
+
+### What changed
+
+- Extracted command implementations from `mythic_vibe_cli/app.py` into `mythic_vibe_cli/commands.py`.
+- Kept `mythic_vibe_cli/app.py` focused on parser construction and top-level dispatch.
+- Preserved `mythic_vibe_cli/cli.py` as the public compatibility wrapper for `mythic_vibe_cli.cli:main`.
+- Added `mythic_vibe_cli/output.py` for shared plain-text terminal rendering helpers.
+- Added `mythic_vibe_cli/errors.py` for structured CLI error payloads and formatting.
+- Added shared `--json`, `--quiet`, `--verbose`, and `--dry-run` command controls where each option can preserve existing behavior safely.
+- Added JSON output paths for structured reporting commands and dry-run guards for file-writing/syncing commands.
+- Updated `tests/test_cli_kernel.py` so the compatibility export, parser dispatch, and command registry are locked to the same handler table.
+- Added tests for status JSON output, quiet output suppression, init dry-run safety, and clean grimoire JSON output.
+- Updated command, architecture, domain, active-boundary, API, and changelog records so docs match the new runtime shape.
+- Checked the Stage 1 completed items in `MYTHIC_VIBE_CLI_PRODUCTION_ROADMAP.md`, using the actual transitional module paths.
+
+### Verification
+
+- `python -m pytest tests/test_cli_kernel.py tests/test_cli.py -q` passed with 12 tests.
+- `python -m pytest -q` passed with 21 tests.
+- `python -m mythic_vibe_cli --help` rendered successfully.
+- `python -m mythic_vibe_cli.cli --help` rendered successfully.
+- `python -m mythic_vibe_cli.cli doctor --repo-boundary --path .` passed with no errors or warnings.
+- `python -m mythic_vibe_cli status --json` emitted clean JSON.
+- `python -m mythic_vibe_cli doctor --repo-boundary --path . --json` emitted clean JSON.
+- `python -m mythic_vibe_cli init --goal "Preview only" --path .mythic-preview --dry-run` previewed without creating the target directory.
+- `git diff --check` passed with only line-ending normalization warnings.
+
+### Next thread
+
+Move into Stage 2: create the schema-versioned project state engine, JSON persistence layer, migration path from current `mythic/status.json`, and state validation commands.
+
+---
+
 ## 2026-04-24 - Stage 1 CLI Kernel Hardening Begins
 
 **Session:** Second implementation pass from `MYTHIC_VIBE_CLI_PRODUCTION_ROADMAP.md`.
