@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viking Code: Mythic Engineering CLI - Advanced Design Plan</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .font-playfair { font-family: 'Playfair Display', serif; }
+        .font-inter { font-family: 'Inter', sans-serif; }
+        .smooth-scroll { scroll-behavior: smooth; }
+        .nav-item.active { background-color: #3B82F6; color: white; }
+        .nav-item:hover { background-color: #EBF4FF; }
+        .nav-item.active:hover { background-color: #2563EB; }
+        cite a { color: #007bff; text-decoration: none; }
+        cite a:hover { text-decoration: underline; }
+        
+        /* Responsive hiding of the left sidebar */
+        @media (max-width: 768px) {
+            nav.fixed.left-0 {
+                display: none !important;
+            }
+            
+            main {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+            
+            main.ml-64, main.ml-80 {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-inter smooth-scroll">
+    <!-- Left Navigation -->
+    <nav class="fixed left-0 top-0 w-64 h-full bg-white shadow-lg overflow-y-auto z-10">
+        <div class="p-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Table of Contents</h2>
+            <ul class="space-y-1">
+                <li><a href="#intro" class="nav-item block px-3 py-2 rounded text-sm text-gray-700 transition-colors">Introduction</a></li>
+                <li><a href="#section1" class="nav-item block px-3 py-2 rounded text-sm text-gray-700 transition-colors">From Vibe Coding to Mythic Engineering</a>
+                    <ul class="ml-4 mt-1 space-y-1">
+                        <li><a href="#section1-1" class="nav-item block px-2 py-1 rounded text-xs text-gray-600 transition-colors">Defining Vibe Coding</a></li>
+                        <li><a href="#section1-2" class="nav-item block px-2 py-1 rounded text-xs text-gray-600 transition-colors">The Modern AI Programming Tool Landscape</a></li>
+                        <li><a href="#section1-3" class="nav-item block px-2 py-1 rounded text-xs text-gray-600 transition-colors">A New Paradigm</a></li>
+                        <li><a href="#section1-4" class="nav-item block px-2 py-1 rounded text-xs text-gray-600 transition-colors">The Architect's Design Philosophy</a></li>
+                    </ul>
+                </li>
+                <li><a href="#section2" class="nav-item block px-3 py-2 rounded text-sm text-gray-700 transition-colors">Viking Code Architecture Overview</a>
+                    <ul class="ml-4 mt-1 space-y-1">
+                        <li><a href="#section2-1" class="nav-item block px-2 py-1 rounded text-xs text-gray-600 transition-colors">Core CLI Architecture</a></li>
+                        <li><a href="#section2-2" class="nav-item block px-2 py-1 rounded text-xs text-gray-600 transition-colors">Control Plane</a></li>
+                        <li><a href="#section2-3" class="nav-item block px-2 py-1 rounded text-xs text-gray-600 transition-colors">Data Plane</a></li>
+                    </ul>
+                </li>
+                <li><a href="#section3" class="nav-item block px-3 py-2 rounded text-sm text-gray-700 transition-colors">Core Domain Deep Dive</a>
+                    <ul class="ml-4 mt-1 space-y-1">
+                        <li><a href="#section3-1" class="nav-item block px-2 py-1 rounded text-xs text-gray-600 transition-colors">Epics</a></li>
+                        <li><a href="#section3-2" class="nav-item block px-2 py-1 rounded text-xs text-gray-600 transition-colors">Recipes</a></li>
+                        <li><a href="#section3-3" class="nav-item block px-2 py-1 rounded text-xs text-gray-600 transition-colors">Agents</a></li>
+                        <li><a href="#section3-4" class="nav-item block px-2 py-1 rounded text-xs text-gray-600 transition-colors">Context</a></li>
+                    </ul>
+                </li>
+                <li><a href="#section4" class="nav-item block px-3 py-2 rounded text-sm text-gray-700 transition-colors">Advanced Feature Implementation</a>
+                    <ul class="ml-4 mt-1 space-y-1">
+                        <li><a href="#section4-1" class="nav-item block px-2 py-1 rounded text-xs text-gray-600 transition-colors">CLI DSL Design</a></li>
+                        <li><a href="#section4-2" class="nav-item block px-2 py-1 rounded text-xs text-gray-600 transition-colors">Port System</a></li>
+                        <li><a href="#section4-3" class="nav-item block px-2 py-1 rounded text-xs text-gray-600 transition-colors">Audit System</a></li>
+                    </ul>
+                </li>
+                <li><a href="#section5" class="nav-item block px-3 py-2 rounded text-sm text-gray-700 transition-colors">Evolution Roadmap</a>
+                    <ul class="ml-4 mt-1 space-y-1">
+                        <li><a href="#section5-1" class="nav-item block px-2 py-1 rounded text-xs text-gray-600 transition-colors">First Agentic MVP</a></li>
+                        <li><a href="#section5-2" class="nav-item block px-2 py-1 rounded text-xs text-gray-600 transition-colors">Incremental Delegation of Agent Capabilities</a></li>
+                        <li><a href="#section5-3" class="nav-item block px-2 py-1 rounded text-xs text-gray-600 transition-colors">Mythic-Level Features</a></li>
+                        <li><a href="#section5-4" class="nav-item block px-2 py-1 rounded text-xs text-gray-600 transition-colors">Release and Evolution</a></li>
+                    </ul>
+                </li>
+                <li><a href="#conclusion" class="nav-item block px-3 py-2 rounded text-sm text-gray-700 transition-colors">Conclusion</a></li>
+                <li><a href="#references" class="nav-item block px-3 py-2 rounded text-sm text-gray-700 transition-colors">References</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Right Content Area -->
+    <main class="ml-64 min-h-screen">
+        <!-- Cover Page -->
+        <section class="bg-gradient-to-br from-indigo-900 via-blue-900 to-indigo-800 text-white min-h-screen flex items-center justify-center">
+            <div class="text-center max-w-4xl px-8">
+                <h1 class="font-playfair text-6xl font-bold italic mb-8 leading-tight">
+                    Viking Code
+                </h1>
+                <h2 class="font-playfair text-3xl italic mb-12 text-blue-200">
+                    Mythic Engineering CLI
+                </h2>
+                <div class="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-8 mb-8">
+                    <h3 class="text-xl font-semibold mb-4 text-blue-200">Advanced Design Plan</h3>
+                    <p class="text-lg leading-relaxed text-blue-100">
+                        The Evolution from "Vibe Coding" to "Mythic Engineering"<br>
+                        An Auditable, Scalable, and Fully Controlled Platform<br>
+                        Commanded by a Human Architect, Executed by Expert Agents
+                    </p>
+                </div>
+                <div class="text-sm text-blue-300">
+                    A Bridge to Autonomous Software Engineering
+                </div>
+            </div>
+        </section>
+
+        <!-- Introduction -->
+        <section id="intro" class="px-12 py-12 max-w-6xl mx-auto">
+            <h2 class="font-playfair text-3xl font-bold text-gray-800 mb-8">Introduction</h2>
+            
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-6 mb-8">
+                <p class="text-gray-700 leading-relaxed">
+                    This report defines "Viking Code," a command-line interface (CLI) tool designed to be the ultimate command center for "Mythic Engineering." It is not just another simple code generator, but a powerful, terminal-centric platform designed to harness and direct the collective action of multiple AI agents, meeting the increasingly complex demands of modern AI-driven software development.<cite><a href="#ref20" target="_blank">[20]</a></cite>
+                </p>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-sm border p-6">
+                <p class="text-gray-700 leading-relaxed">
+                    The report first positions "Mythic Engineering" as a new paradigm that transcends "Vibe Coding." Subsequently, it will elaborate on the architecture of Viking Code: a command system stewarded by an "Overlord" and executed by a team of expert "Centurion" agents. This design deconstructs complex projects into manageable, independent workflows and provides an unparalleled level of guidance, context management, and control through a Domain-Specific Language (DSL) centered on Pipelines and Recipes, optimized for agent use, thereby moving Mythic Engineering from concept to actionable reality.
+                </p>
+            </div>
+        </section>
+
+        <!-- Chapter 1 -->
+        <section id="section1" class="px-12 py-8 max-w-6xl mx-auto">
+            <h2 class="font-playfair text-3xl font-bold text-gray-800 mb-8">1. The Evolution from Vibe Coding to Mythic Engineering</h2>
+            
+            <div id="section1-1" class="mb-12">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">1.1 Defining Vibe Coding</h3>
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <p class="text-gray-700 leading-relaxed mb-4">
+                        Vibe Coding, popularized by OpenAI co-founder Andrej Karpathy, describes a development practice where developers describe requirements to a Large Language Model (LLM) in natural language, the AI generates the code, and the developer judges correctness by running the result rather than reading the code.<cite><a href="#ref20" target="_blank">[20]</a></cite> Its core characteristic is the developer's conscious surrender of line-by-line understanding of the code.
+                    </p>
+                    <div class="bg-gray-50 border-l-4 border-gray-400 p-4">
+                        <p class="text-gray-600 italic">
+                            "If an LLM wrote every line of your code but you reviewed and understood all of it, that's not vibe coding - that's using an LLM as a typing assistant." — Simon Willison<cite><a href="#ref20" target="_blank">[20]</a></cite>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section1-2" class="mb-12">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">1.2 The Modern AI Programming Tool Landscape</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-lg shadow-sm border p-6">
+                        <h4 class="font-semibold text-blue-600 mb-3">AI-Native IDEs</h4>
+                        <p class="text-gray-700 text-sm leading-relaxed">
+                            Such as Cursor, offering Composer and Agent modes, suited for professional developers for daily coding and fine-grained control.<cite><a href="#ref20" target="_blank">[20]</a></cite>
+                        </p>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-sm border p-6">
+                        <h4 class="font-semibold text-blue-600 mb-3">Terminal Agents</h4>
+                        <p class="text-gray-700 text-sm leading-relaxed">
+                            Such as Claude Code, a pure terminal agent with no graphical interface, excelling at deep understanding, navigation, and refactoring of large, complex codebases (millions of lines).<cite><a href="#ref20" target="_blank">[20]</a></cite>
+                        </p>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-sm border p-6">
+                        <h4 class="font-semibold text-blue-600 mb-3">App Generators</h4>
+                        <p class="text-gray-700 text-sm leading-relaxed">
+                            Such as Bolt.new, capable of generating full-stack web applications directly from natural language descriptions in the browser, ideal for rapid prototyping.<cite><a href="#ref20" target="_blank">[20]</a></cite>
+                        </p>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-sm border p-6">
+                        <h4 class="font-semibold text-blue-600 mb-3">Autonomous Agents</h4>
+                        <p class="text-gray-700 text-sm leading-relaxed">
+                            Such as Devin, positioned as a fully autonomous AI software engineer capable of handling the entire software development lifecycle.<cite><a href="#ref20" target="_blank">[20]</a></cite>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section1-3" class="mb-12">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">1.3 A New Paradigm: Agentic Engineering and Mythic Engineering</h3>
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <p class="text-gray-700 leading-relaxed mb-6">
+                        By 2026, the concept of AI programming has evolved far beyond Vibe Coding. It has grown into a spectrum encompassing multiple modalities, including:
+                    </p>
+                    <div class="space-y-4">
+                        <div class="border-l-4 border-blue-500 pl-4">
+                            <h4 class="font-semibold text-blue-600">Agentic Engineering</h4>
+                            <p class="text-gray-700 text-sm">
+                                Proposed by Karpathy in February 2026, seen as the "disciplined version" of Vibe Coding. It emphasizes human oversight and quality control, with the developer's role shifting from "prompt engineer" to "architect" and "orchestrator."<cite><a href="#ref20" target="_blank">[20]</a></cite><cite><a href="#ref42" target="_blank">[42]</a></cite>
+                            </p>
+                        </div>
+                        <div class="border-l-4 border-green-500 pl-4">
+                            <h4 class="font-semibold text-green-600">Harness Engineering</h4>
+                            <p class="text-gray-700 text-sm">
+                                The core is "human at the helm + agent execution." It's not about optimizing the model itself, but building a complete set of constraint mechanisms, feedback loops, and workflow management systems around the AI agents.<cite><a href="#ref42" target="_blank">[42]</a></cite>
+                            </p>
+                        </div>
+                        <div class="border-l-4 border-purple-500 pl-4">
+                            <h4 class="font-semibold text-purple-600">Ralph Wiggum Loop</h4>
+                            <p class="text-gray-700 text-sm">
+                                Putting the AI in a loop, executing repeatedly until all checklist items in the requirements document are completed. Progress is persisted via Git commits, supporting unattended execution.<cite><a href="#ref42" target="_blank">[42]</a></cite>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section1-4" class="mb-12">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">1.4 The Architect's Design Philosophy</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-blue-50 rounded-lg p-6">
+                        <h4 class="font-semibold text-blue-700 mb-3">Terminal-Centric</h4>
+                        <p class="text-gray-700 text-sm">
+                            Establishes terminal agents like Claude Code as the core of Viking Code, considering the terminal to be the most direct and controllable interface for engineers.<cite><a href="#ref20" target="_blank">[20]</a></cite>
+                        </p>
+                    </div>
+                    <div class="bg-green-50 rounded-lg p-6">
+                        <h4 class="font-semibold text-green-700 mb-3">Command, Don't Do</h4>
+                        <p class="text-gray-700 text-sm">
+                            The human's role is to design the system, formulate strategy, and oversee execution, not to get bogged down in every code detail.
+                        </p>
+                    </div>
+                    <div class="bg-purple-50 rounded-lg p-6">
+                        <h4 class="font-semibold text-purple-700 mb-3">Decoupling and Control</h4>
+                        <p class="text-gray-700 text-sm">
+                            Breaks down complex projects through mandatory separation of concerns and provides complete, traceable execution logs.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Chapter 2 -->
+        <section id="section2" class="px-12 py-8 max-w-6xl mx-auto">
+            <h2 class="font-playfair text-3xl font-bold text-gray-800 mb-8">2. Viking Code Architecture Overview</h2>
+            
+            <div id="section2-1" class="mb-12">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">2.1 Core CLI Architecture</h3>
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <p class="text-gray-700 leading-relaxed mb-6">
+                        Viking Code features a layered, API-first architecture designed to provide a clear human-machine interface.
+                    </p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-blue-50 rounded-lg p-6">
+                            <h4 class="font-semibold text-blue-700 mb-4">CLI Layer (Human-Facing)</h4>
+                            <ul class="space-y-2 text-sm text-gray-700">
+                                <li>• Clear command structure: <code class="bg-gray-200 px-2 py-1 rounded">viking init</code>, <code class="bg-gray-200 px-2 py-1 rounded">viking plan</code></li>
+                                <li>• YAML-based "Recipe" system</li>
+                                <li>• CLI patterns inspired by Git and Docker</li>
+                            </ul>
+                        </div>
+                        <div class="bg-green-50 rounded-lg p-6">
+                            <h4 class="font-semibold text-green-700 mb-4">Control Plane (Agent-Facing)</h4>
+                            <ul class="space-y-2 text-sm text-gray-700">
+                                <li>• <code class="bg-gray-200 px-2 py-1 rounded">/agents</code> API: Agent discovery and control</li>
+                                <li>• <code class="bg-gray-200 px-2 py-1 rounded">/tasks</code> API: Task assignment and status updates</li>
+                                <li>• Event Bus: System-wide event propagation</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section2-2" class="mb-12">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">2.2 Control Plane: The AI Agent</h3>
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-6 mb-6">
+                        <h4 class="font-semibold text-indigo-700 mb-3">The "Overlord"</h4>
+                        <p class="text-gray-700 text-sm">
+                            The central intelligence of Viking Code, acting as the central nervous system. Designed to be intelligent, proactive, and highly controllable.
+                        </p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="bg-gray-50 rounded p-4">
+                            <h5 class="font-semibold text-gray-800 mb-2">Task Decomposition & Orchestration</h5>
+                            <p class="text-gray-600 text-sm">Reads recipe files, breaking down complex epics into ordered tasks</p>
+                        </div>
+                        <div class="bg-gray-50 rounded p-4">
+                            <h5 class="font-semibold text-gray-800 mb-2">Agent Delegation</h5>
+                            <p class="text-gray-600 text-sm">Assigns tasks to the most suitable Centurion agent</p>
+                        </div>
+                        <div class="bg-gray-50 rounded p-4">
+                            <h5 class="font-semibold text-gray-800 mb-2">Supervision & Recovery</h5>
+                            <p class="text-gray-600 text-sm">Monitors agent health, reassigning tasks upon failure</p>
+                        </div>
+                        <div class="bg-gray-50 rounded p-4">
+                            <h5 class="font-semibold text-gray-800 mb-2">State Management</h5>
+                            <p class="text-gray-600 text-sm">Maintains a centralized task state database</p>
+                        </div>
+                        <div class="bg-gray-50 rounded p-4">
+                            <h5 class="font-semibold text-gray-800 mb-2">Security Oversight</h5>
+                            <p class="text-gray-600 text-sm">Monitors suspicious activity, integrates with OPA policy engine</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section2-3" class="mb-12">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">2.3 Data Plane: Connections and Integrations</h3>
+                <div class="space-y-6">
+                    <div class="bg-white rounded-lg shadow-sm border p-6">
+                        <h4 class="font-semibold text-blue-600 mb-4">Agent Pool</h4>
+                        <p class="text-gray-700 leading-relaxed mb-4">
+                            Each Centurion is an independent, specialized AI agent with its own LLM backend, isolated filesystem sandbox, and a small internal knowledge base. They communicate with the Overlord via gRPC or RESTful APIs.
+                        </p>
+                        <div class="bg-blue-50 rounded p-4">
+                            <p class="text-blue-800 text-sm font-medium">Example Agent Types:</p>
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                <span class="bg-blue-200 text-blue-800 px-2 py-1 rounded text-xs">Code Generator</span>
+                                <span class="bg-blue-200 text-blue-800 px-2 py-1 rounded text-xs">Test Writer</span>
+                                <span class="bg-blue-200 text-blue-800 px-2 py-1 rounded text-xs">Documentation Writer</span>
+                                <span class="bg-blue-200 text-blue-800 px-2 py-1 rounded text-xs">Security Auditor</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow-sm border p-6">
+                        <h4 class="font-semibold text-green-600 mb-4">External Integrations</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <h5 class="font-medium text-gray-800 mb-2">Code Repositories</h5>
+                                <p class="text-gray-600 text-sm">GitHub, GitLab - Pull source code, commit changes, create PRs</p>
+                            </div>
+                            <div>
+                                <h5 class="font-medium text-gray-800 mb-2">Issue Tracking</h5>
+                                <p class="text-gray-600 text-sm">Jira - Sync task status and update issues</p>
+                            </div>
+                            <div>
+                                <h5 class="font-medium text-gray-800 mb-2">CI/CD Pipelines</h5>
+                                <p class="text-gray-600 text-sm">GitHub Actions - Automate testing and deployment</p>
+                            </div>
+                            <div>
+                                <h5 class="font-medium text-gray-800 mb-2">External APIs</h5>
+                                <p class="text-gray-600 text-sm">Confluence, service catalogs, monitoring tools, etc.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Chapter 3 -->
+        <section id="section3" class="px-12 py-8 max-w-6xl mx-auto">
+            <h2 class="font-playfair text-3xl font-bold text-gray-800 mb-8">3. Core Domain Deep Dive</h2>
+            
+            <div id="section3-1" class="mb-12">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">3.1 Epics</h3>
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-semibold text-blue-600 mb-3">Definition</h4>
+                            <p class="text-gray-700 text-sm leading-relaxed">
+                                An epic is a human-readable, high-level description of a feature or requirement, typically a collection of phrases.
+                            </p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-green-600 mb-3">Example</h4>
+                            <div class="bg-green-50 border border-green-200 rounded p-3">
+                                <code class="text-green-800 text-sm">"Implement email verification for the user module, including sending verification emails, validating tokens, and updating user status."</code>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <h4 class="font-semibold text-purple-600 mb-3">Manifestation in Viking</h4>
+                        <p class="text-gray-700 text-sm">
+                            The <code class="bg-gray-200 px-2 py-1 rounded text-xs">viking init</code> command guides the user to create an epic and initializes it into the project structure.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section3-2" class="mb-12">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">3.2 Recipes</h3>
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <div class="mb-6">
+                        <h4 class="font-semibold text-blue-600 mb-3">Definition</h4>
+                        <p class="text-gray-700 text-sm leading-relaxed">
+                            A recipe is a machine-readable, version-controlled execution plan for an epic. It is a YAML file that deconstructs an epic into a series of independent, idempotent tasks.
+                        </p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-blue-50 rounded p-4">
+                            <h5 class="font-semibold text-blue-700 mb-2">Idempotency</h5>
+                            <p class="text-blue-800 text-sm">Result is the same whether executed once or a hundred times</p>
+                        </div>
+                        <div class="bg-green-50 rounded p-4">
+                            <h5 class="font-semibold text-green-700 mb-2">Atomicity</h5>
+                            <p class="text-green-800 text-sm">Tasks are as independent as possible, with clearly defined inputs and outputs</p>
+                        </div>
+                        <div class="bg-purple-50 rounded p-4">
+                            <h5 class="font-semibold text-purple-700 mb-2">Explicit Dependencies</h5>
+                            <p class="text-purple-800 text-sm">Cross-task dependencies must be explicitly declared in the recipe file</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-semibold text-gray-800 mb-3">Example Structure</h4>
+                        <pre class="text-xs text-gray-700 overflow-x-auto"><code>epic: "feat(user): add email verification"
+version: 1
+tasks:
+  - id: analyze_prd
+    description: "Analyze existing user module architecture and determine integration points."
+    agent_type: "architect"
+    inputs:
+      - "source_code"
+      - "product_requirements_document"
+    outputs:
+      - "architecture_design_document"
+      - "integration_points"
+    estimated_tokens: 15000
+    environment:
+      - "sandbox"
+    retry_policy:
+      - "on_failure"
+      - max_attempts: 3</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section3-3" class="mb-12">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">3.3 Agents</h3>
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <div class="mb-6">
+                        <h4 class="font-semibold text-blue-600 mb-3">Definition</h4>
+                        <p class="text-gray-700 text-sm leading-relaxed mb-4">
+                            An Agent is an AI program given a specific goal (task) and authorized to act autonomously to achieve it. Its behavior is entirely constrained by the boundaries defined by its Persona and available Tools.
+                        </p>
+                        
+                        <div class="bg-indigo-50 border border-indigo-200 rounded p-4">
+                            <h5 class="font-semibold text-indigo-700 mb-2">Centurions</h5>
+                            <p class="text-indigo-800 text-sm">
+                                The expert-level agents in Viking. Each Centurion is proficient in a specific function, such as "Backend Engineer," "Frontend Engineer," "Test Engineer," "Documentation Writer," or "Security Auditor."
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div class="bg-blue-50 rounded p-4">
+                                <h5 class="font-semibold text-blue-700 mb-2">Persona</h5>
+                                <p class="text-blue-800 text-sm">Defines the agent's expertise, communication style, and core principles</p>
+                                <div class="mt-2 text-xs text-blue-600 italic">
+                                    "You are a Rust backend expert with 10 years of experience, focused on security and performance."
+                                </div>
+                            </div>
+                            
+                            <div class="bg-green-50 rounded p-4">
+                                <h5 class="font-semibold text-green-700 mb-2">Tools</h5>
+                                <p class="text-green-800 text-sm">Functions authorized for the agent to use</p>
+                                <div class="mt-2 text-xs text-green-600">
+                                    <code class="bg-green-200 px-1 rounded">run_tests</code>,
+                                    <code class="bg-green-200 px-1 rounded">read_file</code>,
+                                    <code class="bg-green-200 px-1 rounded">write_file</code>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div class="bg-purple-50 rounded p-4">
+                                <h5 class="font-semibold text-purple-700 mb-2">Context</h5>
+                                <p class="text-purple-800 text-sm">Task-specific information like recipes, relevant code snippets, or previous execution logs</p>
+                            </div>
+                            
+                            <div class="bg-gray-50 rounded p-4">
+                                <h5 class="font-semibold text-gray-700 mb-2">Memory</h5>
+                                <p class="text-gray-800 text-sm">Optional persistent vector storage for retaining knowledge across multiple tasks</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section3-4" class="mb-12">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">3.4 Context</h3>
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <div class="mb-6">
+                        <h4 class="font-semibold text-blue-600 mb-3">Definition</h4>
+                        <p class="text-gray-700 text-sm leading-relaxed">
+                            Context is the lifeblood of all AI interactions. Viking Code's context management system is designed to provide the right information to the agent at the right time.
+                        </p>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="border-l-4 border-blue-500 pl-4 bg-blue-50 py-3">
+                            <h5 class="font-semibold text-blue-700">Project Level</h5>
+                            <p class="text-blue-800 text-sm">
+                                The <code class="bg-blue-200 px-2 py-1 rounded text-xs">VIKING.md</code> file defines project-wide conventions, tech stack, and high-level goals<cite><a href="#ref20" target="_blank">[20]</a></cite>
+                            </p>
+                        </div>
+                        
+                        <div class="border-l-4 border-green-500 pl-4 bg-green-50 py-3">
+                            <h5 class="font-semibold text-green-700">Epic Level</h5>
+                            <p class="text-green-800 text-sm">The recipe file itself provides the scope and constraints of the epic</p>
+                        </div>
+                        
+                        <div class="border-l-4 border-purple-500 pl-4 bg-purple-50 py-3">
+                            <h5 class="font-semibold text-purple-700">Task Level</h5>
+                            <p class="text-purple-800 text-sm">Each agent receives a packaged context including relevant source files, outputs from prior tasks, and user instructions</p>
+                        </div>
+                        
+                        <div class="border-l-4 border-gray-500 pl-4 bg-gray-50 py-3">
+                            <h5 class="font-semibold text-gray-700">Session Level</h5>
+                            <p class="text-gray-800 text-sm">The agent's "short-term memory," existing for the duration of the task</p>
+                        </div>
+                        
+                        <div class="border-l-4 border-indigo-500 pl-4 bg-indigo-50 py-3">
+                            <h5 class="font-semibold text-indigo-700">Global Level</h5>
+                            <p class="text-indigo-800 text-sm">Relevant information from an internal knowledge base (RAG), such as company API design standards documents</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-blue-50 rounded p-4">
+                            <h5 class="font-semibold text-blue-700 mb-2">Context Packing</h5>
+                            <p class="text-blue-800 text-sm">
+                                The system automatically packages relevant code, documentation, and prior outputs, intelligently pruning irrelevant information to maximize information density within the limited context window.
+                            </p>
+                        </div>
+                        
+                        <div class="bg-green-50 rounded p-4">
+                            <h5 class="font-semibold text-green-700 mb-2">Knowledge Graph</h5>
+                            <p class="text-green-800 text-sm">
+                                Viking maintains a project knowledge graph linking entities like files, functions, API endpoints, and bugs, enabling highly precise context retrieval.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Chapter 4 -->
+        <section id="section4" class="px-12 py-8 max-w-6xl mx-auto">
+            <h2 class="font-playfair text-3xl font-bold text-gray-800 mb-8">4. Advanced Feature Implementation</h2>
+            
+            <div id="section4-1" class="mb-12">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">4.1 CLI DSL Design</h3>
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <div class="mb-6">
+                        <h4 class="font-semibold text-blue-600 mb-3">Concept</h4>
+                        <p class="text-gray-700 text-sm leading-relaxed">
+                            A Domain-Specific Language (DSL) for agent interaction, designed to maximize clarity and consistency while minimizing the token count required by agent LLMs.
+                        </p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-blue-50 rounded p-4">
+                            <h5 class="font-semibold text-blue-700 mb-3">Design Principles</h5>
+                            <ul class="space-y-2 text-sm text-blue-800">
+                                <li>• <strong>Imperative:</strong> Uses active voice imperatives</li>
+                                <li>• <strong>Noun-Verb Structure:</strong> Resource first, action second</li>
+                                <li>• <strong>Strongly Typed Flags:</strong> GNU-style long format flags</li>
+                                <li>• <strong>Pipe Native:</strong> Output is easily pipeable</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="bg-green-50 rounded p-4">
+                            <h5 class="font-semibold text-green-700 mb-3">Advantage Examples</h5>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex justify-between">
+                                    <span class="text-green-600">✓ viking plan</span>
+                                    <span class="text-red-600">✗ viking plan_request</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-green-600">✓ vikcent run</span>
+                                    <span class="text-red-600">✗ viking task_run</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-green-600">✓ --recipe=viking.yml</span>
+                                    <span class="text-red-600">✗ -r viking.yml</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-semibold text-gray-800 mb-3">Example Workflow</h4>
+                        <pre class="text-xs text-gray-700 overflow-x-auto"><code># Initialize a new epic
+viking init --name "user-mgmt" --description "Implement user management epic."
+
+# Generate a recipe based on the epic
+viking plan --epic user-mgmt.md --recipe viking.yml --force
+
+# Inspect the recipe
+cat viking.yml
+
+# Start execution
+vikcent run --recipe viking.yml --agent architect --task analyze_prd
+
+# Monitor progress
+viking task status --task analyze_prd
+
+# View agent logs
+viking task logs --task analyze_prd --follow
+
+# If architecture changes, update recipe and restart
+viking plan --epic user-mgmt.md --recipe viking.v2.yml
+vikcent run --recipe viking.v2.yml
+
+# Complete the epic
+viking complete --epic user-mgmt --status done --summary "Epic completed successfully."</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section4-2" class="mb-12">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">4.2 Port System</h3>
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <div class="mb-6">
+                        <h4 class="font-semibold text-blue-600 mb-3">Definition</h4>
+                        <p class="text-gray-700 text-sm leading-relaxed">
+                            A Port is a named input or output point that allows structured data to be exchanged between tasks, enabling loose coupling.
+                        </p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-blue-50 rounded p-4">
+                            <h5 class="font-semibold text-blue-700 mb-3">Input Port Examples</h5>
+                            <ul class="space-y-1 text-sm text-blue-800">
+                                <li>• <code class="bg-blue-200 px-2 py-1 rounded text-xs">source_code</code>: Access to the codebase</li>
+                                <li>• <code class="bg-blue-200 px-2 py-1 rounded text-xs">product_requirements</code>: Product requirements document</li>
+                                <li>• <code class="bg-blue-200 px-2 py-1 rounded text-xs">architecture_document</code>: Architecture design document</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="bg-green-50 rounded p-4">
+                            <h5 class="font-semibold text-green-700 mb-3">Output Port Examples</h5>
+                            <ul class="space-y-1 text-sm text-green-800">
+                                <li>• <code class="bg-green-200 px-2 py-1 rounded text-xs">architecture_design_document</code>: Path to design document</li>
+                                <li>• <code class="bg-green-200 px-2 py-1 rounded text-xs">integration_points</code>: List of integration points</li>
+                                <li>• <code class="bg-green-200 px-2 py-1 rounded text-xs">test_results</code>: Test execution results</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-purple-50 border border-purple-200 rounded p-4">
+                        <h4 class="font-semibold text-purple-700 mb-3">Connection Mechanism</h4>
+                        <p class="text-purple-800 text-sm mb-3">
+                            Connection definitions in the recipe file specify how an output port of one task connects to an input port of another.
+                        </p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                            <div class="bg-white rounded p-3">
+                                <h6 class="font-semibold text-purple-600 mb-2">Task A Output</h6>
+                                <pre class="text-purple-800"><code>outputs:
+  - "architecture_design_document"</code></pre>
+                            </div>
+                            <div class="bg-white rounded p-3">
+                                <h6 class="font-semibold text-purple-600 mb-2">Task B Input</h6>
+                                <pre class="text-purple-800"><code>inputs:
+  - "architecture_design_document"</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section4-3" class="mb-12">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">4.3 Audit System</h3>
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <div class="mb-6">
+                        <h4 class="font-semibold text-blue-600 mb-3">Definition</h4>
+                        <p class="text-gray-700 text-sm leading-relaxed">
+                            Audit is one of the core principles of Viking. All operations requiring human judgment are explicitly logged, flagged, and made available for review.
+                        </p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div class="bg-blue-50 rounded p-4">
+                                <h5 class="font-semibold text-blue-700 mb-2">Logs</h5>
+                                <p class="text-blue-800 text-sm">
+                                    All agent activity (prompts, tool calls, responses, file edits) is logged in structured JSON format to persistent logs. The <code class="bg-blue-200 px-2 py-1 rounded text-xs">viking task logs</code> command retrieves these logs.
+                                </p>
+                            </div>
+                            
+                            <div class="bg-green-50 rounded p-4">
+                                <h5 class="font-semibold text-green-700 mb-2">Audit Trails</h5>
+                                <p class="text-green-800 text-sm">
+                                    A separate, immutable audit log records all state transitions, task assignments, and completed changesets, similar to git's commit history, but for AI operations.
+                                </p>
+                            </div>
+                            
+                            <div class="bg-purple-50 rounded p-4">
+                                <h5 class="font-semibold text-purple-700 mb-2">Human Review Gates</h5>
+                                <p class="text-purple-800 text-sm">
+                                    Certain tasks (like deploy or merge) can be flagged as requiring human approval. The Overlord will pause execution and wait for human confirmation via the <code class="bg-purple-200 px-2 py-1 rounded text-xs">viking approve</code> command.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div class="bg-red-50 rounded p-4">
+                                <h5 class="font-semibold text-red-700 mb-2">Security Logs</h5>
+                                <p class="text-red-800 text-sm">
+                                    Integration with Open Policy Agent (OPA) can generate security audit logs recording the rationale for access control decisions.
+                                </p>
+                            </div>
+                            
+                            <div class="bg-indigo-50 rounded p-4">
+                                <h5 class="font-semibold text-indigo-700 mb-2">Compliance Reports</h5>
+                                <p class="text-indigo-800 text-sm">
+                                    The <code class="bg-indigo-200 px-2 py-1 rounded text-xs">viking audit report --format=json</code> command can generate a complete compliance report detailing the execution of each task, tokens used, and changes made.
+                                </p>
+                            </div>
+                            
+                            <div class="bg-gray-50 rounded p-4">
+                                <h5 class="font-semibold text-gray-700 mb-2">Traceability</h5>
+                                <p class="text-gray-800 text-sm">
+                                    Can be used to track "who (which agent) did what and when," providing complete traceability.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Chapter 5 -->
+        <section id="section5" class="px-12 py-8 max-w-6xl mx-auto">
+            <h2 class="font-playfair text-3xl font-bold text-gray-800 mb-8">5. Evolution Roadmap</h2>
+            
+            <div id="section5-1" class="mb-12">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">5.1 From Python Rewrite to the First Agentic MVP</h3>
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <div class="bg-blue-50 border border-blue-200 rounded p-4 mb-6">
+                        <h4 class="font-semibold text-blue-700 mb-2">Goal</h4>
+                        <p class="text-blue-800 text-sm">
+                            Build a Minimum Viable Product supporting AI agents, pluggable into existing toolchains.
+                        </p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div class="bg-green-50 rounded p-4">
+                                <h5 class="font-semibold text-green-700 mb-2">Tech Stack Selection</h5>
+                                <p class="text-green-800 text-sm">
+                                    Rewrite the existing prototype from Python to Go. Go has inherent advantages in concurrency, API services, and CLI tool development.
+                                </p>
+                            </div>
+                            
+                            <div class="bg-purple-50 rounded p-4">
+                                <h5 class="font-semibold text-purple-700 mb-2">Agent Integration</h5>
+                                <p class="text-purple-800 text-sm">
+                                    Integrate an existing open-source terminal agent like Aider or Opencode as a "Centurion-01" expert.<cite><a href="#ref25" target="_blank">[25]</a></cite>
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div class="bg-indigo-50 rounded p-4">
+                                <h5 class="font-semibold text-indigo-700 mb-2">Core Commands</h5>
+                                <p class="text-indigo-800 text-sm">
+                                    Implement the <code class="bg-indigo-200 px-2 py-1 rounded text-xs">viking init</code> and <code class="bg-indigo-200 px-2 py-1 rounded text-xs">viking plan</code> commands to create epics and recipes in YAML format.<cite><a href="#ref58" target="_blank">[58]</a></cite>
+                                </p>
+                            </div>
+                            
+                            <div class="bg-gray-50 rounded p-4">
+                                <h5 class="font-semibold text-gray-700 mb-2">Task Execution</h5>
+                                <p class="text-gray-800 text-sm">
+                                    Implement the <code class="bg-gray-200 px-2 py-1 rounded text-xs">vikcent run</code> command to delegate tasks to the integrated agent and stream its output.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section5-2" class="mb-12">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">5.2 Incremental Delegation of Agent Capabilities</h3>
+                <div class="space-y-6">
+                    <div class="bg-white rounded-lg shadow-sm border p-6">
+                        <h4 class="font-semibold text-blue-600 mb-4">Phase One: Core Agent</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-blue-50 rounded p-4">
+                                <h5 class="font-medium text-blue-700 mb-2">Claude Code Integration</h5>
+                                <p class="text-blue-800 text-sm">Integrate the Claude Code CLI as a base agent</p>
+                            </div>
+                            <div class="bg-green-50 rounded p-4">
+                                <h5 class="font-medium text-green-700 mb-2">Test Coverage</h5>
+                                <p class="text-green-800 text-sm">Write comprehensive test coverage for recipe YAML and CLI<cite><a href="#ref12" target="_blank">[12]</a></cite></p>
+                            </div>
+                            <div class="bg-purple-50 rounded p-4">
+                                <h5 class="font-medium text-purple-700 mb-2">MVP Release</h5>
+                                <p class="text-purple-800 text-sm">Release a well-documented MVP usable for proof-of-concept</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow-sm border p-6">
+                        <h4 class="font-semibold text-green-600 mb-4">Phase Two: Centurion Cluster</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-green-50 rounded p-4">
+                                <h5 class="font-medium text-green-700 mb-2">Agent Concept</h5>
+                                <p class="text-green-800 text-sm">Introduce the "Agent" concept, configuring Docker containers for specific tasks</p>
+                            </div>
+                            <div class="bg-blue-50 rounded p-4">
+                                <h5 class="font-medium text-blue-700 mb-2">API Implementation</h5>
+                                <p class="text-blue-800 text-sm">Implement the <code class="bg-blue-200 px-2 py-1 rounded text-xs">/agents</code> API in Go</p>
+                            </div>
+                            <div class="bg-purple-50 rounded p-4">
+                                <h5 class="font-medium text-purple-700 mb-2">Command Family</h5>
+                                <p class="text-purple-800 text-sm">Add the <code class="bg-purple-200 px-2 py-1 rounded text-xs">viking agent</code> command family</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow-sm border p-6">
+                        <h4 class="font-semibold text-purple-600 mb-4">Phase Three: Supervisor Mode</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-purple-50 rounded p-4">
+                                <h5 class="font-medium text-purple-700 mb-2">Supervisor Logic</h5>
+                                <p class="text-purple-800 text-sm">Implement basic supervisor logic in Opencode for task assignment</p>
+                            </div>
+                            <div class="bg-red-50 rounded p-4">
+                                <h5 class="font-medium text-red-700 mb-2">Security Integration</h5>
+                                <p class="text-red-800 text-sm">Integrate Open Policy Agent (OPA) for simple authorization for agents</p>
+                            </div>
+                            <div class="bg-gray-50 rounded p-4">
+                                <h5 class="font-medium text-gray-700 mb-2">Structured Logging</h5>
+                                <p class="text-gray-800 text-sm">Add structured JSON log output</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section5-3" class="mb-12">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">5.3 Mythic-Level Features</h3>
+                <div class="space-y-6">
+                    <div class="bg-white rounded-lg shadow-sm border p-6">
+                        <h4 class="font-semibold text-indigo-600 mb-4">Phase Four: Context Weaving</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-indigo-50 rounded p-4">
+                                <h5 class="font-medium text-indigo-700 mb-2">Knowledge Graph</h5>
+                                <p class="text-indigo-800 text-sm">Implement knowledge graph and RAG system for enhanced context</p>
+                            </div>
+                            <div class="bg-blue-50 rounded p-4">
+                                <h5 class="font-medium text-blue-700 mb-2">Pipeline Workflow</h5>
+                                <p class="text-blue-800 text-sm">Add support for stdin as an input port, enabling true pipeline workflows</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow-sm border p-6">
+                        <h4 class="font-semibold text-red-600 mb-4">Phase Five: Security & Governance</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-red-50 rounded p-4">
+                                <h5 class="font-medium text-red-700 mb-2">Deep OPA Integration</h5>
+                                <p class="text-red-800 text-sm">Implement complex policies like "do not allow rm -rf /"</p>
+                            </div>
+                            <div class="bg-yellow-50 rounded p-4">
+                                <h5 class="font-medium text-yellow-700 mb-2">Human Gating</h5>
+                                <p class="text-yellow-800 text-sm">Implement human review gates and immutable audit logs</p>
+                            </div>
+                            <div class="bg-green-50 rounded p-4">
+                                <h5 class="font-medium text-green-700 mb-2">Compliance Commands</h5>
+                                <p class="text-green-800 text-sm">Add the viking audit command for compliance reporting</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow-sm border p-6">
+                        <h4 class="font-semibold text-green-600 mb-4">Phase Six: Collaboration</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-green-50 rounded p-4">
+                                <h5 class="font-medium text-green-700 mb-2">Recipe Sharing</h5>
+                                <p class="text-green-800 text-sm">Implement viking share functionality for sharing recipes and best practices among developers</p>
+                            </div>
+                            <div class="bg-blue-50 rounded p-4">
+                                <h5 class="font-medium text-blue-700 mb-2">Observation Mode</h5>
+                                <p class="text-blue-800 text-sm">Add support for observing agent execution processes</p>
+                            </div>
+                            <div class="bg-purple-50 rounded p-4">
+                                <h5 class="font-medium text-purple-700 mb-2">Remote Command</h5>
+                                <p class="text-purple-800 text-sm">Provide a preview of the Remote Overlord mode</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section5-4" class="mb-12">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">5.4 Release and Evolution</h3>
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-blue-50 rounded p-6">
+                            <h4 class="font-semibold text-blue-700 mb-4">Release</h4>
+                            <ul class="space-y-2 text-sm text-blue-800">
+                                <li>• Release on GitHub under a permissive open-source license (MIT)</li>
+                                <li>• Establish a project website full of documentation, tutorials, and mythic-themed naming</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="bg-green-50 rounded p-6">
+                            <h4 class="font-semibold text-green-700 mb-4">Evolution</h4>
+                            <ul class="space-y-2 text-sm text-green-800">
+                                <li>• Grow an agent ecosystem from community adoption</li>
+                                <li>• Explore enterprise features like SSO, audit logs, and managed agent runtimes</li>
+                                <li>• Partner with cloud platform providers to offer pre-configured Viking Code environments</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 bg-gray-50 rounded p-4">
+                        <p class="text-gray-700 text-sm leading-relaxed">
+                            The evolution roadmap for Viking Code indicates that the path to Mythic Engineering is not a "big bang" product launch, but a journey of incrementally enhancing capabilities through carefully planned phases. Success relies on early integration of existing, proven tools (like Claude Code), gradual expansion via the agent architecture, and ultimately differentiation through innovation in context management and security.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Conclusion -->
+        <section id="conclusion" class="px-12 py-8 max-w-6xl mx-auto">
+            <h2 class="font-playfair text-3xl font-bold text-gray-800 mb-8">Conclusion: The Future of the CLI</h2>
+            
+            <div class="space-y-6">
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <p class="text-gray-700 leading-relaxed text-lg">
+                        Viking Code is not the final destination, but an evolutionary intermediate step. It points directly towards a future possibility: a truly autonomous software engineering agent—given just a specification and a Viking Code server, capable of delivering a production-ready system. The Mythic CLI is the crucial cornerstone paving the way to this future: an auditable, scalable, and fully controlled platform commanded by a human strategic mind and executed by expert agents.
+                    </p>
+                </div>
+                
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-6">
+                    <p class="text-gray-700 leading-relaxed">
+                        The design principles of Viking Code—decoupling, idempotency, explicit context, and machine-readable recipes—represent the inevitable direction for the evolution of AI programming tools. As Large Language Models continue to advance, tools for controlling and managing the "digital workforce" they generate will become as important as the models themselves.<cite><a href="#ref47" target="_blank">[47]</a></cite> Viking Code is designed precisely for building and managing this future workforce.
+                    </p>
+                </div>
+                
+                <div class="bg-green-50 border-l-4 border-green-500 p-6">
+                    <p class="text-gray-700 leading-relaxed">
+                        The ultimate goal of Viking Code is to empower human architects to skillfully navigate the exponential complexity introduced by AI-generated code. By placing the human in the role of designer and supervisor, rather than executor, it directly addresses the "black box" and maintainability challenges posed by Vibe Coding.<cite><a href="#ref22" target="_blank">[22]</a></cite> It solidifies emerging methodologies like SDD and the Ralph Wiggum Loop into executable processes by introducing "Recipes" and explicit task boundaries.<cite><a href="#ref44" target="_blank">[44]</a></cite>
+                    </p>
+                </div>
+                
+                <div class="bg-purple-50 border-l-4 border-purple-500 p-6">
+                    <p class="text-gray-700 leading-relaxed">
+                        By providing audit logs, human gating, and policy-as-code, it meets enterprise-level needs for security and compliance.<cite><a href="#ref56" target="_blank">[56]</a></cite> Therefore, Viking Code is not just another tool. It is a redefinition of the act of "programming" itself, in an era where software engineering is increasingly agent-driven. It is a bridge to autonomous software engineering, offering a clear, controllable, and scalable framework for the future of AI-driven development teams.<cite><a href="#ref52" target="_blank">[52]</a></cite>
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- References -->
+        <section id="references" class="px-12 py-8 max-w-6xl mx-auto bg-gray-50">
+            <h2 class="font-playfair text-3xl font-bold text-gray-800 mb-8">References</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-3">
+                    <div id="ref1" class="text-sm">
+                        <span class="font-semibold text-blue-600">[1]</span>
+                        <cite><a href="https://www.nowcoder.com/discuss/868450882990440448?sourceSSR=home" target="_blank" class="text-blue-600 hover:underline">Share several practical VibeCoding open-source projects</a></cite>
+                    </div>
+                    
+                    <div id="ref2" class="text-sm">
+                        <span class="font-semibold text-blue-600">[2]</span>
+                        <cite><a href="https://cloud.tencent.com.cn/developer/article/2639557" target="_blank" class="text-blue-600 hover:underline">2.1K Star! This Vibe Coding list on GitHub exposes all the AI programming tools out there!</a></cite>
+                    </div>
+                    
+                    <div id="ref3" class="text-sm">
+                        <span class="font-semibold text-blue-600">[3]</span>
+                        <cite><a href="https://blog.csdn.net/weixin_73134956/article/details/156354259" target="_blank" class="text-blue-600 hover:underline">GitHub Trending #1? Vibe Coding: When programming is no longer about writing code, but the art of "feeling"</a></cite>
+                    </div>
+                    
+                    <div id="ref4" class="text-sm">
+                        <span class="font-semibold text-blue-600">[4]</span>
+                        <cite><a href="https://m.blog.csdn.net/j8267643/article/details/156274912" target="_blank" class="text-blue-600 hover:underline">[GitHub Project Recommendation - Vibe Coding Chinese Guide: Let AI be your programming buddy]</a></cite>
+                    </div>
+                    
+                    <div id="ref5" class="text-sm">
+                        <span class="font-semibold text-blue-600">[5]</span>
+                        <cite><a href="https://m.blog.csdn.net/weixin_47080540/article/details/155962878" target="_blank" class="text-blue-600 hover:underline">Dug up 4 Vibe Coding GitHub open-source projects, bookmark quickly.</a></cite>
+                    </div>
+                    
+                    <div id="ref12" class="text-sm">
+                        <span class="font-semibold text-blue-600">[12]</span>
+                        <cite><a href="https://m.blog.csdn.net/weixin_73134956/article/details/156354259" target="_blank" class="text-blue-600 hover:underline">GitHub Trending #1? Vibe Coding: When programming is no longer about writing code, but the art of "feeling"</a></cite>
+                    </div>
+                    
+                    <div id="ref20" class="text-sm">
+                        <span class="font-semibold text-blue-600">[20]</span>
+                        <cite><a href="https://zhuanlan.zhihu.com/p/2010879714030540578" target="_blank" class="text-blue-600 hover:underline">Complete Guide to Vibe Coding: From "Vibe Coding" to Agentic Engineering</a></cite>
+                    </div>
+                    
+                    <div id="ref22" class="text-sm">
+                        <span class="font-semibold text-blue-600">[22]</span>
+                        <cite><a href="https://blog.csdn.net/qq_49548132/article/details/157220892" target="_blank" class="text-blue-600 hover:underline">The Underlying Logic of Vibe Coding: From "coding by feeling" to "deliverable Agentic Engineering"</a></cite>
+                    </div>
+                    
+                    <div id="ref23" class="text-sm">
+                        <span class="font-semibold text-blue-600">[23]</span>
+                        <cite><a href="https://m.blog.csdn.net/gitblog_00556/article/details/153503161" target="_blank" class="text-blue-600 hover:underline">Ultimate Guide: Building an Autonomous Navigation Robot System Using Context Engineering and PRP Techniques</a></cite>
+                    </div>
+                    
+                    <div id="ref25" class="text-sm">
+                        <span class="font-semibold text-blue-600">[25]</span>
+                        <cite><a href="https://cloud.tencent.com/developer/article/2605163" target="_blank" class="text-blue-600 hover:underline">Stop "Vibing," bro, it's time to get "Agentic" with Qoder</a></cite>
+                    </div>
+                </div>
+                
+                <div class="space-y-3">
+                    <div id="ref41" class="text-sm">
+                        <span class="font-semibold text-blue-600">[41]</span>
+                        <cite><a href="https://m.blog.csdn.net/weixin_43726381/article/details/160296416" target="_blank" class="text-blue-600 hover:underline">The AI Programming Paradigm Shift: Vibe Coding is dead, Agentic Engineering is the future</a></cite>
+                    </div>
+                    
+                    <div id="ref42" class="text-sm">
+                        <span class="font-semibold text-blue-600">[42]</span>
+                        <cite><a href="https://m.163.com/dy/article/KP48N6B30556DREL.html" target="_blank" class="text-blue-600 hover:underline">Interviewer frowned: "Your resume says 'proficient in AI programming'?" I confidently replied: "Yeah, Vibe Coding, right?" He couldn't help but laugh: "Is that all?"</a></cite>
+                    </div>
+                    
+                    <div id="ref44" class="text-sm">
+                        <span class="font-semibold text-blue-600">[44]</span>
+                        <cite><a href="https://www.infoq.cn/article/QtQVbAc62O1ib1V2WftO?utm_source=rss&utm_medium=article" target="_blank" class="text-blue-600 hover:underline">Practices and Thoughts on Vibe Coding in Code Generation and Collaboration - InfoQ</a></cite>
+                    </div>
+                    
+                    <div id="ref47" class="text-sm">
+                        <span class="font-semibold text-blue-600">[47]</span>
+                        <cite><a href="https://zhuanlan.zhihu.com/p/1977418667277975795" target="_blank" class="text-blue-600 hover:underline">Deep Dive into Claude Code Architecture and Vibe Coding Paradigm Shift: From Intent</a></cite>
+                    </div>
+                    
+                    <div id="ref52" class="text-sm">
+                        <span class="font-semibold text-blue-600">[52]</span>
+                        <cite><a href="https://m.blog.csdn.net/gitblog_00382/article/details/159645908" target="_blank" class="text-blue-600 hover:underline">Aider Ultimate Guide: Build your AI pair programming tool from scratch in 5 minutes</a></cite>
+                    </div>
+                    
+                    <div id="ref56" class="text-sm">
+                        <span class="font-semibold text-blue-600">[56]</span>
+                        <cite><a href="https://m.blog.csdn.net/gitblog_00538/article/details/151080601" target="_blank" class="text-blue-600 hover:underline">2025 Aider Ultimate Evolution Guide: The Complete Roadmap from AI Pair Programming to Intelligent Development Assistant</a></cite>
+                    </div>
+                    
+                    <div id="ref58" class="text-sm">
+                        <span class="font-semibold text-blue-600">[58]</span>
+                        <cite><a href="https://m.php.cn/faq/2275053.html" target="_blank" class="text-blue-600 hover:underline">Claude Mythos Developer Platform Usage Tutorial - Getting Started with Claude Mythos Console</a></cite>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Smooth scrolling and navigation highlighting
+        document.addEventListener('DOMContentLoaded', function() {
+            const navItems = document.querySelectorAll('.nav-item');
+            const sections = document.querySelectorAll('section[id]');
+            
+            // Smooth scrolling when clicking nav items
+            navItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetSection = document.getElementById(targetId);
+                    
+                    if (targetSection) {
+                        targetSection.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+            
+            // Update navigation highlight on scroll
+            function updateActiveNav() {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.clientHeight;
+                    if (window.pageYOffset >= sectionTop - 100) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                
+                navItems.forEach(item => {
+                    item.classList.remove('active');
+                    if (item.getAttribute('href') === '#' + current) {
+                        item.classList.add('active');
+                    }
+                });
+            }
+            
+            window.addEventListener('scroll', updateActiveNav);
+            updateActiveNav(); // Initialize
+        });
+    </script>
+</body>
+</html>
