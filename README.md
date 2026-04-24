@@ -304,7 +304,7 @@ Unless required by applicable law or agreed to in writing, this project is distr
 
 ## Distribution and Privacy Position
 
-Mythic-Engineering is published here as source code and project material.
+Mythic Vibe CLI is published here as source code and project material.
 
 The author does not require users to provide age, identity, government ID, biometric data, or similar personal information in order to access or use the source code in this repository.
 
