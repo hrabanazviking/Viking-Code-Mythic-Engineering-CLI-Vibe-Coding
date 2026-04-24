@@ -1,3 +1,9 @@
+---
+
+![https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/development/120329a8-9f29-4177-b10f-56719c134843.png](https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/development/120329a8-9f29-4177-b10f-56719c134843.png)
+
+---
+
 # Mythic Vibe CLI
 
 Mythic Vibe CLI is an open-source, method-first command-line tool for people who want to **ship software with continuity, architecture, and recoverable memory** rather than pure improvisation.
@@ -10,6 +16,10 @@ The project is designed to be useful for first-time builders and still disciplin
 
 Canonical Mythic Engineering source:
 - https://github.com/hrabanazviking/Mythic-Engineering
+
+---
+
+![https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/development/ee5643a3-eb8a-4100-98ad-d4e8b9eeb1b0.jpg](https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/development/ee5643a3-eb8a-4100-98ad-d4e8b9eeb1b0.jpg)
 
 ---
 
@@ -36,6 +46,10 @@ Core goals:
 2. **Improve AI-assisted execution** by packaging project context into explicit prompt packets.
 3. **Preserve intent and rationale** so later contributors can resume without reconstruction.
 4. **Keep the workflow beginner-safe** while still useful in complex projects.
+
+---
+
+![https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/development/178756ea-06c6-429e-817a-607113ebaa08.jpg](https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/development/178756ea-06c6-429e-817a-607113ebaa08.jpg)
 
 ---
 
@@ -92,6 +106,10 @@ Recommended:
 
 ---
 
+![https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/development/6cd73309-165e-44ff-aee3-d66afb691e78.jpg](https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/development/6cd73309-165e-44ff-aee3-d66afb691e78.jpg)
+
+---
+
 ## Quick start
 
 Initialize a new project scaffold:
@@ -141,6 +159,10 @@ mythic-vibe codex-log --phase build --response "Implemented parser with subcomma
 ```bash
 mythic-vibe status
 ```
+
+---
+
+![https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/development/2628f01e-d7fd-4923-84de-e19630282130.jpg](https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/development/2628f01e-d7fd-4923-84de-e19630282130.jpg)
 
 ---
 
