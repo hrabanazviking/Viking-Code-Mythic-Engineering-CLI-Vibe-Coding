@@ -37,7 +37,8 @@ Default rule: islands are independent unless explicit adapter contracts are docu
 
 ```text
 User
-  -> CLI Router (mythic_vibe_cli/cli.py)
+    -> CLI Entrypoints (mythic_vibe_cli/__main__.py, mythic_vibe_cli/cli.py)
+    -> CLI Kernel (mythic_vibe_cli/app.py)
     -> Workflow Orchestrator (workflow.py)
     -> Prompt Bridge (codex_bridge.py)
     -> Config Resolver (config.py)
@@ -50,11 +51,27 @@ User
 
 ## 3) Component responsibilities
 
+### `mythic_vibe_cli/__main__.py`
+
+- Provides `python -m mythic_vibe_cli`.
+- Delegates to `mythic_vibe_cli.cli.main`.
+- Must stay thin and side-effect free.
+
 ### `mythic_vibe_cli/cli.py`
 
+- Preserves the public `mythic_vibe_cli.cli:main` entrypoint.
+- Re-exports the current CLI kernel for compatibility.
+
+### `mythic_vibe_cli/app.py`
+
 - Defines command surface and argument contracts.
-- Dispatches behavior to orchestration layers.
+- Dispatches behavior through `COMMAND_HANDLERS`.
 - Maintains user-facing ergonomics and stability.
+
+### `mythic_vibe_cli/exit_codes.py`
+
+- Defines the shared CLI exit-code policy.
+- Keeps command return meanings stable across handlers.
 
 ### `mythic_vibe_cli/workflow.py`
 

@@ -28,3 +28,7 @@ mythic = "mythic_vibe_cli.cli:main"
 
 [tool.setuptools]
 packages = ["mythic_vibe_cli"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]

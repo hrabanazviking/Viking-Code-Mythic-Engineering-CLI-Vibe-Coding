@@ -24,7 +24,7 @@ class ConfigStore:
         self.project_root = project_root.resolve() if project_root else None
 
     def _candidate_paths(self) -> list[Path]:
-        home = Path.home()
+        home = Path(os.environ.get("HOME") or Path.home())
         xdg_home = Path(os.environ.get("XDG_CONFIG_HOME", home / ".config"))
 
         paths = [

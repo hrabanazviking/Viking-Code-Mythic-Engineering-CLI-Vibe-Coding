@@ -1,9 +1,68 @@
 # DEVLOG — The Living Chronicle
 
-**Last updated:** 2026-04-23
+**Last updated:** 2026-04-24
 **Branch:** development
 **Scope:** An ongoing, dated chronicle of meaningful work performed in this repository. Each entry preserves *what happened* and *why it mattered*, so that later sessions can resume with understanding rather than guesswork.
 **Purpose:** Continuity of record. The project's memory, kept outside anyone's head.
+
+---
+
+## 2026-04-24 - Stage 1 CLI Kernel Hardening Begins
+
+**Session:** Second implementation pass from `MYTHIC_VIBE_CLI_PRODUCTION_ROADMAP.md`.
+**Status:** Runtime, tests, and command-contract documentation updated on `development`.
+**Scope:** First safe slice of Stage 1 CLI kernel hardening.
+
+### What changed
+
+- Added `mythic_vibe_cli/__main__.py`, enabling `python -m mythic_vibe_cli`.
+- Added `mythic_vibe_cli/exit_codes.py` with the named return-code policy: success, operational failure, user/config error, verification failure, and unsafe operation blocked.
+- Moved the real CLI kernel into `mythic_vibe_cli/app.py`, leaving `mythic_vibe_cli/cli.py` as the compatibility entrypoint for `mythic_vibe_cli.cli:main`.
+- Replaced the long `main()` dispatch chain with `COMMAND_HANDLERS`, preserving existing commands and aliases.
+- Added `tests/test_cli_kernel.py` to lock down module execution, alias preservation, and exit-code policy.
+- Added `docs/COMMAND_CONTRACTS.md` for entrypoints, command dispatch, compatibility aliases, and exit codes.
+- Updated `docs/api.md`, `docs/ARCHITECTURE.md`, `docs/DOMAIN_MAP.md`, and `docs/INDEX.md` to reflect the kernel contract.
+
+### Verification
+
+- `python -m pytest tests/test_cli_kernel.py -q` passed.
+- `python -m mythic_vibe_cli --help` rendered successfully.
+- `python -m mythic_vibe_cli.cli --help` rendered successfully.
+
+### Next thread
+
+Continue Stage 1 by extracting command groups from `app.py` into focused command modules, then introduce shared terminal output/error helpers.
+
+---
+
+## 2026-04-24 - Stage 0 Boundary Stabilization Begins
+
+**Session:** First implementation pass from `MYTHIC_VIBE_CLI_PRODUCTION_ROADMAP.md`.
+**Status:** Runtime and governance changes made on `development`.
+**Scope:** Stage 0 repo boundary stabilization, with one small test-harness hardening fix.
+
+### What changed
+
+- Added `REPO_BOUNDARY.md` as the root law for active runtime, dormant islands, and adapter gates.
+- Added `docs/ACTIVE_PRODUCT_BOUNDARY.md` and `docs/DORMANT_ISLANDS.md` so contributors can tell what is product runtime and what is reference material.
+- Added `docs/ADRS/ADR-0001-active-runtime-boundary.md` and `docs/ADRS/ADR-0002-no-direct-vendor-imports.md` to make the boundary decisions durable.
+- Updated `README.md` with an above-the-fold Active Runtime Path section.
+- Expanded `docs/INDEX.md` into a real navigation hub for boundary, architecture, and operator docs.
+- Added `mythic-vibe doctor --repo-boundary` to validate boundary docs and scan active runtime imports for direct dependencies on dormant islands.
+- Added `tests/test_repo_boundary.py` for boundary-file and forbidden-import behavior.
+- Configured pytest to collect only active product tests under `tests/`, preventing dormant island tests from breaking the product verification gate.
+- Fixed `ConfigStore` to honor `HOME` environment overrides before falling back to `Path.home()`.
+
+### Verification
+
+- `python -m pytest tests/test_repo_boundary.py -q` passed.
+- `python -m mythic_vibe_cli.cli doctor --repo-boundary --path .` passed with no errors or warnings.
+- `python -m pytest -q` passed with 13 active product tests.
+- `python -m mythic_vibe_cli.cli --help` rendered successfully.
+
+### Next thread
+
+Continue with Stage 1 CLI kernel hardening: add `mythic_vibe_cli/__main__.py`, begin command-router extraction, and preserve all existing command aliases while tests stay green.
 
 ---
 

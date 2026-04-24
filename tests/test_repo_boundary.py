@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from mythic_vibe_cli.cli import main
 from mythic_vibe_cli.workflow import MythicRunConfig, MythicWorkflow
 
 
@@ -73,6 +74,18 @@ class RepoBoundaryDoctorTests(unittest.TestCase):
             errors, _warnings = workflow.doctor(repo_boundary=True)
 
             self.assertEqual(errors, [])
+
+    def test_cli_repo_boundary_mode_does_not_require_project_scaffold(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _write_boundary_docs(root)
+            package = root / "mythic_vibe_cli"
+            package.mkdir(parents=True, exist_ok=True)
+            (package / "__init__.py").write_text("", encoding="utf-8")
+
+            code = main(["doctor", "--repo-boundary", "--path", str(root)])
+
+            self.assertEqual(code, 0)
 
 
 if __name__ == "__main__":

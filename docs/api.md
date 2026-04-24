@@ -19,8 +19,13 @@ mythic-vibe --help
 ### Module execution (useful for debugging/install edge cases)
 
 ```bash
+python -m mythic_vibe_cli --help
 python -m mythic_vibe_cli.cli --help
 ```
+
+The package entrypoint (`python -m mythic_vibe_cli`) is preferred for install/path debugging. The `cli` module entrypoint remains supported for compatibility.
+
+Command dispatch lives in `mythic_vibe_cli.app` and is re-exported through `mythic_vibe_cli.cli` for compatibility. The dispatch and exit-code policy are recorded in `docs/COMMAND_CONTRACTS.md`.
 
 ---
 
