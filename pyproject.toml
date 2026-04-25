@@ -26,8 +26,11 @@ Homepage = "https://github.com/hrabanazviking/Mythic-Engineering"
 mythic-vibe = "mythic_vibe_cli.cli:main"
 mythic = "mythic_vibe_cli.cli:main"
 
-[tool.setuptools]
-packages = ["mythic_vibe_cli"]
+[tool.setuptools.packages.find]
+include = ["mythic_vibe_cli*"]
+
+[tool.setuptools.package-data]
+mythic_vibe_cli = ["resources/schemas/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -55,7 +55,7 @@ class CodexBridge:
                 "goal": state.get("goal"),
                 "current_phase": state.get("current_phase"),
                 "completed_phases": state.get("completed_phases", []),
-                "last_update": state.get("last_update"),
+                "last_update": state.get("updated_at") or state.get("last_update"),
             },
             indent=2,
         )

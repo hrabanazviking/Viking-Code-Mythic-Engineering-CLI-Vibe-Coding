@@ -26,6 +26,9 @@ The active CLI must remain independently executable without importing dormant ru
 | `mythic_vibe_cli/commands.py` | Command implementations, command registry, and compatibility aliases |
 | `mythic_vibe_cli/output.py` | Shared terminal output helpers |
 | `mythic_vibe_cli/errors.py` | Structured CLI error payloads and formatting |
+| `mythic_vibe_cli/core/state.py` | Schema-versioned project state, records, phase constants, and validation |
+| `mythic_vibe_cli/persistence/` | JSON state storage, lock-file protection, backups, and migrations |
+| `mythic_vibe_cli/resources/schemas/` | Packaged JSON schemas for state and continuity records |
 | `mythic_vibe_cli/exit_codes.py` | Shared CLI return-code policy |
 | `mythic_vibe_cli/workflow.py` | Mythic phases, scaffolding, status, check-ins, diagnostics |
 | `mythic_vibe_cli/codex_bridge.py` | AI prompt packet rendering and context compaction |

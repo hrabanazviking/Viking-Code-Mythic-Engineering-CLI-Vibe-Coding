@@ -4,9 +4,9 @@ import argparse
 
 from . import __version__
 from .commands import COMMAND_HANDLERS, CommandHandler
+from .core.state import PHASES
 from .exit_codes import USER_INPUT_ERROR
 from .output import configure_output
-from .workflow import PHASES
 
 
 def add_runtime_options(
@@ -154,6 +154,15 @@ def build_parser() -> argparse.ArgumentParser:
     config_set.add_argument("value", help="String value")
     config_set.add_argument("--path", default=".", help="Project directory (default: current directory)")
     add_runtime_options(config_set, json_output=True, dry_run=True)
+
+    state = sub.add_parser("state", help="Inspect and validate Mythic project state")
+    state_sub = state.add_subparsers(dest="state_command", required=True)
+    state_show = state_sub.add_parser("show", help="Show schema-versioned Mythic project state")
+    state_show.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    add_runtime_options(state_show, json_output=True)
+    state_validate = state_sub.add_parser("validate", help="Validate mythic/status.json against the state contract")
+    state_validate.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    add_runtime_options(state_validate, json_output=True)
 
     db = sub.add_parser("db", help="Database maintenance tasks")
     add_runtime_options(db)

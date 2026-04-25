@@ -49,6 +49,10 @@ Argument parsing and top-level dispatch live in `mythic_vibe_cli.app`. Command i
   - Persists structured phase updates.
 - `status`
   - Reports current progress and phase state.
+- `state show`
+  - Displays schema-versioned project state from `mythic/status.json`.
+- `state validate`
+  - Validates `mythic/status.json` and returns verification failure on invalid state.
 
 ### Health and method state
 
@@ -73,13 +77,15 @@ Depending on implementation state, additional commands may be exposed:
 
 Use `--help` for current option details and defaults.
 
+`db migrate` upgrades legacy `mythic/status.json` files into the current schema-versioned `ProjectState` format, preserving the previous file under `mythic/backups/` before rewriting it. It also keeps the existing local `weave.db` migration behavior.
+
 ### Shared runtime options
 
 The active command surface now supports shared runtime controls where useful:
 
 | Option | Use |
 |---|---|
-| `--json` | Return structured machine-readable output. Supported by reporting/structured commands including `status`, `doctor`, `config`, `codex-pack`, `grimoire`, `db migrate`, and `plunder`. |
+| `--json` | Return structured machine-readable output. Supported by reporting/structured commands including `status`, `state show`, `state validate`, `doctor`, `config`, `codex-pack`, `grimoire`, `db migrate`, and `plunder`. |
 | `--quiet` | Suppress non-error human text output. |
 | `--verbose` | Show additional operational detail when the command provides it. |
 | `--dry-run` | Preview write/sync operations without changing files, registries, databases, or remote state. |

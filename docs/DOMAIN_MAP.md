@@ -25,7 +25,7 @@ This file prevents that by documenting:
 
 | Domain | Primary paths | Status | Owns | Must not own |
 |---|---|---|---|---|
-| Product CLI | `mythic_vibe_cli/`, `tests/`, packaging files | **Active** | Command contracts, workflow lifecycle, config, prompt packets, method sync | Vendor mirrors, dormant islands, unrelated research runtimes |
+| Product CLI | `mythic_vibe_cli/`, `tests/`, packaging files | **Active** | Command contracts, workflow lifecycle, project state, config, prompt packets, method sync | Vendor mirrors, dormant islands, unrelated research runtimes |
 | Governance Docs | `docs/`, root architecture/governance docs | **Active** | Architecture records, onboarding, standards, release notes | Runtime implementation logic |
 | Skills & Agent Modes | `skills/`, `.claude/`, `.roo/` | **Active** | Reusable execution/persona workflows | Product runtime behavior |
 | Legacy Runtime Cluster | `ai/`, `core/`, `systems/`, `sessions/`, `yggdrasil/`, `imports/norsesaga/` | Dormant/fragmented | Historical experiments and archived runtime ideas | New product-critical behavior without architecture decision |
@@ -72,6 +72,8 @@ Forbidden:
 |---|---|
 | Command surface and aliases | `mythic_vibe_cli/__main__.py`, `mythic_vibe_cli/cli.py`, `mythic_vibe_cli/app.py`, `mythic_vibe_cli/commands.py`, `mythic_vibe_cli/exit_codes.py` |
 | Terminal output and CLI error formatting | `mythic_vibe_cli/output.py`, `mythic_vibe_cli/errors.py` |
+| Project state contract and validation | `mythic_vibe_cli/core/state.py`, `mythic_vibe_cli/resources/schemas/` |
+| JSON persistence, backups, and migrations | `mythic_vibe_cli/persistence/json_store.py`, `mythic_vibe_cli/persistence/migrations.py` |
 | Workflow lifecycle and phase transitions | `mythic_vibe_cli/workflow.py` |
 | Configuration precedence and coercion | `mythic_vibe_cli/config.py` |
 | Prompt packet synthesis and budget logic | `mythic_vibe_cli/codex_bridge.py` |
@@ -84,7 +86,9 @@ Forbidden:
 - New CLI command/alias -> parser wiring in `mythic_vibe_cli/app.py`, implementation and registry wiring in `mythic_vibe_cli/commands.py`, with compatibility preserved through `mythic_vibe_cli/cli.py`
 - New CLI entrypoint or exit-code policy -> `mythic_vibe_cli/__main__.py`, `mythic_vibe_cli/exit_codes.py`, and `docs/COMMAND_CONTRACTS.md`
 - New terminal rendering or command error format -> `mythic_vibe_cli/output.py`, `mythic_vibe_cli/errors.py`, and command tests where behavior is user-visible
-- New phase/state logic -> `mythic_vibe_cli/workflow.py`
+- New phase lifecycle logic -> `mythic_vibe_cli/workflow.py`
+- New project state fields/schema/validation -> `mythic_vibe_cli/core/state.py`, `mythic_vibe_cli/resources/schemas/`, and migration tests
+- New state read/write/migration behavior -> `mythic_vibe_cli/persistence/`
 - New config option or precedence behavior -> `mythic_vibe_cli/config.py`
 - New prompt packet section/format -> `mythic_vibe_cli/codex_bridge.py`
 - New sync provider/parser/cache path -> `mythic_vibe_cli/mythic_data.py`

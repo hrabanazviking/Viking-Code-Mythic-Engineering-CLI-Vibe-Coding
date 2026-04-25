@@ -2,21 +2,13 @@ from __future__ import annotations
 
 import ast
 from dataclasses import dataclass
-from datetime import datetime, timezone
 import json
 from pathlib import Path
 import textwrap
 
-
-PHASES = [
-    "intent",
-    "constraints",
-    "architecture",
-    "plan",
-    "build",
-    "verify",
-    "reflect",
-]
+from .core.state import PHASES, ProjectState, next_phase_after, utc_now, validate_state_payload
+from .persistence.json_store import JsonStateStore, StateStoreError
+from .persistence.migrations import migrate_project_state
 
 FORBIDDEN_RUNTIME_IMPORT_ROOTS = {
     "ai",
@@ -80,22 +72,15 @@ class MythicWorkflow:
             raise ValueError(f"Invalid phase '{phase}'. Choose one of: {valid}")
 
         self.mythic_dir.mkdir(parents=True, exist_ok=True)
-        status_path = self.mythic_dir / "status.json"
         devlog_path = self.docs_dir / "DEVLOG.md"
         self.docs_dir.mkdir(parents=True, exist_ok=True)
 
-        state = self._load_status(status_path)
-
-        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ")
-        state["current_phase"] = normalized
-        completed = [p for p in state.get("completed_phases", []) if p in PHASES]
-        if normalized not in completed:
-            completed.append(normalized)
-        state["completed_phases"] = completed
-        state["last_update"] = timestamp
-        history = state.setdefault("history", [])
-        history.append({"time": timestamp, "phase": normalized, "update": update})
-        status_path.write_text(json.dumps(state, indent=2), encoding="utf-8")
+        migrate_project_state(self.root)
+        store = JsonStateStore(self.root)
+        state = store.load_state()
+        timestamp = utc_now()
+        state.append_checkin(normalized, update, timestamp=timestamp)
+        status_path = store.write_state(state)
 
         if not devlog_path.exists():
             devlog_path.write_text(self._devlog_template(), encoding="utf-8")
@@ -110,16 +95,19 @@ class MythicWorkflow:
         if not status_path.exists():
             return "No Mythic status found. Run `mythic-vibe init --goal \"...\"` first."
 
-        state = self._load_status(status_path)
-        completed = [phase for phase in state.get("completed_phases", []) if phase in PHASES]
+        try:
+            state = JsonStateStore(self.root).load_state()
+        except StateStoreError:
+            state = ProjectState(goal="unspecified goal")
+        completed = [phase for phase in state.completed_phases if phase in PHASES]
         progress = int((len(completed) / len(PHASES)) * 100)
         return textwrap.dedent(
             f"""
-            Goal: {state.get('goal', 'n/a')}
-            Current phase: {state.get('current_phase', 'intent')}
+            Goal: {state.goal}
+            Current phase: {state.current_phase}
             Progress: {progress}% ({len(completed)}/{len(PHASES)} phases touched)
-            Last update: {state.get('last_update', 'n/a')}
-            Next suggested phase: {self._next_phase(completed)}
+            Last update: {state.updated_at}
+            Next suggested phase: {next_phase_after(completed)}
             """
         ).strip()
 
@@ -149,21 +137,15 @@ class MythicWorkflow:
             status_path = self.mythic_dir / "status.json"
             if status_path.exists():
                 try:
-                    state = json.loads(status_path.read_text(encoding="utf-8"))
-                except json.JSONDecodeError:
+                    state = JsonStateStore(self.root).read_payload()
+                except StateStoreError:
                     errors.append("Invalid JSON in mythic/status.json")
                     state = None
 
                 if state:
-                    current = state.get("current_phase")
-                    if current and current not in PHASES:
-                        errors.append(f"Invalid current_phase in status.json: {current}")
-
-                    completed = state.get("completed_phases", [])
-                    invalid = [phase for phase in completed if phase not in PHASES]
-                    if invalid:
-                        errors.append(f"Invalid completed_phases values: {', '.join(invalid)}")
-
+                    validation = validate_state_payload(state)
+                    errors.extend(validation.errors)
+                    warnings.extend(validation.warnings)
                     if not state.get("history"):
                         warnings.append("No check-in history yet. Run `mythic-vibe checkin` after your next milestone.")
 
@@ -242,10 +224,10 @@ class MythicWorkflow:
         return state
 
     def _next_phase(self, completed: list[str]) -> str:
-        for phase in PHASES:
-            if phase not in completed:
-                return phase
-        return "reflect (all phases completed at least once)"
+        next_phase = next_phase_after(completed)
+        if len([phase for phase in completed if phase in PHASES]) == len(PHASES):
+            return "reflect (all phases completed at least once)"
+        return next_phase
 
     def _mythic_engineering_note(self, method_source: str) -> str:
         return textwrap.dedent(
@@ -290,7 +272,7 @@ class MythicWorkflow:
         ).strip() + "\n"
 
     def _plan_template(self, goal: str, noob_mode: bool) -> str:
-        now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ")
+        now = utc_now()
         beginner_tips = "Enabled" if noob_mode else "Disabled"
         return textwrap.dedent(
             f"""
@@ -345,16 +327,7 @@ class MythicWorkflow:
         ).strip() + "\n"
 
     def _status_template(self, goal: str) -> str:
-        return json.dumps(
-            {
-                "goal": goal,
-                "current_phase": "intent",
-                "completed_phases": [],
-                "last_update": None,
-                "history": [],
-            },
-            indent=2,
-        )
+        return json.dumps(ProjectState(goal=goal).to_dict(), indent=2)
 
     def _philosophy_template(self, goal: str) -> str:
         return textwrap.dedent(
