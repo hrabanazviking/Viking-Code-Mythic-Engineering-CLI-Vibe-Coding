@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mythic-vibe.local/schemas/checkin.schema.json",
+  "title": "Mythic Vibe CheckinRecord",
+  "type": "object",
+  "required": ["schema_version", "checkin_id", "timestamp", "phase", "summary"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "checkin_id": { "type": "string", "pattern": "^CHK-[0-9]{6}$" },
+    "timestamp": { "type": "string" },
+    "phase": {
+      "enum": ["intent", "constraints", "architecture", "plan", "build", "verify", "reflect"]
+    },
+    "task_id": { "type": ["string", "null"] },
+    "summary": { "type": "string" },
+    "files_changed": { "type": "array", "items": { "type": "string" } },
+    "decisions": { "type": "array", "items": { "type": "string" } },
+    "risks": { "type": "array", "items": { "type": "string" } },
+    "next_phase": { "type": ["string", "null"] }
+  },
+  "additionalProperties": true
+}

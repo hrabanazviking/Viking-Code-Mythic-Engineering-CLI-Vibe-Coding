@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mythic-vibe.local/schemas/verification.schema.json",
+  "title": "Mythic Vibe VerificationRecord",
+  "type": "object",
+  "required": ["schema_version", "verification_id", "timestamp", "commands", "result"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "verification_id": { "type": "string" },
+    "timestamp": { "type": "string" },
+    "task_id": { "type": ["string", "null"] },
+    "commands": { "type": "array", "items": { "type": "object" } },
+    "diff_reviewed": { "type": "boolean" },
+    "docs_updated": { "type": "boolean" },
+    "invariants_checked": { "type": "array", "items": { "type": "string" } },
+    "result": { "enum": ["pass", "fail", "blocked"] }
+  },
+  "additionalProperties": true
+}
