@@ -55,6 +55,7 @@ class CliKernelTests(unittest.TestCase):
             "oath",
             "grimoire",
             "config",
+            "state",
             "db",
             "plunder",
         }

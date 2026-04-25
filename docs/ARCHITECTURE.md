@@ -41,6 +41,8 @@ User
     -> Parser + Dispatch Kernel (mythic_vibe_cli/app.py)
     -> Command Handlers (mythic_vibe_cli/commands.py)
     -> Terminal/Error Helpers (mythic_vibe_cli/output.py, mythic_vibe_cli/errors.py)
+    -> Core State Model (mythic_vibe_cli/core/state.py)
+    -> Persistence Layer (mythic_vibe_cli/persistence/*.py)
     -> Workflow Orchestrator (workflow.py)
     -> Prompt Bridge (codex_bridge.py)
     -> Config Resolver (config.py)
@@ -87,6 +89,29 @@ User
 - Owns structured CLI error payloads and formatting.
 - Keeps command error messages actionable and compatible with the exit-code policy.
 
+### `mythic_vibe_cli/core/state.py`
+
+- Owns the schema-versioned `ProjectState` contract.
+- Defines phase names, check-in records, decision records, verification records, and state validation.
+- Must not perform filesystem, network, or terminal output side effects.
+
+### `mythic_vibe_cli/persistence/json_store.py`
+
+- Owns JSON state read/write behavior for `mythic/status.json`.
+- Provides backup, atomic write, and lock-file protection for state updates.
+- Must not own command semantics or Mythic phase decisions.
+
+### `mythic_vibe_cli/persistence/migrations.py`
+
+- Owns migration from legacy status JSON to the current state schema.
+- Creates backups under `mythic/backups/` before rewriting existing state.
+- Recovers corrupt JSON by preserving the broken file as a backup before writing a valid default state.
+
+### `mythic_vibe_cli/resources/schemas/`
+
+- Stores packaged JSON schema files for state, check-ins, decisions, and verification records.
+- Documents the file-level contract used by validation and future external integrations.
+
 ### `mythic_vibe_cli/exit_codes.py`
 
 - Defines the shared CLI exit-code policy.
@@ -121,12 +146,13 @@ User
 Allowed primary direction:
 
 1. `__main__.py` and `cli.py` -> `app`
-2. `app.py` -> `commands` + argument contract constants
-3. `commands.py` -> `workflow`, `codex_bridge`, `config`, `mythic_data`, `output`, `errors`, `exit_codes`
-4. `workflow.py` -> `config` + local artifact IO
-5. `codex_bridge.py` -> `config` + prepared context
-6. `config.py` -> minimal dependencies only
-7. `mythic_data.py` -> provider/sync/cache concerns
+2. `app.py` -> `commands` + `core.state` argument constants
+3. `commands.py` -> `workflow`, `persistence`, `codex_bridge`, `config`, `mythic_data`, `output`, `errors`, `exit_codes`
+4. `workflow.py` -> `core.state`, `persistence`, `config` + local artifact IO
+5. `persistence/*.py` -> `core.state` + filesystem primitives
+6. `codex_bridge.py` -> `config` + prepared context
+7. `config.py` -> minimal dependencies only
+8. `mythic_data.py` -> provider/sync/cache concerns
 
 Forbidden by default:
 
@@ -145,6 +171,8 @@ Runtime behavior assumes stable interaction with:
 - `docs/` for governance/architecture records
 - `tasks/` for planning and execution tracking
 - `mythic/` for loop status/plan artifacts
+- `mythic/status.json` as schema-versioned project state
+- `mythic/backups/` for migration/recovery backups
 - root continuity records such as `DEVLOG.md` and `CHANGELOG.md`
 
 Renaming or relocating these without migration strategy is considered a breaking change.
@@ -173,6 +201,7 @@ Renaming or relocating these without migration strategy is considered a breaking
 3. **Contract drift:** docs may diverge from actual CLI behavior.
 4. **Overloaded bridge packets:** context packets can become noisy without budget discipline.
 5. **Output-mode drift:** human, quiet, dry-run, and JSON modes can diverge if command output bypasses shared helpers.
+6. **State corruption:** migration or check-in writes can damage continuity if they bypass backup, lock, and atomic-write paths.
 
 Mitigations:
 
@@ -181,6 +210,7 @@ Mitigations:
 - routine command-help and smoke tests,
 - changelog/devlog continuity discipline.
 - command output through `output.py` and structured errors through `errors.py`.
+- all state writes through `JsonStateStore` and all legacy upgrades through `migrations.py`.
 
 ---
 

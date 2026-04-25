@@ -14,10 +14,13 @@ import urllib.request
 from .codex_bridge import CodexBridge, CodexPacketRequest
 from .config import ConfigStore
 from .errors import CliError, format_error
-from .exit_codes import OPERATIONAL_FAILURE, SUCCESS, USER_INPUT_ERROR
+from .exit_codes import OPERATIONAL_FAILURE, SUCCESS, USER_INPUT_ERROR, VERIFICATION_FAILURE
 from .mythic_data import MethodStore
 from .output import write_bullet, write_error, write_json, write_key_value, write_line, write_verbose
-from .workflow import PHASES, MythicRunConfig, MythicWorkflow
+from .core.state import PHASES, coerce_project_state, validate_state_payload
+from .persistence.json_store import JsonStateStore, StateStoreError
+from .persistence.migrations import migrate_project_state
+from .workflow import MythicRunConfig, MythicWorkflow
 
 
 CommandHandler = Callable[[argparse.Namespace], int]
@@ -28,43 +31,47 @@ def _flag(args: argparse.Namespace, name: str) -> bool:
 
 
 def _status_payload(root: Path) -> dict[str, object]:
-    status_path = root / "mythic" / "status.json"
-    if not status_path.exists():
+    store = JsonStateStore(root)
+    if not store.status_path.exists():
         return {
             "status_found": False,
-            "path": str(status_path),
+            "path": str(store.status_path),
             "message": 'No Mythic status found. Run `mythic-vibe init --goal "..."` first.',
         }
 
     try:
-        state = json.loads(status_path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
+        payload = store.read_payload()
+    except StateStoreError as exc:
         return {
             "status_found": True,
             "valid": False,
-            "path": str(status_path),
-            "error": f"Invalid JSON: {exc.msg}",
+            "path": str(store.status_path),
+            "error": str(exc),
         }
 
-    if not isinstance(state, dict):
+    if payload is None:
         return {
-            "status_found": True,
-            "valid": False,
-            "path": str(status_path),
-            "error": "status.json must contain a JSON object.",
+            "status_found": False,
+            "path": str(store.status_path),
+            "message": 'No Mythic status found. Run `mythic-vibe init --goal "..."` first.',
         }
 
-    completed = [phase for phase in state.get("completed_phases", []) if phase in PHASES]
+    state = coerce_project_state(payload)
+    validation = validate_state_payload(payload)
+    completed = [phase for phase in state.completed_phases if phase in PHASES]
     progress = int((len(completed) / len(PHASES)) * 100)
     return {
         "status_found": True,
-        "valid": True,
-        "path": str(status_path),
-        "goal": state.get("goal", "n/a"),
-        "current_phase": state.get("current_phase", "intent"),
+        "valid": validation.ok,
+        "path": str(store.status_path),
+        "schema_version": state.schema_version,
+        "goal": state.goal,
+        "current_phase": state.current_phase,
         "completed_phases": completed,
         "progress_percent": progress,
-        "last_update": state.get("last_update", "n/a"),
+        "last_update": state.updated_at,
+        "errors": validation.errors,
+        "warnings": validation.warnings,
     }
 
 
@@ -458,6 +465,118 @@ def cmd_config_set(args: argparse.Namespace) -> int:
     return SUCCESS
 
 
+def cmd_state_show(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    store = JsonStateStore(root)
+
+    try:
+        payload = store.read_payload()
+    except StateStoreError as exc:
+        if _flag(args, "json"):
+            write_json({"ok": False, "path": str(store.status_path), "errors": [str(exc)], "warnings": []})
+        else:
+            write_error(str(exc))
+        return VERIFICATION_FAILURE
+
+    if payload is None:
+        message = "No mythic/status.json found. Run `mythic-vibe init` or `mythic-vibe db migrate` first."
+        if _flag(args, "json"):
+            write_json({"ok": False, "path": str(store.status_path), "errors": [message], "warnings": []})
+        else:
+            write_error(message)
+        return USER_INPUT_ERROR
+
+    state = coerce_project_state(payload)
+    validation = validate_state_payload(payload)
+    if _flag(args, "json"):
+        write_json(
+            {
+                "ok": validation.ok,
+                "path": str(store.status_path),
+                "legacy": payload.get("schema_version") is None,
+                "errors": validation.errors,
+                "warnings": validation.warnings,
+                "state": state.to_dict(),
+            }
+        )
+        return VERIFICATION_FAILURE if validation.errors else SUCCESS
+
+    write_line("Mythic project state")
+    write_key_value("Path", store.status_path)
+    write_key_value("Schema version", state.schema_version)
+    write_key_value("Project ID", state.project_id)
+    write_key_value("Goal", state.goal)
+    write_key_value("Current phase", state.current_phase)
+    write_key_value("Completed phases", ", ".join(state.completed_phases) or "none")
+    write_key_value("Updated", state.updated_at)
+    write_key_value("History records", len(state.history))
+    if validation.warnings:
+        write_line("- Warnings:")
+        for warning in validation.warnings:
+            write_bullet(warning, indent=2)
+    if validation.errors:
+        write_line("- Errors:")
+        for error in validation.errors:
+            write_bullet(error, indent=2)
+        return VERIFICATION_FAILURE
+    return SUCCESS
+
+
+def cmd_state_validate(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    store = JsonStateStore(root)
+
+    try:
+        payload = store.read_payload()
+    except StateStoreError as exc:
+        errors = [str(exc)]
+        if _flag(args, "json"):
+            write_json({"ok": False, "path": str(store.status_path), "errors": errors, "warnings": []})
+        else:
+            write_line("Mythic state validation")
+            write_key_value("Path", store.status_path)
+            write_line("- Errors:")
+            for error in errors:
+                write_bullet(error, indent=2)
+        return VERIFICATION_FAILURE
+
+    if payload is None:
+        errors = ["No mythic/status.json found. Run `mythic-vibe init` or `mythic-vibe db migrate` first."]
+        if _flag(args, "json"):
+            write_json({"ok": False, "path": str(store.status_path), "errors": errors, "warnings": []})
+        else:
+            write_error(errors[0])
+        return USER_INPUT_ERROR
+
+    validation = validate_state_payload(payload)
+    if _flag(args, "json"):
+        write_json(
+            {
+                "ok": validation.ok,
+                "path": str(store.status_path),
+                "errors": validation.errors,
+                "warnings": validation.warnings,
+            }
+        )
+        return SUCCESS if validation.ok else VERIFICATION_FAILURE
+
+    write_line("Mythic state validation")
+    write_key_value("Path", store.status_path)
+    if validation.errors:
+        write_line("- Errors:")
+        for error in validation.errors:
+            write_bullet(error, indent=2)
+    else:
+        write_line("- Errors: none")
+    if validation.warnings:
+        write_line("- Warnings:")
+        for warning in validation.warnings:
+            write_bullet(warning, indent=2)
+    else:
+        write_line("- Warnings: none")
+    return SUCCESS if validation.ok else VERIFICATION_FAILURE
+
+
 def cmd_plunder(args: argparse.Namespace) -> int:
     out_path = Path(args.dest).resolve()
     if _flag(args, "dry_run"):
@@ -530,14 +649,17 @@ def cmd_db_migrate(args: argparse.Namespace) -> int:
             "command": "db migrate",
             "dry_run": True,
             "database": str(db_path),
+            "status_path": str(root / "mythic" / "status.json"),
         }
         if _flag(args, "json"):
             write_json(payload)
         else:
             write_line("Dry run: no database migration will be performed.")
             write_key_value("Database", db_path)
+            write_key_value("State", root / "mythic" / "status.json")
         return SUCCESS
 
+    state_migration = migrate_project_state(root)
     db_path.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(db_path) as conn:
         conn.execute(
@@ -552,10 +674,20 @@ def cmd_db_migrate(args: argparse.Namespace) -> int:
         )
         conn.commit()
     if _flag(args, "json"):
-        write_json({"command": "db migrate", "dry_run": False, "database": str(db_path)})
+        write_json(
+            {
+                "command": "db migrate",
+                "dry_run": False,
+                "database": str(db_path),
+                "state_migration": state_migration.to_dict(),
+            }
+        )
         return SUCCESS
 
     write_key_value("Database migrated", db_path)
+    write_key_value("State", state_migration.status_path)
+    if state_migration.backup_path:
+        write_key_value("State backup", state_migration.backup_path)
     return SUCCESS
 
 
@@ -609,6 +741,14 @@ def cmd_db_dispatch(args: argparse.Namespace) -> int:
     return cmd_db_migrate(args)
 
 
+def cmd_state_dispatch(args: argparse.Namespace) -> int:
+    if args.state_command == "show":
+        return cmd_state_show(args)
+    if args.state_command == "validate":
+        return cmd_state_validate(args)
+    return USER_INPUT_ERROR
+
+
 COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "init": cmd_init,
     "start": cmd_init,
@@ -629,6 +769,7 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "oath": cmd_oath,
     "grimoire": cmd_grimoire,
     "config": cmd_config_dispatch,
+    "state": cmd_state_dispatch,
     "db": cmd_db_dispatch,
     "plunder": cmd_plunder,
 }
