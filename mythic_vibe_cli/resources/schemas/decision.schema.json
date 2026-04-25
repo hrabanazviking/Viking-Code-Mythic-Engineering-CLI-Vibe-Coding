@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mythic-vibe.local/schemas/decision.schema.json",
+  "title": "Mythic Vibe DecisionRecord",
+  "type": "object",
+  "required": ["schema_version", "decision_id", "title", "status", "context", "decision"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "decision_id": { "type": "string" },
+    "title": { "type": "string" },
+    "status": { "enum": ["proposed", "accepted", "superseded", "rejected"] },
+    "context": { "type": "string" },
+    "decision": { "type": "string" },
+    "consequences": { "type": "array", "items": { "type": "string" } },
+    "links": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}

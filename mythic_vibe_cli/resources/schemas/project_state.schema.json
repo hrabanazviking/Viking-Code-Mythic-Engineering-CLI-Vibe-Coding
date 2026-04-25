@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mythic-vibe.local/schemas/project_state.schema.json",
+  "title": "Mythic Vibe ProjectState",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "project_id",
+    "goal",
+    "created_at",
+    "updated_at",
+    "current_phase",
+    "completed_phases",
+    "history"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "project_id": { "type": "string", "minLength": 1 },
+    "goal": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string" },
+    "updated_at": { "type": "string" },
+    "current_phase": {
+      "enum": ["intent", "constraints", "architecture", "plan", "build", "verify", "reflect"]
+    },
+    "completed_phases": {
+      "type": "array",
+      "items": { "enum": ["intent", "constraints", "architecture", "plan", "build", "verify", "reflect"] }
+    },
+    "active_task_id": { "type": ["string", "null"] },
+    "open_risks": { "type": "array", "items": { "type": "string" } },
+    "open_decisions": { "type": "array", "items": { "type": "string" } },
+    "last_packet_id": { "type": ["string", "null"] },
+    "last_verification_id": { "type": ["string", "null"] },
+    "history": { "type": "array", "items": { "$ref": "checkin.schema.json" } }
+  },
+  "additionalProperties": true
+}
