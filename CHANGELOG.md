@@ -8,6 +8,9 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Added
 
+- Added `mythic-vibe reflect`, `mythic-vibe handoff create|show|latest`, and `mythic-vibe resume` for durable session continuity.
+- Added timestamped handoff artifacts under `mythic/handoffs/` plus `docs/SESSION_HANDOFF.md` generation.
+- Added latest-handoff linkage in `status` output so the current session handoff is easy to recover.
 - Added canonical `docs/INDEX.md` and `docs/COMMAND_CONTRACTS.md` scaffolding during project initialization.
 - Added `docs/ADRS/ADR-0003-verification-gates.md` and `docs/ADRS/ADR-0004-doctor-diagnostics.md`.
 - Added structured `doctor` reporting with required-artifact, state-coherence, docs-drift, and boundary sections.
@@ -56,6 +59,7 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Changed
 
+- `status` now includes the latest handoff path, ID, and next recommended action when a handoff exists.
 - `doctor --repo-boundary` now stays focused on runtime boundary checks, while the normal doctor path handles docs drift and ADR checks.
 - Project scaffolding now creates the canonical docs index and command contract files by default.
 - Successful verification now updates `last_verification_id` in project state.

@@ -7,6 +7,7 @@ from pathlib import Path
 import textwrap
 
 from .core.state import PHASES, ProjectState, next_phase_after, utc_now, validate_state_payload
+from .handoff import load_latest_handoff
 from .persistence.json_store import JsonStateStore, StateStoreError
 from .persistence.migrations import migrate_project_state
 
@@ -120,13 +121,21 @@ class MythicWorkflow:
             state = ProjectState(goal="unspecified goal")
         completed = [phase for phase in state.completed_phases if phase in PHASES]
         progress = int((len(completed) / len(PHASES)) * 100)
+        latest_handoff = load_latest_handoff(self.root)
+        handoff_line = ""
+        if latest_handoff:
+            handoff_line = (
+                f"\nLatest handoff: {self.root / 'docs' / 'SESSION_HANDOFF.md'}"
+                f"\nLatest handoff ID: {latest_handoff.handoff_id}"
+                f"\nNext handoff action: {latest_handoff.next_steps[0] if latest_handoff.next_steps else 'review the handoff'}"
+            )
         return textwrap.dedent(
             f"""
             Goal: {state.goal}
             Current phase: {state.current_phase}
             Progress: {progress}% ({len(completed)}/{len(PHASES)} phases touched)
             Last update: {state.updated_at}
-            Next suggested phase: {next_phase_after(completed)}
+            Next suggested phase: {next_phase_after(completed)}{handoff_line}
             """
         ).strip()
 

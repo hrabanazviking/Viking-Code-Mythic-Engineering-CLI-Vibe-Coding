@@ -26,6 +26,7 @@ This hub orients contributors to the active Mythic Vibe CLI product and the surr
 - `docs/api.md` - command/API contract overview.
 - `docs/hardware_profiles.md` - hardware-oriented guidance.
 - `docs/DOCUMENTATION_STANDARDS.md` - documentation maintenance rules.
+- `docs/SESSION_HANDOFF.md` - latest generated session handoff summary.
 - `docs/SESSION_HANDOFF_TEMPLATE.md` - continuity template for session closure.
 
 ## Method And Philosophy

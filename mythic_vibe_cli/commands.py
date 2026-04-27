@@ -17,6 +17,15 @@ from .context.indexer import ProjectIndexer
 from .config import ConfigStore
 from .errors import CliError, format_error
 from .exit_codes import OPERATIONAL_FAILURE, SUCCESS, USER_INPUT_ERROR, VERIFICATION_FAILURE
+from .handoff import (
+    HandoffRecord,
+    build_handoff_record,
+    list_handoffs,
+    load_latest_handoff,
+    load_handoff_record,
+    render_handoff_markdown,
+    write_handoff_record,
+)
 from .mythic_data import MethodStore
 from .output import write_bullet, write_error, write_json, write_key_value, write_line, write_verbose
 from .core.state import PHASES, VerificationRecord, coerce_project_state, utc_now, validate_state_payload
@@ -67,6 +76,7 @@ def _status_payload(root: Path) -> dict[str, object]:
     validation = validate_state_payload(payload)
     completed = [phase for phase in state.completed_phases if phase in PHASES]
     progress = int((len(completed) / len(PHASES)) * 100)
+    latest_handoff = load_latest_handoff(root)
     return {
         "status_found": True,
         "valid": validation.ok,
@@ -77,6 +87,9 @@ def _status_payload(root: Path) -> dict[str, object]:
         "completed_phases": completed,
         "progress_percent": progress,
         "last_update": state.updated_at,
+        "latest_handoff_id": latest_handoff.handoff_id if latest_handoff else None,
+        "latest_handoff_path": str(root / "docs" / "SESSION_HANDOFF.md") if latest_handoff else None,
+        "latest_handoff_next_step": latest_handoff.next_steps[0] if latest_handoff and latest_handoff.next_steps else None,
         "errors": validation.errors,
         "warnings": validation.warnings,
     }
@@ -95,6 +108,8 @@ def _command_name(args: argparse.Namespace, fallback: str) -> str:
         subcommand_attr = getattr(args, "config_command", "")
     elif command == "grimoire":
         subcommand_attr = getattr(args, "grimoire_command", "")
+    elif command == "handoff":
+        subcommand_attr = getattr(args, "handoff_command", "")
 
     if subcommand_attr:
         return f"{command} {subcommand_attr}"
@@ -895,6 +910,197 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     return OPERATIONAL_FAILURE if report["errors"] else SUCCESS
 
 
+def _handoff_payload(root: Path, record: HandoffRecord) -> dict[str, object]:
+    return {
+        "handoff_id": record.handoff_id,
+        "timestamp": record.timestamp,
+        "branch": record.branch,
+        "session_type": record.session_type,
+        "objective": record.objective,
+        "intent": record.intent,
+        "constraints": record.constraints,
+        "decisions": record.decisions,
+        "files_changed": record.files_changed,
+        "tests_run": record.tests_run,
+        "failures": record.failures,
+        "next_steps": record.next_steps,
+        "prompt_packet_suggestion": record.prompt_packet_suggestion,
+        "verification_id": record.verification_id,
+        "verification_result": record.verification_result,
+        "notes": record.notes,
+        "markdown_path": str(root / "docs" / "SESSION_HANDOFF.md"),
+        "json_path": str(root / "mythic" / "handoffs" / f"{record.handoff_id}.json"),
+        "markdown": render_handoff_markdown(record),
+    }
+
+
+def _create_handoff(
+    root: Path,
+    *,
+    objective: str | None = None,
+    next_step: str | None = None,
+    note: str | None = None,
+    session_type: str = "reflect",
+) -> tuple[HandoffRecord, Path, Path]:
+    record = build_handoff_record(
+        root,
+        objective=objective,
+        next_step=next_step,
+        note=note,
+        session_type=session_type,
+    )
+    json_path, md_path = write_handoff_record(root, record)
+    return record, json_path, md_path
+
+
+def cmd_handoff_create(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    if _flag(args, "dry_run"):
+        record = build_handoff_record(
+            root,
+            objective=getattr(args, "summary", None) or getattr(args, "objective", None),
+            next_step=getattr(args, "next_step", None),
+            note=getattr(args, "note", None),
+            session_type=getattr(args, "session_type", "handoff"),
+        )
+        payload = _handoff_payload(root, record)
+        payload["dry_run"] = True
+        if _flag(args, "json"):
+            write_json({"command": "handoff create", "path": str(root), "handoff": payload})
+        else:
+            write_line("Dry run: no session handoff will be written.")
+            write_key_value("Handoff ID", record.handoff_id)
+            write_key_value("Markdown", payload["markdown_path"])
+            write_key_value("JSON", payload["json_path"])
+            write_key_value("Next recommended action", record.next_steps[0] if record.next_steps else "review the handoff")
+        return SUCCESS
+
+    record, json_path, md_path = _create_handoff(
+        root,
+        objective=getattr(args, "summary", None) or getattr(args, "objective", None),
+        next_step=getattr(args, "next_step", None),
+        note=getattr(args, "note", None),
+        session_type=getattr(args, "session_type", "handoff"),
+    )
+    if _flag(args, "json"):
+        write_json({"command": "handoff create", "path": str(root), "handoff": _handoff_payload(root, record)})
+        return SUCCESS
+
+    write_line("Session handoff created.")
+    write_key_value("Handoff ID", record.handoff_id)
+    write_key_value("Markdown", md_path)
+    write_key_value("JSON", json_path)
+    write_key_value("Next recommended action", record.next_steps[0] if record.next_steps else "review the handoff")
+    return SUCCESS
+
+
+def cmd_handoff_show(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    handoff_id = getattr(args, "handoff_id", "") or ""
+    record = load_handoff_record(root, handoff_id) if handoff_id else load_latest_handoff(root)
+    if record is None:
+        write_error("No handoff record found. Run `mythic-vibe reflect` first.")
+        return USER_INPUT_ERROR
+
+    if _flag(args, "json"):
+        write_json({"command": _command_name(args, "handoff show"), "path": str(root), "handoff": _handoff_payload(root, record)})
+        return SUCCESS
+
+    write_line(render_handoff_markdown(record))
+    return SUCCESS
+
+
+def cmd_handoff_latest(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    record = load_latest_handoff(root)
+    if record is None:
+        write_error("No handoff record found. Run `mythic-vibe reflect` first.")
+        return USER_INPUT_ERROR
+    if _flag(args, "json"):
+        write_json({"command": "handoff latest", "path": str(root), "handoff": _handoff_payload(root, record)})
+        return SUCCESS
+
+    write_line(render_handoff_markdown(record))
+    return SUCCESS
+
+
+def cmd_reflect(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    if _flag(args, "dry_run"):
+        record = build_handoff_record(
+            root,
+            objective=getattr(args, "summary", None) or getattr(args, "objective", None),
+            next_step=getattr(args, "next_step", None),
+            note=getattr(args, "note", None),
+            session_type="reflect",
+        )
+        payload = _handoff_payload(root, record)
+        payload["dry_run"] = True
+        if _flag(args, "json"):
+            write_json({"command": "reflect", "path": str(root), "handoff": payload})
+        else:
+            write_line("Dry run: no reflection handoff will be written.")
+            write_key_value("Handoff ID", record.handoff_id)
+            write_key_value("Markdown", payload["markdown_path"])
+            write_key_value("JSON", payload["json_path"])
+            write_key_value("Next recommended action", record.next_steps[0] if record.next_steps else "review the handoff")
+        return SUCCESS
+
+    record, json_path, md_path = _create_handoff(
+        root,
+        objective=getattr(args, "summary", None) or getattr(args, "objective", None),
+        next_step=getattr(args, "next_step", None),
+        note=getattr(args, "note", None),
+        session_type="reflect",
+    )
+    if _flag(args, "json"):
+        write_json({"command": "reflect", "path": str(root), "handoff": _handoff_payload(root, record)})
+        return SUCCESS
+
+    write_line("Reflection handoff created.")
+    write_key_value("Handoff ID", record.handoff_id)
+    write_key_value("Markdown", md_path)
+    write_key_value("JSON", json_path)
+    write_key_value("Next recommended action", record.next_steps[0] if record.next_steps else "review the handoff")
+    return SUCCESS
+
+
+def cmd_resume(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    record = load_latest_handoff(root)
+    if record is None:
+        write_line("No handoff exists yet. Run `mythic-vibe reflect` to create one.")
+        return SUCCESS
+
+    payload = _handoff_payload(root, record)
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "resume",
+                "path": str(root),
+                "handoff": payload,
+                "next_recommended_action": record.next_steps[0] if record.next_steps else "review the handoff",
+            }
+        )
+        return SUCCESS
+
+    write_line("Resume summary")
+    write_key_value("Handoff ID", record.handoff_id)
+    write_key_value("Next recommended action", record.next_steps[0] if record.next_steps else "review the handoff")
+    write_key_value("Prompt packet suggestion", record.prompt_packet_suggestion)
+    return SUCCESS
+
+
+def cmd_handoff_dispatch(args: argparse.Namespace) -> int:
+    if args.handoff_command == "create":
+        return cmd_handoff_create(args)
+    if args.handoff_command == "show":
+        return cmd_handoff_show(args)
+    if args.handoff_command == "latest":
+        return cmd_handoff_latest(args)
+    return USER_INPUT_ERROR
+
+
 def cmd_sync(_args: argparse.Namespace) -> int:
     if _flag(_args, "dry_run"):
         store = MethodStore()
@@ -1351,6 +1557,9 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "start": cmd_init,
     "imbue": cmd_init,
     "checkin": cmd_checkin,
+    "reflect": cmd_reflect,
+    "handoff": cmd_handoff_dispatch,
+    "resume": cmd_resume,
     "scan": cmd_scan,
     "import-md": cmd_import_md,
     "codex-pack": cmd_codex_pack,

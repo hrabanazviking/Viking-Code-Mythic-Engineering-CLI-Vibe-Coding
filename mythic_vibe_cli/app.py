@@ -57,6 +57,13 @@ def build_parser() -> argparse.ArgumentParser:
     status.add_argument("--path", default=".", help="Project directory (default: current directory)")
     add_runtime_options(status, json_output=True)
 
+    reflect = sub.add_parser("reflect", help="Create a reflection handoff for the current session")
+    reflect.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    reflect.add_argument("--summary", required=True, help="Short summary of the current work session")
+    reflect.add_argument("--next-step", default="", help="Optional next action to emphasize")
+    reflect.add_argument("--note", default="", help="Optional note to preserve in the handoff")
+    add_runtime_options(reflect, json_output=True, dry_run=True)
+
     scan = sub.add_parser("scan", help="Build a local project index for AI context")
     scan.add_argument("--path", default=".", help="Project directory (default: current directory)")
     scan.add_argument("--changed", action="store_true", help="Restrict the scan to changed files")
@@ -166,6 +173,23 @@ def build_parser() -> argparse.ArgumentParser:
     packet_diff.add_argument("--right", required=True, help="Right packet ID")
     add_runtime_options(packet_diff, json_output=True)
 
+    handoff = sub.add_parser("handoff", help="Create, inspect, or list session handoff records")
+    add_runtime_options(handoff, json_output=True, dry_run=True)
+    handoff_sub = handoff.add_subparsers(dest="handoff_command", required=True)
+    handoff_create = handoff_sub.add_parser("create", help="Create a session handoff record")
+    handoff_create.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    handoff_create.add_argument("--summary", default="", help="Optional summary of the current work session")
+    handoff_create.add_argument("--next-step", default="", help="Optional next action to emphasize")
+    handoff_create.add_argument("--note", default="", help="Optional note to preserve in the handoff")
+    add_runtime_options(handoff_create, json_output=True, dry_run=True)
+    handoff_show = handoff_sub.add_parser("show", help="Show a stored handoff record")
+    handoff_show.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    handoff_show.add_argument("--handoff-id", default="", help="Handoff ID to show (default: latest)")
+    add_runtime_options(handoff_show, json_output=True)
+    handoff_latest = handoff_sub.add_parser("latest", help="Show the latest handoff record")
+    handoff_latest.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    add_runtime_options(handoff_latest, json_output=True)
+
     scry = sub.add_parser("scry", help="Analyze project health and diagnostics")
     scry.add_argument("--path", default=".", help="Project directory (default: current directory)")
     add_runtime_options(scry, json_output=True)
@@ -182,6 +206,10 @@ def build_parser() -> argparse.ArgumentParser:
     heal.add_argument("--path", default=".", help="Project directory (default: current directory)")
     heal.add_argument("--failing-test", default="", help="Optional failing test identifier")
     add_runtime_options(heal)
+
+    resume = sub.add_parser("resume", help="Summarize the latest handoff and suggest the next step")
+    resume.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    add_runtime_options(resume, json_output=True)
 
     oath = sub.add_parser("oath", help="Display responsible AI usage oath")
     oath.add_argument("--yes", action="store_true", help="Echo acceptance message after displaying the oath")
