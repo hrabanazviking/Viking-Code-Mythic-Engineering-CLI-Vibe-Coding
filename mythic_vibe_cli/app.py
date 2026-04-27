@@ -55,6 +55,24 @@ def build_parser() -> argparse.ArgumentParser:
     status.add_argument("--path", default=".", help="Project directory (default: current directory)")
     add_runtime_options(status, json_output=True)
 
+    scan = sub.add_parser("scan", help="Build a local project index for AI context")
+    scan.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    scan.add_argument("--changed", action="store_true", help="Restrict the scan to changed files")
+    scan.add_argument("--docs", action="store_true", help="Restrict the scan to documentation files")
+    scan.add_argument(
+        "--include",
+        action="append",
+        default=[],
+        help="Glob pattern to force-include paths in the scan",
+    )
+    scan.add_argument(
+        "--exclude",
+        action="append",
+        default=[],
+        help="Glob pattern to exclude paths from the scan",
+    )
+    add_runtime_options(scan, json_output=True, dry_run=True)
+
     import_md = sub.add_parser("import-md", help="Import all Markdown files from Mythic Engineering repo")
     import_md.add_argument("--path", default=".", help="Project directory (default: current directory)")
     import_md.add_argument(
@@ -71,6 +89,7 @@ def build_parser() -> argparse.ArgumentParser:
     codex_pack.add_argument("--task", required=True, help="Specific coding task for Codex")
     codex_pack.add_argument("--phase", required=True, choices=PHASES, help="Current Mythic phase")
     codex_pack.add_argument("--audience", default="beginner", help="Audience level: beginner/intermediate/advanced")
+    codex_pack.add_argument("--role", default="Forge Worker", help="Packet role: Architect, Forge Worker, Auditor, Cartographer, Scribe, Debugger, Refactorer")
     codex_pack.add_argument("--path", default=".", help="Project directory (default: current directory)")
     codex_pack.add_argument("--out", default=None, help="Output file path (default: <project>/mythic/codex_prompt.md)")
     add_runtime_options(codex_pack, json_output=True, dry_run=True)
@@ -109,9 +128,29 @@ def build_parser() -> argparse.ArgumentParser:
     evoke.add_argument("--task", required=True, help="Specific coding task for Codex")
     evoke.add_argument("--phase", default="plan", choices=PHASES, help="Current Mythic phase (default: plan)")
     evoke.add_argument("--audience", default="beginner", help="Audience level: beginner/intermediate/advanced")
+    evoke.add_argument("--role", default="Forge Worker", help="Packet role: Architect, Forge Worker, Auditor, Cartographer, Scribe, Debugger, Refactorer")
     evoke.add_argument("--path", default=".", help="Project directory (default: current directory)")
     evoke.add_argument("--out", default=None, help="Output file path (default: <project>/mythic/codex_prompt.md)")
     add_runtime_options(evoke, json_output=True, dry_run=True)
+
+    packet = sub.add_parser("packet", help="Create, show, or list reusable packet artifacts")
+    add_runtime_options(packet, json_output=True, dry_run=True)
+    packet_sub = packet.add_subparsers(dest="packet_command", required=True)
+    packet_create = packet_sub.add_parser("create", help="Create a reusable packet artifact")
+    packet_create.add_argument("--task", required=True, help="Specific coding task for the packet")
+    packet_create.add_argument("--phase", required=True, choices=PHASES, help="Current Mythic phase")
+    packet_create.add_argument("--audience", default="beginner", help="Audience level: beginner/intermediate/advanced")
+    packet_create.add_argument("--role", default="Forge Worker", help="Packet role")
+    packet_create.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    packet_create.add_argument("--out", default=None, help="Optional output file path")
+    add_runtime_options(packet_create, json_output=True, dry_run=True)
+    packet_show = packet_sub.add_parser("show", help="Show a stored packet by packet ID")
+    packet_show.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    packet_show.add_argument("--packet-id", default="", help="Packet ID to show (default: latest)")
+    add_runtime_options(packet_show, json_output=True)
+    packet_list = packet_sub.add_parser("list", help="List stored packet records")
+    packet_list.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    add_runtime_options(packet_list, json_output=True)
 
     scry = sub.add_parser("scry", help="Analyze project health and diagnostics")
     scry.add_argument("--path", default=".", help="Project directory (default: current directory)")

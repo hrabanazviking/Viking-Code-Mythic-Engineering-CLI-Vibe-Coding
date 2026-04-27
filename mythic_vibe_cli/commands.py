@@ -12,6 +12,7 @@ import urllib.parse
 import urllib.request
 
 from .codex_bridge import CodexBridge, CodexPacketRequest
+from .context.indexer import ProjectIndexer
 from .config import ConfigStore
 from .errors import CliError, format_error
 from .exit_codes import OPERATIONAL_FAILURE, SUCCESS, USER_INPUT_ERROR, VERIFICATION_FAILURE
@@ -73,6 +74,27 @@ def _status_payload(root: Path) -> dict[str, object]:
         "errors": validation.errors,
         "warnings": validation.warnings,
     }
+
+
+def _command_name(args: argparse.Namespace, fallback: str) -> str:
+    command = getattr(args, "command", "")
+    subcommand_attr = None
+    if command == "packet":
+        subcommand_attr = getattr(args, "packet_command", "")
+    elif command == "db":
+        subcommand_attr = getattr(args, "db_command", "")
+    elif command == "state":
+        subcommand_attr = getattr(args, "state_command", "")
+    elif command == "config":
+        subcommand_attr = getattr(args, "config_command", "")
+    elif command == "grimoire":
+        subcommand_attr = getattr(args, "grimoire_command", "")
+
+    if subcommand_attr:
+        return f"{command} {subcommand_attr}"
+    if command:
+        return command
+    return fallback
 
 
 def cmd_init(args: argparse.Namespace) -> int:
@@ -155,48 +177,169 @@ def cmd_import_md(args: argparse.Namespace) -> int:
     return SUCCESS
 
 
+def cmd_scan(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    indexer = ProjectIndexer(root)
+    if _flag(args, "dry_run"):
+        payload = {
+            "command": "scan",
+            "dry_run": True,
+            "path": str(root),
+            "index_path": str(indexer.index_path),
+            "changed_only": _flag(args, "changed"),
+            "docs_only": _flag(args, "docs"),
+            "include_patterns": list(getattr(args, "include", []) or []),
+            "exclude_patterns": list(getattr(args, "exclude", []) or []),
+        }
+        if _flag(args, "json"):
+            write_json(payload)
+        else:
+            write_line("Dry run: no project index will be written.")
+            write_key_value("Project path", root)
+            write_key_value("Index", indexer.index_path)
+        return SUCCESS
+
+    index = indexer.build(
+        changed_only=_flag(args, "changed"),
+        docs_only=_flag(args, "docs"),
+        include_patterns=getattr(args, "include", []) or [],
+        exclude_patterns=getattr(args, "exclude", []) or [],
+    )
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "scan",
+                "dry_run": False,
+                "path": str(root),
+                "index_path": str(indexer.index_path),
+                "changed_only": _flag(args, "changed"),
+                "docs_only": _flag(args, "docs"),
+                "index": index.to_dict(),
+            }
+        )
+        return SUCCESS
+
+    write_line("Project context scan complete.")
+    write_key_value("Index", indexer.index_path)
+    write_key_value("Changed files", len(index.git.get("changed_files", [])))
+    write_key_value("Languages", len(index.languages))
+    write_key_value("Docs", len(index.docs))
+    write_key_value("Tests", len(index.tests))
+    write_key_value("Risks", len(index.risks))
+    if index.recommended_context:
+        write_line("- Recommended context:")
+        for item in index.recommended_context:
+            write_bullet(item, indent=2)
+    return SUCCESS
+
+
 def cmd_codex_pack(args: argparse.Namespace) -> int:
+    return cmd_packet_create(args)
+
+
+def cmd_packet_create(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
     out_path = Path(args.out).resolve() if args.out else root / "mythic" / "codex_prompt.md"
     if _flag(args, "dry_run"):
         payload = {
-            "command": args.command,
+            "command": _command_name(args, "packet create"),
             "dry_run": True,
             "path": str(root),
             "output_file": str(out_path),
             "phase": args.phase,
             "task": args.task,
+            "role": args.role,
         }
         if _flag(args, "json"):
             write_json(payload)
         else:
             write_line("Dry run: no Codex packet will be written.")
             write_key_value("File", out_path)
+            write_key_value("Packet role", args.role)
             write_key_value("Phase", args.phase)
             write_key_value("Task", args.task)
         return SUCCESS
 
     bridge = CodexBridge(root)
     packet = bridge.create_packet(
-        request=CodexPacketRequest(task=args.task, phase=args.phase, audience=args.audience),
+        request=CodexPacketRequest(task=args.task, phase=args.phase, audience=args.audience, role=args.role),
         out_file=out_path,
     )
     if _flag(args, "json"):
         write_json(
             {
-                "command": args.command,
+                "command": _command_name(args, "packet create"),
                 "dry_run": False,
                 "path": str(root),
                 "output_file": str(packet),
                 "phase": args.phase,
                 "task": args.task,
+                "role": args.role,
             }
         )
         return SUCCESS
 
     write_line("Codex packet generated.")
     write_key_value("File", packet)
+    write_key_value("Packet role", args.role)
     write_line("Paste the 'Prompt To Paste' section into ChatGPT/Codex.")
+    return SUCCESS
+
+
+def cmd_packet_show(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    bridge = CodexBridge(root)
+    packet_id = getattr(args, "packet_id", "") or ""
+    if not packet_id:
+        records = bridge.list_packets()
+        if not records:
+            write_error("No packet records found. Run `mythic-vibe packet create` first.")
+            return USER_INPUT_ERROR
+        packet_id = records[-1].packet_id
+
+    text = bridge.load_packet_text(packet_id)
+    if text is None:
+        write_error(f"Packet not found: {packet_id}")
+        return USER_INPUT_ERROR
+
+    if _flag(args, "json"):
+        record = bridge.load_packet_record(packet_id)
+        write_json(
+            {
+                "command": "packet show",
+                "packet_id": packet_id,
+                "packet": record.to_dict() if record else None,
+                "text": text,
+            }
+        )
+        return SUCCESS
+
+    write_line(text)
+    return SUCCESS
+
+
+def cmd_packet_list(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    bridge = CodexBridge(root)
+    records = bridge.list_packets()
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "packet list",
+                "path": str(root),
+                "packets": [record.to_dict() for record in records],
+            }
+        )
+        return SUCCESS
+
+    if not records:
+        write_line("No packet records found.")
+        return SUCCESS
+
+    write_line("Packet records")
+    for record in records:
+        write_key_value(record.packet_id, f"{record.phase} | {record.role} | {record.created_at}", indent=2)
+        write_bullet(record.task, indent=4)
     return SUCCESS
 
 
@@ -749,14 +892,26 @@ def cmd_state_dispatch(args: argparse.Namespace) -> int:
     return USER_INPUT_ERROR
 
 
+def cmd_packet_dispatch(args: argparse.Namespace) -> int:
+    if args.packet_command == "create":
+        return cmd_packet_create(args)
+    if args.packet_command == "show":
+        return cmd_packet_show(args)
+    if args.packet_command == "list":
+        return cmd_packet_list(args)
+    return USER_INPUT_ERROR
+
+
 COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "init": cmd_init,
     "start": cmd_init,
     "imbue": cmd_init,
     "checkin": cmd_checkin,
+    "scan": cmd_scan,
     "import-md": cmd_import_md,
     "codex-pack": cmd_codex_pack,
     "evoke": cmd_codex_pack,
+    "packet": cmd_packet_dispatch,
     "codex-log": cmd_codex_log,
     "status": cmd_status,
     "sync": cmd_sync,

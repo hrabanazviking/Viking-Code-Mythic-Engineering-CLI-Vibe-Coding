@@ -75,6 +75,35 @@ class ConfigAndBridgeTests(unittest.TestCase):
             self.assertIn("## Prompt To Paste", packet)
             self.assertIn("Current phase: plan", packet)
 
+    def test_codex_bridge_writes_project_index_context(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "docs").mkdir(parents=True, exist_ok=True)
+            (root / "tasks").mkdir(parents=True, exist_ok=True)
+            (root / "mythic").mkdir(parents=True, exist_ok=True)
+            (root / "mythic_vibe_cli").mkdir(parents=True, exist_ok=True)
+            (root / "tests").mkdir(parents=True, exist_ok=True)
+
+            (root / "tasks" / "current_GOALS.md").write_text("Ship the packet engine\n", encoding="utf-8")
+            (root / "docs" / "ARCHITECTURE.md").write_text("# Architecture\n", encoding="utf-8")
+            (root / "mythic" / "plan.md").write_text("# Plan\n", encoding="utf-8")
+            (root / "mythic" / "loop.md").write_text("# Loop\n", encoding="utf-8")
+            (root / "mythic_vibe_cli" / "app.py").write_text("print('hello')\n", encoding="utf-8")
+            (root / "tests" / "test_smoke.py").write_text("def test_ok():\n    assert True\n", encoding="utf-8")
+
+            bridge = CodexBridge(root)
+            packet_path = bridge.create_packet(CodexPacketRequest(task="scan context", phase="build", audience="advanced"))
+            packet = packet_path.read_text(encoding="utf-8")
+            index_path = root / "mythic" / "project_index.json"
+            index = index_path.read_text(encoding="utf-8")
+
+            self.assertTrue(packet_path.exists())
+            self.assertTrue(index_path.exists())
+            self.assertIn("### PROJECT INDEX", packet)
+            self.assertIn("recommended_context", packet)
+            self.assertIn("mythic_vibe_cli/app.py", index)
+            self.assertIn("tests/test_smoke.py", index)
+
 
 if __name__ == "__main__":
     unittest.main()

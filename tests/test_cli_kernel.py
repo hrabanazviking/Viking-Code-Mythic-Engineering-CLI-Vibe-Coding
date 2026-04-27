@@ -41,9 +41,11 @@ class CliKernelTests(unittest.TestCase):
             "imbue",
             "checkin",
             "status",
+            "scan",
             "import-md",
             "codex-pack",
             "evoke",
+            "packet",
             "codex-log",
             "sync",
             "method",
@@ -129,6 +131,64 @@ class CliKernelTests(unittest.TestCase):
             self.assertEqual(code, SUCCESS)
             self.assertFalse(project.exists())
             self.assertIn("Dry run", output.getvalue())
+
+    def test_packet_create_list_and_show_persist_records(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "docs").mkdir(parents=True, exist_ok=True)
+            (root / "tasks").mkdir(parents=True, exist_ok=True)
+            (root / "mythic").mkdir(parents=True, exist_ok=True)
+            (root / "docs" / "ARCHITECTURE.md").write_text("# Architecture\n", encoding="utf-8")
+            (root / "tasks" / "current_GOALS.md").write_text("Ship packets\n", encoding="utf-8")
+            (root / "mythic" / "plan.md").write_text("# Plan\n", encoding="utf-8")
+            (root / "mythic" / "loop.md").write_text("# Loop\n", encoding="utf-8")
+
+            create_output = io.StringIO()
+            with redirect_stdout(create_output):
+                create_code = app.main(
+                    [
+                        "packet",
+                        "create",
+                        "--task",
+                        "wire packet storage",
+                        "--phase",
+                        "build",
+                        "--path",
+                        str(root),
+                        "--json",
+                    ]
+                )
+
+            packet_dir = root / "mythic" / "packets"
+            metadata_files = sorted(packet_dir.glob("PKT-*.json"))
+            packet_files = sorted(packet_dir.glob("PKT-*.md"))
+            self.assertEqual(create_code, SUCCESS)
+            self.assertTrue(metadata_files)
+            self.assertTrue(packet_files)
+
+            payload = json.loads(create_output.getvalue())
+            self.assertEqual(payload["command"], "packet create")
+            self.assertEqual(payload["role"], "Forge Worker")
+            self.assertTrue(Path(payload["output_file"]).exists())
+
+            list_output = io.StringIO()
+            with redirect_stdout(list_output):
+                list_code = app.main(["packet", "list", "--path", str(root), "--json"])
+
+            listing = json.loads(list_output.getvalue())
+            self.assertEqual(list_code, SUCCESS)
+            self.assertEqual(listing["command"], "packet list")
+            self.assertEqual(len(listing["packets"]), 1)
+            self.assertEqual(listing["packets"][0]["packet_id"], "PKT-000001")
+
+            show_output = io.StringIO()
+            with redirect_stdout(show_output):
+                show_code = app.main(["packet", "show", "--path", str(root), "--packet-id", "PKT-000001", "--json"])
+
+            shown = json.loads(show_output.getvalue())
+            self.assertEqual(show_code, SUCCESS)
+            self.assertEqual(shown["packet"]["packet_id"], "PKT-000001")
+            self.assertIn("### PROJECT INDEX", shown["text"])
 
     def test_grimoire_json_has_no_human_prefix(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
