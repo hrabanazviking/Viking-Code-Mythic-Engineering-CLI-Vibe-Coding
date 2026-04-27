@@ -7,6 +7,36 @@
 
 ---
 
+## 2026-04-27 - Stage 15 Method Corpus Manifest
+
+**Session:** Continuing Stage 15 Mythic Engineering Method Integration.
+**Status:** `import-md` now writes a manifest-backed method corpus import.
+**Scope:** Small persistence upgrade that gives later method diff/pin work a stable base.
+
+### What changed
+
+- Added `MethodImportManifest` and `MethodManifestEntry` records.
+- Updated `MethodStore.import_all_markdown()` to write `method_manifest.json` with source, ref, generated timestamp, file count, relative paths, byte sizes, and SHA-256 hashes.
+- Kept `_import_index.json` as a compatibility copy of the manifest payload.
+- Updated `import-md` output to report the manifest path.
+- Added a network-free test that fakes the GitHub tree and markdown downloads.
+
+### Why it matters
+
+Method diffing and pinning need a real corpus identity, not just copied files. The manifest now gives the CLI a durable inventory it can compare, pin, and audit.
+
+### Verification
+
+- `pytest -q tests/test_method.py` -> `4 passed, 7 subtests passed`
+- `ruff check mythic_vibe_cli/mythic_data.py mythic_vibe_cli/commands.py tests/test_method.py` -> passed
+- `mypy mythic_vibe_cli` -> passed
+
+### Continuity thread
+
+- The next Stage 15 slice is to add `method diff` against `method_manifest.json`, then `method pin` once diff semantics are clear.
+
+_A method corpus that cannot name its files cannot defend its truth._
+
 ## 2026-04-27 - Stage 15 Method Profile Visibility
 
 **Session:** Beginning Stage 15 Mythic Engineering Method Integration.
