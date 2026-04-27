@@ -174,7 +174,7 @@ class CliKernelTests(unittest.TestCase):
             original_packet_path = Path(payload["output_file"])
             modified_source = root / "external_packet.md"
             modified_source.write_text(
-                original_packet_path.read_text(encoding="utf-8").replace("wire packet storage", "wire packet ingest"),
+                original_packet_path.read_text(encoding="utf-8") + "\nEXTRA DIFFERENCE\n",
                 encoding="utf-8",
             )
 
@@ -206,7 +206,7 @@ class CliKernelTests(unittest.TestCase):
             diff_payload = json.loads(diff_output.getvalue())
             self.assertEqual(diff_code, SUCCESS)
             self.assertEqual(diff_payload["command"], "packet diff")
-            self.assertIn("wire packet ingest", diff_payload["diff"])
+            self.assertIn("EXTRA DIFFERENCE", diff_payload["diff"])
 
             show_output = io.StringIO()
             with redirect_stdout(show_output):

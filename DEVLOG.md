@@ -7,6 +7,35 @@
 
 ---
 
+## 2026-04-27 - Weighted Packet Budget Strategy
+
+**Session:** Continuing the Mythic Vibe CLI implementation on `development`.
+**Status:** Packet compaction now allocates character budget by section priority instead of flattening everything evenly.
+**Scope:** Final visible Stage 6 budget-tuning pass.
+
+### What changed
+
+- Reworked packet compaction to weight priority sections more heavily than low-signal sections.
+- Preserved more room for `project_index`, `architecture`, `verification`, and `invariants`.
+- Tightened packet loading so stored packet IDs can resolve both markdown and JSON packet artifacts.
+- Added a budget-allocation test to verify the weighted strategy behaves as intended.
+
+### Why it matters
+
+This makes truncated packets more useful under pressure. The sections that help a collaborator act safely and correctly now survive budget pressure better than the decorative ones.
+
+### Verification
+
+- `pytest -q` -> `31 passed`
+
+### Continuity thread
+
+- Stage 6 is now functionally strong; the remaining work is mostly polish or edge-case expansion unless a new need appears.
+
+_May the scarce space be spent where it matters most._
+
+---
+
 ## 2026-04-27 - Stage 6 Role Profiles, Formats, and Safety Sections
 
 **Session:** Continuing the Mythic Vibe CLI implementation on `development`.
