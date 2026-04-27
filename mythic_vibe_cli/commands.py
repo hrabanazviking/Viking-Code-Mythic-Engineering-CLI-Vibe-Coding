@@ -52,7 +52,7 @@ from .ux import (
     zsh_completion,
 )
 from .workflow import MythicRunConfig, MythicWorkflow
-from .verify import VerificationArtifact, new_verification_id, write_verification_artifact
+from .verify import VerificationArtifact, load_latest_verification, new_verification_id, write_verification_artifact
 from .verify.doc_checker import check_docs
 from .verify.git_diff import review_changed_files
 from .verify.invariant_checker import check_invariants
@@ -876,27 +876,49 @@ def cmd_guide(args: argparse.Namespace) -> int:
 def cmd_next(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
     payload = _status_payload(root)
+    latest_verification = load_latest_verification(root)
+    verification_result = str(latest_verification.get("result") or "") if latest_verification else ""
+    handoff_next_step = str(payload.get("latest_handoff_next_step") or "").strip()
     if not payload.get("status_found"):
         next_phase = "intent"
         action = 'Run `mythic-vibe init --goal "..." --path .`.'
+        source = "scaffold"
+    elif latest_verification and verification_result != "pass":
+        next_phase = "verify"
+        action = "Resolve the latest verification issues, then rerun `mythic-vibe verify --commands --docs --invariants --record`."
+        source = "verification"
     else:
         completed = [str(item) for item in payload.get("completed_phases", [])]
         next_phase = next_phase_from_completed(completed)
-        action = PHASE_GUIDE[next_phase].next_action
+        action = handoff_next_step or PHASE_GUIDE[next_phase].next_action
+        source = "handoff" if handoff_next_step else "phase"
     result = {
         "command": "next",
         "path": str(root),
         "next_phase": next_phase,
+        "source": source,
         "purpose": PHASE_GUIDE[next_phase].purpose,
         "next_action": action,
         "verification": PHASE_GUIDE[next_phase].verification,
+        "latest_verification_result": verification_result or None,
+        "latest_verification_id": str(latest_verification.get("verification_id") or "") if latest_verification else None,
+        "latest_handoff_next_step": handoff_next_step or None,
     }
+    if latest_verification and verification_result != "pass":
+        result["verification_errors"] = [str(item) for item in latest_verification.get("errors", []) if str(item)]
+        result["blocked_reasons"] = [str(item) for item in latest_verification.get("blocked_reasons", []) if str(item)]
     if _flag(args, "json"):
         write_json(result)
         return SUCCESS
 
     write_line("Next recommended action")
     write_key_value("What happened", f"Resolved the next phase as `{next_phase}`.")
+    if source == "verification":
+        write_key_value("Why this comes first", f"Latest verification result is `{verification_result or 'unknown'}`.")
+        for item in result.get("verification_errors", []) or result.get("blocked_reasons", []):
+            write_bullet(str(item), indent=2)
+    elif source == "handoff":
+        write_key_value("Why this comes first", "Latest handoff names a concrete next step.")
     write_key_value("What should I do next", action)
     write_key_value("How do I verify it", PHASE_GUIDE[next_phase].verification)
     return SUCCESS

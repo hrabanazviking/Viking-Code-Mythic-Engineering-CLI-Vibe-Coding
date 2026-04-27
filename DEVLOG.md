@@ -7,6 +7,33 @@
 
 ---
 
+## 2026-04-27 - Stage 14 Follow-up: Smarter Next Guidance
+
+**Session:** Continuing Stage 14 command ergonomics.
+**Status:** `next` now uses the latest verification and handoff records before falling back to phase guidance.
+**Scope:** Small runtime and documentation pass focused on resuming work from the right pressure point.
+
+### What changed
+
+- `mythic-vibe next` now prioritizes failed or blocked `mythic/verifications/latest.json` results.
+- If verification is passing, `next` uses the latest handoff next step when one exists.
+- JSON output now includes the guidance source, latest verification ID/result, latest handoff next step, and verification issue details when relevant.
+- Added UX tests for phase guidance, failed verification priority, and latest-handoff priority.
+
+### Why it matters
+
+The next command now behaves more like a real session navigator. It does not suggest fresh work while proof is failing, and it preserves the concrete handoff instruction when the previous session already named the next useful action.
+
+### Verification
+
+- `pytest -q tests/test_ux.py` -> `6 passed`
+
+### Continuity thread
+
+- The remaining Stage 14 follow-up is to expand per-command argparse epilog examples for the highest-traffic commands.
+
+_The forge does not ask what is next until it knows what is still hot._
+
 ## 2026-04-27 - Stage 14 UX Polish and Command Ergonomics
 
 **Session:** Continuing the Mythic Vibe CLI implementation on `development`.

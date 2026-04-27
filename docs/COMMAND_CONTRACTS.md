@@ -49,7 +49,7 @@ Current Stage 14 UX commands:
 
 - `examples` - print copy-paste command examples.
 - `guide` - print the compact operator guide for the Mythic loop.
-- `next` - inspect local state and suggest the next phase and command.
+- `next` - inspect local state and suggest the next phase and command; failed or blocked verification records take priority, then latest handoff next steps, then normal phase guidance.
 - `explain phase` - explain one Mythic phase.
 - `explain artifact` - explain one generated artifact and how to verify it.
 - `tutorial` - print a first workflow tutorial.

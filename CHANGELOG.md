@@ -73,6 +73,7 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Changed
 
+- `next` now prioritizes failed or blocked verification records before normal phase guidance, and uses the latest handoff next step when verification is already passing.
 - Expanded operator docs with Stage 14 guidance, shell completion setup, and optional rich-output notes.
 - Expanded `pyproject.toml` metadata, Python classifiers, package URLs, ruff config, mypy config, and coverage config.
 - `grimoire add|list` now writes a versioned plugin registry while preserving the legacy `plugins` list for compatibility.

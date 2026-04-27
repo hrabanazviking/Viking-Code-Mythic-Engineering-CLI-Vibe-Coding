@@ -105,7 +105,7 @@ Supports user-level and project-level config alongside environment overrides, so
 
 ### 7) Operator guidance and completions
 
-Provides `examples`, `guide`, `next`, `explain`, `tutorial`, and shell completion commands so the CLI can tell you where you are, what to do next, and how to verify the move.
+Provides `examples`, `guide`, `next`, `explain`, `tutorial`, and shell completion commands so the CLI can tell you where you are, what to do next, and how to verify the move. `next` now checks verification and handoff records before giving ordinary phase guidance, so failed proof gets handled before fresh work.
 
 ---
 
