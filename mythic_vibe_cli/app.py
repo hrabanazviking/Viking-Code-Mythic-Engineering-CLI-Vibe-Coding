@@ -190,8 +190,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     sync = sub.add_parser("sync", help="Sync Mythic Engineering method notes from GitHub")
     add_runtime_options(sync, dry_run=True)
-    method = sub.add_parser("method", help="Print active Mythic method notes")
-    add_runtime_options(method)
+    method = sub.add_parser("method", help="Inspect and sync the active Mythic Engineering method profile")
+    add_runtime_options(method, json_output=True, dry_run=True)
+    method_sub = method.add_subparsers(dest="method_command", required=False)
+    method_status = method_sub.add_parser("status", help="Show active method source, profile, and version")
+    add_runtime_options(method_status, json_output=True)
+    method_show = method_sub.add_parser("show", help="Print active Mythic method notes")
+    add_runtime_options(method_show, json_output=True)
+    method_sync = method_sub.add_parser("sync", help="Sync Mythic Engineering method notes into the local cache")
+    add_runtime_options(method_sync, json_output=True, dry_run=True)
 
     doctor = sub.add_parser(
         "doctor",

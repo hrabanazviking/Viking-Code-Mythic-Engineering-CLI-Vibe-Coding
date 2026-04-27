@@ -7,6 +7,36 @@
 
 ---
 
+## 2026-04-27 - Stage 15 Method Profile Visibility
+
+**Session:** Beginning Stage 15 Mythic Engineering Method Integration.
+**Status:** The CLI can now report the active method profile, version, cache, sections, and freshness without requiring network access.
+**Scope:** First safe Stage 15 slice, focused on method visibility before deeper corpus sync/diff/pin behavior.
+
+### What changed
+
+- Added `mythic-vibe method status` for method source, profile, content-derived version, cache file, section labels, pin state, and freshness.
+- Added `mythic-vibe method show` and `mythic-vibe method sync` subcommands while preserving the legacy plain `method` notes output.
+- Changed method display/status to use the local cache or fallback profile without forcing a network sync.
+- Expanded the fallback method profile to the full seven-phase loop: `intent -> constraints -> architecture -> plan -> build -> verify -> reflect`.
+- Updated command/API docs, changelog, and the Stage 15 roadmap checkboxes for the completed visibility slice.
+
+### Why it matters
+
+Stage 15 needs the method to behave like a versioned corpus, not loose text. This pass gives the CLI a concrete method identity it can report and later pin, diff, and use for packet section selection.
+
+### Verification
+
+- `pytest -q tests/test_method.py` -> `3 passed, 7 subtests passed`
+- `ruff check mythic_vibe_cli/mythic_data.py mythic_vibe_cli/app.py mythic_vibe_cli/commands.py tests/test_method.py` -> passed
+- `mypy mythic_vibe_cli` -> passed
+
+### Continuity thread
+
+- The next Stage 15 slice is to create a manifest-backed method corpus import and wire `method diff` or `method pin` against that manifest.
+
+_Before the method can guide the work, the tool must know which method it is holding._
+
 ## 2026-04-27 - Stage 14 Follow-up: Blocked Verification Output
 
 **Session:** Continuing Stage 14 UX hardening.

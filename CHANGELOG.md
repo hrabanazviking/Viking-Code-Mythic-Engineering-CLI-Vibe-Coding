@@ -8,6 +8,8 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Added
 
+- Added Stage 15 method profile visibility with `mythic-vibe method status`, `method show`, and `method sync`.
+- Added method version detection, fallback profile reporting, method section labels, and freshness warnings for uncached method corpora.
 - Added argparse help examples for high-traffic commands: `init`, `next`, `verify`, `packet create`, `reflect`, `resume`, and `doctor`.
 - Added Stage 14 UX commands: `examples`, `guide`, `next`, `explain phase`, `explain artifact`, `tutorial`, and `completion`.
 - Added optional rich output support behind `MYTHIC_RICH=1` and the `ux` optional dependency group.

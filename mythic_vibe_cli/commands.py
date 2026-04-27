@@ -134,6 +134,8 @@ def _command_name(args: argparse.Namespace, fallback: str) -> str:
         subcommand_attr = getattr(args, "handoff_command", "")
     elif command == "explain":
         subcommand_attr = getattr(args, "explain_command", "")
+    elif command == "method":
+        subcommand_attr = getattr(args, "method_command", "")
 
     if subcommand_attr:
         return f"{command} {subcommand_attr}"
@@ -1315,6 +1317,16 @@ def cmd_handoff_dispatch(args: argparse.Namespace) -> int:
 def cmd_sync(_args: argparse.Namespace) -> int:
     if _flag(_args, "dry_run"):
         store = MethodStore()
+        if _flag(_args, "json"):
+            write_json(
+                {
+                    "command": _command_name(_args, "sync"),
+                    "dry_run": True,
+                    "cache_file": str(store.cache_file),
+                    "message": "Dry run: no method sync will be performed.",
+                }
+            )
+            return SUCCESS
         write_line("Dry run: no method sync will be performed.")
         write_key_value("Cache", store.cache_file)
         return SUCCESS
@@ -1326,20 +1338,78 @@ def cmd_sync(_args: argparse.Namespace) -> int:
         write_error(format_error(CliError(f"Sync failed: {exc}")))
         return OPERATIONAL_FAILURE
 
+    if _flag(_args, "json"):
+        write_json(
+            {
+                "command": _command_name(_args, "sync"),
+                "dry_run": False,
+                "source": bundle.source,
+                "cache_file": str(store.cache_file),
+                "message": "Synced Mythic method notes.",
+            }
+        )
+        return SUCCESS
+
     write_line("Synced Mythic method notes.")
     write_key_value("Source", bundle.source)
     write_key_value("Cache", store.cache_file)
     return SUCCESS
 
 
+def cmd_method_status(args: argparse.Namespace) -> int:
+    store = MethodStore()
+    status = store.status()
+    payload = {"command": _command_name(args, "method status"), "method": status.to_dict()}
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+
+    write_line("Mythic method profile:")
+    write_key_value("Source", status.source)
+    write_key_value("Profile", status.profile)
+    write_key_value("Version", status.version)
+    write_key_value("Cache", status.cache_file)
+    write_key_value("Freshness", status.freshness)
+    write_key_value("Pinned", "yes" if status.pinned else "no")
+    write_line("Method sections:")
+    for section in status.sections:
+        write_bullet(section)
+    if not status.cached:
+        write_line("Freshness warning: no cached canonical method corpus found; using fallback profile.")
+    return SUCCESS
+
+
 def cmd_method(_args: argparse.Namespace) -> int:
     store = MethodStore()
-    bundle = store.load()
+    bundle = store.load_cached_or_fallback()[0]
+    if _flag(_args, "json"):
+        status = store.status()
+        write_json(
+            {
+                "command": _command_name(_args, "method show"),
+                "method": status.to_dict(),
+                "content": bundle.content,
+            }
+        )
+        return SUCCESS
     write_verbose(f"Loaded method bundle from {bundle.source}")
     write_key_value("Method source", bundle.source)
     write_line("=" * 72)
     write_line(bundle.content)
     return SUCCESS
+
+
+def cmd_method_dispatch(args: argparse.Namespace) -> int:
+    command = getattr(args, "method_command", None)
+    if command is None:
+        return cmd_method(args)
+    if command == "status":
+        return cmd_method_status(args)
+    if command == "show":
+        return cmd_method(args)
+    if command == "sync":
+        return cmd_sync(args)
+    return USER_INPUT_ERROR
 
 
 def cmd_oath(args: argparse.Namespace) -> int:
@@ -2205,7 +2275,7 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "codex-log": cmd_codex_log,
     "status": cmd_status,
     "sync": cmd_sync,
-    "method": cmd_method,
+    "method": cmd_method_dispatch,
     "doctor": cmd_doctor,
     "scry": cmd_doctor,
     "weave": cmd_weave,
