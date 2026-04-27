@@ -1,6 +1,8 @@
-# Documentation Hub
+# Documentation Hub (Legacy Alias)
 
 This hub orients contributors to the active Mythic Vibe CLI product and the surrounding mythic engineering workspace.
+
+The canonical navigation file is [docs/INDEX.md](INDEX.md). This lowercase hub remains for compatibility and mirrors the same structure.
 
 ## Start Here
 
