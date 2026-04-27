@@ -64,6 +64,7 @@ Current Stage 15 method commands:
 - `method status` - report active method source, profile, content-derived version, cache path, section labels, pin state, and freshness.
 - `method show` - print the active method notes, with optional JSON metadata.
 - `method sync` - sync the canonical Mythic Engineering method notes into the local method cache; supports dry-run and JSON output.
+- `method diff` - compare an imported markdown corpus against `method_manifest.json`, reporting missing, changed, and untracked markdown files.
 - `import-md` - import the canonical markdown corpus and write both `method_manifest.json` and compatibility `_import_index.json`.
 - If no canonical method cache exists, method status must use the built-in seven-phase fallback profile and emit a freshness warning.
 

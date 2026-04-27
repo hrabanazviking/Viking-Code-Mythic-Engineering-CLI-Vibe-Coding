@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 import hashlib
 import io
 import json
@@ -11,7 +11,7 @@ import unittest
 from unittest.mock import patch
 
 from mythic_vibe_cli import app
-from mythic_vibe_cli.exit_codes import SUCCESS
+from mythic_vibe_cli.exit_codes import SUCCESS, USER_INPUT_ERROR
 from mythic_vibe_cli.mythic_data import DEFAULT_METHOD_NOTES, MethodStore
 
 
@@ -107,6 +107,81 @@ class MethodCommandTests(unittest.TestCase):
             self.assertEqual(manifest_payload["files"][0]["sha256"], hashlib.sha256(b"# Method\n").hexdigest())
             self.assertTrue((target / "README.md").exists())
             self.assertTrue((target / "docs" / "guide.md").exists())
+
+    def test_method_diff_reports_clean_corpus(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "docs" / "mythic_source"
+            target.mkdir(parents=True)
+            body = b"# Method\n"
+            (target / "README.md").write_bytes(body)
+            (target / "method_manifest.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "source": "test",
+                        "ref": "abc123",
+                        "generated_at": "2026-04-27T00:00:00+00:00",
+                        "markdown_files": 1,
+                        "files": [{"path": "README.md", "bytes": len(body), "sha256": hashlib.sha256(body).hexdigest()}],
+                        "paths": ["README.md"],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            diff = MethodStore(app_home=Path(tmp) / "home").diff_import_manifest(target)
+
+            self.assertTrue(diff.clean)
+            self.assertEqual(diff.missing, [])
+            self.assertEqual(diff.changed, [])
+            self.assertEqual(diff.untracked, [])
+
+    def test_method_diff_reports_missing_changed_and_untracked_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "docs" / "mythic_source"
+            target.mkdir(parents=True)
+            (target / "README.md").write_bytes(b"# Changed\n")
+            (target / "extra.md").write_bytes(b"Extra\n")
+            original = b"# Method\n"
+            missing = b"Missing\n"
+            (target / "method_manifest.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "source": "test",
+                        "ref": "abc123",
+                        "generated_at": "2026-04-27T00:00:00+00:00",
+                        "markdown_files": 2,
+                        "files": [
+                            {"path": "README.md", "bytes": len(original), "sha256": hashlib.sha256(original).hexdigest()},
+                            {"path": "missing.md", "bytes": len(missing), "sha256": hashlib.sha256(missing).hexdigest()},
+                        ],
+                        "paths": ["README.md", "missing.md"],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(["method", "diff", "--path", tmp, "--json"])
+
+            payload = json.loads(output.getvalue())
+
+            self.assertEqual(code, SUCCESS)
+            self.assertFalse(payload["diff"]["clean"])
+            self.assertEqual(payload["diff"]["changed"], ["README.md"])
+            self.assertEqual(payload["diff"]["missing"], ["missing.md"])
+            self.assertEqual(payload["diff"]["untracked"], ["extra.md"])
+
+    def test_method_diff_requires_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output = io.StringIO()
+            with redirect_stderr(output):
+                code = app.main(["method", "diff", "--path", tmp])
+
+            self.assertEqual(code, USER_INPUT_ERROR)
+            self.assertIn("No method manifest found", output.getvalue())
 
 
 if __name__ == "__main__":

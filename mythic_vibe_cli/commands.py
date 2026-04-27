@@ -1400,6 +1400,43 @@ def cmd_method(_args: argparse.Namespace) -> int:
     return SUCCESS
 
 
+def cmd_method_diff(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    target = root / args.target
+    store = MethodStore()
+    try:
+        diff = store.diff_import_manifest(target)
+    except FileNotFoundError:
+        write_error(f"No method manifest found at {target / 'method_manifest.json'}. Run `mythic-vibe import-md` first.")
+        return USER_INPUT_ERROR
+
+    payload = {"command": "method diff", "path": str(root), "target": str(target), "diff": diff.to_dict()}
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+
+    if diff.clean:
+        write_line("Method corpus matches manifest.")
+        write_key_value("Manifest", diff.manifest_path)
+        return SUCCESS
+
+    write_line("Method corpus differs from manifest.")
+    write_key_value("Manifest", diff.manifest_path)
+    if diff.missing:
+        write_line("Missing files:")
+        for path in diff.missing:
+            write_bullet(path)
+    if diff.changed:
+        write_line("Changed files:")
+        for path in diff.changed:
+            write_bullet(path)
+    if diff.untracked:
+        write_line("Untracked markdown files:")
+        for path in diff.untracked:
+            write_bullet(path)
+    return SUCCESS
+
+
 def cmd_method_dispatch(args: argparse.Namespace) -> int:
     command = getattr(args, "method_command", None)
     if command is None:
@@ -1410,6 +1447,8 @@ def cmd_method_dispatch(args: argparse.Namespace) -> int:
         return cmd_method(args)
     if command == "sync":
         return cmd_sync(args)
+    if command == "diff":
+        return cmd_method_diff(args)
     return USER_INPUT_ERROR
 
 

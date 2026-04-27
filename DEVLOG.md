@@ -7,6 +7,35 @@
 
 ---
 
+## 2026-04-27 - Stage 15 Method Corpus Diff
+
+**Session:** Continuing Stage 15 Mythic Engineering Method Integration.
+**Status:** `method diff` now checks an imported method corpus against its manifest.
+**Scope:** Local drift detection for manifest-backed method imports.
+
+### What changed
+
+- Added `MethodDiff` and `MethodStore.diff_import_manifest()`.
+- Added `mythic-vibe method diff --path . --target docs/mythic_source`.
+- Reports missing files, changed file bytes/hashes, and untracked markdown files.
+- Added JSON and human output paths.
+- Added focused tests for clean corpus, drifted corpus, and missing manifest behavior.
+
+### Why it matters
+
+Pinning is only useful if drift can be seen. This gives the method corpus a local integrity check before `method pin` makes any reproducibility promise.
+
+### Verification
+
+- `pytest -q tests/test_method.py` -> `7 passed, 7 subtests passed`
+- `ruff check mythic_vibe_cli/mythic_data.py mythic_vibe_cli/app.py mythic_vibe_cli/commands.py tests/test_method.py` -> passed
+
+### Continuity thread
+
+- The next Stage 15 slice is `method pin`, built on the manifest and diff contracts now in place.
+
+_A pinned method must first know whether the present corpus has wandered._
+
 ## 2026-04-27 - Stage 15 Method Corpus Manifest
 
 **Session:** Continuing Stage 15 Mythic Engineering Method Integration.
