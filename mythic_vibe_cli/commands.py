@@ -8,7 +8,7 @@ from pathlib import Path
 import sqlite3
 import urllib.error
 
-from .codex_bridge import CodexBridge, CodexPacketRequest, PACKET_OUTPUT_FORMATS, PACKET_ROLES
+from .codex_bridge import CodexBridge, CodexPacketRequest
 from .ai.registry import ProviderRegistry
 from .context.indexer import ProjectIndexer
 from .config import ConfigStore
@@ -17,7 +17,6 @@ from .exit_codes import OPERATIONAL_FAILURE, SUCCESS, USER_INPUT_ERROR, VERIFICA
 from .handoff import (
     HandoffRecord,
     build_handoff_record,
-    list_handoffs,
     load_latest_handoff,
     load_handoff_record,
     render_handoff_markdown,
