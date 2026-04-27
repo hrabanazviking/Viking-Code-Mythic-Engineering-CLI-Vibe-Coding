@@ -8,6 +8,14 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Added
 
+- Added `mythic-vibe packet create`, `mythic-vibe packet show`, and `mythic-vibe packet list`.
+- Added packet IDs and metadata files under `mythic/packets/`.
+- Renamed the internal packet concept to `PacketBuilder` while keeping `CodexBridge` compatibility.
+- Added project-index context into Codex prompt packet generation.
+- Added automatic `mythic/project_index.json` writing during packet creation.
+- Added `mythic-vibe scan` with project indexing, changed-file mode, docs mode, and JSON output.
+- Added `mythic_vibe_cli.context` scanner and indexer modules for local project context mapping.
+- Added `.mythicignore` to define local context-scan exclusions.
 - Added `python -m mythic_vibe_cli` package execution via `mythic_vibe_cli/__main__.py`.
 - Added `mythic_vibe_cli.commands` for command implementations and registry ownership.
 - Added `mythic_vibe_cli.output` and `mythic_vibe_cli.errors` as shared command rendering/error helpers.

@@ -1,9 +1,98 @@
 # DEVLOG — The Living Chronicle
 
-**Last updated:** 2026-04-24
+**Last updated:** 2026-04-27
 **Branch:** development
 **Scope:** An ongoing, dated chronicle of meaningful work performed in this repository. Each entry preserves *what happened* and *why it mattered*, so that later sessions can resume with understanding rather than guesswork.
 **Purpose:** Continuity of record. The project's memory, kept outside anyone's head.
+
+---
+
+## 2026-04-27 - Packet Command Family and Artifact Store
+
+**Session:** Continuing the Mythic Vibe CLI implementation on `development`.
+**Status:** Packet artifacts now have IDs, metadata, and dedicated CLI commands.
+**Scope:** Stage 6 prompt-packet groundwork beyond the initial project-index integration.
+
+### What changed
+
+- Renamed the internal packet builder concept to `PacketBuilder` while preserving `CodexBridge` as a compatibility alias.
+- Added packet IDs and packet metadata under `mythic/packets/`.
+- Added `mythic-vibe packet create`, `mythic-vibe packet show`, and `mythic-vibe packet list`.
+- Kept `codex-pack` and `evoke` as compatibility paths into the packet builder.
+- Packet creation now carries role metadata and continues to embed the local project index.
+
+### Why it matters
+
+The prompt system is no longer a throwaway text emitter. It has a durable artifact store, which is the shape Stage 6 needs if it is to become reusable across tools and sessions.
+
+### Verification
+
+- `pytest -q` -> `29 passed`
+
+### Continuity thread
+
+- The next Stage 6 steps are packet ingest, packet diff, richer role presets, and stronger safety/format selection.
+
+_May the artifacts outlast the moment that summoned them._
+
+---
+
+## 2026-04-27 - Packet Builder Context Integration
+
+**Session:** Continuing the Mythic Vibe CLI implementation on `development`.
+**Status:** Runtime packet generation now pulls from the local project index.
+**Scope:** Stage 6-adjacent packet context hardening, built on top of the Stage 5 scanner work.
+
+### What changed
+
+- `CodexBridge` now builds and embeds a project index snapshot when generating prompt packets.
+- `mythic/project_index.json` is written automatically as part of packet generation.
+- The packet now includes a `PROJECT INDEX` section with git metadata, language stats, important files, docs, tests, risks, and recommended context.
+- Tests were added to verify the packet contains the project index and that the index file is written.
+
+### Why it matters
+
+Prompt packets are now grounded in the local repository map, which makes them less speculative and more useful for real engineering work.
+
+### Verification
+
+- `pytest -q` -> `28 passed`
+
+### Continuity thread
+
+- The next logical step is to make packet context selection smarter so the bridge can prioritize changed files and task-relevant files even more precisely.
+
+_May the packet know the ground it stands on._
+
+---
+
+## 2026-04-27 - Stage 5 Context Scanner and Project Index
+
+**Session:** Continuing the Mythic Vibe CLI implementation on `development`.
+**Status:** Runtime, tests, and project-records updated with a local context scanner and index writer.
+**Scope:** First implementation slice of Stage 5 from `MYTHIC_VIBE_CLI_PRODUCTION_ROADMAP.md`.
+
+### What changed
+
+- Added `mythic_vibe_cli.context` with scanner and indexer modules.
+- Added `mythic-vibe scan` with `--json`, `--changed`, `--docs`, `--include`, `--exclude`, and `--dry-run` support.
+- Added `.mythicignore` as a local scan policy file.
+- Added project-index generation at `mythic/project_index.json`.
+- Added tests covering git-aware scanning, ignore rules, and the new command registry entry.
+
+### Why it matters
+
+The CLI now has a real local-project map, which makes future prompt packets and workflow guidance less blind and less hand-wavy. It can see the shape of the repo before it asks for attention.
+
+### Verification
+
+- `pytest -q` -> `27 passed`
+
+### Continuity thread
+
+- The next useful step is to wire the index into prompt packet generation so context selection becomes automatic rather than manual.
+
+_May the map speak before the blade moves._
 
 ---
 
