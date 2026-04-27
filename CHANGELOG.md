@@ -8,6 +8,9 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Added
 
+- Added `mythic-vibe packet ingest` to import packet artifacts into the local packet store.
+- Added `mythic-vibe packet diff` to compare stored packet artifacts.
+- Packet ingestion now preserves source path and provenance metadata.
 - Added `mythic-vibe packet create`, `mythic-vibe packet show`, and `mythic-vibe packet list`.
 - Added packet IDs and metadata files under `mythic/packets/`.
 - Renamed the internal packet concept to `PacketBuilder` while keeping `CodexBridge` compatibility.
