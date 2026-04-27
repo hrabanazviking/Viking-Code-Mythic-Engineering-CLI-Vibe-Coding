@@ -59,6 +59,8 @@ class AIProviderTests(unittest.TestCase):
         response = provider.run("hello world")
         self.assertGreaterEqual(estimate.input_tokens, 1)
         self.assertEqual(response.packet_id, "manual")
+        self.assertIn("estimated_cost_usd", response.metadata)
+        self.assertEqual(response.metadata["estimated_cost_usd"], 0.0)
 
     def test_openai_provider_executes_and_redacts_provider_log(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -94,6 +96,9 @@ class AIProviderTests(unittest.TestCase):
                 self.assertFalse(response.dry_run)
                 self.assertEqual(response.packet_id, "PKT-000123")
                 self.assertIn("sk-secret1234567890", response.content)
+                self.assertIn("input_tokens", response.usage)
+                self.assertIn("observed_cost_usd", response.metadata)
+                self.assertGreaterEqual(response.metadata["estimated_cost_usd"], 0.0)
 
                 log_path = root / "mythic" / "ai" / "provider_calls.jsonl"
                 self.assertTrue(log_path.exists())
@@ -156,6 +161,8 @@ class AIProviderTests(unittest.TestCase):
             self.assertEqual(payload["packet"]["packet_id"], "PKT-000001")
             self.assertEqual(payload["response"]["packet_id"], "PKT-000001")
             self.assertTrue(payload["response"]["dry_run"])
+            self.assertIn("usage", payload["response"])
+            self.assertIn("metadata", payload["response"])
 
 
 if __name__ == "__main__":

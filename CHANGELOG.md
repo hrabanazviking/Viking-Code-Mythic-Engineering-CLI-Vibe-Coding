@@ -8,6 +8,8 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Added
 
+- Added provider usage and metadata fields to response objects and JSON command output.
+- Added provider-side pricing heuristics so estimated costs are no longer zero for real adapters.
 - Added real provider execution for `openai`, `anthropic`, `gemini`, and `openrouter` behind explicit API keys.
 - Added provider request and response logging under `mythic/ai/provider_calls.jsonl` with secret redaction.
 - Added packet resolution for `mythic-vibe ai test` and `mythic-vibe ai run`, including stored packet IDs and on-disk packet files.
@@ -47,6 +49,7 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Changed
 
+- Real provider responses now include request IDs, usage, estimated cost, and observed cost metadata when available.
 - `mythic-vibe ai test` now stays dry-run-only, and `mythic-vibe ai run` now honors `--dry-run` explicitly.
 - `copy-paste` and `local` provider modes keep their always-available bridge behavior for inline packet input.
 - Moved the real CLI kernel into `mythic_vibe_cli/app.py` while preserving `mythic_vibe_cli.cli:main` as the public compatibility entrypoint.

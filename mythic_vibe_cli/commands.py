@@ -518,6 +518,8 @@ def cmd_ai_test(args: argparse.Namespace) -> int:
             "packet_id": response.packet_id,
             "dry_run": response.dry_run,
             "content": response.content,
+            "usage": response.usage,
+            "metadata": response.metadata,
         },
     }
     write_json(payload)
@@ -555,6 +557,8 @@ def cmd_ai_run(args: argparse.Namespace) -> int:
             "packet_id": response.packet_id,
             "dry_run": response.dry_run,
             "content": response.content,
+            "usage": response.usage,
+            "metadata": response.metadata,
         },
     }
     write_json(payload)
