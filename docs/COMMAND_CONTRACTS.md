@@ -19,6 +19,14 @@ python -m mythic_vibe_cli.cli --help
 
 `mythic_vibe_cli.commands.COMMAND_HANDLERS` is the in-process command registry. `mythic_vibe_cli.app` imports it for dispatch, and `mythic_vibe_cli.cli` re-exports it for compatibility. New commands and ritual aliases must add parser support in `mythic_vibe_cli.app`, implementation in `mythic_vibe_cli.commands`, and registry wiring in `COMMAND_HANDLERS`.
 
+Current Stage 10 continuity commands:
+
+- `reflect` - create a reflection handoff from the current session summary.
+- `handoff create` - create a handoff record from the current repository state.
+- `handoff show` - show a stored handoff record by ID or the latest record.
+- `handoff latest` - show the newest handoff record.
+- `resume` - summarize the latest handoff and next recommended action.
+
 Current compatibility aliases:
 
 | Alias | Canonical behavior |
@@ -48,7 +56,7 @@ Commands may expose shared runtime options where the behavior is meaningful:
 
 | Option | Contract |
 |---|---|
-| `--json` | Emits a machine-readable JSON payload with no human preface text. Supported by structured reporting commands such as `status`, `doctor`, `config`, `codex-pack`, `grimoire`, `db migrate`, and `plunder`. |
+| `--json` | Emits a machine-readable JSON payload with no human preface text. Supported by structured reporting commands such as `status`, `doctor`, `reflect`, `handoff`, `resume`, `config`, `codex-pack`, `grimoire`, `db migrate`, and `plunder`. |
 | `--quiet` | Suppresses non-error human text output. JSON output remains emitted because it is the primary result. |
 | `--verbose` | Emits additional operational detail when a command has meaningful extra detail. |
 | `--dry-run` | Previews write/sync operations without writing files, modifying registries, creating databases, or fetching remote files. |

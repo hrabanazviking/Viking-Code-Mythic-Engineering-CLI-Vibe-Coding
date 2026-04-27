@@ -7,6 +7,34 @@
 
 ---
 
+## 2026-04-27 - Stage 10 Reflection, Handoff, and Continuity Memory
+
+**Session:** Continuing the Mythic Vibe CLI implementation on `development`.
+**Status:** `reflect`, `handoff`, and `resume` now preserve session continuity with durable handoff artifacts.
+**Scope:** Stage 10 pass, focused on end-of-session memory, status linkage, and future-session recovery.
+
+### What changed
+
+- Added `mythic-vibe reflect` with session-summary capture and handoff generation.
+- Added `mythic-vibe handoff create|show|latest` for durable handoff records.
+- Added `mythic-vibe resume` to summarize the latest handoff and the next recommended action.
+- Wrote timestamped handoff artifacts under `mythic/handoffs/` and refreshed `docs/SESSION_HANDOFF.md`.
+- Linked the latest handoff into `status` output so future sessions can find it quickly.
+
+### Why it matters
+
+Stage 10 turns the CLI into a better collaborator at session boundaries. Instead of losing context at the edge of a work cycle, the repo now leaves behind a structured handoff that the next session can use immediately.
+
+### Verification
+
+- `pytest -q` -> `41 passed`
+
+### Continuity thread
+
+- The next useful step after Stage 10 is to use the new handoff flow in real work and see whether the generated summaries stay sharp enough under pressure.
+
+_May the next session arrive to a prepared table._
+
 ## 2026-04-27 - Stage 9 Doctor Diagnostics and Drift Checks
 
 **Session:** Continuing the Mythic Vibe CLI implementation on `development`.
