@@ -873,6 +873,32 @@ def cmd_guide(args: argparse.Namespace) -> int:
     return SUCCESS
 
 
+def _verification_failed_commands(latest_verification: dict[str, object] | None) -> list[str]:
+    if not latest_verification:
+        return []
+    commands = latest_verification.get("commands", [])
+    if not isinstance(commands, list):
+        return []
+
+    failed: list[str] = []
+    for item in commands:
+        if not isinstance(item, dict):
+            continue
+        try:
+            exit_code = int(item.get("exit_code", 0))
+        except (TypeError, ValueError):
+            exit_code = 0
+        if exit_code == 0:
+            continue
+        command = item.get("command", [])
+        if isinstance(command, list):
+            rendered = " ".join(str(part) for part in command if str(part))
+        else:
+            rendered = str(command)
+        failed.append(f"{rendered} (exit {exit_code})")
+    return failed
+
+
 def cmd_next(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
     payload = _status_payload(root)
@@ -907,6 +933,7 @@ def cmd_next(args: argparse.Namespace) -> int:
     if latest_verification and verification_result != "pass":
         result["verification_errors"] = [str(item) for item in latest_verification.get("errors", []) if str(item)]
         result["blocked_reasons"] = [str(item) for item in latest_verification.get("blocked_reasons", []) if str(item)]
+        result["failed_verification_commands"] = _verification_failed_commands(latest_verification)
     if _flag(args, "json"):
         write_json(result)
         return SUCCESS
@@ -915,8 +942,19 @@ def cmd_next(args: argparse.Namespace) -> int:
     write_key_value("What happened", f"Resolved the next phase as `{next_phase}`.")
     if source == "verification":
         write_key_value("Why this comes first", f"Latest verification result is `{verification_result or 'unknown'}`.")
-        for item in result.get("verification_errors", []) or result.get("blocked_reasons", []):
-            write_bullet(str(item), indent=2)
+        failed_commands = result.get("failed_verification_commands", [])
+        if failed_commands:
+            write_line("- Failed commands:")
+            for item in failed_commands:
+                write_bullet(str(item), indent=2)
+        if result.get("verification_errors"):
+            write_line("- Verification errors:")
+            for item in result["verification_errors"]:
+                write_bullet(str(item), indent=2)
+        if result.get("blocked_reasons"):
+            write_line("- Blocked reasons:")
+            for item in result["blocked_reasons"]:
+                write_bullet(str(item), indent=2)
     elif source == "handoff":
         write_key_value("Why this comes first", "Latest handoff names a concrete next step.")
     write_key_value("What should I do next", action)

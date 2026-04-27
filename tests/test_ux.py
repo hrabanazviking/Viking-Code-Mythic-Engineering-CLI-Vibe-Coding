@@ -108,6 +108,46 @@ class UxCommandTests(unittest.TestCase):
             self.assertEqual(payload["latest_verification_id"], "VER-FAILED")
             self.assertIn("pytest failed", payload["verification_errors"])
 
+    def test_next_human_output_shows_failed_commands_and_blockers(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "mythic" / "verifications").mkdir(parents=True)
+            (root / "mythic" / "status.json").write_text(
+                json.dumps(
+                    {
+                        "goal": "Ship ergonomic commands",
+                        "current_phase": "verify",
+                        "completed_phases": ["intent", "constraints", "architecture", "plan", "build"],
+                        "history": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (root / "mythic" / "verifications" / "latest.json").write_text(
+                json.dumps(
+                    {
+                        "verification_id": "VER-BLOCKED",
+                        "result": "blocked",
+                        "commands": [{"command": ["pytest", "-q"], "exit_code": 1}],
+                        "errors": ["Verification command failed: pytest -q (exit 1)"],
+                        "blocked_reasons": ["Missing documentation files: docs/api.md"],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(["next", "--path", tmp])
+
+            text = output.getvalue()
+            self.assertEqual(code, SUCCESS)
+            self.assertIn("Failed commands", text)
+            self.assertIn("pytest -q (exit 1)", text)
+            self.assertIn("Blocked reasons", text)
+            self.assertIn("Missing documentation files: docs/api.md", text)
+            self.assertIn("mythic-vibe verify --commands --docs --invariants --record", text)
+
     def test_next_uses_latest_handoff_when_verification_passed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

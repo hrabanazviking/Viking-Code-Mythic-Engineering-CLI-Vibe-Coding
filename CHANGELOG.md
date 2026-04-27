@@ -74,6 +74,7 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Changed
 
+- `next` human output now shows failed verification commands, verification errors, and blocked reasons as separate sections when the latest verification is not passing.
 - `next` now prioritizes failed or blocked verification records before normal phase guidance, and uses the latest handoff next step when verification is already passing.
 - Expanded operator docs with Stage 14 guidance, shell completion setup, and optional rich-output notes.
 - Expanded `pyproject.toml` metadata, Python classifiers, package URLs, ruff config, mypy config, and coverage config.

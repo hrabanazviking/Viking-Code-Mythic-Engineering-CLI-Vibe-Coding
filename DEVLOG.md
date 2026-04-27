@@ -7,6 +7,34 @@
 
 ---
 
+## 2026-04-27 - Stage 14 Follow-up: Blocked Verification Output
+
+**Session:** Continuing Stage 14 UX hardening.
+**Status:** `next` now explains non-passing verification records more clearly in human output.
+**Scope:** Small command-output polish with focused regression coverage.
+
+### What changed
+
+- Added failed-command extraction from the latest verification artifact.
+- Updated `mythic-vibe next` human output to separate failed commands, verification errors, and blocked reasons.
+- Added a UX regression test for blocked verification output in normal text mode.
+
+### Why it matters
+
+When proof is failing, the next action must be obvious. The CLI now shows what command failed, what blocker was recorded, and the exact verification rerun command in one place.
+
+### Verification
+
+- `pytest -q tests/test_ux.py` -> `8 passed, 7 subtests passed`
+- `ruff check mythic_vibe_cli/commands.py tests/test_ux.py` -> passed
+- `mypy mythic_vibe_cli/commands.py` -> passed
+
+### Continuity thread
+
+- The next useful step is to run the full local release gate set, commit this change, and then push the accumulated Stage 14 commits.
+
+_When the proof breaks, the tool should point straight at the crack._
+
 ## 2026-04-27 - Stage 14 Follow-up: Command Help Examples
 
 **Session:** Finishing the Stage 14 UX polish thread.
