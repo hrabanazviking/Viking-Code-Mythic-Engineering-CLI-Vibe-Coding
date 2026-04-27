@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 import io
 import json
 from pathlib import Path
@@ -61,6 +61,7 @@ class CliKernelTests(unittest.TestCase):
             "state",
             "db",
             "plunder",
+            "verify",
         }
 
         self.assertEqual(set(COMMAND_HANDLERS), expected)
@@ -335,6 +336,60 @@ class CliKernelTests(unittest.TestCase):
             self.assertEqual(ingest_code, SUCCESS)
             self.assertTrue(ingest_path.exists())
             self.assertFalse(ingest_payload["payload"]["applied"])
+
+    def test_verify_records_artifacts_and_unblocks_reflect(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "tests").mkdir(parents=True, exist_ok=True)
+            (root / "tests" / "test_smoke.py").write_text(
+                "def test_smoke():\n    assert True\n",
+                encoding="utf-8",
+            )
+
+            blocked_output = io.StringIO()
+            with redirect_stdout(blocked_output), redirect_stderr(blocked_output):
+                blocked_code = app.main(
+                    [
+                        "checkin",
+                        "--path",
+                        str(root),
+                        "--phase",
+                        "reflect",
+                        "--update",
+                        "attempted reflect without verification",
+                    ]
+                )
+
+            self.assertEqual(blocked_code, USER_INPUT_ERROR)
+            self.assertIn("verification", blocked_output.getvalue().lower())
+
+            verify_output = io.StringIO()
+            with redirect_stdout(verify_output):
+                verify_code = app.main(["verify", "--path", str(root), "--commands", "--json"])
+
+            verify_payload = json.loads(verify_output.getvalue())
+            self.assertEqual(verify_code, SUCCESS)
+            self.assertEqual(verify_payload["result"], "pass")
+            self.assertEqual(verify_payload["level"], "unit")
+            self.assertTrue(Path(verify_payload["artifact_path"]).exists())
+            self.assertTrue((root / "mythic" / "verifications" / "latest.json").exists())
+
+            reflect_output = io.StringIO()
+            with redirect_stdout(reflect_output):
+                reflect_code = app.main(
+                    [
+                        "checkin",
+                        "--path",
+                        str(root),
+                        "--phase",
+                        "reflect",
+                        "--update",
+                        "verification complete",
+                    ]
+                )
+
+            self.assertEqual(reflect_code, SUCCESS)
+            self.assertIn("Mythic check-in recorded.", reflect_output.getvalue())
 
 
 if __name__ == "__main__":

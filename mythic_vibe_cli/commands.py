@@ -19,10 +19,15 @@ from .errors import CliError, format_error
 from .exit_codes import OPERATIONAL_FAILURE, SUCCESS, USER_INPUT_ERROR, VERIFICATION_FAILURE
 from .mythic_data import MethodStore
 from .output import write_bullet, write_error, write_json, write_key_value, write_line, write_verbose
-from .core.state import PHASES, coerce_project_state, validate_state_payload
+from .core.state import PHASES, VerificationRecord, coerce_project_state, utc_now, validate_state_payload
 from .persistence.json_store import JsonStateStore, StateStoreError
 from .persistence.migrations import migrate_project_state
 from .workflow import MythicRunConfig, MythicWorkflow
+from .verify import VerificationArtifact, new_verification_id, write_verification_artifact
+from .verify.doc_checker import check_docs
+from .verify.git_diff import review_changed_files
+from .verify.invariant_checker import check_invariants
+from .verify.test_runner import run_default_commands
 
 
 CommandHandler = Callable[[argparse.Namespace], int]
@@ -455,6 +460,18 @@ def _resolve_ai_packet(root: Path, packet: str) -> dict[str, str]:
     }
 
 
+def _verification_level(selected: dict[str, bool], *, commands_ran: bool, docs_ok: bool, invariants_ok: bool, changed_files_checked: bool) -> str:
+    if not any(selected.values()):
+        return "none"
+    if commands_ran and docs_ok and invariants_ok and changed_files_checked:
+        return "integration"
+    if commands_ran:
+        return "unit"
+    if changed_files_checked or docs_ok or invariants_ok:
+        return "smoke"
+    return "none"
+
+
 def cmd_ai_providers(args: argparse.Namespace) -> int:
     root = Path(getattr(args, "path", ".")).resolve()
     registry = _ai_registry(root)
@@ -585,6 +602,168 @@ def cmd_ai_ingest_response(args: argparse.Namespace) -> int:
     write_key_value("Path", out_path)
     write_key_value("Applied", "false")
     return SUCCESS
+
+
+def cmd_verify(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    selected = {
+        "commands": _flag(args, "commands"),
+        "changed_files": _flag(args, "changed_files"),
+        "docs": _flag(args, "docs"),
+        "invariants": _flag(args, "invariants"),
+    }
+    if not any(selected.values()):
+        selected = {key: True for key in selected}
+
+    command_runs: list[dict[str, object]] = []
+    warnings: list[str] = []
+    errors: list[str] = []
+    blocked_reasons: list[str] = []
+    changed_files: list[str] = []
+    docs_checked: list[str] = []
+    invariants_checked: list[str] = []
+    diff_reviewed = False
+    docs_updated = False
+    commands_ran = False
+    docs_ok = False
+    invariants_ok = False
+    changed_files_checked = False
+
+    if selected["commands"]:
+        runner = run_default_commands(root)
+        warnings.extend(runner.warnings)
+        if runner.commands:
+            commands_ran = True
+            command_runs.extend(item.to_dict() for item in runner.commands)
+            for item in runner.commands:
+                if item.exit_code != 0:
+                    errors.append(
+                        f"Verification command failed: {' '.join(item.command)} (exit {item.exit_code})"
+                    )
+        else:
+            blocked_reasons.append("No verification commands were discovered.")
+
+    if selected["changed_files"]:
+        diff_result = review_changed_files(root)
+        warnings.extend(diff_result.warnings)
+        changed_files = diff_result.changed_files
+        diff_reviewed = True
+        changed_files_checked = True
+
+    if selected["docs"]:
+        doc_result = check_docs(root)
+        warnings.extend(doc_result.warnings)
+        docs_checked = doc_result.checked
+        docs_updated = not doc_result.missing
+        docs_ok = not doc_result.missing
+        if doc_result.missing:
+            blocked_reasons.append("Missing documentation files: " + ", ".join(doc_result.missing))
+
+    if selected["invariants"]:
+        invariant_result = check_invariants(root)
+        warnings.extend(invariant_result.warnings)
+        invariants_checked = invariant_result.checked
+        invariants_ok = invariant_result.ok
+        if invariant_result.errors:
+            errors.extend(invariant_result.errors)
+
+    if not command_runs and not changed_files_checked and not docs_checked and not invariants_checked:
+        blocked_reasons.append("No verification checks were able to run.")
+
+    result = "pass"
+    if errors:
+        result = "fail"
+    elif blocked_reasons:
+        result = "blocked"
+
+    level = _verification_level(
+        selected,
+        commands_ran=commands_ran,
+        docs_ok=docs_ok,
+        invariants_ok=invariants_ok,
+        changed_files_checked=changed_files_checked,
+    )
+    if result == "blocked" and level == "none":
+        level = "none"
+
+    verification_id = new_verification_id()
+    state_snapshot = JsonStateStore(root).load_state()
+    record = VerificationRecord(
+        verification_id=verification_id,
+        timestamp=utc_now(),
+        result=result,
+        task_id=state_snapshot.active_task_id,
+        commands=command_runs,
+        diff_reviewed=diff_reviewed,
+        docs_updated=docs_updated,
+        invariants_checked=invariants_checked,
+    ).to_dict()
+    artifact = VerificationArtifact(
+        schema_version=record["schema_version"],
+        verification_id=record["verification_id"],
+        timestamp=record["timestamp"],
+        task_id=record["task_id"],
+        commands=record["commands"],
+        diff_reviewed=record["diff_reviewed"],
+        docs_updated=record["docs_updated"],
+        invariants_checked=record["invariants_checked"],
+        result=record["result"],
+        level=level,
+        warnings=warnings,
+        errors=errors,
+        blocked_reasons=blocked_reasons,
+        changed_files=changed_files,
+        docs_checked=docs_checked,
+    )
+    artifact_path = write_verification_artifact(root, artifact, promote_latest=True)
+
+    store = JsonStateStore(root)
+    state = state_snapshot
+    state.last_verification_id = verification_id
+    state.updated_at = utc_now()
+    store.write_state(state)
+
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "verify",
+                "path": str(root),
+                "record_requested": _flag(args, "record"),
+                "result": result,
+                "level": level,
+                "verification_id": verification_id,
+                "artifact_path": str(artifact_path),
+                "latest_path": str(root / "mythic" / "verifications" / "latest.json"),
+                "selected": selected,
+                "warnings": warnings,
+                "errors": errors,
+                "blocked_reasons": blocked_reasons,
+                "commands": command_runs,
+                "changed_files": changed_files,
+                "docs_checked": docs_checked,
+                "invariants_checked": invariants_checked,
+            }
+        )
+        return SUCCESS if result == "pass" else (VERIFICATION_FAILURE if result == "fail" else OPERATIONAL_FAILURE)
+
+    write_line("Verification complete.")
+    write_key_value("Result", result)
+    write_key_value("Level", level)
+    write_key_value("Verification ID", verification_id)
+    write_key_value("Artifact", artifact_path)
+    if warnings:
+        write_line("- Warnings:")
+        for warning in warnings:
+            write_bullet(warning, indent=2)
+    if errors:
+        write_line("- Errors:")
+        for error in errors:
+            write_bullet(error, indent=2)
+    if blocked_reasons:
+        write_line("- Blocked:")
+        for reason in blocked_reasons:
+            write_bullet(reason, indent=2)
+    return SUCCESS if result == "pass" else (VERIFICATION_FAILURE if result == "fail" else OPERATIONAL_FAILURE)
 
 
 def cmd_codex_log(args: argparse.Namespace) -> int:
@@ -1162,6 +1341,10 @@ def cmd_ai_dispatch(args: argparse.Namespace) -> int:
     return USER_INPUT_ERROR
 
 
+def cmd_verify_dispatch(args: argparse.Namespace) -> int:
+    return cmd_verify(args)
+
+
 COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "init": cmd_init,
     "start": cmd_init,
@@ -1188,4 +1371,5 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "db": cmd_db_dispatch,
     "plunder": cmd_plunder,
     "ai": cmd_ai_dispatch,
+    "verify": cmd_verify_dispatch,
 }

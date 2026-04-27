@@ -8,6 +8,10 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Added
 
+- Added `mythic-vibe verify` with command execution, changed-file review, docs checks, invariant checks, and durable verification records.
+- Added `mythic/verifications/` artifacts with a `latest.json` pointer.
+- Added a reflect gate so `mythic-vibe checkin --phase reflect` refuses to proceed until a successful verification exists.
+- Added `mythic_vibe_cli.verify` helpers for test running, git diff review, doc checks, and invariant checks.
 - Added provider usage and metadata fields to response objects and JSON command output.
 - Added provider-side pricing heuristics so estimated costs are no longer zero for real adapters.
 - Added real provider execution for `openai`, `anthropic`, `gemini`, and `openrouter` behind explicit API keys.
@@ -49,6 +53,8 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Changed
 
+- Successful verification now updates `last_verification_id` in project state.
+- Verification artifacts are now durable, and blocked reflection emits a clear reason instead of pretending the gate passed.
 - Real provider responses now include request IDs, usage, estimated cost, and observed cost metadata when available.
 - `mythic-vibe ai test` now stays dry-run-only, and `mythic-vibe ai run` now honors `--dry-run` explicitly.
 - `copy-paste` and `local` provider modes keep their always-available bridge behavior for inline packet input.

@@ -263,6 +263,15 @@ def build_parser() -> argparse.ArgumentParser:
     ai_ingest.add_argument("--response", required=True, help="Provider response text or summary")
     add_runtime_options(ai_ingest, json_output=True)
 
+    verify = sub.add_parser("verify", help="Run verification gates and write a durable verification record")
+    verify.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    verify.add_argument("--commands", action="store_true", help="Run discovered test commands")
+    verify.add_argument("--changed-files", action="store_true", help="Review changed files and diffs")
+    verify.add_argument("--docs", action="store_true", help="Check active documentation files")
+    verify.add_argument("--invariants", action="store_true", help="Check project invariants and boundaries")
+    verify.add_argument("--record", action="store_true", help="Promote the verification artifact to latest and update state")
+    add_runtime_options(verify, json_output=True)
+
     return parser
 
 
