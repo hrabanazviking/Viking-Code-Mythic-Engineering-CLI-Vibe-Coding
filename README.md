@@ -208,6 +208,7 @@ These environment variables override any file-based value at runtime:
 - `MYTHIC_EXCERPT_LIMIT`
 - `MYTHIC_PACKET_CHAR_BUDGET`
 - `MYTHIC_AUTO_COMPACT`
+- `MYTHIC_METHOD_SOURCE`
 
 To see what the tool is actually reading in your current project:
 

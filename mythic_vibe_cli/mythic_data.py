@@ -16,6 +16,7 @@ CANONICAL_README_RAW = (
 )
 CANONICAL_TREE_API = "https://api.github.com/repos/hrabanazviking/Mythic-Engineering/git/trees/main?recursive=1"
 CANONICAL_RAW_BASE = "https://raw.githubusercontent.com/hrabanazviking/Mythic-Engineering/main/"
+DEFAULT_METHOD_BRANCH = "main"
 
 DEFAULT_METHOD_NOTES = textwrap.dedent(
     """
@@ -56,6 +57,24 @@ DEFAULT_METHOD_NOTES = textwrap.dedent(
 class MethodBundle:
     source: str
     content: str
+
+
+@dataclass
+class MethodSource:
+    source: str
+    readme_raw: str
+    tree_api: str
+    raw_base: str
+    ref: str = DEFAULT_METHOD_BRANCH
+
+    def to_dict(self) -> dict[str, str]:
+        return {
+            "source": self.source,
+            "readme_raw": self.readme_raw,
+            "tree_api": self.tree_api,
+            "raw_base": self.raw_base,
+            "ref": self.ref,
+        }
 
 
 @dataclass
@@ -150,6 +169,7 @@ class MethodStatus:
     sections: list[str]
     freshness: str
     pinned: bool = False
+    configured_source: str = CANONICAL_REPO
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -161,21 +181,23 @@ class MethodStatus:
             "sections": self.sections,
             "freshness": self.freshness,
             "pinned": self.pinned,
+            "configured_source": self.configured_source,
         }
 
 
 class MethodStore:
-    def __init__(self, app_home: Path | None = None):
+    def __init__(self, app_home: Path | None = None, method_source: str = CANONICAL_REPO):
         self.app_home = app_home or Path(os.environ.get("MYTHIC_HOME", Path.home() / ".mythic-vibe"))
         self.app_home.mkdir(parents=True, exist_ok=True)
         self.cache_file = self.app_home / "method_cache.json"
+        self.method_source = resolve_method_source(method_source)
 
     def sync(self, timeout: int = 10) -> MethodBundle:
-        req = urllib.request.Request(CANONICAL_README_RAW, headers={"User-Agent": "mythic-vibe-cli/0.1"})
+        req = urllib.request.Request(self.method_source.readme_raw, headers={"User-Agent": "mythic-vibe-cli/0.1"})
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             content = resp.read().decode("utf-8", errors="replace")
 
-        bundle = MethodBundle(source=CANONICAL_REPO, content=content)
+        bundle = MethodBundle(source=self.method_source.source, content=content)
         self.cache_file.write_text(json.dumps(bundle.__dict__, indent=2), encoding="utf-8")
         return bundle
 
@@ -218,12 +240,13 @@ class MethodStore:
             cached=cached,
             sections=sections,
             freshness=freshness,
+            configured_source=self.method_source.source,
         )
 
     def import_all_markdown(self, target_dir: Path, timeout: int = 20) -> MethodImportManifest:
         target_dir.mkdir(parents=True, exist_ok=True)
 
-        req = urllib.request.Request(CANONICAL_TREE_API, headers={"User-Agent": "mythic-vibe-cli/0.1"})
+        req = urllib.request.Request(self.method_source.tree_api, headers={"User-Agent": "mythic-vibe-cli/0.1"})
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             tree_payload = json.loads(resp.read().decode("utf-8", errors="replace"))
 
@@ -233,7 +256,7 @@ class MethodStore:
 
         files: list[MethodManifestEntry] = []
         for rel_path in md_paths:
-            raw_url = f"{CANONICAL_RAW_BASE}{rel_path}"
+            raw_url = f"{self.method_source.raw_base}{rel_path}"
             out_path = target_dir / rel_path
             out_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -252,7 +275,7 @@ class MethodStore:
             )
 
         manifest = MethodImportManifest(
-            source=CANONICAL_REPO,
+            source=self.method_source.source,
             ref=ref,
             manifest_path=target_dir / "method_manifest.json",
             files=files,
@@ -323,3 +346,31 @@ class MethodStore:
         )
         pin.pin_path.write_text(json.dumps(pin.to_dict(), indent=2), encoding="utf-8")
         return pin
+
+
+def resolve_method_source(source: str) -> MethodSource:
+    normalized = (source or CANONICAL_REPO).strip().rstrip("/")
+    if normalized == CANONICAL_REPO:
+        return MethodSource(
+            source=CANONICAL_REPO,
+            readme_raw=CANONICAL_README_RAW,
+            tree_api=CANONICAL_TREE_API,
+            raw_base=CANONICAL_RAW_BASE,
+        )
+
+    marker = "github.com/"
+    if marker not in normalized:
+        raise ValueError("method source must be a GitHub repository URL like https://github.com/owner/repo")
+
+    repo = normalized.split(marker, 1)[1].strip("/")
+    parts = [part for part in repo.split("/") if part]
+    if len(parts) < 2:
+        raise ValueError("method source must include GitHub owner and repository")
+    owner, name = parts[0], parts[1]
+    source_url = f"https://github.com/{owner}/{name}"
+    return MethodSource(
+        source=source_url,
+        readme_raw=f"https://raw.githubusercontent.com/{owner}/{name}/{DEFAULT_METHOD_BRANCH}/README.md",
+        tree_api=f"https://api.github.com/repos/{owner}/{name}/git/trees/{DEFAULT_METHOD_BRANCH}?recursive=1",
+        raw_base=f"https://raw.githubusercontent.com/{owner}/{name}/{DEFAULT_METHOD_BRANCH}/",
+    )

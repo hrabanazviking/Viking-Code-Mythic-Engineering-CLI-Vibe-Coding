@@ -11,6 +11,7 @@ class AppConfig:
     excerpt_limit: int = 1800
     packet_char_budget: int = 12000
     auto_compact: bool = True
+    method_source: str = "https://github.com/hrabanazviking/Mythic-Engineering"
 
 
 @dataclass
@@ -51,6 +52,7 @@ class ConfigStore:
                 sources.append(path)
 
         codex = payload.get("codex", {}) if isinstance(payload.get("codex", {}), dict) else {}
+        method = payload.get("method", {}) if isinstance(payload.get("method", {}), dict) else {}
 
         config = AppConfig(
             excerpt_limit=_parse_int_env(
@@ -66,6 +68,10 @@ class ConfigStore:
                 maximum=100000,
             ),
             auto_compact=_parse_bool_env("MYTHIC_AUTO_COMPACT", codex.get("auto_compact", True)),
+            method_source=_parse_str_env(
+                "MYTHIC_METHOD_SOURCE",
+                method.get("source", AppConfig.method_source),
+            ),
         )
 
         return LoadedConfig(config=config, sources=sources)
@@ -103,3 +109,10 @@ def _parse_bool_env(name: str, fallback: bool) -> bool:
     if normalized in {"0", "false", "no", "off"}:
         return False
     return bool(fallback)
+
+
+def _parse_str_env(name: str, fallback: str) -> str:
+    raw = os.environ.get(name)
+    if raw is not None and raw.strip():
+        return raw.strip()
+    return str(fallback).strip()

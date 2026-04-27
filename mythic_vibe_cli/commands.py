@@ -144,6 +144,11 @@ def _command_name(args: argparse.Namespace, fallback: str) -> str:
     return fallback
 
 
+def _method_store(root: Path | None = None) -> MethodStore:
+    loaded = ConfigStore(root).load() if root else ConfigStore().load()
+    return MethodStore(method_source=loaded.config.method_source)
+
+
 def cmd_init(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
     if _flag(args, "dry_run"):
@@ -155,7 +160,7 @@ def cmd_init(args: argparse.Namespace) -> int:
 
     root.mkdir(parents=True, exist_ok=True)
 
-    store = MethodStore()
+    store = _method_store(root)
     method = store.load()
     workflow = MythicWorkflow(root)
     created = workflow.init_project(
@@ -210,7 +215,7 @@ def cmd_import_md(args: argparse.Namespace) -> int:
         write_key_value("Target", target)
         return SUCCESS
 
-    store = MethodStore()
+    store = _method_store(root)
     try:
         manifest = store.import_all_markdown(target)
     except Exception as exc:  # noqa: BLE001 - surface remote import issues in CLI.
@@ -1060,6 +1065,7 @@ def cmd_config(args: argparse.Namespace) -> int:
                     "codex.excerpt_limit": loaded.config.excerpt_limit,
                     "codex.packet_char_budget": loaded.config.packet_char_budget,
                     "codex.auto_compact": loaded.config.auto_compact,
+                    "method.source": loaded.config.method_source,
                 },
             }
         )
@@ -1078,6 +1084,7 @@ def cmd_config(args: argparse.Namespace) -> int:
     write_key_value("codex.excerpt_limit", loaded.config.excerpt_limit, indent=2)
     write_key_value("codex.packet_char_budget", loaded.config.packet_char_budget, indent=2)
     write_key_value("codex.auto_compact", str(loaded.config.auto_compact).lower(), indent=2)
+    write_key_value("method.source", loaded.config.method_source, indent=2)
     return SUCCESS
 
 
@@ -1316,13 +1323,15 @@ def cmd_handoff_dispatch(args: argparse.Namespace) -> int:
 
 
 def cmd_sync(_args: argparse.Namespace) -> int:
+    root = Path(getattr(_args, "path", ".")).resolve()
     if _flag(_args, "dry_run"):
-        store = MethodStore()
+        store = _method_store(root)
         if _flag(_args, "json"):
             write_json(
                 {
                     "command": _command_name(_args, "sync"),
                     "dry_run": True,
+                    "source": store.method_source.source,
                     "cache_file": str(store.cache_file),
                     "message": "Dry run: no method sync will be performed.",
                 }
@@ -1332,7 +1341,7 @@ def cmd_sync(_args: argparse.Namespace) -> int:
         write_key_value("Cache", store.cache_file)
         return SUCCESS
 
-    store = MethodStore()
+    store = _method_store(root)
     try:
         bundle = store.sync()
     except Exception as exc:  # noqa: BLE001 - CLI should show actionable message and continue.
@@ -1358,7 +1367,8 @@ def cmd_sync(_args: argparse.Namespace) -> int:
 
 
 def cmd_method_status(args: argparse.Namespace) -> int:
-    store = MethodStore()
+    root = Path(getattr(args, "path", ".")).resolve()
+    store = _method_store(root)
     status = store.status()
     payload = {"command": _command_name(args, "method status"), "method": status.to_dict()}
     if _flag(args, "json"):
@@ -1381,7 +1391,8 @@ def cmd_method_status(args: argparse.Namespace) -> int:
 
 
 def cmd_method(_args: argparse.Namespace) -> int:
-    store = MethodStore()
+    root = Path(getattr(_args, "path", ".")).resolve()
+    store = _method_store(root)
     bundle = store.load_cached_or_fallback()[0]
     if _flag(_args, "json"):
         status = store.status()
@@ -1403,7 +1414,7 @@ def cmd_method(_args: argparse.Namespace) -> int:
 def cmd_method_diff(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
     target = root / args.target
-    store = MethodStore()
+    store = _method_store(root)
     try:
         diff = store.diff_import_manifest(target)
     except FileNotFoundError:
@@ -1440,7 +1451,7 @@ def cmd_method_diff(args: argparse.Namespace) -> int:
 def cmd_method_pin(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
     target = root / args.target
-    store = MethodStore()
+    store = _method_store(root)
     try:
         diff = store.diff_import_manifest(target)
     except FileNotFoundError:

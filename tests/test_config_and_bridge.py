@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import os
+from contextlib import redirect_stdout
+import io
+import json
 import tempfile
 import unittest
 from pathlib import Path
 
+from mythic_vibe_cli import app
 from mythic_vibe_cli.codex_bridge import CodexBridge, CodexPacketRequest
 from mythic_vibe_cli.config import ConfigStore
 
@@ -48,7 +52,61 @@ class ConfigAndBridgeTests(unittest.TestCase):
             self.assertEqual(loaded.config.excerpt_limit, 1300)
             self.assertEqual(loaded.config.packet_char_budget, 7000)
             self.assertFalse(loaded.config.auto_compact)
+            self.assertEqual(loaded.config.method_source, "https://github.com/hrabanazviking/Mythic-Engineering")
             self.assertEqual(len(loaded.sources), 3)
+
+    def test_method_source_config_layering_and_env_override(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            home = root / "home"
+            project = root / "project"
+            home.mkdir(parents=True, exist_ok=True)
+            project.mkdir(parents=True, exist_ok=True)
+            (home / ".mythic-vibe.json").write_text(
+                '{"method": {"source": "https://github.com/home/method"}}',
+                encoding="utf-8",
+            )
+            (project / ".mythic-vibe.json").write_text(
+                '{"method": {"source": "https://github.com/project/method"}}',
+                encoding="utf-8",
+            )
+
+            old_home = os.environ.get("HOME")
+            old_source = os.environ.get("MYTHIC_METHOD_SOURCE")
+            try:
+                os.environ["HOME"] = str(home)
+                loaded = ConfigStore(project).load()
+                self.assertEqual(loaded.config.method_source, "https://github.com/project/method")
+
+                os.environ["MYTHIC_METHOD_SOURCE"] = "https://github.com/env/method"
+                loaded = ConfigStore(project).load()
+                self.assertEqual(loaded.config.method_source, "https://github.com/env/method")
+            finally:
+                if old_home is None:
+                    os.environ.pop("HOME", None)
+                else:
+                    os.environ["HOME"] = old_home
+                if old_source is None:
+                    os.environ.pop("MYTHIC_METHOD_SOURCE", None)
+                else:
+                    os.environ["MYTHIC_METHOD_SOURCE"] = old_source
+
+    def test_config_json_reports_method_source(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            root.joinpath(".mythic-vibe.json").write_text(
+                '{"method": {"source": "https://github.com/project/method"}}',
+                encoding="utf-8",
+            )
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(["config", "--path", tmp, "--json"])
+
+            payload = json.loads(output.getvalue())
+
+            self.assertEqual(code, 0)
+            self.assertEqual(payload["config"]["method.source"], "https://github.com/project/method")
 
     def test_codex_bridge_auto_compacts_sections(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
