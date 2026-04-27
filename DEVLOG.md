@@ -7,6 +7,34 @@
 
 ---
 
+## 2026-04-27 - Stage 14 Follow-up: Command Help Examples
+
+**Session:** Finishing the Stage 14 UX polish thread.
+**Status:** High-traffic command help now includes concrete examples.
+**Scope:** Parser help text, UX tests, and documentation records.
+
+### What changed
+
+- Added multi-line argparse examples for `init`, `next`, `verify`, `packet create`, `reflect`, `resume`, and `doctor`.
+- Preserved normal command semantics; this pass only improves command help output.
+- Added a UX regression test that verifies each targeted help screen renders an expected example.
+
+### Why it matters
+
+The CLI now teaches by showing. A user who reaches for `--help` gets practical commands they can adapt immediately instead of a bare list of flags.
+
+### Verification
+
+- `pytest -q tests/test_ux.py` -> `7 passed, 7 subtests passed`
+- `ruff check mythic_vibe_cli/app.py tests/test_ux.py` -> passed
+- `mypy mythic_vibe_cli/app.py` -> passed
+
+### Continuity thread
+
+- The remaining useful Stage 14 hardening is to improve blocked-verification human output in `next`, especially command failures and blocked reasons.
+
+_A good help screen should put the handle of the tool in the user's hand._
+
 ## 2026-04-27 - Stage 14 Follow-up: Smarter Next Guidance
 
 **Session:** Continuing Stage 14 command ergonomics.

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from textwrap import dedent
 
 from . import __version__
 from .ai.registry import ProviderRegistry
@@ -11,6 +12,17 @@ from .exit_codes import USER_INPUT_ERROR
 from .output import configure_output
 from .plugins.api import PLUGIN_HOOKS
 from .ux import artifact_names, phase_names
+
+
+def _epilog(text: str) -> str:
+    return dedent(text).strip()
+
+
+def _example_parser_kwargs(epilog: str) -> dict[str, object]:
+    return {
+        "formatter_class": argparse.RawDescriptionHelpFormatter,
+        "epilog": _epilog(epilog),
+    }
 
 
 def add_runtime_options(
@@ -40,7 +52,13 @@ def build_parser() -> argparse.ArgumentParser:
     init_cmd = sub.add_parser(
         "init",
         help="Initialize Mythic Engineering docs + workflow scaffolding",
-        epilog='Example: mythic-vibe init --goal "Build a calm CLI" --noob',
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe init --goal "Build a calm CLI" --noob
+              mythic-vibe init --goal "Refactor checkout flow" --path ./app --dry-run
+            """
+        ),
     )
     init_cmd.add_argument("--goal", required=True, help="Plain language product goal")
     init_cmd.add_argument("--path", default=".", help="Project directory (default: current directory)")
@@ -69,7 +87,20 @@ def build_parser() -> argparse.ArgumentParser:
     guide = sub.add_parser("guide", help="Show the compact Mythic Vibe operator guide")
     add_runtime_options(guide, json_output=True)
 
-    next_cmd = sub.add_parser("next", help="Show the next recommended phase and command")
+    next_cmd = sub.add_parser(
+        "next",
+        help="Show the next recommended phase and command",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe next --path .
+              mythic-vibe next --path . --json
+
+            Notes:
+              Failed verification comes first, then latest handoff guidance, then phase guidance.
+            """
+        ),
+    )
     next_cmd.add_argument("--path", default=".", help="Project directory (default: current directory)")
     add_runtime_options(next_cmd, json_output=True)
 
@@ -90,7 +121,18 @@ def build_parser() -> argparse.ArgumentParser:
     completion.add_argument("--shell", required=True, choices=["bash", "zsh", "powershell"], help="Shell to generate completions for")
     add_runtime_options(completion, json_output=True)
 
-    reflect = sub.add_parser("reflect", help="Create a reflection handoff for the current session")
+    reflect = sub.add_parser(
+        "reflect",
+        help="Create a reflection handoff for the current session",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe reflect --summary "Added packet diff tests"
+              mythic-vibe reflect --summary "Verified release gates" --next-step "Check GitHub CI"
+              mythic-vibe reflect --summary "Docs updated" --dry-run
+            """
+        ),
+    )
     reflect.add_argument("--path", default=".", help="Project directory (default: current directory)")
     reflect.add_argument("--summary", required=True, help="Short summary of the current work session")
     reflect.add_argument("--next-step", default="", help="Optional next action to emphasize")
@@ -151,7 +193,18 @@ def build_parser() -> argparse.ArgumentParser:
     method = sub.add_parser("method", help="Print active Mythic method notes")
     add_runtime_options(method)
 
-    doctor = sub.add_parser("doctor", help="Validate Mythic project structure and status")
+    doctor = sub.add_parser(
+        "doctor",
+        help="Validate Mythic project structure and status",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe doctor --path .
+              mythic-vibe doctor --path . --repo-boundary
+              mythic-vibe doctor --path . --json
+            """
+        ),
+    )
     doctor.add_argument("--path", default=".", help="Project directory (default: current directory)")
     doctor.add_argument(
         "--repo-boundary",
@@ -180,7 +233,18 @@ def build_parser() -> argparse.ArgumentParser:
     packet = sub.add_parser("packet", help="Create, show, or list reusable packet artifacts")
     add_runtime_options(packet, json_output=True, dry_run=True)
     packet_sub = packet.add_subparsers(dest="packet_command", required=True)
-    packet_create = packet_sub.add_parser("create", help="Create a reusable packet artifact")
+    packet_create = packet_sub.add_parser(
+        "create",
+        help="Create a reusable packet artifact",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe packet create --task "Implement login audit" --phase build
+              mythic-vibe packet create --task "Review plugin hooks" --phase verify --role Auditor
+              mythic-vibe packet create --task "Map data flow" --phase architecture --format json
+            """
+        ),
+    )
     packet_create.add_argument("--task", required=True, help="Specific coding task for the packet")
     packet_create.add_argument("--phase", required=True, choices=PHASES, help="Current Mythic phase")
     packet_create.add_argument("--audience", default="beginner", help="Audience level: beginner/intermediate/advanced")
@@ -240,7 +304,20 @@ def build_parser() -> argparse.ArgumentParser:
     heal.add_argument("--failing-test", default="", help="Optional failing test identifier")
     add_runtime_options(heal)
 
-    resume = sub.add_parser("resume", help="Summarize the latest handoff and suggest the next step")
+    resume = sub.add_parser(
+        "resume",
+        help="Summarize the latest handoff and suggest the next step",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe resume --path .
+              mythic-vibe resume --path . --json
+
+            Notes:
+              Use this at the start of a session to recover the latest handoff.
+            """
+        ),
+    )
     resume.add_argument("--path", default=".", help="Project directory (default: current directory)")
     add_runtime_options(resume, json_output=True)
 
@@ -380,7 +457,18 @@ def build_parser() -> argparse.ArgumentParser:
     ai_ingest.add_argument("--response", required=True, help="Provider response text or summary")
     add_runtime_options(ai_ingest, json_output=True)
 
-    verify = sub.add_parser("verify", help="Run verification gates and write a durable verification record")
+    verify = sub.add_parser(
+        "verify",
+        help="Run verification gates and write a durable verification record",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe verify --commands --record
+              mythic-vibe verify --commands --docs --invariants --record
+              mythic-vibe verify --changed-files --docs --json
+            """
+        ),
+    )
     verify.add_argument("--path", default=".", help="Project directory (default: current directory)")
     verify.add_argument("--commands", action="store_true", help="Run discovered test commands")
     verify.add_argument("--changed-files", action="store_true", help="Review changed files and diffs")

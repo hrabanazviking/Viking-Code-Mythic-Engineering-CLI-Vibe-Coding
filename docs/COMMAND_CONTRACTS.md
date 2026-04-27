@@ -47,6 +47,7 @@ Current Stage 12 plugin commands:
 
 Current Stage 14 UX commands:
 
+- High-traffic command help for `init`, `next`, `verify`, `packet create`, `reflect`, `resume`, and `doctor` includes concrete copy-paste examples.
 - `examples` - print copy-paste command examples.
 - `guide` - print the compact operator guide for the Mythic loop.
 - `next` - inspect local state and suggest the next phase and command; failed or blocked verification records take priority, then latest handoff next steps, then normal phase guidance.
