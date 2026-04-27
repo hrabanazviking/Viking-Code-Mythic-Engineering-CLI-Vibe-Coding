@@ -60,6 +60,7 @@ class CliKernelTests(unittest.TestCase):
             "heal",
             "oath",
             "grimoire",
+            "plugin",
             "config",
             "state",
             "db",

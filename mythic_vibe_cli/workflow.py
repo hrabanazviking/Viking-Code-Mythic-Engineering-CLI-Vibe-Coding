@@ -315,7 +315,7 @@ class MythicWorkflow:
             if contracts_path.exists():
                 sections.append(contracts_path.relative_to(self.root).as_posix())
                 contract_text = contracts_path.read_text(encoding="utf-8", errors="replace")
-                required_terms = ["doctor", "scry", "verify", "packet", "ai", "plunder"]
+                required_terms = ["doctor", "scry", "verify", "packet", "ai", "plunder", "plugin"]
                 missing_terms = [term for term in required_terms if term not in contract_text]
                 if missing_terms:
                     warnings.append(
@@ -599,6 +599,10 @@ class MythicWorkflow:
             - `imbue` -> `init`
             - `evoke` -> `codex-pack`
             - `scry` -> `doctor`
+
+            ## Plugin Contract
+
+            `grimoire add|list` preserves compatibility for registry updates. `plugin list|inspect|disable` exposes versioned plugin health and control. Supported hooks are `before_scan`, `after_scan`, `before_packet`, `after_packet`, `before_verify`, `after_verify`, `before_reflect`, and `after_reflect`.
 
             ## Exit-Code Policy
 

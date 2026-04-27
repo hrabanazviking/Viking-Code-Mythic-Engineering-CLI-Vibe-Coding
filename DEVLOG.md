@@ -7,6 +7,35 @@
 
 ---
 
+## 2026-04-27 - Stage 12 Plugin and Grimoire System
+
+**Session:** Continuing the Mythic Vibe CLI implementation on `development`.
+**Status:** Plugins now have a versioned registry, hook declarations, health inspection, and disable controls.
+**Scope:** Stage 12 pass, focused on visible extension behavior without destabilizing the core CLI.
+
+### What changed
+
+- Added `mythic_vibe_cli.plugins` modules for plugin API contracts, registry persistence, and entrypoint inspection.
+- Added `mythic-vibe plugin list|inspect|disable`.
+- Upgraded `grimoire add|list` to use the versioned plugin registry while preserving the legacy `plugins` list shape.
+- Added the supported hook set: `before_scan`, `after_scan`, `before_packet`, `after_packet`, `before_verify`, `after_verify`, `before_reflect`, and `after_reflect`.
+- Added plugin health reporting and sandbox warnings so local Python extension points are visible before use.
+- Added `plugin_manifest.schema.json` for the registry contract.
+
+### Why it matters
+
+Stage 12 moves plugins from loose strings toward observable extension points. The CLI can now show what is registered, what hooks a plugin claims, whether it is disabled, and whether inspection failed.
+
+### Verification
+
+- `pytest -q tests/test_plugins.py tests/test_cli.py::MythicCliRitualTests::test_grimoire_add_and_list tests/test_cli_kernel.py::CliKernelTests::test_grimoire_json_has_no_human_prefix tests/test_cli_kernel.py::CliKernelTests::test_command_registry_preserves_current_commands_and_aliases` -> `6 passed`
+
+### Continuity thread
+
+- The next useful improvement is real hook invocation around scan, packet, verify, and reflect flows. Stage 12 currently makes hooks discoverable and controlled before wiring execution into the core lifecycle.
+
+_Extensions may enter the hall, but they do not take the throne._
+
 ## 2026-04-27 - Stage 11 Lawful Plunder System v2
 
 **Session:** Continuing the Mythic Vibe CLI implementation on `development`.

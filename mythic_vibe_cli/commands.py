@@ -36,6 +36,9 @@ from .plunder.provenance import (
     update_notice,
     write_plan,
 )
+from .plugins.api import PLUGIN_HOOKS
+from .plugins.loader import inspect_plugin
+from .plugins.registry import PluginRegistry
 from .core.state import PHASES, VerificationRecord, coerce_project_state, utc_now, validate_state_payload
 from .persistence.json_store import JsonStateStore, StateStoreError
 from .persistence.migrations import migrate_project_state
@@ -116,6 +119,8 @@ def _command_name(args: argparse.Namespace, fallback: str) -> str:
         subcommand_attr = getattr(args, "config_command", "")
     elif command == "grimoire":
         subcommand_attr = getattr(args, "grimoire_command", "")
+    elif command == "plugin":
+        subcommand_attr = getattr(args, "plugin_command", "")
     elif command == "handoff":
         subcommand_attr = getattr(args, "handoff_command", "")
 
@@ -1128,13 +1133,15 @@ def cmd_oath(args: argparse.Namespace) -> int:
 
 def cmd_grimoire(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
-    store_file = root / "mythic" / "plugins.json"
+    registry = PluginRegistry(root)
+    store_file = registry.path
     if _flag(args, "dry_run") and args.grimoire_command == "add":
         payload = {
             "command": "grimoire add",
             "dry_run": True,
             "registry": str(store_file),
             "plugin": args.plugin,
+            "hooks": getattr(args, "hook", []) or [],
         }
         if _flag(args, "json"):
             write_json(payload)
@@ -1144,19 +1151,21 @@ def cmd_grimoire(args: argparse.Namespace) -> int:
             write_key_value("Plugin", args.plugin)
         return SUCCESS
 
-    store_file.parent.mkdir(parents=True, exist_ok=True)
-    if store_file.exists():
-        data = json.loads(store_file.read_text(encoding="utf-8"))
-    else:
-        data = {"plugins": []}
-
     if args.grimoire_command == "add":
-        if args.plugin not in data["plugins"]:
-            data["plugins"].append(args.plugin)
-            store_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        try:
+            record, created = registry.add(
+                args.plugin,
+                hooks=getattr(args, "hook", []) or [],
+                version=getattr(args, "version", "unknown"),
+            )
+        except ValueError as exc:
+            write_error(str(exc))
+            return USER_INPUT_ERROR
+        if created:
             message = f"Registered plugin: {args.plugin}"
         else:
             message = f"Plugin already registered: {args.plugin}"
+        plugins = [item.entrypoint for item in registry.list()]
         if _flag(args, "json"):
             write_json(
                 {
@@ -1164,7 +1173,9 @@ def cmd_grimoire(args: argparse.Namespace) -> int:
                     "dry_run": False,
                     "registry": str(store_file),
                     "plugin": args.plugin,
-                    "plugins": data.get("plugins", []),
+                    "plugin_record": record.to_dict(),
+                    "plugins": plugins,
+                    "sandbox_warning": "Plugins are local Python extension points. Inspect and trust them before enabling.",
                 }
             )
             return SUCCESS
@@ -1172,9 +1183,18 @@ def cmd_grimoire(args: argparse.Namespace) -> int:
         write_key_value("Registry", store_file)
         return SUCCESS
 
-    plugins = data.get("plugins", [])
+    records = registry.list()
+    plugins = [record.entrypoint for record in records]
     if _flag(args, "json"):
-        write_json({"command": "grimoire list", "registry": str(store_file), "plugins": plugins})
+        write_json(
+            {
+                "command": "grimoire list",
+                "registry": str(store_file),
+                "plugins": plugins,
+                "plugin_records": [record.to_dict() for record in records],
+                "available_hooks": PLUGIN_HOOKS,
+            }
+        )
         return SUCCESS
 
     if not plugins:
@@ -1184,6 +1204,110 @@ def cmd_grimoire(args: argparse.Namespace) -> int:
     for plugin in plugins:
         write_bullet(plugin)
     return SUCCESS
+
+
+def cmd_plugin_list(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    registry = PluginRegistry(root)
+    records = registry.list(include_disabled=_flag(args, "all"))
+    inspections = [inspect_plugin(record, import_plugin=False) for record in records]
+    payload = {
+        "command": "plugin list",
+        "registry": str(registry.path),
+        "available_hooks": PLUGIN_HOOKS,
+        "sandbox_warning": "Plugins are local Python extension points. Inspect and trust them before enabling.",
+        "plugins": inspections,
+    }
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+
+    if not inspections:
+        write_line("No plugins registered.")
+        return SUCCESS
+    write_line("Registered plugins:")
+    for item in inspections:
+        health = item["health"] if isinstance(item.get("health"), dict) else {}
+        write_bullet(f"{item['entrypoint']} [{health.get('status', 'unknown')}]")
+    return SUCCESS
+
+
+def cmd_plugin_inspect(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    registry = PluginRegistry(root)
+    record = registry.get(args.plugin)
+    if record is None:
+        write_error(f"Plugin is not registered: {args.plugin}")
+        return USER_INPUT_ERROR
+    inspection = inspect_plugin(record, import_plugin=not _flag(args, "metadata_only"))
+    payload = {
+        "command": "plugin inspect",
+        "registry": str(registry.path),
+        "plugin": inspection,
+    }
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+
+    health = inspection["health"] if isinstance(inspection.get("health"), dict) else {}
+    write_line("Plugin inspection")
+    write_key_value("Plugin", inspection["entrypoint"])
+    write_key_value("Status", health.get("status", "unknown"))
+    write_key_value("Version", inspection.get("version", "unknown"))
+    if inspection.get("hooks"):
+        write_line("- Hooks:")
+        for hook in inspection["hooks"]:
+            write_bullet(str(hook), indent=2)
+    for warning in health.get("warnings", []):
+        write_key_value("Warning", warning)
+    for error in health.get("errors", []):
+        write_key_value("Error", error)
+    return SUCCESS
+
+
+def cmd_plugin_disable(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    registry = PluginRegistry(root)
+    if _flag(args, "dry_run"):
+        payload = {
+            "command": "plugin disable",
+            "dry_run": True,
+            "registry": str(registry.path),
+            "plugin": args.plugin,
+        }
+        if _flag(args, "json"):
+            write_json(payload)
+        else:
+            write_line("Dry run: no plugin will be disabled.")
+            write_key_value("Plugin", args.plugin)
+        return SUCCESS
+
+    record = registry.disable(args.plugin)
+    if record is None:
+        write_error(f"Plugin is not registered: {args.plugin}")
+        return USER_INPUT_ERROR
+    payload = {
+        "command": "plugin disable",
+        "registry": str(registry.path),
+        "plugin": record.to_dict(),
+    }
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+    write_line("Plugin disabled.")
+    write_key_value("Plugin", record.entrypoint)
+    write_key_value("Registry", registry.path)
+    return SUCCESS
+
+
+def cmd_plugin_dispatch(args: argparse.Namespace) -> int:
+    if args.plugin_command == "list":
+        return cmd_plugin_list(args)
+    if args.plugin_command == "inspect":
+        return cmd_plugin_inspect(args)
+    if args.plugin_command == "disable":
+        return cmd_plugin_disable(args)
+    return USER_INPUT_ERROR
 
 
 def cmd_config_set(args: argparse.Namespace) -> int:
@@ -1864,6 +1988,7 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "heal": cmd_heal,
     "oath": cmd_oath,
     "grimoire": cmd_grimoire,
+    "plugin": cmd_plugin_dispatch,
     "config": cmd_config_dispatch,
     "state": cmd_state_dispatch,
     "db": cmd_db_dispatch,
