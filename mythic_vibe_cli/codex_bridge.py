@@ -205,9 +205,10 @@ class PacketBuilder:
         return records
 
     def load_packet_text(self, packet_id: str) -> str | None:
-        packet_path = self.packet_dir / f"{packet_id}.md"
-        if packet_path.exists():
-            return packet_path.read_text(encoding="utf-8")
+        for suffix in (".md", ".json"):
+            packet_path = self.packet_dir / f"{packet_id}{suffix}"
+            if packet_path.exists():
+                return packet_path.read_text(encoding="utf-8")
         return None
 
     def load_packet_record(self, packet_id: str) -> PacketRecord | None:
@@ -294,7 +295,6 @@ class PacketBuilder:
         payload = record.to_dict()
         payload["source_metadata"] = source_metadata if isinstance(source_metadata, dict) else {}
         canonical_meta.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-        self._write_context_manifest(record, packet_text)
         self._write_context_manifest(record, packet_text)
 
     def _read_ingest_source(self, source_path: Path) -> tuple[str, dict[str, object]]:
@@ -461,12 +461,45 @@ class PacketBuilder:
         if total <= budget:
             return sections
 
+        weights = {
+            "goals": 2,
+            "architecture": 4,
+            "plan": 3,
+            "loop": 1,
+            "project_index": 5,
+            "allowed_files": 2,
+            "forbidden_files": 2,
+            "invariants": 4,
+            "verification": 4,
+        }
+        minimums = {
+            "goals": 120,
+            "architecture": 220,
+            "plan": 180,
+            "loop": 80,
+            "project_index": 260,
+            "allowed_files": 120,
+            "forbidden_files": 120,
+            "invariants": 160,
+            "verification": 160,
+        }
         keys = list(sections.keys())
-        share = max(200, budget // max(1, len(keys)))
+        active_weights = {key: weights.get(key, 1) for key in keys}
+        active_mins = {key: minimums.get(key, 100) for key in keys}
+        min_total = sum(active_mins.values())
+
+        if min_total >= budget:
+            scale = budget / max(1, min_total)
+            active_mins = {key: max(40, int(value * scale)) for key, value in active_mins.items()}
+            min_total = sum(active_mins.values())
+
+        remaining = max(0, budget - min_total)
+        weight_total = sum(active_weights.values()) or 1
 
         compacted: dict[str, str] = {}
         for key in keys:
-            compacted[key] = self._safe_excerpt(sections[key], limit=share)
+            allotment = active_mins[key] + int(remaining * (active_weights[key] / weight_total))
+            compacted[key] = self._safe_excerpt(sections[key], limit=max(40, allotment))
 
         return compacted
 

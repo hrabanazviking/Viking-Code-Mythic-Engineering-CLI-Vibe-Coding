@@ -8,6 +8,8 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Added
 
+- Added weighted packet budget allocation so high-priority sections retain more context under truncation.
+- Added budget-allocation coverage to verify packet compaction keeps priority sections larger than low-signal ones.
 - Added role presets, output formats, safety sections, and context manifest support to packet generation.
 - Added JSON packet rendering as a first-class packet output format.
 - Added packet context manifest writing to `mythic/context_sources.json`.

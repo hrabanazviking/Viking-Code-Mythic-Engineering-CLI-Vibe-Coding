@@ -104,6 +104,41 @@ class ConfigAndBridgeTests(unittest.TestCase):
             self.assertIn("mythic_vibe_cli/app.py", index)
             self.assertIn("tests/test_smoke.py", index)
 
+    def test_codex_bridge_weights_budget_toward_priority_sections(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "docs").mkdir(parents=True, exist_ok=True)
+            (root / "tasks").mkdir(parents=True, exist_ok=True)
+            (root / "mythic").mkdir(parents=True, exist_ok=True)
+
+            long_text = "B" * 4000
+            (root / "tasks" / "current_GOALS.md").write_text(long_text, encoding="utf-8")
+            (root / "docs" / "ARCHITECTURE.md").write_text(long_text, encoding="utf-8")
+            (root / "mythic" / "plan.md").write_text(long_text, encoding="utf-8")
+            (root / "mythic" / "loop.md").write_text(long_text, encoding="utf-8")
+            (root / ".mythic-vibe.json").write_text(
+                '{"codex": {"excerpt_limit": 5000, "packet_char_budget": 1000, "auto_compact": true}}',
+                encoding="utf-8",
+            )
+
+            bridge = CodexBridge(root)
+            sections = {
+                "goals": "G" * 4000,
+                "architecture": "A" * 4000,
+                "plan": "P" * 4000,
+                "loop": "L" * 4000,
+                "project_index": "I" * 4000,
+                "allowed_files": "F" * 4000,
+                "forbidden_files": "X" * 4000,
+                "invariants": "N" * 4000,
+                "verification": "V" * 4000,
+            }
+            compacted = bridge._compact_sections(sections, 1000)
+
+            self.assertGreater(len(compacted["project_index"]), len(compacted["loop"]))
+            self.assertGreater(len(compacted["architecture"]), len(compacted["goals"]))
+            self.assertGreater(len(compacted["verification"]), len(compacted["loop"]))
+
 
 if __name__ == "__main__":
     unittest.main()
