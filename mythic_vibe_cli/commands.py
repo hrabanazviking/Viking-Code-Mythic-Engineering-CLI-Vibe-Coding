@@ -11,7 +11,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-from .codex_bridge import CodexBridge, CodexPacketRequest
+from .codex_bridge import CodexBridge, CodexPacketRequest, PACKET_OUTPUT_FORMATS, PACKET_ROLES
 from .context.indexer import ProjectIndexer
 from .config import ConfigStore
 from .errors import CliError, format_error
@@ -239,7 +239,8 @@ def cmd_codex_pack(args: argparse.Namespace) -> int:
 
 def cmd_packet_create(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
-    out_path = Path(args.out).resolve() if args.out else root / "mythic" / "codex_prompt.md"
+    default_ext = ".json" if args.format == "json" else ".md"
+    out_path = Path(args.out).resolve() if args.out else root / "mythic" / f"codex_prompt{default_ext}"
     if _flag(args, "dry_run"):
         payload = {
             "command": _command_name(args, "packet create"),
@@ -249,6 +250,7 @@ def cmd_packet_create(args: argparse.Namespace) -> int:
             "phase": args.phase,
             "task": args.task,
             "role": args.role,
+            "format": args.format,
         }
         if _flag(args, "json"):
             write_json(payload)
@@ -262,7 +264,13 @@ def cmd_packet_create(args: argparse.Namespace) -> int:
 
     bridge = CodexBridge(root)
     packet = bridge.create_packet(
-        request=CodexPacketRequest(task=args.task, phase=args.phase, audience=args.audience, role=args.role),
+        request=CodexPacketRequest(
+            task=args.task,
+            phase=args.phase,
+            audience=args.audience,
+            role=args.role,
+            output_format=args.format,
+        ),
         out_file=out_path,
     )
     if _flag(args, "json"):
@@ -275,6 +283,7 @@ def cmd_packet_create(args: argparse.Namespace) -> int:
                 "phase": args.phase,
                 "task": args.task,
                 "role": args.role,
+                "format": args.format,
             }
         )
         return SUCCESS
@@ -282,6 +291,7 @@ def cmd_packet_create(args: argparse.Namespace) -> int:
     write_line("Codex packet generated.")
     write_key_value("File", packet)
     write_key_value("Packet role", args.role)
+    write_key_value("Format", args.format)
     write_line("Paste the 'Prompt To Paste' section into ChatGPT/Codex.")
     return SUCCESS
 

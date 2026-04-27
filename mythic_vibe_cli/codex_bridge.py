@@ -9,6 +9,94 @@ import textwrap
 from .context.indexer import ProjectIndexer
 from .config import AppConfig, ConfigStore
 
+PACKET_ROLES = [
+    "Architect",
+    "Forge Worker",
+    "Auditor",
+    "Cartographer",
+    "Scribe",
+    "Debugger",
+    "Refactorer",
+]
+
+PACKET_OUTPUT_FORMATS = [
+    "markdown",
+    "copy-paste",
+    "json",
+    "claude",
+    "aider",
+    "gemini",
+    "roo",
+    "goose",
+]
+
+
+ROLE_PRESETS: dict[str, dict[str, list[str]]] = {
+    "Architect": {
+        "invariants": [
+            "Keep boundaries explicit and ownership narrow.",
+            "Prefer durable structure over quick coupling.",
+        ],
+        "verification": [
+            "Run structural or boundary checks for the touched modules.",
+        ],
+    },
+    "Forge Worker": {
+        "invariants": [
+            "Keep the smallest safe implementation path.",
+            "Do not widen the edit surface without reason.",
+        ],
+        "verification": [
+            "Run the most relevant unit or smoke tests for the change.",
+        ],
+    },
+    "Auditor": {
+        "invariants": [
+            "Do not accept claims without evidence.",
+            "Surface contradictions and edge cases directly.",
+        ],
+        "verification": [
+            "Review the diff and run the failing or nearby tests.",
+        ],
+    },
+    "Cartographer": {
+        "invariants": [
+            "Map relationships before proposing changes.",
+            "Keep data flow and dependency direction visible.",
+        ],
+        "verification": [
+            "Confirm the affected paths and references are correctly mapped.",
+        ],
+    },
+    "Scribe": {
+        "invariants": [
+            "Preserve continuity and keep records legible.",
+            "Match documentation to implementation reality.",
+        ],
+        "verification": [
+            "Check documentation updates and handoff completeness.",
+        ],
+    },
+    "Debugger": {
+        "invariants": [
+            "Reproduce the issue before patching.",
+            "Keep fixes minimal and measurable.",
+        ],
+        "verification": [
+            "Run the failing test, then the smallest confirming test set.",
+        ],
+    },
+    "Refactorer": {
+        "invariants": [
+            "Preserve behavior while improving shape.",
+            "Do not mix cleanup with unrelated feature work.",
+        ],
+        "verification": [
+            "Run the affected tests before and after the refactor.",
+        ],
+    },
+}
+
 
 @dataclass
 class CodexPacketRequest:
@@ -16,6 +104,7 @@ class CodexPacketRequest:
     phase: str
     audience: str
     role: str = "Forge Worker"
+    output_format: str = "markdown"
 
 
 @dataclass
@@ -30,6 +119,7 @@ class PacketRecord:
     metadata_path: str
     source_path: str | None = None
     source_packet_id: str | None = None
+    output_format: str = "markdown"
 
     def to_dict(self) -> dict[str, str]:
         payload: dict[str, str] = {
@@ -41,6 +131,7 @@ class PacketRecord:
             "audience": self.audience,
             "packet_path": self.packet_path,
             "metadata_path": self.metadata_path,
+            "output_format": self.output_format,
         }
         if self.source_path is not None:
             payload["source_path"] = self.source_path
@@ -60,6 +151,7 @@ class PacketBuilder:
         self.config = config or ConfigStore(root).load().config
 
     def create_packet(self, request: CodexPacketRequest, out_file: Path | None = None) -> Path:
+        self._validate_request(request)
         record = self._create_record(request, out_file=out_file)
         self._write_record(record, request)
         return Path(record.packet_path if out_file is None else out_file)
@@ -82,6 +174,7 @@ class PacketBuilder:
             metadata_path=str(self.packet_dir / f"{packet_id}.json"),
             source_path=str(source_path),
             source_packet_id=str(source_metadata.get("packet_id")) if source_metadata.get("packet_id") else None,
+            output_format=str(source_metadata.get("output_format") or "markdown"),
         )
         self._write_ingested_record(record, packet_text, source_metadata)
         return record
@@ -90,7 +183,7 @@ class PacketBuilder:
         if not self.packet_dir.exists():
             return []
         records: list[PacketRecord] = []
-        for path in sorted(self.packet_dir.glob("PKT-*.json")):
+        for path in sorted(self.packet_dir.glob("PKT-*.meta.json")):
             try:
                 payload = json.loads(path.read_text(encoding="utf-8"))
             except (OSError, json.JSONDecodeError):
@@ -106,6 +199,7 @@ class PacketBuilder:
                         audience=str(payload.get("audience", "")),
                         packet_path=str(payload.get("packet_path", "")),
                         metadata_path=str(path),
+                        output_format=str(payload.get("output_format", "markdown")),
                     )
                 )
         return records
@@ -117,7 +211,7 @@ class PacketBuilder:
         return None
 
     def load_packet_record(self, packet_id: str) -> PacketRecord | None:
-        metadata_path = self.packet_dir / f"{packet_id}.json"
+        metadata_path = self.packet_dir / f"{packet_id}.meta.json"
         if not metadata_path.exists():
             return None
         try:
@@ -135,6 +229,7 @@ class PacketBuilder:
             metadata_path=str(metadata_path),
             source_path=str(payload.get("source_path")) if payload.get("source_path") else None,
             source_packet_id=str(payload.get("source_packet_id")) if payload.get("source_packet_id") else None,
+            output_format=str(payload.get("output_format", "markdown")),
         )
 
     def diff_packets(self, left_packet_id: str, right_packet_id: str) -> str:
@@ -157,8 +252,9 @@ class PacketBuilder:
 
     def _create_record(self, request: CodexPacketRequest, *, out_file: Path | None = None) -> PacketRecord:
         packet_id = self._next_packet_id()
-        packet_path = self.packet_dir / f"{packet_id}.md"
-        metadata_path = self.packet_dir / f"{packet_id}.json"
+        default_suffix = ".json" if request.output_format == "json" else ".md"
+        packet_path = self.packet_dir / f"{packet_id}{default_suffix}"
+        metadata_path = self.packet_dir / f"{packet_id}.meta.json"
         if out_file is not None:
             packet_output = out_file
         else:
@@ -173,28 +269,33 @@ class PacketBuilder:
             audience=request.audience,
             packet_path=str(packet_output),
             metadata_path=str(metadata_path),
+            output_format=request.output_format,
         )
 
     def _write_record(self, record: PacketRecord, request: CodexPacketRequest) -> None:
-        canonical_packet = self.packet_dir / f"{record.packet_id}.md"
-        canonical_meta = self.packet_dir / f"{record.packet_id}.json"
+        canonical_packet = self.packet_dir / f"{record.packet_id}{Path(record.packet_path).suffix or '.md'}"
+        canonical_meta = self.packet_dir / f"{record.packet_id}.meta.json"
         canonical_packet.parent.mkdir(parents=True, exist_ok=True)
-        canonical_packet.write_text(self._render_packet(request, record.packet_id, record.created_at), encoding="utf-8")
+        rendered = self._render_packet(request, record.packet_id, record.created_at)
+        canonical_packet.write_text(rendered, encoding="utf-8")
         canonical_meta.write_text(json.dumps(record.to_dict(), indent=2) + "\n", encoding="utf-8")
+        self._write_context_manifest(record, rendered)
 
         out_path = Path(record.packet_path)
         if out_path != canonical_packet:
             out_path.parent.mkdir(parents=True, exist_ok=True)
-            out_path.write_text(self._render_packet(request, record.packet_id, record.created_at), encoding="utf-8")
+            out_path.write_text(rendered, encoding="utf-8")
 
     def _write_ingested_record(self, record: PacketRecord, packet_text: str, source_metadata: dict[str, object]) -> None:
-        canonical_packet = self.packet_dir / f"{record.packet_id}.md"
-        canonical_meta = self.packet_dir / f"{record.packet_id}.json"
+        canonical_packet = self.packet_dir / f"{record.packet_id}{Path(record.packet_path).suffix or '.md'}"
+        canonical_meta = self.packet_dir / f"{record.packet_id}.meta.json"
         canonical_packet.parent.mkdir(parents=True, exist_ok=True)
         canonical_packet.write_text(packet_text, encoding="utf-8")
         payload = record.to_dict()
         payload["source_metadata"] = source_metadata if isinstance(source_metadata, dict) else {}
         canonical_meta.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        self._write_context_manifest(record, packet_text)
+        self._write_context_manifest(record, packet_text)
 
     def _read_ingest_source(self, source_path: Path) -> tuple[str, dict[str, object]]:
         if source_path.suffix.lower() == ".json":
@@ -216,6 +317,54 @@ class PacketBuilder:
                 pass
         return text, metadata
 
+    def _validate_request(self, request: CodexPacketRequest) -> None:
+        if request.role not in PACKET_ROLES:
+            raise ValueError(f"Unsupported packet role: {request.role}")
+        if request.output_format not in PACKET_OUTPUT_FORMATS:
+            raise ValueError(f"Unsupported packet output format: {request.output_format}")
+
+    def _write_context_manifest(self, record: PacketRecord, packet_text: str) -> None:
+        manifest_path = self.mythic_dir / "context_sources.json"
+        payload = {
+            "packet_id": record.packet_id,
+            "created_at": record.created_at,
+            "role": record.role,
+            "phase": record.phase,
+            "task": record.task,
+            "output_format": record.output_format,
+            "packet_path": record.packet_path,
+            "source_path": record.source_path,
+            "source_packet_id": record.source_packet_id,
+            "selected_sources": self._selected_sources_snapshot(packet_text),
+        }
+        manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        manifest_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+    def _selected_sources_snapshot(self, packet_text: str) -> list[dict[str, str]]:
+        index = self.indexer.build(write=True)
+        sources: list[dict[str, str]] = [
+            {"path": "mythic/status.json", "kind": "status"},
+            {"path": "mythic/project_index.json", "kind": "project_index"},
+            {"path": "mythic/context_sources.json", "kind": "context_manifest"},
+            {"path": "tasks/current_GOALS.md", "kind": "goals"},
+            {"path": "docs/ARCHITECTURE.md", "kind": "architecture"},
+            {"path": "mythic/plan.md", "kind": "plan"},
+            {"path": "mythic/loop.md", "kind": "loop"},
+        ]
+        for path in index.recommended_context:
+            sources.append({"path": path, "kind": "recommended"})
+        if len(packet_text) > 0:
+            sources.append({"path": "mythic/packets", "kind": "packet_store"})
+        deduped: list[dict[str, str]] = []
+        seen: set[str] = set()
+        for item in sources:
+            path = item["path"]
+            if path in seen:
+                continue
+            seen.add(path)
+            deduped.append(item)
+        return deduped
+
     def _ingest_text_from_metadata(self, source_path: Path, metadata: dict[str, object]) -> str:
         packet_text_path = metadata.get("packet_path")
         if isinstance(packet_text_path, str):
@@ -228,6 +377,9 @@ class PacketBuilder:
         candidate = source_path.with_suffix(".md")
         if candidate.exists():
             return candidate.read_text(encoding="utf-8")
+        candidate_json = source_path.with_suffix(".json")
+        if candidate_json.exists():
+            return candidate_json.read_text(encoding="utf-8")
 
         packet_text = metadata.get("text")
         if isinstance(packet_text, str):
@@ -318,6 +470,68 @@ class PacketBuilder:
 
         return compacted
 
+    def _role_profile(self, role: str) -> dict[str, list[str]]:
+        return ROLE_PRESETS.get(role, ROLE_PRESETS["Forge Worker"])
+
+    def _files_in_scope(self) -> list[str]:
+        return [
+            "tasks/current_GOALS.md",
+            "docs/ARCHITECTURE.md",
+            "mythic/plan.md",
+            "mythic/loop.md",
+            "mythic/status.json",
+            "mythic/project_index.json",
+            "mythic/context_sources.json",
+        ]
+
+    def _files_out_of_scope(self) -> list[str]:
+        index = self.indexer.build(write=True)
+        forbidden = [entry["path"] for entry in index.ignored[:8] if isinstance(entry, dict) and entry.get("path")]
+        if not forbidden:
+            forbidden = [
+                ".git/",
+                "vendor/",
+                "node_modules/",
+                "ai/",
+                "systems/",
+                "sessions/",
+                "whisper/",
+            ]
+        return forbidden
+
+    def _required_output_format(self, format_name: str) -> str:
+        format_name = format_name.lower()
+        if format_name in {"json"}:
+            return "strict JSON"
+        if format_name in {"claude"}:
+            return "Claude Code task"
+        if format_name in {"aider"}:
+            return "Aider prompt"
+        if format_name in {"gemini"}:
+            return "Gemini CLI task"
+        if format_name in {"roo"}:
+            return "Roo prompt"
+        if format_name in {"goose"}:
+            return "Goose prompt"
+        if format_name in {"copy-paste"}:
+            return "ChatGPT/Codex copy-paste"
+        return "generic Markdown"
+
+    def _packet_header(self, request: CodexPacketRequest, packet_id: str, created_at: str) -> str:
+        return textwrap.dedent(
+            f"""
+            # Mythic Engineering Task Packet
+
+            Packet ID: {packet_id}
+            Created At: {created_at}
+            Role: {request.role}
+            Phase: {request.phase}
+            Audience: {request.audience}
+            Task: {request.task}
+            Format: {request.output_format}
+            """
+        ).strip()
+
     def _next_packet_id(self) -> str:
         latest = 0
         for record in self.list_packets():
@@ -341,12 +555,17 @@ class PacketBuilder:
     ) -> str:
         packet_id = packet_id or "PKT-000000"
         created_at = created_at or self._now()
+        role_profile = self._role_profile(request.role)
         sections = {
             "goals": self._safe_excerpt(self._read_optional(self.tasks_dir / "current_GOALS.md")),
             "architecture": self._safe_excerpt(self._read_optional(self.docs_dir / "ARCHITECTURE.md")),
             "plan": self._safe_excerpt(self._read_optional(self.mythic_dir / "plan.md")),
             "loop": self._safe_excerpt(self._read_optional(self.mythic_dir / "loop.md")),
             "project_index": self._project_index_snapshot(),
+            "allowed_files": "\n".join(f"- {item}" for item in self._files_in_scope()),
+            "forbidden_files": "\n".join(f"- {item}" for item in self._files_out_of_scope()),
+            "invariants": "\n".join(f"- {item}" for item in role_profile["invariants"]),
+            "verification": "\n".join(f"- {item}" for item in role_profile["verification"]),
         }
         status = self._status_snapshot()
 
@@ -358,59 +577,67 @@ class PacketBuilder:
         plan = sections["plan"]
         loop = sections["loop"]
         project_index = sections["project_index"]
+        allowed_files = sections["allowed_files"]
+        forbidden_files = sections["forbidden_files"]
+        invariants = sections["invariants"]
+        verification = sections["verification"]
+        required_output = self._required_output_format(request.output_format)
+
+        if request.output_format == "json":
+            payload = {
+                "packet_id": packet_id,
+                "created_at": created_at,
+                "phase": request.phase,
+                "role": request.role,
+                "task": request.task,
+                "audience": request.audience,
+                "format": request.output_format,
+                "current_state": json.loads(status) if status.startswith("{") else status,
+                "goals": goals,
+                "architecture": architecture,
+                "plan": plan,
+                "loop": loop,
+                "project_index": json.loads(project_index) if project_index.startswith("{") else project_index,
+                "files_in_scope": self._files_in_scope(),
+                "files_out_of_scope": self._files_out_of_scope(),
+                "invariants": role_profile["invariants"],
+                "verification_commands": role_profile["verification"],
+                "required_output_format": required_output,
+                "checkin_summary_format": [
+                    "Phase: <phase>",
+                    "Update: <one sentence>",
+                    "Files changed: <list>",
+                ],
+            }
+            return json.dumps(payload, indent=2) + "\n"
 
         return textwrap.dedent(
             f"""
-            # Codex Prompt Packet (ChatGPT Plus Friendly)
+            {self._packet_header(request, packet_id, created_at)}
 
-            This packet is generated for users on a $20 ChatGPT Plus account.
-            Paste the section below into ChatGPT (or Codex in ChatGPT) to continue work.
+            ## 1. Role
+            {request.role}
 
-            ## Prompt To Paste
+            ## 2. Intent
+            {request.task}
 
-            You are my Mythic Engineering coding assistant, intentionally chosen for this session.
-            Respect user sovereignty: do not claim authority over the user, other AIs, or hardware.
-            Session authorization is already granted for this chosen assistant.
-            You may operate autonomously within the requested task and stated constraints.
-            Use this strict operating sequence:
-            1) Restate intent and constraints.
-            2) Propose architecture-aware plan.
-            3) Suggest smallest safe code change.
-            4) Suggest verification commands.
-            5) Suggest a concise check-in update.
+            ## 3. Constraints
+            - Audience: {request.audience}
+            - Phase: {request.phase}
+            - Format: {required_output}
 
-            Packet ID: {packet_id}
-            Created At: {created_at}
-            Role: {request.role}
-            My audience level: {request.audience}
-            Current phase: {request.phase}
-            Task request: {request.task}
+            ## 4. Architecture Context
+            {architecture}
 
-            Project context below:
+            ## 5. Files In Scope
+            {allowed_files}
 
-            ### STATUS SNAPSHOT
+            ## 6. Files Out of Scope
+            {forbidden_files}
+
+            ## 7. Current State
             ```json
             {status}
-            ```
-
-            ### GOALS
-            ```markdown
-            {goals}
-            ```
-
-            ### ARCHITECTURE
-            ```markdown
-            {architecture}
-            ```
-
-            ### PLAN
-            ```markdown
-            {plan}
-            ```
-
-            ### LOOP NOTES
-            ```markdown
-            {loop}
             ```
 
             ### PROJECT INDEX
@@ -418,20 +645,29 @@ class PacketBuilder:
             {project_index}
             ```
 
-            Return output in this exact format:
+            ## 8. Requested Change
+            {plan}
 
-            ## Mythic Plan Update
-            <bullet points>
+            ## 9. Verification Commands
+            {verification}
 
-            ## File Changes
-            <ordered steps>
+            ## 10. Required Output Format
+            {required_output}
 
-            ## Verification
-            <commands + expected outputs>
+            ## 11. Check-in Summary
+            - Phase: {request.phase}
+            - Update: one sentence
+            - Files changed: list only what changed
 
-            ## Checkin
-            Phase: {request.phase}
-            Update: <one sentence for mythic-vibe checkin>
+            ### SAFETY
+            - Invariants:
+            {invariants}
+            - Files allowed:
+            {allowed_files}
+            - Files forbidden:
+            {forbidden_files}
+            - Verification commands:
+            {verification}
             """
         ).strip() + "\n"
 

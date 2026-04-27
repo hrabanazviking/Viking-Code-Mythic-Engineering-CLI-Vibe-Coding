@@ -4,6 +4,7 @@ import argparse
 
 from . import __version__
 from .commands import COMMAND_HANDLERS, CommandHandler
+from .codex_bridge import PACKET_OUTPUT_FORMATS, PACKET_ROLES
 from .core.state import PHASES
 from .exit_codes import USER_INPUT_ERROR
 from .output import configure_output
@@ -89,7 +90,8 @@ def build_parser() -> argparse.ArgumentParser:
     codex_pack.add_argument("--task", required=True, help="Specific coding task for Codex")
     codex_pack.add_argument("--phase", required=True, choices=PHASES, help="Current Mythic phase")
     codex_pack.add_argument("--audience", default="beginner", help="Audience level: beginner/intermediate/advanced")
-    codex_pack.add_argument("--role", default="Forge Worker", help="Packet role: Architect, Forge Worker, Auditor, Cartographer, Scribe, Debugger, Refactorer")
+    codex_pack.add_argument("--role", default="Forge Worker", choices=PACKET_ROLES, help="Packet role")
+    codex_pack.add_argument("--format", default="markdown", choices=PACKET_OUTPUT_FORMATS, help="Packet output format")
     codex_pack.add_argument("--path", default=".", help="Project directory (default: current directory)")
     codex_pack.add_argument("--out", default=None, help="Output file path (default: <project>/mythic/codex_prompt.md)")
     add_runtime_options(codex_pack, json_output=True, dry_run=True)
@@ -128,7 +130,8 @@ def build_parser() -> argparse.ArgumentParser:
     evoke.add_argument("--task", required=True, help="Specific coding task for Codex")
     evoke.add_argument("--phase", default="plan", choices=PHASES, help="Current Mythic phase (default: plan)")
     evoke.add_argument("--audience", default="beginner", help="Audience level: beginner/intermediate/advanced")
-    evoke.add_argument("--role", default="Forge Worker", help="Packet role: Architect, Forge Worker, Auditor, Cartographer, Scribe, Debugger, Refactorer")
+    evoke.add_argument("--role", default="Forge Worker", choices=PACKET_ROLES, help="Packet role")
+    evoke.add_argument("--format", default="markdown", choices=PACKET_OUTPUT_FORMATS, help="Packet output format")
     evoke.add_argument("--path", default=".", help="Project directory (default: current directory)")
     evoke.add_argument("--out", default=None, help="Output file path (default: <project>/mythic/codex_prompt.md)")
     add_runtime_options(evoke, json_output=True, dry_run=True)
@@ -140,7 +143,8 @@ def build_parser() -> argparse.ArgumentParser:
     packet_create.add_argument("--task", required=True, help="Specific coding task for the packet")
     packet_create.add_argument("--phase", required=True, choices=PHASES, help="Current Mythic phase")
     packet_create.add_argument("--audience", default="beginner", help="Audience level: beginner/intermediate/advanced")
-    packet_create.add_argument("--role", default="Forge Worker", help="Packet role")
+    packet_create.add_argument("--role", default="Forge Worker", choices=PACKET_ROLES, help="Packet role")
+    packet_create.add_argument("--format", default="markdown", choices=PACKET_OUTPUT_FORMATS, help="Packet output format")
     packet_create.add_argument("--path", default=".", help="Project directory (default: current directory)")
     packet_create.add_argument("--out", default=None, help="Optional output file path")
     add_runtime_options(packet_create, json_output=True, dry_run=True)

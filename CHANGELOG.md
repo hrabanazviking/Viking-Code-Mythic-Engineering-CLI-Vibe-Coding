@@ -8,6 +8,9 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Added
 
+- Added role presets, output formats, safety sections, and context manifest support to packet generation.
+- Added JSON packet rendering as a first-class packet output format.
+- Added packet context manifest writing to `mythic/context_sources.json`.
 - Added `mythic-vibe packet ingest` to import packet artifacts into the local packet store.
 - Added `mythic-vibe packet diff` to compare stored packet artifacts.
 - Packet ingestion now preserves source path and provenance metadata.

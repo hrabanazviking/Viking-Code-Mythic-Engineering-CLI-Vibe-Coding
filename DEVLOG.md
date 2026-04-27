@@ -7,6 +7,37 @@
 
 ---
 
+## 2026-04-27 - Stage 6 Role Profiles, Formats, and Safety Sections
+
+**Session:** Continuing the Mythic Vibe CLI implementation on `development`.
+**Status:** Packet generation now supports named roles, packet formats, safety sections, and a context manifest.
+**Scope:** Closing the remaining visible Stage 6 packet-engine gaps.
+
+### What changed
+
+- Added packet role presets for `Architect`, `Forge Worker`, `Auditor`, `Cartographer`, `Scribe`, `Debugger`, and `Refactorer`.
+- Added packet output format selection, including Markdown, copy-paste, JSON, and provider-oriented format labels.
+- Added packet safety sections for files in scope, files out of scope, invariants, verification commands, and check-in summary shape.
+- Added `mythic/context_sources.json` as the packet context manifest.
+- Added JSON packet rendering support when requested.
+- Preserved `CodexBridge` compatibility while the internal builder continues to evolve as `PacketBuilder`.
+
+### Why it matters
+
+The packet engine now expresses the actual working contract the roadmap wanted: role-aware, format-aware, safety-bound, and grounded in local context.
+
+### Verification
+
+- `pytest -q` -> `30 passed`
+
+### Continuity thread
+
+- Stage 6 still has small polish items left if we want them later, but the major functional pieces are now in place.
+
+_May the packet carry both intention and boundary._
+
+---
+
 ## 2026-04-27 - Packet Ingest and Diff Lifecycle
 
 **Session:** Continuing the Mythic Vibe CLI implementation on `development`.

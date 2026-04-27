@@ -160,7 +160,7 @@ class CliKernelTests(unittest.TestCase):
                 )
 
             packet_dir = root / "mythic" / "packets"
-            metadata_files = sorted(packet_dir.glob("PKT-*.json"))
+            metadata_files = sorted(packet_dir.glob("PKT-*.meta.json"))
             packet_files = sorted(packet_dir.glob("PKT-*.md"))
             self.assertEqual(create_code, SUCCESS)
             self.assertTrue(metadata_files)
@@ -174,10 +174,7 @@ class CliKernelTests(unittest.TestCase):
             original_packet_path = Path(payload["output_file"])
             modified_source = root / "external_packet.md"
             modified_source.write_text(
-                original_packet_path.read_text(encoding="utf-8").replace(
-                    "Task request: wire packet storage",
-                    "Task request: wire packet ingest",
-                ),
+                original_packet_path.read_text(encoding="utf-8").replace("wire packet storage", "wire packet ingest"),
                 encoding="utf-8",
             )
 
@@ -219,6 +216,54 @@ class CliKernelTests(unittest.TestCase):
             self.assertEqual(show_code, SUCCESS)
             self.assertEqual(shown["packet"]["packet_id"], "PKT-000001")
             self.assertIn("### PROJECT INDEX", shown["text"])
+
+    def test_packet_create_json_format_writes_manifest_and_safety_sections(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "docs").mkdir(parents=True, exist_ok=True)
+            (root / "tasks").mkdir(parents=True, exist_ok=True)
+            (root / "mythic").mkdir(parents=True, exist_ok=True)
+            (root / "docs" / "ARCHITECTURE.md").write_text("# Architecture\n", encoding="utf-8")
+            (root / "tasks" / "current_GOALS.md").write_text("Ship packets\n", encoding="utf-8")
+            (root / "mythic" / "plan.md").write_text("# Plan\n", encoding="utf-8")
+            (root / "mythic" / "loop.md").write_text("# Loop\n", encoding="utf-8")
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(
+                    [
+                        "packet",
+                        "create",
+                        "--task",
+                        "render json",
+                        "--phase",
+                        "build",
+                        "--role",
+                        "Architect",
+                        "--format",
+                        "json",
+                        "--path",
+                        str(root),
+                        "--json",
+                    ]
+                )
+
+            payload = json.loads(output.getvalue())
+            packet_path = Path(payload["output_file"])
+            manifest_path = root / "mythic" / "context_sources.json"
+
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(payload["role"], "Architect")
+            self.assertEqual(payload["format"], "json")
+            self.assertTrue(packet_path.exists())
+            self.assertTrue(manifest_path.exists())
+            packet_payload = json.loads(packet_path.read_text(encoding="utf-8"))
+            manifest_payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+            self.assertEqual(packet_payload["role"], "Architect")
+            self.assertEqual(packet_payload["required_output_format"], "strict JSON")
+            self.assertIn("files_in_scope", packet_payload)
+            self.assertIn("selected_sources", manifest_payload)
+            self.assertIn("mythic/project_index.json", {item["path"] for item in manifest_payload["selected_sources"]})
 
     def test_grimoire_json_has_no_human_prefix(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
