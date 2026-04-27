@@ -8,6 +8,9 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Added
 
+- Added `mythic-vibe ai providers`, `mythic-vibe ai test`, `mythic-vibe ai run`, and `mythic-vibe ai ingest-response`.
+- Added an isolated provider registry with `copy-paste`, `local`, `openai`, `anthropic`, `gemini`, and `openrouter` adapters.
+- Added explicit API-key validation and dry-run-first provider behavior.
 - Added weighted packet budget allocation so high-priority sections retain more context under truncation.
 - Added budget-allocation coverage to verify packet compaction keeps priority sections larger than low-signal ones.
 - Added role presets, output formats, safety sections, and context manifest support to packet generation.
