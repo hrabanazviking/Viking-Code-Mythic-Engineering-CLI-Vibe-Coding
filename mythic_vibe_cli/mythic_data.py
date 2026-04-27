@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+import hashlib
 import textwrap
 import urllib.error
 import urllib.request
@@ -28,19 +29,23 @@ DEFAULT_METHOD_NOTES = textwrap.dedent(
        - List known constraints (time, stack, risk, quality bar).
        - Prefer simpler architecture when uncertain.
 
-    3) Plan
+    3) Architecture
+       - Name the owning modules, data flow, and interfaces.
+       - Keep dependencies pointed toward stable boundaries.
+
+    4) Plan
        - Break into smallest valuable milestones.
        - State assumptions before coding.
 
-    4) Build
+    5) Build
        - Implement one milestone at a time.
        - Keep the code understandable for future maintainers.
 
-    5) Verify
+    6) Verify
        - Run checks/tests after each milestone.
        - Confirm result matches intent, not just that code runs.
 
-    6) Reflect
+    7) Reflect
        - Document what changed and why.
        - Capture follow-up improvements and risks.
     """
@@ -51,6 +56,30 @@ DEFAULT_METHOD_NOTES = textwrap.dedent(
 class MethodBundle:
     source: str
     content: str
+
+
+@dataclass
+class MethodStatus:
+    source: str
+    profile: str
+    version: str
+    cache_file: Path
+    cached: bool
+    sections: list[str]
+    freshness: str
+    pinned: bool = False
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "source": self.source,
+            "profile": self.profile,
+            "version": self.version,
+            "cache_file": str(self.cache_file),
+            "cached": self.cached,
+            "sections": self.sections,
+            "freshness": self.freshness,
+            "pinned": self.pinned,
+        }
 
 
 class MethodStore:
@@ -77,6 +106,37 @@ class MethodStore:
             return self.sync()
         except (urllib.error.URLError, TimeoutError):
             return MethodBundle(source="fallback", content=DEFAULT_METHOD_NOTES)
+
+    def load_cached_or_fallback(self) -> tuple[MethodBundle, bool]:
+        if self.cache_file.exists():
+            data = json.loads(self.cache_file.read_text(encoding="utf-8"))
+            return MethodBundle(source=data["source"], content=data["content"]), True
+        return MethodBundle(source="fallback", content=DEFAULT_METHOD_NOTES), False
+
+    def status(self) -> MethodStatus:
+        bundle, cached = self.load_cached_or_fallback()
+        version = hashlib.sha256(bundle.content.encode("utf-8")).hexdigest()[:12]
+        profile = "canonical-cache" if cached else "fallback"
+        freshness = "cached" if cached else "fallback-no-cache"
+        sections = [
+            "principles",
+            "workflow",
+            "AI roles",
+            "required docs",
+            "refactor method",
+            "debugging method",
+            "verification method",
+            "failure modes",
+        ]
+        return MethodStatus(
+            source=bundle.source,
+            profile=profile,
+            version=version,
+            cache_file=self.cache_file,
+            cached=cached,
+            sections=sections,
+            freshness=freshness,
+        )
 
     def import_all_markdown(self, target_dir: Path, timeout: int = 20) -> list[Path]:
         target_dir.mkdir(parents=True, exist_ok=True)

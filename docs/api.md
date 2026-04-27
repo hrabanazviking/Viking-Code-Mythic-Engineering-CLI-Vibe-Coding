@@ -61,7 +61,13 @@ Argument parsing and top-level dispatch live in `mythic_vibe_cli.app`. Command i
 - `sync`
   - Pulls method content from configured source.
 - `method`
-  - Displays loaded method notes.
+  - Displays active method notes.
+- `method status`
+  - Reports the active method source, profile, content-derived version, cache path, section labels, pin state, and freshness warning.
+- `method show`
+  - Displays the active method notes with optional JSON metadata.
+- `method sync`
+  - Syncs canonical Mythic Engineering notes into the local method cache.
 
 ### Extended ritual surfaces
 
@@ -93,13 +99,15 @@ Use `--help` for current option details and defaults.
 
 Stage 14 UX commands provide orientation without changing project state. `examples`, `guide`, `next`, `explain`, and `tutorial` answer what happened, what to do next, and how to verify it. `next` prioritizes failed or blocked verification records, then the latest handoff next step, then normal phase guidance; when verification is not passing, human output separates failed commands, verification errors, and blocked reasons. High-traffic command help for `init`, `next`, `verify`, `packet create`, `reflect`, `resume`, and `doctor` includes concrete examples. `completion --shell bash|zsh|powershell` prints shell completion scripts. Plain output is the default; optional rich rendering is enabled with `MYTHIC_RICH=1` when the `rich` package is installed.
 
+Stage 15 method commands make the Mythic Engineering method profile visible. `method status` uses the local cache when available, otherwise reports the built-in fallback profile without requiring a network call. The reported version is derived from method content, so users can see when the active method corpus changes.
+
 ### Shared runtime options
 
 The active command surface now supports shared runtime controls where useful:
 
 | Option | Use |
 |---|---|
-| `--json` | Return structured machine-readable output. Supported by reporting/structured commands including `status`, `state show`, `state validate`, `doctor`, `examples`, `guide`, `next`, `explain`, `tutorial`, `completion`, `config`, `codex-pack`, `grimoire`, `plugin`, `db migrate`, and `plunder`. |
+| `--json` | Return structured machine-readable output. Supported by reporting/structured commands including `status`, `state show`, `state validate`, `doctor`, `examples`, `guide`, `next`, `explain`, `tutorial`, `completion`, `config`, `codex-pack`, `method`, `grimoire`, `plugin`, `db migrate`, and `plunder`. |
 | `--quiet` | Suppress non-error human text output. |
 | `--verbose` | Show additional operational detail when the command provides it. |
 | `--dry-run` | Preview write/sync operations without changing files, registries, databases, or remote state. |

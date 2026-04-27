@@ -58,6 +58,14 @@ Current Stage 14 UX commands:
 - `completion --shell bash|zsh|powershell` - print shell completion scripts.
 - Optional rich terminal rendering is enabled only when `rich` is installed and `MYTHIC_RICH=1` is set; plain output remains the fallback.
 
+Current Stage 15 method commands:
+
+- `method` - compatibility form that prints the active method notes without requiring network access.
+- `method status` - report active method source, profile, content-derived version, cache path, section labels, pin state, and freshness.
+- `method show` - print the active method notes, with optional JSON metadata.
+- `method sync` - sync the canonical Mythic Engineering method notes into the local method cache; supports dry-run and JSON output.
+- If no canonical method cache exists, method status must use the built-in seven-phase fallback profile and emit a freshness warning.
+
 Current compatibility aliases:
 
 | Alias | Canonical behavior |
@@ -87,7 +95,7 @@ Commands may expose shared runtime options where the behavior is meaningful:
 
 | Option | Contract |
 |---|---|
-| `--json` | Emits a machine-readable JSON payload with no human preface text. Supported by structured reporting commands such as `status`, `doctor`, `examples`, `guide`, `next`, `explain`, `tutorial`, `completion`, `reflect`, `handoff`, `resume`, `config`, `codex-pack`, `grimoire`, `plugin`, `db migrate`, and `plunder`. |
+| `--json` | Emits a machine-readable JSON payload with no human preface text. Supported by structured reporting commands such as `status`, `doctor`, `examples`, `guide`, `next`, `explain`, `tutorial`, `completion`, `reflect`, `handoff`, `resume`, `config`, `codex-pack`, `method`, `grimoire`, `plugin`, `db migrate`, and `plunder`. |
 | `--quiet` | Suppresses non-error human text output. JSON output remains emitted because it is the primary result. |
 | `--verbose` | Emits additional operational detail when a command has meaningful extra detail. |
 | `--dry-run` | Previews write/sync operations without writing files, modifying registries, creating databases, or fetching remote files. |

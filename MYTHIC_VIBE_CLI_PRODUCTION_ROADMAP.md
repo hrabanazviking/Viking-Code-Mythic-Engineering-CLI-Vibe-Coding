@@ -1533,16 +1533,16 @@ The method source should not be a loose README sync. The CLI should treat Mythic
 ### Build tasks
 
 - [ ] Import markdown corpus with manifest.
-- [ ] Add method version detection.
+- [x] Add method version detection.
 - [ ] Add method source config.
-- [ ] Add `method sync`.
-- [ ] Add `method status`.
+- [x] Add `method sync`.
+- [x] Add `method status`.
 - [ ] Add `method diff`.
 - [ ] Add `method pin`.
-- [ ] Add local cache.
-- [ ] Add fallback method profile.
+- [x] Add local cache.
+- [x] Add fallback method profile.
 - [ ] Add method excerpt selector for packet building.
-- [ ] Add method sections:
+- [x] Add method sections:
   - principles,
   - workflow,
   - AI roles,
@@ -1551,7 +1551,7 @@ The method source should not be a loose README sync. The CLI should treat Mythic
   - debugging method,
   - verification method,
   - failure modes.
-- [ ] Add method freshness warning.
+- [x] Add method freshness warning.
 
 ### Done when
 
