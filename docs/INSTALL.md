@@ -94,3 +94,46 @@ mypy mythic_vibe_cli
 python -m build
 twine check dist/*
 ```
+
+## Optional Rich Output
+
+Plain terminal output is the default. To try richer rendering:
+
+```bash
+python -m pip install -e ".[ux]"
+```
+
+Windows PowerShell:
+
+```powershell
+$env:MYTHIC_RICH = "1"
+mythic-vibe guide
+```
+
+Linux/macOS:
+
+```bash
+MYTHIC_RICH=1 mythic-vibe guide
+```
+
+## Shell Completion
+
+Windows PowerShell:
+
+```powershell
+mythic-vibe completion --shell powershell | Invoke-Expression
+```
+
+Bash:
+
+```bash
+eval "$(mythic-vibe completion --shell bash)"
+```
+
+Zsh:
+
+```bash
+mythic-vibe completion --shell zsh > "${fpath[1]}/_mythic-vibe"
+autoload -Uz compinit
+compinit
+```

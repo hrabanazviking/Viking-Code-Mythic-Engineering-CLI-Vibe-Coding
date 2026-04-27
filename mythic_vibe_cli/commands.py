@@ -41,6 +41,16 @@ from .plugins.registry import PluginRegistry
 from .core.state import PHASES, VerificationRecord, coerce_project_state, utc_now, validate_state_payload
 from .persistence.json_store import JsonStateStore, StateStoreError
 from .persistence.migrations import migrate_project_state
+from .ux import (
+    ARTIFACT_GUIDE,
+    EXAMPLES,
+    PHASE_GUIDE,
+    bash_completion,
+    next_phase_from_completed,
+    phase_names,
+    powershell_completion,
+    zsh_completion,
+)
 from .workflow import MythicRunConfig, MythicWorkflow
 from .verify import VerificationArtifact, new_verification_id, write_verification_artifact
 from .verify.doc_checker import check_docs
@@ -122,6 +132,8 @@ def _command_name(args: argparse.Namespace, fallback: str) -> str:
         subcommand_attr = getattr(args, "plugin_command", "")
     elif command == "handoff":
         subcommand_attr = getattr(args, "handoff_command", "")
+    elif command == "explain":
+        subcommand_attr = getattr(args, "explain_command", "")
 
     if subcommand_attr:
         return f"{command} {subcommand_attr}"
@@ -822,6 +834,154 @@ def cmd_status(args: argparse.Namespace) -> int:
 
     workflow = MythicWorkflow(root)
     write_line(workflow.status_summary())
+    return SUCCESS
+
+
+def cmd_examples(args: argparse.Namespace) -> int:
+    if _flag(args, "json"):
+        write_json({"command": "examples", "examples": EXAMPLES})
+        return SUCCESS
+
+    write_line("Mythic Vibe examples")
+    for example in EXAMPLES:
+        write_line("")
+        write_key_value("What happened", example["name"])
+        write_key_value("Command", example["command"])
+        write_key_value("What should I do next", example["next"])
+        write_key_value("How do I verify it", "Run the command with `--help` first if you are unsure.")
+    return SUCCESS
+
+
+def cmd_guide(args: argparse.Namespace) -> int:
+    payload = {
+        "command": "guide",
+        "loop": phase_names(),
+        "next": "Use `mythic-vibe next --path .` inside a project.",
+        "verify": "Run `mythic-vibe doctor --path .` and `pytest -q`.",
+    }
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+
+    write_line("Mythic Vibe guide")
+    write_key_value("What happened", "Loaded the operator guide for the Mythic loop.")
+    write_line("- Phase loop:")
+    for phase in phase_names():
+        write_bullet(phase, indent=2)
+    write_key_value("What should I do next", payload["next"])
+    write_key_value("How do I verify it", payload["verify"])
+    return SUCCESS
+
+
+def cmd_next(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    payload = _status_payload(root)
+    if not payload.get("status_found"):
+        next_phase = "intent"
+        action = 'Run `mythic-vibe init --goal "..." --path .`.'
+    else:
+        completed = [str(item) for item in payload.get("completed_phases", [])]
+        next_phase = next_phase_from_completed(completed)
+        action = PHASE_GUIDE[next_phase].next_action
+    result = {
+        "command": "next",
+        "path": str(root),
+        "next_phase": next_phase,
+        "purpose": PHASE_GUIDE[next_phase].purpose,
+        "next_action": action,
+        "verification": PHASE_GUIDE[next_phase].verification,
+    }
+    if _flag(args, "json"):
+        write_json(result)
+        return SUCCESS
+
+    write_line("Next recommended action")
+    write_key_value("What happened", f"Resolved the next phase as `{next_phase}`.")
+    write_key_value("What should I do next", action)
+    write_key_value("How do I verify it", PHASE_GUIDE[next_phase].verification)
+    return SUCCESS
+
+
+def cmd_explain_phase(args: argparse.Namespace) -> int:
+    phase = args.phase
+    details = PHASE_GUIDE[phase]
+    payload = {"command": "explain phase", "phase": details.__dict__}
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+
+    write_line(f"Phase: {details.name}")
+    write_key_value("What happened", details.purpose)
+    write_key_value("What should I do next", details.next_action)
+    write_key_value("How do I verify it", details.verification)
+    return SUCCESS
+
+
+def cmd_explain_artifact(args: argparse.Namespace) -> int:
+    artifact = args.artifact
+    details = ARTIFACT_GUIDE[artifact]
+    payload = {"command": "explain artifact", "artifact": artifact, **details}
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+
+    write_line(f"Artifact: {artifact}")
+    write_key_value("Where was it written", details["path"])
+    write_key_value("What happened", details["purpose"])
+    write_key_value("How do I verify it", details["verify"])
+    return SUCCESS
+
+
+def cmd_explain_dispatch(args: argparse.Namespace) -> int:
+    if args.explain_command == "phase":
+        return cmd_explain_phase(args)
+    if args.explain_command == "artifact":
+        return cmd_explain_artifact(args)
+    return USER_INPUT_ERROR
+
+
+def cmd_tutorial(args: argparse.Namespace) -> int:
+    steps = [
+        'mythic-vibe init --goal "Build something useful" --noob',
+        "mythic-vibe next --path .",
+        "mythic-vibe scan --path .",
+        'mythic-vibe packet create --task "Implement the first slice" --phase build',
+        "mythic-vibe verify --commands --docs --invariants --record",
+        'mythic-vibe reflect --summary "First slice complete"',
+        "mythic-vibe resume --path .",
+    ]
+    payload = {
+        "command": "tutorial",
+        "steps": steps,
+        "verify": "The tutorial is healthy when `mythic-vibe resume --path .` gives a clear next action.",
+    }
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+
+    write_line("Mythic Vibe tutorial")
+    for index, step in enumerate(steps, start=1):
+        write_key_value(f"Step {index}", step)
+    write_key_value("How do I verify it", payload["verify"])
+    return SUCCESS
+
+
+def cmd_completion(args: argparse.Namespace) -> int:
+    shell = args.shell
+    if shell == "bash":
+        script = bash_completion()
+    elif shell == "zsh":
+        script = zsh_completion()
+    elif shell == "powershell":
+        script = powershell_completion()
+    else:
+        write_error(f"Unsupported shell: {shell}")
+        return USER_INPUT_ERROR
+
+    if _flag(args, "json"):
+        write_json({"command": "completion", "shell": shell, "script": script})
+    else:
+        write_line(script, force=True)
     return SUCCESS
 
 
@@ -1971,6 +2131,12 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "reflect": cmd_reflect,
     "handoff": cmd_handoff_dispatch,
     "resume": cmd_resume,
+    "examples": cmd_examples,
+    "guide": cmd_guide,
+    "next": cmd_next,
+    "explain": cmd_explain_dispatch,
+    "tutorial": cmd_tutorial,
+    "completion": cmd_completion,
     "scan": cmd_scan,
     "import-md": cmd_import_md,
     "codex-pack": cmd_codex_pack,

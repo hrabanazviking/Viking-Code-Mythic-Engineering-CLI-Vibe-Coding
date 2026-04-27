@@ -103,6 +103,10 @@ Surfaces missing files, invalid state, and method drift early — before they co
 
 Supports user-level and project-level config alongside environment overrides, so the tool bends to your context without requiring ceremony every time.
 
+### 7) Operator guidance and completions
+
+Provides `examples`, `guide`, `next`, `explain`, `tutorial`, and shell completion commands so the CLI can tell you where you are, what to do next, and how to verify the move.
+
 ---
 
 ## Install

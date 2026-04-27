@@ -10,6 +10,7 @@ from .core.state import PHASES
 from .exit_codes import USER_INPUT_ERROR
 from .output import configure_output
 from .plugins.api import PLUGIN_HOOKS
+from .ux import artifact_names, phase_names
 
 
 def add_runtime_options(
@@ -36,7 +37,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub = parser.add_subparsers(dest="command", required=True)
 
-    init_cmd = sub.add_parser("init", help="Initialize Mythic Engineering docs + workflow scaffolding")
+    init_cmd = sub.add_parser(
+        "init",
+        help="Initialize Mythic Engineering docs + workflow scaffolding",
+        epilog='Example: mythic-vibe init --goal "Build a calm CLI" --noob',
+    )
     init_cmd.add_argument("--goal", required=True, help="Plain language product goal")
     init_cmd.add_argument("--path", default=".", help="Project directory (default: current directory)")
     init_cmd.add_argument("--noob", action="store_true", help="Enable beginner-friendly guidance")
@@ -57,6 +62,33 @@ def build_parser() -> argparse.ArgumentParser:
     status = sub.add_parser("status", help="Show current Mythic progress summary")
     status.add_argument("--path", default=".", help="Project directory (default: current directory)")
     add_runtime_options(status, json_output=True)
+
+    examples = sub.add_parser("examples", help="Show copy-paste command examples")
+    add_runtime_options(examples, json_output=True)
+
+    guide = sub.add_parser("guide", help="Show the compact Mythic Vibe operator guide")
+    add_runtime_options(guide, json_output=True)
+
+    next_cmd = sub.add_parser("next", help="Show the next recommended phase and command")
+    next_cmd.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    add_runtime_options(next_cmd, json_output=True)
+
+    explain = sub.add_parser("explain", help="Explain phases and artifacts")
+    add_runtime_options(explain, json_output=True)
+    explain_sub = explain.add_subparsers(dest="explain_command", required=True)
+    explain_phase = explain_sub.add_parser("phase", help="Explain one Mythic phase")
+    explain_phase.add_argument("phase", choices=phase_names(), help="Phase to explain")
+    add_runtime_options(explain_phase, json_output=True)
+    explain_artifact = explain_sub.add_parser("artifact", help="Explain one generated artifact")
+    explain_artifact.add_argument("artifact", choices=artifact_names(), help="Artifact to explain")
+    add_runtime_options(explain_artifact, json_output=True)
+
+    tutorial = sub.add_parser("tutorial", help="Show a first full workflow tutorial")
+    add_runtime_options(tutorial, json_output=True)
+
+    completion = sub.add_parser("completion", help="Print shell completion script")
+    completion.add_argument("--shell", required=True, choices=["bash", "zsh", "powershell"], help="Shell to generate completions for")
+    add_runtime_options(completion, json_output=True)
 
     reflect = sub.add_parser("reflect", help="Create a reflection handoff for the current session")
     reflect.add_argument("--path", default=".", help="Project directory (default: current directory)")

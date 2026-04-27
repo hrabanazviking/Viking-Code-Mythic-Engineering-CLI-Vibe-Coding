@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from typing import Any
 from typing import TextIO
@@ -20,6 +21,14 @@ def write_line(message: str = "", *, stream: TextIO | None = None, force: bool =
     target = stream or sys.stdout
     if target is sys.stdout and _QUIET and not force:
         return
+    if target is sys.stdout and os.getenv("MYTHIC_RICH", "").strip().lower() in {"1", "true", "yes"}:
+        try:
+            from rich.console import Console
+
+            Console().print(message)
+            return
+        except Exception:
+            pass
     print(message, file=target)
 
 

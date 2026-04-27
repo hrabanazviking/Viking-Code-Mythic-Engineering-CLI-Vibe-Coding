@@ -73,6 +73,12 @@ Depending on implementation state, additional commands may be exposed:
 - `oath`
 - `grimoire add|list`
 - `plugin list|inspect|disable`
+- `examples`
+- `guide`
+- `next`
+- `explain phase|artifact`
+- `tutorial`
+- `completion`
 - `config set`
 - `db migrate`
 - `plunder inspect|plan|fetch|apply|record`
@@ -85,13 +91,15 @@ Use `--help` for current option details and defaults.
 
 `plugin` exposes the versioned grimoire registry. `plugin list` reports registry health without importing plugin code, `plugin inspect` imports one registered `module:object` entrypoint and reports declared hooks, and `plugin disable` preserves a plugin record while preventing it from being treated as active. Supported hooks are `before_scan`, `after_scan`, `before_packet`, `after_packet`, `before_verify`, `after_verify`, `before_reflect`, and `after_reflect`.
 
+Stage 14 UX commands provide orientation without changing project state. `examples`, `guide`, `next`, `explain`, and `tutorial` answer what happened, what to do next, and how to verify it. `completion --shell bash|zsh|powershell` prints shell completion scripts. Plain output is the default; optional rich rendering is enabled with `MYTHIC_RICH=1` when the `rich` package is installed.
+
 ### Shared runtime options
 
 The active command surface now supports shared runtime controls where useful:
 
 | Option | Use |
 |---|---|
-| `--json` | Return structured machine-readable output. Supported by reporting/structured commands including `status`, `state show`, `state validate`, `doctor`, `config`, `codex-pack`, `grimoire`, `plugin`, `db migrate`, and `plunder`. |
+| `--json` | Return structured machine-readable output. Supported by reporting/structured commands including `status`, `state show`, `state validate`, `doctor`, `examples`, `guide`, `next`, `explain`, `tutorial`, `completion`, `config`, `codex-pack`, `grimoire`, `plugin`, `db migrate`, and `plunder`. |
 | `--quiet` | Suppress non-error human text output. |
 | `--verbose` | Show additional operational detail when the command provides it. |
 | `--dry-run` | Preview write/sync operations without changing files, registries, databases, or remote state. |
