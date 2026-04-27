@@ -8,6 +8,10 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Added
 
+- Added `mythic-vibe plugin list|inspect|disable` for visible plugin health and control.
+- Added `mythic_vibe_cli.plugins` helpers for plugin API contracts, versioned registry records, and entrypoint inspection.
+- Added hook declarations for `before_scan`, `after_scan`, `before_packet`, `after_packet`, `before_verify`, `after_verify`, `before_reflect`, and `after_reflect`.
+- Added `plugin_manifest.schema.json` for the plugin registry contract.
 - Added `mythic-vibe plunder inspect|plan|fetch|apply|record` for staged, lawful single-file reuse.
 - Added `mythic_vibe_cli.plunder` helpers for GitHub fetches, license posture, provenance manifests, and NOTICE updates.
 - Added `mythic/imports/plunder_plan.json`, `mythic/imports/plunder_manifest.json`, and local plunder cache support.
@@ -63,6 +67,7 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Changed
 
+- `grimoire add|list` now writes a versioned plugin registry while preserving the legacy `plugins` list for compatibility.
 - Legacy `plunder --repo --source --dest` now refuses silent overwrites unless `--force` is supplied.
 - `status` now includes the latest handoff path, ID, and next recommended action when a handoff exists.
 - `doctor --repo-boundary` now stays focused on runtime boundary checks, while the normal doctor path handles docs drift and ADR checks.

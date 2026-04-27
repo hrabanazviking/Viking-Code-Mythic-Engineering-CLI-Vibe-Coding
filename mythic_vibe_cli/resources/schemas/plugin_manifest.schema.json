@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mythic-vibe.local/schemas/plugin_manifest.schema.json",
+  "title": "Mythic Vibe Plugin Manifest",
+  "type": "object",
+  "required": ["schema_version", "hooks_version", "available_hooks", "plugin_records"],
+  "properties": {
+    "schema_version": { "const": 2 },
+    "hooks_version": { "type": "integer", "minimum": 1 },
+    "available_hooks": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "before_scan",
+          "after_scan",
+          "before_packet",
+          "after_packet",
+          "before_verify",
+          "after_verify",
+          "before_reflect",
+          "after_reflect"
+        ]
+      }
+    },
+    "sandbox_warning": { "type": "string" },
+    "plugins": { "type": "array", "items": { "type": "string" } },
+    "plugin_records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["entrypoint", "enabled", "hooks", "version", "added_at"],
+        "properties": {
+          "entrypoint": { "type": "string", "minLength": 1 },
+          "enabled": { "type": "boolean" },
+          "hooks": { "type": "array", "items": { "type": "string" } },
+          "version": { "type": "string" },
+          "added_at": { "type": "string" },
+          "disabled_at": { "type": ["string", "null"] },
+          "notes": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

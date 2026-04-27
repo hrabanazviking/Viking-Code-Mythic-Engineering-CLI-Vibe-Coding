@@ -9,6 +9,7 @@ from .codex_bridge import PACKET_OUTPUT_FORMATS, PACKET_ROLES
 from .core.state import PHASES
 from .exit_codes import USER_INPUT_ERROR
 from .output import configure_output
+from .plugins.api import PLUGIN_HOOKS
 
 
 def add_runtime_options(
@@ -221,10 +222,29 @@ def build_parser() -> argparse.ArgumentParser:
     grimoire_add = grimoire_sub.add_parser("add", help="Register a plugin entrypoint string")
     grimoire_add.add_argument("plugin", help="Plugin entrypoint, e.g. package.module:Plugin")
     grimoire_add.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    grimoire_add.add_argument("--hook", action="append", default=[], choices=PLUGIN_HOOKS, help="Hook implemented by this plugin")
+    grimoire_add.add_argument("--version", default="unknown", help="Plugin version label")
     add_runtime_options(grimoire_add, json_output=True, dry_run=True)
     grimoire_list = grimoire_sub.add_parser("list", help="List registered plugins")
     grimoire_list.add_argument("--path", default=".", help="Project directory (default: current directory)")
     add_runtime_options(grimoire_list, json_output=True)
+
+    plugin = sub.add_parser("plugin", help="Inspect and control registered plugins")
+    add_runtime_options(plugin, json_output=True)
+    plugin_sub = plugin.add_subparsers(dest="plugin_command", required=True)
+    plugin_list = plugin_sub.add_parser("list", help="List plugin health without importing plugin code")
+    plugin_list.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    plugin_list.add_argument("--all", action="store_true", help="Include disabled plugins")
+    add_runtime_options(plugin_list, json_output=True)
+    plugin_inspect = plugin_sub.add_parser("inspect", help="Inspect one plugin entrypoint and hook declarations")
+    plugin_inspect.add_argument("plugin", help="Plugin entrypoint, e.g. package.module:Plugin")
+    plugin_inspect.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    plugin_inspect.add_argument("--metadata-only", action="store_true", help="Inspect registry metadata without importing plugin code")
+    add_runtime_options(plugin_inspect, json_output=True)
+    plugin_disable = plugin_sub.add_parser("disable", help="Disable one registered plugin")
+    plugin_disable.add_argument("plugin", help="Plugin entrypoint, e.g. package.module:Plugin")
+    plugin_disable.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    add_runtime_options(plugin_disable, json_output=True, dry_run=True)
 
     config = sub.add_parser("config", help="Show or manage configuration values")
     config.add_argument("--path", default=".", help="Project directory used for local overrides")

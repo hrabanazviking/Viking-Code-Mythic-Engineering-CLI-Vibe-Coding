@@ -72,6 +72,7 @@ Depending on implementation state, additional commands may be exposed:
 - `heal`
 - `oath`
 - `grimoire add|list`
+- `plugin list|inspect|disable`
 - `config set`
 - `db migrate`
 - `plunder inspect|plan|fetch|apply|record`
@@ -82,13 +83,15 @@ Use `--help` for current option details and defaults.
 
 `plunder` is now a staged lawful reuse workflow. `inspect` classifies Apache/MIT/BSD-compatible licenses, `plan` writes `mythic/imports/plunder_plan.json`, `fetch` caches one source file, `apply` refuses incompatible or unknown licenses unless forced and records provenance in `mythic/imports/plunder_manifest.json`, and `record` can append provenance manually. Unknown, GPL, AGPL, or LGPL licenses emit a "Do not plunder" warning for explicit review.
 
+`plugin` exposes the versioned grimoire registry. `plugin list` reports registry health without importing plugin code, `plugin inspect` imports one registered `module:object` entrypoint and reports declared hooks, and `plugin disable` preserves a plugin record while preventing it from being treated as active. Supported hooks are `before_scan`, `after_scan`, `before_packet`, `after_packet`, `before_verify`, `after_verify`, `before_reflect`, and `after_reflect`.
+
 ### Shared runtime options
 
 The active command surface now supports shared runtime controls where useful:
 
 | Option | Use |
 |---|---|
-| `--json` | Return structured machine-readable output. Supported by reporting/structured commands including `status`, `state show`, `state validate`, `doctor`, `config`, `codex-pack`, `grimoire`, `db migrate`, and `plunder`. |
+| `--json` | Return structured machine-readable output. Supported by reporting/structured commands including `status`, `state show`, `state validate`, `doctor`, `config`, `codex-pack`, `grimoire`, `plugin`, `db migrate`, and `plunder`. |
 | `--quiet` | Suppress non-error human text output. |
 | `--verbose` | Show additional operational detail when the command provides it. |
 | `--dry-run` | Preview write/sync operations without changing files, registries, databases, or remote state. |

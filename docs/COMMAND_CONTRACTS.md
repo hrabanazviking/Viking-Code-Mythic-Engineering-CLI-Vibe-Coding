@@ -36,6 +36,15 @@ Current Stage 11 plunder commands:
 - `plunder record` - append provenance from the current plan without applying a file.
 - legacy `plunder --repo --source --dest` remains available for one-file copying, but new reuse work should prefer the staged workflow.
 
+Current Stage 12 plugin commands:
+
+- `grimoire add|list` - compatibility registry commands for adding and listing plugin entrypoints.
+- `plugin list` - list plugin health without importing plugin code.
+- `plugin inspect` - inspect one registered plugin, import its entrypoint, and report declared hooks.
+- `plugin disable` - mark a plugin disabled without removing its provenance from `mythic/plugins.json`.
+- Plugin hooks are versioned and limited to `before_scan`, `after_scan`, `before_packet`, `after_packet`, `before_verify`, `after_verify`, `before_reflect`, and `after_reflect`.
+- Plugins are local Python extension points; inspect and trust them before enabling.
+
 Current compatibility aliases:
 
 | Alias | Canonical behavior |
@@ -65,7 +74,7 @@ Commands may expose shared runtime options where the behavior is meaningful:
 
 | Option | Contract |
 |---|---|
-| `--json` | Emits a machine-readable JSON payload with no human preface text. Supported by structured reporting commands such as `status`, `doctor`, `reflect`, `handoff`, `resume`, `config`, `codex-pack`, `grimoire`, `db migrate`, and `plunder`. |
+| `--json` | Emits a machine-readable JSON payload with no human preface text. Supported by structured reporting commands such as `status`, `doctor`, `reflect`, `handoff`, `resume`, `config`, `codex-pack`, `grimoire`, `plugin`, `db migrate`, and `plunder`. |
 | `--quiet` | Suppresses non-error human text output. JSON output remains emitted because it is the primary result. |
 | `--verbose` | Emits additional operational detail when a command has meaningful extra detail. |
 | `--dry-run` | Previews write/sync operations without writing files, modifying registries, creating databases, or fetching remote files. |

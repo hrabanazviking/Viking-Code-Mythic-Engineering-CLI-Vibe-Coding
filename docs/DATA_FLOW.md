@@ -72,7 +72,7 @@ Dormant runtime clusters (`ai/`, `core/`, `systems/`, `yggdrasil/`, `imports/nor
 | Project devlog | `docs/DEVLOG.md` | Check-in/log commands | Append-only chronological log. |
 | Codex packet output | `mythic/codex_prompt.md` | `codex-pack` / `evoke` | Regenerated per request. |
 | Initial project docs | `docs/*.md`, `tasks/current_GOALS.md`, `mythic/*.md` | `init/imbue` flow | Seeded once; then edited iteratively. |
-| Plugin registry | `mythic/plugins.json` | Grimoire commands | Local registry for plugin entrypoints. |
+| Plugin registry | `mythic/plugins.json` | Grimoire/plugin commands | Versioned local registry for plugin entrypoints, hooks, enabled state, and sandbox warnings. |
 | Local config | `mythic/config.toml` | Config commands | Per-project tool settings. |
 | Local DB seed | `mythic/weave.db` | DB migration path | Local SQLite ritual store scaffold. |
 | Method cache | `~/.mythic-vibe/method_cache.json` | Method sync layer | Cross-project user cache. |
