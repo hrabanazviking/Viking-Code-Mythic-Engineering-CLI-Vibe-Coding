@@ -11,7 +11,7 @@ import unittest
 from unittest.mock import patch
 
 from mythic_vibe_cli import app
-from mythic_vibe_cli.exit_codes import SUCCESS, USER_INPUT_ERROR
+from mythic_vibe_cli.exit_codes import SUCCESS, USER_INPUT_ERROR, VERIFICATION_FAILURE
 from mythic_vibe_cli.mythic_data import DEFAULT_METHOD_NOTES, MethodStore
 
 
@@ -30,6 +30,27 @@ class FakeResponse:
 
 
 class MethodCommandTests(unittest.TestCase):
+    def _write_manifest_fixture(self, root: Path, *, changed: bool = False) -> Path:
+        target = root / "docs" / "mythic_source"
+        target.mkdir(parents=True)
+        body = b"# Method\n"
+        target.joinpath("README.md").write_bytes(b"# Changed\n" if changed else body)
+        target.joinpath("method_manifest.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "source": "test-source",
+                    "ref": "abc123",
+                    "generated_at": "2026-04-27T00:00:00+00:00",
+                    "markdown_files": 1,
+                    "files": [{"path": "README.md", "bytes": len(body), "sha256": hashlib.sha256(body).hexdigest()}],
+                    "paths": ["README.md"],
+                }
+            ),
+            encoding="utf-8",
+        )
+        return target
+
     def test_method_status_reports_fallback_profile_without_network(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             output = io.StringIO()
@@ -182,6 +203,57 @@ class MethodCommandTests(unittest.TestCase):
 
             self.assertEqual(code, USER_INPUT_ERROR)
             self.assertIn("No method manifest found", output.getvalue())
+
+    def test_method_pin_writes_reproducibility_record_for_clean_corpus(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = self._write_manifest_fixture(root)
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(["method", "pin", "--path", tmp, "--note", "release baseline", "--json"])
+
+            payload = json.loads(output.getvalue())
+            pin_payload = json.loads(target.joinpath("method_pin.json").read_text(encoding="utf-8"))
+            manifest_hash = hashlib.sha256(target.joinpath("method_manifest.json").read_bytes()).hexdigest()
+
+            self.assertEqual(code, SUCCESS)
+            self.assertTrue(payload["pinned"])
+            self.assertEqual(pin_payload["source"], "test-source")
+            self.assertEqual(pin_payload["ref"], "abc123")
+            self.assertEqual(pin_payload["manifest_sha256"], manifest_hash)
+            self.assertEqual(pin_payload["note"], "release baseline")
+
+    def test_method_pin_dry_run_does_not_write_pin(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = self._write_manifest_fixture(root)
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(["method", "pin", "--path", tmp, "--dry-run", "--json"])
+
+            payload = json.loads(output.getvalue())
+
+            self.assertEqual(code, SUCCESS)
+            self.assertFalse(payload["pinned"])
+            self.assertFalse(target.joinpath("method_pin.json").exists())
+
+    def test_method_pin_refuses_dirty_corpus(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = self._write_manifest_fixture(root, changed=True)
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(["method", "pin", "--path", tmp, "--json"])
+
+            payload = json.loads(output.getvalue())
+
+            self.assertEqual(code, VERIFICATION_FAILURE)
+            self.assertFalse(payload["pinned"])
+            self.assertEqual(payload["diff"]["changed"], ["README.md"])
+            self.assertFalse(target.joinpath("method_pin.json").exists())
 
 
 if __name__ == "__main__":

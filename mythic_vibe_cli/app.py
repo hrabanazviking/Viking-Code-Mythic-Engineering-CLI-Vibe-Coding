@@ -207,6 +207,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="Imported method corpus folder inside project (default: docs/mythic_source)",
     )
     add_runtime_options(method_diff, json_output=True)
+    method_pin = method_sub.add_parser("pin", help="Pin a clean imported method corpus for reproducibility")
+    method_pin.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    method_pin.add_argument(
+        "--target",
+        default="docs/mythic_source",
+        help="Imported method corpus folder inside project (default: docs/mythic_source)",
+    )
+    method_pin.add_argument("--note", default="", help="Optional note to store with the method pin")
+    add_runtime_options(method_pin, json_output=True, dry_run=True)
 
     doctor = sub.add_parser(
         "doctor",

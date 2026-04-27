@@ -7,6 +7,36 @@
 
 ---
 
+## 2026-04-27 - Stage 15 Method Corpus Pin
+
+**Session:** Continuing Stage 15 Mythic Engineering Method Integration.
+**Status:** `method pin` now records a reproducibility pin for clean imported method corpora.
+**Scope:** Pinning layer on top of the manifest and diff contracts.
+
+### What changed
+
+- Added `MethodPin` and `MethodStore.pin_import_manifest()`.
+- Added `mythic-vibe method pin --path . --target docs/mythic_source`.
+- Refuses to pin when `method diff` reports missing, changed, or untracked markdown files.
+- Writes `method_pin.json` with source, ref, manifest SHA-256, file count, paths, timestamp, and optional note.
+- Added tests for successful pinning, dry-run behavior, and dirty-corpus refusal.
+
+### Why it matters
+
+The method corpus is now reproducible. A user can import it, check it, and pin the exact manifest identity before using that method as a stable reference.
+
+### Verification
+
+- `pytest -q tests/test_method.py` -> `10 passed, 7 subtests passed`
+- `ruff check mythic_vibe_cli/mythic_data.py mythic_vibe_cli/app.py mythic_vibe_cli/commands.py tests/test_method.py` -> passed
+- `mypy mythic_vibe_cli` -> passed
+
+### Continuity thread
+
+- The next Stage 15 slice is method source configuration or method excerpt selection for packet building.
+
+_A pinned method is a promise: this is the teaching we meant._
+
 ## 2026-04-27 - Stage 15 Method Corpus Diff
 
 **Session:** Continuing Stage 15 Mythic Engineering Method Integration.
