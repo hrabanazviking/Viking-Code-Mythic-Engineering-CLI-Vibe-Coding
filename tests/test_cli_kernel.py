@@ -47,6 +47,7 @@ class CliKernelTests(unittest.TestCase):
             "evoke",
             "packet",
             "codex-log",
+            "ai",
             "sync",
             "method",
             "doctor",
@@ -275,6 +276,65 @@ class CliKernelTests(unittest.TestCase):
             self.assertEqual(code, SUCCESS)
             self.assertEqual(payload["command"], "grimoire add")
             self.assertEqual(payload["plugins"], ["my_pkg.plugin:Plugin"])
+
+    def test_ai_providers_test_run_and_ingest_response(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "mythic").mkdir(parents=True, exist_ok=True)
+
+            providers_output = io.StringIO()
+            with redirect_stdout(providers_output):
+                providers_code = app.main(["ai", "providers", "--json"])
+
+            providers_payload = json.loads(providers_output.getvalue())
+            self.assertEqual(providers_code, SUCCESS)
+            self.assertIn("copy-paste", providers_payload["providers"])
+            self.assertIn("local", providers_payload["providers"])
+
+            test_output = io.StringIO()
+            with redirect_stdout(test_output):
+                test_code = app.main(["ai", "test", "--provider", "copy-paste", "--packet", "hello", "--json"])
+
+            test_payload = json.loads(test_output.getvalue())
+            self.assertEqual(test_code, SUCCESS)
+            self.assertEqual(test_payload["provider"], "copy-paste")
+            self.assertTrue(test_payload["configured"])
+            self.assertIn("estimate", test_payload)
+
+            run_output = io.StringIO()
+            with redirect_stdout(run_output):
+                run_code = app.main(["ai", "run", "--provider", "copy-paste", "--packet", "hello", "--dry-run", "--json"])
+
+            run_payload = json.loads(run_output.getvalue())
+            self.assertEqual(run_code, SUCCESS)
+            self.assertEqual(run_payload["provider"], "copy-paste")
+            self.assertTrue(run_payload["dry_run"])
+
+            ingest_output = io.StringIO()
+            with redirect_stdout(ingest_output):
+                ingest_code = app.main(
+                    [
+                        "ai",
+                        "ingest-response",
+                        "--path",
+                        str(root),
+                        "--provider",
+                        "copy-paste",
+                        "--model",
+                        "manual",
+                        "--packet-id",
+                        "PKT-000001",
+                        "--response",
+                        "ok",
+                        "--json",
+                    ]
+                )
+
+            ingest_payload = json.loads(ingest_output.getvalue())
+            ingest_path = root / "mythic" / "ai" / "latest_response.json"
+            self.assertEqual(ingest_code, SUCCESS)
+            self.assertTrue(ingest_path.exists())
+            self.assertFalse(ingest_payload["payload"]["applied"])
 
 
 if __name__ == "__main__":

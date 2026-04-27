@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 
 from . import __version__
+from .ai.registry import ProviderRegistry
 from .commands import COMMAND_HANDLERS, CommandHandler
 from .codex_bridge import PACKET_OUTPUT_FORMATS, PACKET_ROLES
 from .core.state import PHASES
@@ -237,6 +238,27 @@ def build_parser() -> argparse.ArgumentParser:
         help="Environment variable holding a GitHub token (default: GITHUB_TOKEN)",
     )
     add_runtime_options(plunder, json_output=True, dry_run=True)
+
+    ai = sub.add_parser("ai", help="Manage optional AI provider integrations")
+    add_runtime_options(ai, json_output=True, dry_run=True)
+    ai_sub = ai.add_subparsers(dest="ai_command", required=True)
+    ai_providers = ai_sub.add_parser("providers", help="List available AI providers and config status")
+    add_runtime_options(ai_providers, json_output=True)
+    ai_test = ai_sub.add_parser("test", help="Dry-run a provider against a packet payload")
+    ai_test.add_argument("--provider", required=True, choices=sorted(ProviderRegistry().providers().keys()))
+    ai_test.add_argument("--packet", required=True, help="Packet text or identifier to estimate/run")
+    add_runtime_options(ai_test, json_output=True)
+    ai_run = ai_sub.add_parser("run", help="Run a provider in explicit provider mode")
+    ai_run.add_argument("--provider", required=True, choices=sorted(ProviderRegistry().providers().keys()))
+    ai_run.add_argument("--packet", required=True, help="Packet text or identifier to send")
+    add_runtime_options(ai_run, json_output=True, dry_run=True)
+    ai_ingest = ai_sub.add_parser("ingest-response", help="Record a provider response as metadata only")
+    ai_ingest.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    ai_ingest.add_argument("--provider", required=True, help="Provider name")
+    ai_ingest.add_argument("--model", required=True, help="Provider model name")
+    ai_ingest.add_argument("--packet-id", required=True, help="Packet ID the response belongs to")
+    ai_ingest.add_argument("--response", required=True, help="Provider response text or summary")
+    add_runtime_options(ai_ingest, json_output=True)
 
     return parser
 

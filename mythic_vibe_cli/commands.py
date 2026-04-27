@@ -12,6 +12,7 @@ import urllib.parse
 import urllib.request
 
 from .codex_bridge import CodexBridge, CodexPacketRequest, PACKET_OUTPUT_FORMATS, PACKET_ROLES
+from .ai.registry import ProviderRegistry
 from .context.indexer import ProjectIndexer
 from .config import ConfigStore
 from .errors import CliError, format_error
@@ -420,6 +421,120 @@ def cmd_packet_diff(args: argparse.Namespace) -> int:
         return SUCCESS
 
     write_line(diff)
+    return SUCCESS
+
+
+def _ai_registry() -> ProviderRegistry:
+    return ProviderRegistry()
+
+
+def cmd_ai_providers(args: argparse.Namespace) -> int:
+    registry = _ai_registry()
+    providers = registry.providers()
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "ai providers",
+                "providers": {
+                    name: {
+                        "name": provider.name,
+                        "configured": provider.validate_config().configured,
+                        "details": provider.validate_config().details,
+                    }
+                    for name, provider in providers.items()
+                },
+            }
+        )
+        return SUCCESS
+
+    write_line("AI providers")
+    for name, provider in providers.items():
+        status = provider.validate_config()
+        write_key_value(name, "configured" if status.configured else "not configured", indent=2)
+        for detail in status.details:
+            write_bullet(detail, indent=4)
+    return SUCCESS
+
+
+def cmd_ai_test(args: argparse.Namespace) -> int:
+    registry = _ai_registry()
+    provider_name = args.provider
+    providers = registry.providers()
+    provider = providers.get(provider_name)
+    if provider is None:
+        write_error(f"Unknown provider: {provider_name}")
+        return USER_INPUT_ERROR
+
+    status = provider.validate_config()
+    estimate = provider.estimate(args.packet)
+    response = provider.run(args.packet)
+
+    payload = {
+        "command": "ai test",
+        "provider": provider.name,
+        "configured": status.configured,
+        "details": status.details,
+        "estimate": {
+            "input_tokens": estimate.input_tokens,
+            "output_tokens": estimate.output_tokens,
+            "cost_usd": estimate.cost_usd,
+        },
+        "response": {
+            "provider": response.provider,
+            "model": response.model,
+            "packet_id": response.packet_id,
+            "dry_run": response.dry_run,
+        },
+    }
+    write_json(payload)
+    return SUCCESS
+
+
+def cmd_ai_run(args: argparse.Namespace) -> int:
+    registry = _ai_registry()
+    provider = registry.providers().get(args.provider)
+    if provider is None:
+        write_error(f"Unknown provider: {args.provider}")
+        return USER_INPUT_ERROR
+
+    status = provider.validate_config()
+    if not status.configured and not _flag(args, "dry_run"):
+        write_error(f"Provider not configured: {args.provider}. Use --dry-run or set the required API key.")
+        return USER_INPUT_ERROR
+
+    response = provider.run(args.packet)
+    payload = {
+        "command": "ai run",
+        "provider": provider.name,
+        "dry_run": _flag(args, "dry_run") or response.dry_run,
+        "packet_id": response.packet_id,
+        "model": response.model,
+        "configured": status.configured,
+        "details": status.details,
+    }
+    write_json(payload)
+    return SUCCESS
+
+
+def cmd_ai_ingest_response(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    out_dir = root / "mythic" / "ai"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / "latest_response.json"
+    payload = {
+        "provider": args.provider,
+        "model": args.model,
+        "packet_id": args.packet_id,
+        "response": args.response,
+        "applied": False,
+    }
+    out_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    if _flag(args, "json"):
+        write_json({"command": "ai ingest-response", "path": str(out_path), "payload": payload})
+        return SUCCESS
+    write_line("AI response ingested as metadata only.")
+    write_key_value("Path", out_path)
+    write_key_value("Applied", "false")
     return SUCCESS
 
 
@@ -986,6 +1101,18 @@ def cmd_packet_dispatch(args: argparse.Namespace) -> int:
     return USER_INPUT_ERROR
 
 
+def cmd_ai_dispatch(args: argparse.Namespace) -> int:
+    if args.ai_command == "providers":
+        return cmd_ai_providers(args)
+    if args.ai_command == "test":
+        return cmd_ai_test(args)
+    if args.ai_command == "run":
+        return cmd_ai_run(args)
+    if args.ai_command == "ingest-response":
+        return cmd_ai_ingest_response(args)
+    return USER_INPUT_ERROR
+
+
 COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "init": cmd_init,
     "start": cmd_init,
@@ -1011,4 +1138,5 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "state": cmd_state_dispatch,
     "db": cmd_db_dispatch,
     "plunder": cmd_plunder,
+    "ai": cmd_ai_dispatch,
 }

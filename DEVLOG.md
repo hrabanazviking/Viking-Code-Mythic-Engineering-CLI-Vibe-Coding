@@ -7,6 +7,37 @@
 
 ---
 
+## 2026-04-27 - Stage 7 Provider Adapter Spine
+
+**Session:** Continuing the Mythic Vibe CLI implementation on `development`.
+**Status:** Optional AI provider adapters exist behind explicit CLI commands and dry-run-first behavior.
+**Scope:** First Stage 7 pass, focused on isolation, visibility, and safe defaults.
+
+### What changed
+
+- Added `mythic_vibe_cli.ai` with a provider registry and isolated provider modules.
+- Added provider stubs for `copy-paste`, `local`, `openai`, `anthropic`, `gemini`, and `openrouter`.
+- Added `mythic-vibe ai providers`, `mythic-vibe ai test`, `mythic-vibe ai run`, and `mythic-vibe ai ingest-response`.
+- Added explicit API-key validation for direct provider adapters.
+- Kept direct provider execution dry-run-first and metadata-oriented.
+- Preserved copy-paste as a first-class, always-available mode.
+
+### Why it matters
+
+Stage 7 now has a real spine. The CLI can name providers, inspect their configuration, estimate usage, and record responses without losing the local-first method.
+
+### Verification
+
+- `pytest -q` -> `35 passed`
+
+### Continuity thread
+
+- The next Stage 7 work is real provider network execution, redaction, logging, and stricter safety records.
+
+_May the bridge remain explicit and the fallback remain local._
+
+---
+
 ## 2026-04-27 - Weighted Packet Budget Strategy
 
 **Session:** Continuing the Mythic Vibe CLI implementation on `development`.
