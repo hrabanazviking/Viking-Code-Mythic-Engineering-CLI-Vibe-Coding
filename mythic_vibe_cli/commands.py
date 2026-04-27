@@ -424,22 +424,51 @@ def cmd_packet_diff(args: argparse.Namespace) -> int:
     return SUCCESS
 
 
-def _ai_registry() -> ProviderRegistry:
-    return ProviderRegistry()
+def _ai_registry(root: Path | None = None) -> ProviderRegistry:
+    return ProviderRegistry(root=root)
+
+
+def _resolve_ai_packet(root: Path, packet: str) -> dict[str, str]:
+    bridge = CodexBridge(root)
+    text = packet
+    packet_id = "inline"
+    source = "inline"
+
+    if packet.startswith("PKT-"):
+        loaded = bridge.load_packet_text(packet)
+        if loaded is not None:
+            text = loaded
+            record = bridge.load_packet_record(packet)
+            packet_id = packet
+            source = record.packet_path if record else packet
+    else:
+        packet_path = Path(packet)
+        if packet_path.exists():
+            text = packet_path.read_text(encoding="utf-8")
+            packet_id = packet_path.stem if packet_path.stem.startswith("PKT-") else packet_path.stem
+            source = str(packet_path)
+
+    return {
+        "text": text,
+        "packet_id": packet_id,
+        "source": source,
+    }
 
 
 def cmd_ai_providers(args: argparse.Namespace) -> int:
-    registry = _ai_registry()
+    root = Path(getattr(args, "path", ".")).resolve()
+    registry = _ai_registry(root)
     providers = registry.providers()
     if _flag(args, "json"):
         write_json(
             {
                 "command": "ai providers",
+                "path": str(root),
                 "providers": {
                     name: {
                         "name": provider.name,
-                        "configured": provider.validate_config().configured,
-                        "details": provider.validate_config().details,
+                        "configured": (status := provider.validate_config()).configured,
+                        "details": status.details,
                     }
                     for name, provider in providers.items()
                 },
@@ -457,7 +486,8 @@ def cmd_ai_providers(args: argparse.Namespace) -> int:
 
 
 def cmd_ai_test(args: argparse.Namespace) -> int:
-    registry = _ai_registry()
+    root = Path(getattr(args, "path", ".")).resolve()
+    registry = _ai_registry(root)
     provider_name = args.provider
     providers = registry.providers()
     provider = providers.get(provider_name)
@@ -466,14 +496,17 @@ def cmd_ai_test(args: argparse.Namespace) -> int:
         return USER_INPUT_ERROR
 
     status = provider.validate_config()
-    estimate = provider.estimate(args.packet)
-    response = provider.run(args.packet)
+    packet = _resolve_ai_packet(root, args.packet)
+    estimate = provider.estimate(packet)
+    response = provider.run(packet, dry_run=True)
 
     payload = {
         "command": "ai test",
+        "path": str(root),
         "provider": provider.name,
         "configured": status.configured,
         "details": status.details,
+        "packet": packet,
         "estimate": {
             "input_tokens": estimate.input_tokens,
             "output_tokens": estimate.output_tokens,
@@ -484,6 +517,7 @@ def cmd_ai_test(args: argparse.Namespace) -> int:
             "model": response.model,
             "packet_id": response.packet_id,
             "dry_run": response.dry_run,
+            "content": response.content,
         },
     }
     write_json(payload)
@@ -491,7 +525,8 @@ def cmd_ai_test(args: argparse.Namespace) -> int:
 
 
 def cmd_ai_run(args: argparse.Namespace) -> int:
-    registry = _ai_registry()
+    root = Path(getattr(args, "path", ".")).resolve()
+    registry = _ai_registry(root)
     provider = registry.providers().get(args.provider)
     if provider is None:
         write_error(f"Unknown provider: {args.provider}")
@@ -502,15 +537,25 @@ def cmd_ai_run(args: argparse.Namespace) -> int:
         write_error(f"Provider not configured: {args.provider}. Use --dry-run or set the required API key.")
         return USER_INPUT_ERROR
 
-    response = provider.run(args.packet)
+    packet = _resolve_ai_packet(root, args.packet)
+    response = provider.run(packet, dry_run=_flag(args, "dry_run"))
     payload = {
         "command": "ai run",
+        "path": str(root),
         "provider": provider.name,
         "dry_run": _flag(args, "dry_run") or response.dry_run,
         "packet_id": response.packet_id,
         "model": response.model,
         "configured": status.configured,
         "details": status.details,
+        "packet": packet,
+        "response": {
+            "provider": response.provider,
+            "model": response.model,
+            "packet_id": response.packet_id,
+            "dry_run": response.dry_run,
+            "content": response.content,
+        },
     }
     write_json(payload)
     return SUCCESS

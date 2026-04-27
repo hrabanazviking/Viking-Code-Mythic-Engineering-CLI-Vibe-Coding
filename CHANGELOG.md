@@ -8,6 +8,9 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Added
 
+- Added real provider execution for `openai`, `anthropic`, `gemini`, and `openrouter` behind explicit API keys.
+- Added provider request and response logging under `mythic/ai/provider_calls.jsonl` with secret redaction.
+- Added packet resolution for `mythic-vibe ai test` and `mythic-vibe ai run`, including stored packet IDs and on-disk packet files.
 - Added `mythic-vibe ai providers`, `mythic-vibe ai test`, `mythic-vibe ai run`, and `mythic-vibe ai ingest-response`.
 - Added an isolated provider registry with `copy-paste`, `local`, `openai`, `anthropic`, `gemini`, and `openrouter` adapters.
 - Added explicit API-key validation and dry-run-first provider behavior.
@@ -44,6 +47,8 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Changed
 
+- `mythic-vibe ai test` now stays dry-run-only, and `mythic-vibe ai run` now honors `--dry-run` explicitly.
+- `copy-paste` and `local` provider modes keep their always-available bridge behavior for inline packet input.
 - Moved the real CLI kernel into `mythic_vibe_cli/app.py` while preserving `mythic_vibe_cli.cli:main` as the public compatibility entrypoint.
 - Extracted command behavior out of `mythic_vibe_cli/app.py` so `app.py` now owns parsing/dispatch while `commands.py` owns command execution.
 - Replaced the long command dispatch chain with a `COMMAND_HANDLERS` registry while preserving existing commands and ritual aliases.
