@@ -1532,7 +1532,7 @@ The method source should not be a loose README sync. The CLI should treat Mythic
 
 ### Build tasks
 
-- [ ] Import markdown corpus with manifest.
+- [x] Import markdown corpus with manifest.
 - [x] Add method version detection.
 - [ ] Add method source config.
 - [x] Add `method sync`.

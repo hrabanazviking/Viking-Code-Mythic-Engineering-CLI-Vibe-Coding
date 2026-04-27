@@ -212,14 +212,15 @@ def cmd_import_md(args: argparse.Namespace) -> int:
 
     store = MethodStore()
     try:
-        written = store.import_all_markdown(target)
+        manifest = store.import_all_markdown(target)
     except Exception as exc:  # noqa: BLE001 - surface remote import issues in CLI.
         write_error(format_error(CliError(f"Import failed: {exc}")))
         return OPERATIONAL_FAILURE
 
     write_line("Imported Mythic Engineering markdown files.")
     write_key_value("Destination", target)
-    write_key_value("Files imported", len(written))
+    write_key_value("Files imported", len(manifest.files))
+    write_key_value("Manifest", manifest.manifest_path)
     write_key_value("Index", target / "_import_index.json")
     return SUCCESS
 

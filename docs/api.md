@@ -60,6 +60,8 @@ Argument parsing and top-level dispatch live in `mythic_vibe_cli.app`. Command i
   - Checks structural and state validity.
 - `sync`
   - Pulls method content from configured source.
+- `import-md`
+  - Imports the canonical markdown corpus and writes `method_manifest.json` plus the compatibility `_import_index.json`.
 - `method`
   - Displays active method notes.
 - `method status`
@@ -99,7 +101,7 @@ Use `--help` for current option details and defaults.
 
 Stage 14 UX commands provide orientation without changing project state. `examples`, `guide`, `next`, `explain`, and `tutorial` answer what happened, what to do next, and how to verify it. `next` prioritizes failed or blocked verification records, then the latest handoff next step, then normal phase guidance; when verification is not passing, human output separates failed commands, verification errors, and blocked reasons. High-traffic command help for `init`, `next`, `verify`, `packet create`, `reflect`, `resume`, and `doctor` includes concrete examples. `completion --shell bash|zsh|powershell` prints shell completion scripts. Plain output is the default; optional rich rendering is enabled with `MYTHIC_RICH=1` when the `rich` package is installed.
 
-Stage 15 method commands make the Mythic Engineering method profile visible. `method status` uses the local cache when available, otherwise reports the built-in fallback profile without requiring a network call. The reported version is derived from method content, so users can see when the active method corpus changes.
+Stage 15 method commands make the Mythic Engineering method profile visible. `method status` uses the local cache when available, otherwise reports the built-in fallback profile without requiring a network call. The reported version is derived from method content, so users can see when the active method corpus changes. `import-md` writes a manifest-backed markdown corpus import with source ref, relative paths, byte sizes, and SHA-256 hashes so later diff/pin work has a stable base.
 
 ### Shared runtime options
 

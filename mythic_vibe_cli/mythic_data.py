@@ -1,14 +1,14 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+from datetime import datetime, timezone
+import hashlib
 import json
 import os
 from pathlib import Path
-import hashlib
 import textwrap
 import urllib.error
 import urllib.request
-
-from dataclasses import dataclass
 
 CANONICAL_REPO = "https://github.com/hrabanazviking/Mythic-Engineering"
 CANONICAL_README_RAW = (
@@ -56,6 +56,41 @@ DEFAULT_METHOD_NOTES = textwrap.dedent(
 class MethodBundle:
     source: str
     content: str
+
+
+@dataclass
+class MethodManifestEntry:
+    path: str
+    bytes: int
+    sha256: str
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "path": self.path,
+            "bytes": self.bytes,
+            "sha256": self.sha256,
+        }
+
+
+@dataclass
+class MethodImportManifest:
+    source: str
+    ref: str
+    manifest_path: Path
+    files: list[MethodManifestEntry]
+    generated_at: str
+    schema_version: int = 1
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "schema_version": self.schema_version,
+            "source": self.source,
+            "ref": self.ref,
+            "generated_at": self.generated_at,
+            "markdown_files": len(self.files),
+            "files": [entry.to_dict() for entry in self.files],
+            "paths": [entry.path for entry in self.files],
+        }
 
 
 @dataclass
@@ -138,7 +173,7 @@ class MethodStore:
             freshness=freshness,
         )
 
-    def import_all_markdown(self, target_dir: Path, timeout: int = 20) -> list[Path]:
+    def import_all_markdown(self, target_dir: Path, timeout: int = 20) -> MethodImportManifest:
         target_dir.mkdir(parents=True, exist_ok=True)
 
         req = urllib.request.Request(CANONICAL_TREE_API, headers={"User-Agent": "mythic-vibe-cli/0.1"})
@@ -147,8 +182,9 @@ class MethodStore:
 
         items = tree_payload.get("tree", [])
         md_paths = [item["path"] for item in items if item.get("type") == "blob" and item.get("path", "").lower().endswith(".md")]
+        ref = str(tree_payload.get("sha") or "main")
 
-        written: list[Path] = []
+        files: list[MethodManifestEntry] = []
         for rel_path in md_paths:
             raw_url = f"{CANONICAL_RAW_BASE}{rel_path}"
             out_path = target_dir / rel_path
@@ -159,18 +195,22 @@ class MethodStore:
                 content = file_resp.read().decode("utf-8", errors="replace")
 
             out_path.write_text(content, encoding="utf-8")
-            written.append(out_path)
+            encoded = content.encode("utf-8")
+            files.append(
+                MethodManifestEntry(
+                    path=rel_path,
+                    bytes=len(encoded),
+                    sha256=hashlib.sha256(encoded).hexdigest(),
+                )
+            )
 
-        index = target_dir / "_import_index.json"
-        index.write_text(
-            json.dumps(
-                {
-                    "source": CANONICAL_REPO,
-                    "markdown_files": len(written),
-                    "paths": [str(p.relative_to(target_dir)) for p in written],
-                },
-                indent=2,
-            ),
-            encoding="utf-8",
+        manifest = MethodImportManifest(
+            source=CANONICAL_REPO,
+            ref=ref,
+            manifest_path=target_dir / "method_manifest.json",
+            files=files,
+            generated_at=datetime.now(timezone.utc).isoformat(),
         )
-        return written
+        manifest.manifest_path.write_text(json.dumps(manifest.to_dict(), indent=2), encoding="utf-8")
+        (target_dir / "_import_index.json").write_text(json.dumps(manifest.to_dict(), indent=2), encoding="utf-8")
+        return manifest
