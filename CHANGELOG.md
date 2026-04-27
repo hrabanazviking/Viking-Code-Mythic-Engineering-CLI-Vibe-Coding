@@ -8,6 +8,9 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Added
 
+- Added Stage 14 UX commands: `examples`, `guide`, `next`, `explain phase`, `explain artifact`, `tutorial`, and `completion`.
+- Added optional rich output support behind `MYTHIC_RICH=1` and the `ux` optional dependency group.
+- Added shell completion generation for bash, zsh, and Windows PowerShell.
 - Added Stage 13 packaging and release-quality configuration, including optional dependency groups for `dev`, `ai`, `docs`, `test`, `lint`, `type`, and `build`.
 - Added GitHub Actions CI for tests, coverage, ruff, mypy, changelog checks, package builds, and distribution checks.
 - Added `docs/INSTALL.md`, `docs/RELEASE_CHECKLIST.md`, and `scripts/check_changelog.py`.
@@ -70,6 +73,7 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Changed
 
+- Expanded operator docs with Stage 14 guidance, shell completion setup, and optional rich-output notes.
 - Expanded `pyproject.toml` metadata, Python classifiers, package URLs, ruff config, mypy config, and coverage config.
 - `grimoire add|list` now writes a versioned plugin registry while preserving the legacy `plugins` list for compatibility.
 - Legacy `plunder --repo --source --dest` now refuses silent overwrites unless `--force` is supplied.

@@ -7,6 +7,39 @@
 
 ---
 
+## 2026-04-27 - Stage 14 UX Polish and Command Ergonomics
+
+**Session:** Continuing the Mythic Vibe CLI implementation on `development`.
+**Status:** The CLI now has orientation commands, shell completions, and optional rich output.
+**Scope:** Stage 14 pass, focused on calm, clear command ergonomics and beginner-friendly next steps.
+
+### What changed
+
+- Added `mythic-vibe examples`, `guide`, `next`, `tutorial`, and `completion`.
+- Added `mythic-vibe explain phase` and `mythic-vibe explain artifact`.
+- Added shell completion output for bash, zsh, and Windows PowerShell.
+- Added optional rich terminal rendering behind `MYTHIC_RICH=1` with plain output fallback.
+- Added UX guidance tests and packaging coverage for the new `ux` optional dependency group.
+
+### Why it matters
+
+Stage 14 makes the CLI less cryptic. It can now show examples, explain phases and artifacts, suggest the next action from project state, and hand the user completion scripts without sending them hunting through docs.
+
+### Verification
+
+- `pytest -q` -> `55 passed`
+- `ruff check mythic_vibe_cli tests scripts` -> passed
+- `mypy mythic_vibe_cli` -> passed with the initial non-strict baseline
+- `python scripts/check_changelog.py` -> passed
+- `python -m build` -> built wheel and sdist
+- `twine check dist/*` -> passed
+
+### Continuity thread
+
+- The next useful improvement is to expand per-command examples in argparse epilog text and make `next` smarter about verification failures and latest handoffs.
+
+_A good tool does not merely obey; it orients._
+
 ## 2026-04-27 - Stage 13 Packaging, Release, and Install Quality
 
 **Session:** Continuing the Mythic Vibe CLI implementation on `development`.

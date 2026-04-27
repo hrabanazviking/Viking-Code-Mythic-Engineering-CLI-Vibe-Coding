@@ -31,7 +31,7 @@ class PackagingContractTests(unittest.TestCase):
     def test_optional_dependency_groups_cover_stage_13_contract(self) -> None:
         optional = self.pyproject["project"]["optional-dependencies"]
 
-        for group in ["dev", "ai", "docs", "test", "lint", "type", "build"]:
+        for group in ["dev", "ai", "docs", "test", "lint", "type", "build", "ux"]:
             self.assertIn(group, optional)
             self.assertTrue(optional[group], f"{group} optional dependency group should not be empty")
 
