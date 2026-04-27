@@ -70,6 +70,8 @@ class MythicWorkflow:
         if normalized not in PHASES:
             valid = ", ".join(PHASES)
             raise ValueError(f"Invalid phase '{phase}'. Choose one of: {valid}")
+        if normalized == "reflect":
+            self._require_successful_verification()
 
         self.mythic_dir.mkdir(parents=True, exist_ok=True)
         devlog_path = self.docs_dir / "DEVLOG.md"
@@ -89,6 +91,21 @@ class MythicWorkflow:
             fh.write(f"\n## {timestamp} | {normalized.title()}\n- {update}\n")
 
         return status_path, devlog_path
+
+    def _require_successful_verification(self) -> None:
+        latest_path = self.mythic_dir / "verifications" / "latest.json"
+        if not latest_path.exists():
+            raise ValueError("Reflection is blocked until a successful verification is recorded. Run `mythic-vibe verify --record` first.")
+
+        try:
+            payload = json.loads(latest_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ValueError(f"Cannot read latest verification record: {exc}") from exc
+
+        if not isinstance(payload, dict):
+            raise ValueError("Latest verification record is invalid.")
+        if payload.get("result") != "pass":
+            raise ValueError("Reflection is blocked until the latest verification result is `pass`.")
 
     def status_summary(self) -> str:
         status_path = self.mythic_dir / "status.json"

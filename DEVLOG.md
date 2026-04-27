@@ -7,6 +7,35 @@
 
 ---
 
+## 2026-04-27 - Stage 8 Verification Gate and Durable Records
+
+**Session:** Continuing the Mythic Vibe CLI implementation on `development`.
+**Status:** Verification is now a first-class CLI command and reflect check-ins are blocked until a successful verification exists.
+**Scope:** Stage 8 reality-gate pass, focused on durable verification artifacts, command execution, diff review, and reflect gating.
+
+### What changed
+
+- Added `mythic_vibe_cli.verify` helper modules for test execution, git diff review, invariant checks, and documentation checks.
+- Added `mythic-vibe verify` with command, changed-file, docs, invariant, and record flags.
+- Added durable verification artifacts under `mythic/verifications/` plus a `latest.json` pointer.
+- Updated project state so successful verification records `last_verification_id`.
+- Added a reflect gate so `mythic-vibe checkin --phase reflect` is blocked until the latest verification result is `pass`.
+- Added CLI tests covering verification recording and the reflect gate.
+
+### Why it matters
+
+Stage 8 turns verification from a recommendation into a real gate. The CLI now refuses to claim reflective completion unless there is a successful verification record to stand on.
+
+### Verification
+
+- `pytest -q` -> `38 passed`
+
+### Continuity thread
+
+- The next Stage 8 follow-through could expand verification commands beyond the default pytest runner, but the gate and durable record path now exist.
+
+_May reality stay louder than ceremony._
+
 ## 2026-04-27 - Stage 7 Provider Metadata Hardening
 
 **Session:** Continuing the Mythic Vibe CLI implementation on `development`.
