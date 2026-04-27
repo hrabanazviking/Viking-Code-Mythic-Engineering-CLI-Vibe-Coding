@@ -115,6 +115,32 @@ class MethodDiff:
 
 
 @dataclass
+class MethodPin:
+    pin_path: Path
+    source: str
+    ref: str
+    manifest_sha256: str
+    markdown_files: int
+    paths: list[str]
+    pinned_at: str
+    note: str = ""
+    schema_version: int = 1
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "schema_version": self.schema_version,
+            "source": self.source,
+            "ref": self.ref,
+            "manifest_sha256": self.manifest_sha256,
+            "markdown_files": self.markdown_files,
+            "paths": self.paths,
+            "pinned_at": self.pinned_at,
+            "note": self.note,
+            "pin_path": str(self.pin_path),
+        }
+
+
+@dataclass
 class MethodStatus:
     source: str
     profile: str
@@ -277,3 +303,23 @@ class MethodStore:
             changed=sorted(changed),
             untracked=untracked,
         )
+
+    def pin_import_manifest(self, target_dir: Path, note: str = "") -> MethodPin:
+        diff = self.diff_import_manifest(target_dir)
+        if not diff.clean:
+            raise ValueError("Cannot pin method corpus while it differs from method_manifest.json.")
+
+        manifest_bytes = diff.manifest_path.read_bytes()
+        manifest = json.loads(manifest_bytes.decode("utf-8"))
+        pin = MethodPin(
+            pin_path=target_dir / "method_pin.json",
+            source=str(manifest.get("source", "")),
+            ref=str(manifest.get("ref", "")),
+            manifest_sha256=hashlib.sha256(manifest_bytes).hexdigest(),
+            markdown_files=int(manifest.get("markdown_files", 0)),
+            paths=[str(path) for path in manifest.get("paths", [])],
+            pinned_at=datetime.now(timezone.utc).isoformat(),
+            note=note,
+        )
+        pin.pin_path.write_text(json.dumps(pin.to_dict(), indent=2), encoding="utf-8")
+        return pin

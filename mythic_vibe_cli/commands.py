@@ -1437,6 +1437,56 @@ def cmd_method_diff(args: argparse.Namespace) -> int:
     return SUCCESS
 
 
+def cmd_method_pin(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    target = root / args.target
+    store = MethodStore()
+    try:
+        diff = store.diff_import_manifest(target)
+    except FileNotFoundError:
+        write_error(f"No method manifest found at {target / 'method_manifest.json'}. Run `mythic-vibe import-md` first.")
+        return USER_INPUT_ERROR
+
+    if not diff.clean:
+        payload = {"command": "method pin", "path": str(root), "target": str(target), "pinned": False, "diff": diff.to_dict()}
+        if _flag(args, "json"):
+            write_json(payload)
+        else:
+            write_error("Cannot pin method corpus while it differs from method_manifest.json. Run `mythic-vibe method diff`.")
+        return VERIFICATION_FAILURE
+
+    if _flag(args, "dry_run"):
+        payload = {
+            "command": "method pin",
+            "path": str(root),
+            "target": str(target),
+            "dry_run": True,
+            "pinned": False,
+            "pin_path": str(target / "method_pin.json"),
+            "message": "Dry run: no method pin will be written.",
+        }
+        if _flag(args, "json"):
+            write_json(payload)
+        else:
+            write_line("Dry run: no method pin will be written.")
+            write_key_value("Pin", target / "method_pin.json")
+        return SUCCESS
+
+    pin = store.pin_import_manifest(target, note=getattr(args, "note", "") or "")
+    payload = {"command": "method pin", "path": str(root), "target": str(target), "pinned": True, "pin": pin.to_dict()}
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+
+    write_line("Method corpus pinned.")
+    write_key_value("Pin", pin.pin_path)
+    write_key_value("Source", pin.source)
+    write_key_value("Ref", pin.ref)
+    write_key_value("Manifest SHA-256", pin.manifest_sha256)
+    write_key_value("Markdown files", pin.markdown_files)
+    return SUCCESS
+
+
 def cmd_method_dispatch(args: argparse.Namespace) -> int:
     command = getattr(args, "method_command", None)
     if command is None:
@@ -1449,6 +1499,8 @@ def cmd_method_dispatch(args: argparse.Namespace) -> int:
         return cmd_sync(args)
     if command == "diff":
         return cmd_method_diff(args)
+    if command == "pin":
+        return cmd_method_pin(args)
     return USER_INPUT_ERROR
 
 

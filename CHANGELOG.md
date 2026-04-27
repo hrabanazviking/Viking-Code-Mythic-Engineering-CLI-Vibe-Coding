@@ -11,6 +11,7 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 - Added Stage 15 method profile visibility with `mythic-vibe method status`, `method show`, and `method sync`.
 - Added `method_manifest.json` generation for `import-md`, including source ref, file count, relative paths, byte sizes, and SHA-256 hashes.
 - Added `mythic-vibe method diff` to compare an imported method corpus against its manifest.
+- Added `mythic-vibe method pin` to write a reproducibility pin for clean imported method corpora.
 - Added method version detection, fallback profile reporting, method section labels, and freshness warnings for uncached method corpora.
 - Added argparse help examples for high-traffic commands: `init`, `next`, `verify`, `packet create`, `reflect`, `resume`, and `doctor`.
 - Added Stage 14 UX commands: `examples`, `guide`, `next`, `explain phase`, `explain artifact`, `tutorial`, and `completion`.
