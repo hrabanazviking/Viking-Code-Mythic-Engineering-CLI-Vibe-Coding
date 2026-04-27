@@ -12,6 +12,27 @@ from mythic_vibe_cli.exit_codes import SUCCESS
 
 
 class UxCommandTests(unittest.TestCase):
+    def test_high_traffic_commands_render_examples_in_help(self) -> None:
+        cases = [
+            (["init", "--help"], 'mythic-vibe init --goal "Build a calm CLI" --noob'),
+            (["next", "--help"], "mythic-vibe next --path . --json"),
+            (["verify", "--help"], "mythic-vibe verify --commands --docs --invariants --record"),
+            (["packet", "create", "--help"], 'mythic-vibe packet create --task "Implement login audit" --phase build'),
+            (["reflect", "--help"], 'mythic-vibe reflect --summary "Verified release gates" --next-step "Check GitHub CI"'),
+            (["resume", "--help"], "mythic-vibe resume --path . --json"),
+            (["doctor", "--help"], "mythic-vibe doctor --path . --repo-boundary"),
+        ]
+
+        for argv, expected in cases:
+            with self.subTest(command=" ".join(argv)):
+                output = io.StringIO()
+                with redirect_stdout(output), self.assertRaises(SystemExit) as raised:
+                    app.main(argv)
+
+                self.assertEqual(raised.exception.code, SUCCESS)
+                self.assertIn("Examples:", output.getvalue())
+                self.assertIn(expected, output.getvalue())
+
     def test_examples_guide_and_tutorial_emit_json(self) -> None:
         for command in ["examples", "guide", "tutorial"]:
             output = io.StringIO()
