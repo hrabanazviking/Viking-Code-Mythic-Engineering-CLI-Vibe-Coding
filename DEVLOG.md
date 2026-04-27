@@ -7,6 +7,34 @@
 
 ---
 
+## 2026-04-27 - Stage 7 Provider Metadata Hardening
+
+**Session:** Continuing the Mythic Vibe CLI implementation on `development`.
+**Status:** Provider responses now carry usage, cost hints, and request metadata in a more durable shape.
+**Scope:** Stage 7 hardening pass focused on telemetry consistency and clearer provider contracts.
+
+### What changed
+
+- Added provider-level pricing heuristics so estimates no longer report `0.0` across the board for real adapters.
+- Extended provider responses with usage and metadata fields.
+- Added request IDs, estimated cost, and observed cost fields to real-provider responses when available.
+- Kept dry-run responses consistent by giving them token and cost metadata too.
+- Surfaced response usage and metadata in `ai test` and `ai run` JSON output.
+
+### Why it matters
+
+This makes provider calls easier to inspect and compare without changing the command flow. The CLI now tells the truth about what it thinks a call will cost, and what the provider actually reported when it answered.
+
+### Verification
+
+- `pytest -q` -> `37 passed`
+
+### Continuity thread
+
+- The next useful hardening step would be a more explicit provider-call audit trail or provider-specific retry/backoff policy, if the project wants that before Stage 8.
+
+_May the record carry the weight of the call._
+
 ## 2026-04-27 - Stage 7 Provider Execution and Log Redaction
 
 **Session:** Continuing the Mythic Vibe CLI implementation on `development`.
