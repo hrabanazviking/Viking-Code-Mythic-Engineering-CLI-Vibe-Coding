@@ -1,15 +1,12 @@
 from __future__ import annotations
 
 import argparse
-import base64
 from collections.abc import Callable
 import json
 import os
 from pathlib import Path
 import sqlite3
 import urllib.error
-import urllib.parse
-import urllib.request
 
 from .codex_bridge import CodexBridge, CodexPacketRequest, PACKET_OUTPUT_FORMATS, PACKET_ROLES
 from .ai.registry import ProviderRegistry
@@ -28,6 +25,17 @@ from .handoff import (
 )
 from .mythic_data import MethodStore
 from .output import write_bullet, write_error, write_json, write_key_value, write_line, write_verbose
+from .plunder.github import GitHubClient
+from .plunder.license import classify_license
+from .plunder.provenance import (
+    PlunderPlan,
+    append_record,
+    cache_path_for,
+    load_plan,
+    record_from_plan,
+    update_notice,
+    write_plan,
+)
 from .core.state import PHASES, VerificationRecord, coerce_project_state, utc_now, validate_state_payload
 from .persistence.json_store import JsonStateStore, StateStoreError
 from .persistence.migrations import migrate_project_state
@@ -846,27 +854,6 @@ def cmd_config(args: argparse.Namespace) -> int:
     return SUCCESS
 
 
-def _github_get_file(repo: str, source_path: str, ref: str, token: str) -> str:
-    encoded_path = urllib.parse.quote(source_path.strip("/"))
-    url = f"https://api.github.com/repos/{repo}/contents/{encoded_path}?ref={urllib.parse.quote(ref)}"
-    req = urllib.request.Request(
-        url,
-        headers={
-            "Authorization": f"token {token}",
-            "Accept": "application/vnd.github+json",
-            "User-Agent": "mythic-vibe-cli",
-        },
-    )
-    with urllib.request.urlopen(req, timeout=30) as response:
-        payload = json.loads(response.read().decode("utf-8"))
-    if payload.get("type") != "file":
-        raise ValueError(f"Source is not a file: {source_path}")
-    raw = payload.get("content", "")
-    if payload.get("encoding") != "base64":
-        raise ValueError(f"Unsupported GitHub encoding for {source_path}: {payload.get('encoding')}")
-    return base64.b64decode(raw).decode("utf-8")
-
-
 def cmd_doctor(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
     workflow = MythicWorkflow(root)
@@ -1350,7 +1337,297 @@ def cmd_state_validate(args: argparse.Namespace) -> int:
     return SUCCESS if validation.ok else VERIFICATION_FAILURE
 
 
-def cmd_plunder(args: argparse.Namespace) -> int:
+def _plunder_client(args: argparse.Namespace) -> GitHubClient | None:
+    token = os.getenv(getattr(args, "token_env", "GITHUB_TOKEN"), "").strip()
+    if not token:
+        write_error(
+            format_error(
+                CliError(
+                    f"Missing token. Set {getattr(args, 'token_env', 'GITHUB_TOKEN')} and retry (repo access is required).",
+                    exit_code=USER_INPUT_ERROR,
+                )
+            )
+        )
+        return None
+    return GitHubClient(token)
+
+
+def _write_plunder_plan_output(args: argparse.Namespace, payload: dict[str, object]) -> int:
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+
+    plan = payload.get("plan")
+    write_line(str(payload.get("message", "Plunder plan ready.")))
+    if isinstance(plan, dict):
+        write_key_value("Repo", f"{plan.get('repo')}@{plan.get('ref')}")
+        write_key_value("Source", plan.get("source_file"))
+        write_key_value("Destination", plan.get("destination"))
+        license_payload = plan.get("license") if isinstance(plan.get("license"), dict) else {}
+        write_key_value("License", license_payload.get("spdx_id", "Unknown"))
+        if license_payload.get("warning"):
+            write_key_value("Warning", license_payload["warning"])
+    return SUCCESS
+
+
+def cmd_plunder_inspect(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    if _flag(args, "dry_run"):
+        payload = {
+            "command": "plunder inspect",
+            "dry_run": True,
+            "repo": args.repo,
+            "ref": args.ref,
+        }
+        if _flag(args, "json"):
+            write_json(payload)
+        else:
+            write_line("Dry run: no GitHub repository metadata will be fetched.")
+            write_key_value("Repo", f"{args.repo}@{args.ref}")
+        return SUCCESS
+
+    client = _plunder_client(args)
+    if client is None:
+        return USER_INPUT_ERROR
+
+    try:
+        info = client.inspect_repo(args.repo, args.ref)
+    except urllib.error.HTTPError as exc:
+        message = exc.read().decode("utf-8", errors="replace")
+        write_error(format_error(CliError(f"GitHub API error ({exc.code}): {message}")))
+        return OPERATIONAL_FAILURE
+    except Exception as exc:  # noqa: BLE001
+        write_error(format_error(CliError(f"Plunder inspect failed: {exc}")))
+        return OPERATIONAL_FAILURE
+
+    posture = classify_license(info.license_spdx_id, info.license_name)
+    payload = {
+        "command": "plunder inspect",
+        "path": str(root),
+        "repo": info.to_dict(),
+        "license": posture.to_dict(),
+    }
+    if _flag(args, "json"):
+        write_json(payload)
+    else:
+        write_line("Plunder inspection complete.")
+        write_key_value("Repo", f"{info.repo}@{info.ref}")
+        write_key_value("Resolved SHA", info.sha)
+        write_key_value("License", posture.spdx_id)
+        if posture.warning:
+            write_key_value("Warning", posture.warning)
+    return SUCCESS
+
+
+def cmd_plunder_plan(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    dest_path = Path(args.dest)
+    destination = str(dest_path if dest_path.is_absolute() else (root / dest_path).resolve())
+    if _flag(args, "dry_run"):
+        payload = {
+            "command": "plunder plan",
+            "dry_run": True,
+            "repo": args.repo,
+            "source": args.source,
+            "ref": args.ref,
+            "destination": destination,
+        }
+        return _write_plunder_plan_output(args, {"message": "Dry run: no plunder plan will be written.", "plan": payload})
+
+    client = _plunder_client(args)
+    if client is None:
+        return USER_INPUT_ERROR
+
+    try:
+        info = client.inspect_repo(args.repo, args.ref)
+        source_file = client.get_file(args.repo, args.source, info.sha)
+    except urllib.error.HTTPError as exc:
+        message = exc.read().decode("utf-8", errors="replace")
+        write_error(format_error(CliError(f"GitHub API error ({exc.code}): {message}")))
+        return OPERATIONAL_FAILURE
+    except Exception as exc:  # noqa: BLE001
+        write_error(format_error(CliError(f"Plunder plan failed: {exc}")))
+        return OPERATIONAL_FAILURE
+
+    posture = classify_license(info.license_spdx_id, info.license_name)
+    plan = PlunderPlan(
+        repo=args.repo,
+        source_file=args.source,
+        destination=destination,
+        ref=info.sha,
+        source_sha=source_file.sha,
+        license_spdx_id=posture.spdx_id,
+        license_name=posture.name,
+        license_compatible=posture.compatible,
+        license_warning=posture.warning,
+        notes=posture.notes,
+        modifications=args.modifications,
+    )
+    path = write_plan(root, plan)
+    payload = {
+        "command": "plunder plan",
+        "path": str(root),
+        "plan_path": str(path),
+        "plan": plan.to_dict(),
+    }
+    return _write_plunder_plan_output(args, {"message": "Plunder plan written.", **payload})
+
+
+def cmd_plunder_fetch(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    if _flag(args, "dry_run"):
+        payload = {
+            "command": "plunder fetch",
+            "dry_run": True,
+            "repo": args.repo,
+            "source": args.source,
+            "ref": args.ref,
+        }
+        if _flag(args, "json"):
+            write_json(payload)
+        else:
+            write_line("Dry run: no source file will be fetched into the cache.")
+            write_key_value("Repo", f"{args.repo}@{args.ref}")
+            write_key_value("Source", args.source)
+        return SUCCESS
+
+    client = _plunder_client(args)
+    if client is None:
+        return USER_INPUT_ERROR
+
+    try:
+        github_file, cache_path = client.fetch_to_cache(root, args.repo, args.source, args.ref)
+    except urllib.error.HTTPError as exc:
+        message = exc.read().decode("utf-8", errors="replace")
+        write_error(format_error(CliError(f"GitHub API error ({exc.code}): {message}")))
+        return OPERATIONAL_FAILURE
+    except Exception as exc:  # noqa: BLE001
+        write_error(format_error(CliError(f"Plunder fetch failed: {exc}")))
+        return OPERATIONAL_FAILURE
+
+    payload = {
+        "command": "plunder fetch",
+        "path": str(root),
+        "source": github_file.to_dict(),
+        "cache_path": str(cache_path),
+    }
+    if _flag(args, "json"):
+        write_json(payload)
+    else:
+        write_line("Plunder source fetched.")
+        write_key_value("Source", f"{args.repo}/{args.source}@{args.ref}")
+        write_key_value("Cache", cache_path)
+    return SUCCESS
+
+
+def cmd_plunder_apply(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    try:
+        plan = load_plan(root, Path(args.plan).resolve() if getattr(args, "plan", "") else None)
+    except Exception as exc:  # noqa: BLE001
+        write_error(format_error(CliError(f"Cannot load plunder plan: {exc}")))
+        return USER_INPUT_ERROR
+
+    destination = Path(plan.destination)
+    if not destination.is_absolute():
+        destination = (root / destination).resolve()
+    source_cache = cache_path_for(root, plan.repo, plan.source_file, plan.ref)
+
+    if not plan.license_compatible and not _flag(args, "force"):
+        write_error(format_error(CliError(plan.license_warning or "Do not plunder: license is not compatible.")))
+        return USER_INPUT_ERROR
+    if destination.exists() and not _flag(args, "force"):
+        write_error(format_error(CliError(f"Destination already exists; refusing to overwrite: {destination}")))
+        return USER_INPUT_ERROR
+    if not source_cache.exists():
+        write_error(format_error(CliError(f"Fetched source is missing. Run `mythic-vibe plunder fetch` first: {source_cache}")))
+        return USER_INPUT_ERROR
+
+    if _flag(args, "dry_run"):
+        payload = {
+            "command": "plunder apply",
+            "dry_run": True,
+            "destination": str(destination),
+            "source_cache": str(source_cache),
+            "license": plan.license_spdx_id,
+        }
+        if _flag(args, "json"):
+            write_json(payload)
+        else:
+            write_line("Dry run: no plundered file will be applied.")
+            write_key_value("Source cache", source_cache)
+            write_key_value("Destination", destination)
+        return SUCCESS
+
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(source_cache.read_text(encoding="utf-8"), encoding="utf-8")
+    record = record_from_plan(plan, modifications=getattr(args, "modifications", "") or None)
+    manifest = append_record(root, record)
+    notice = update_notice(root, record) if _flag(args, "notice") else None
+    payload = {
+        "command": "plunder apply",
+        "path": str(root),
+        "destination": str(destination),
+        "manifest": str(manifest),
+        "notice": str(notice) if notice else None,
+        "record": record.to_dict(),
+    }
+    if _flag(args, "json"):
+        write_json(payload)
+    else:
+        write_line("Plunder applied and provenance recorded.")
+        write_key_value("Destination", destination)
+        write_key_value("Manifest", manifest)
+        if notice:
+            write_key_value("NOTICE", notice)
+    return SUCCESS
+
+
+def cmd_plunder_record(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    try:
+        plan = load_plan(root, Path(args.plan).resolve() if getattr(args, "plan", "") else None)
+    except Exception as exc:  # noqa: BLE001
+        write_error(format_error(CliError(f"Cannot load plunder plan: {exc}")))
+        return USER_INPUT_ERROR
+
+    if _flag(args, "dry_run"):
+        payload = {
+            "command": "plunder record",
+            "dry_run": True,
+            "record": record_from_plan(plan, modifications=getattr(args, "modifications", "") or None).to_dict(),
+        }
+        if _flag(args, "json"):
+            write_json(payload)
+        else:
+            write_line("Dry run: no plunder provenance will be recorded.")
+        return SUCCESS
+
+    record = record_from_plan(plan, modifications=getattr(args, "modifications", "") or None)
+    manifest = append_record(root, record)
+    notice = update_notice(root, record) if _flag(args, "notice") else None
+    payload = {
+        "command": "plunder record",
+        "path": str(root),
+        "manifest": str(manifest),
+        "notice": str(notice) if notice else None,
+        "record": record.to_dict(),
+    }
+    if _flag(args, "json"):
+        write_json(payload)
+    else:
+        write_line("Plunder provenance recorded.")
+        write_key_value("Manifest", manifest)
+        if notice:
+            write_key_value("NOTICE", notice)
+    return SUCCESS
+
+
+def cmd_plunder_legacy(args: argparse.Namespace) -> int:
+    if not args.repo or not args.source or not args.dest:
+        write_error("Legacy plunder mode requires --repo, --source, and --dest. Prefer `mythic-vibe plunder plan` for new work.")
+        return USER_INPUT_ERROR
+
     out_path = Path(args.dest).resolve()
     if _flag(args, "dry_run"):
         payload = {
@@ -1370,20 +1647,12 @@ def cmd_plunder(args: argparse.Namespace) -> int:
             write_key_value("Destination", out_path)
         return SUCCESS
 
-    token = os.getenv(args.token_env, "").strip()
-    if not token:
-        write_error(
-            format_error(
-                CliError(
-                    f"Missing token. Set {args.token_env} and retry (repo access is required).",
-                    exit_code=USER_INPUT_ERROR,
-                )
-            )
-        )
+    client = _plunder_client(args)
+    if client is None:
         return USER_INPUT_ERROR
 
     try:
-        text = _github_get_file(args.repo, args.source, args.ref, token)
+        github_file = client.get_file(args.repo, args.source, args.ref)
     except urllib.error.HTTPError as exc:
         message = exc.read().decode("utf-8", errors="replace")
         write_error(format_error(CliError(f"GitHub API error ({exc.code}): {message}")))
@@ -1392,8 +1661,11 @@ def cmd_plunder(args: argparse.Namespace) -> int:
         write_error(format_error(CliError(f"Plunder failed: {exc}")))
         return OPERATIONAL_FAILURE
 
+    if out_path.exists() and not _flag(args, "force"):
+        write_error(format_error(CliError(f"Destination already exists; refusing to overwrite: {out_path}")))
+        return USER_INPUT_ERROR
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(text, encoding="utf-8")
+    out_path.write_text(github_file.text, encoding="utf-8")
     if _flag(args, "json"):
         write_json(
             {
@@ -1402,6 +1674,7 @@ def cmd_plunder(args: argparse.Namespace) -> int:
                 "repo": args.repo,
                 "source": args.source,
                 "ref": args.ref,
+                "source_sha": github_file.sha,
                 "destination": str(out_path),
             }
         )
@@ -1412,6 +1685,21 @@ def cmd_plunder(args: argparse.Namespace) -> int:
     write_key_value("Source", args.source)
     write_key_value("Destination", out_path)
     return SUCCESS
+
+
+def cmd_plunder(args: argparse.Namespace) -> int:
+    command = getattr(args, "plunder_command", None)
+    if command == "inspect":
+        return cmd_plunder_inspect(args)
+    if command == "plan":
+        return cmd_plunder_plan(args)
+    if command == "fetch":
+        return cmd_plunder_fetch(args)
+    if command == "apply":
+        return cmd_plunder_apply(args)
+    if command == "record":
+        return cmd_plunder_record(args)
+    return cmd_plunder_legacy(args)
 
 
 def cmd_db_migrate(args: argparse.Namespace) -> int:

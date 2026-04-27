@@ -7,6 +7,34 @@
 
 ---
 
+## 2026-04-27 - Stage 11 Lawful Plunder System v2
+
+**Session:** Continuing the Mythic Vibe CLI implementation on `development`.
+**Status:** `plunder` now has a staged, license-aware, provenance-recording workflow.
+**Scope:** Stage 11 pass, focused on safe single-file reuse from GitHub with source traceability.
+
+### What changed
+
+- Added `mythic_vibe_cli.plunder` modules for GitHub access, license posture, and provenance records.
+- Added `mythic-vibe plunder inspect|plan|fetch|apply|record`.
+- Added Apache/MIT/BSD compatibility classification and "Do not plunder" warnings for unknown or incompatible licenses.
+- Added `mythic/imports/plunder_plan.json`, `mythic/imports/plunder_manifest.json`, cache paths, and NOTICE update support.
+- Preserved legacy `plunder --repo --source --dest` behavior while making staged reuse the preferred path.
+
+### Why it matters
+
+Stage 11 makes reuse less reckless. Imported code now carries a source trail, license posture, destination, source SHA, and modification note instead of arriving as an anonymous copied file.
+
+### Verification
+
+- `pytest -q tests/test_plunder.py tests/test_cli.py::MythicCliRitualTests::test_plunder_requires_token_env` -> `4 passed`
+
+### Continuity thread
+
+- The next useful improvement is richer license-file capture and source archive checks, but the core legal/provenance path is now real.
+
+_Useful things may be borrowed; careless things become debt._
+
 ## 2026-04-27 - Stage 10 Reflection, Handoff, and Continuity Memory
 
 **Session:** Continuing the Mythic Vibe CLI implementation on `development`.

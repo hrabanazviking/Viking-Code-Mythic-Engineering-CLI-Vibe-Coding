@@ -27,6 +27,15 @@ Current Stage 10 continuity commands:
 - `handoff latest` - show the newest handoff record.
 - `resume` - summarize the latest handoff and next recommended action.
 
+Current Stage 11 plunder commands:
+
+- `plunder inspect` - inspect a GitHub source repository and classify its license posture.
+- `plunder plan` - create `mythic/imports/plunder_plan.json` with source, destination, license, and modification notes.
+- `plunder fetch` - fetch one source file into the local plunder cache.
+- `plunder apply` - apply the fetched file, refuse silent overwrites, and record provenance.
+- `plunder record` - append provenance from the current plan without applying a file.
+- legacy `plunder --repo --source --dest` remains available for one-file copying, but new reuse work should prefer the staged workflow.
+
 Current compatibility aliases:
 
 | Alias | Canonical behavior |

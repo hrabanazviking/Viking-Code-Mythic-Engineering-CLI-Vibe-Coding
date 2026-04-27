@@ -74,10 +74,13 @@ Depending on implementation state, additional commands may be exposed:
 - `grimoire add|list`
 - `config set`
 - `db migrate`
+- `plunder inspect|plan|fetch|apply|record`
 
 Use `--help` for current option details and defaults.
 
 `db migrate` upgrades legacy `mythic/status.json` files into the current schema-versioned `ProjectState` format, preserving the previous file under `mythic/backups/` before rewriting it. It also keeps the existing local `weave.db` migration behavior.
+
+`plunder` is now a staged lawful reuse workflow. `inspect` classifies Apache/MIT/BSD-compatible licenses, `plan` writes `mythic/imports/plunder_plan.json`, `fetch` caches one source file, `apply` refuses incompatible or unknown licenses unless forced and records provenance in `mythic/imports/plunder_manifest.json`, and `record` can append provenance manually. Unknown, GPL, AGPL, or LGPL licenses emit a "Do not plunder" warning for explicit review.
 
 ### Shared runtime options
 
