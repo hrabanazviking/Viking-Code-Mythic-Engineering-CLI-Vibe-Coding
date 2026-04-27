@@ -67,6 +67,7 @@ Current Stage 15 method commands:
 - `method diff` - compare an imported markdown corpus against `method_manifest.json`, reporting missing, changed, and untracked markdown files.
 - `method pin` - write `method_pin.json` for a clean imported corpus, recording manifest hash, source, ref, file count, paths, timestamp, and optional note.
 - `import-md` - import the canonical markdown corpus and write both `method_manifest.json` and compatibility `_import_index.json`.
+- `method.source` may be set in configuration or with `MYTHIC_METHOD_SOURCE`; supported sources are GitHub repository URLs.
 - If no canonical method cache exists, method status must use the built-in seven-phase fallback profile and emit a freshness warning.
 
 Current compatibility aliases:

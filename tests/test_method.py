@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 from mythic_vibe_cli import app
 from mythic_vibe_cli.exit_codes import SUCCESS, USER_INPUT_ERROR, VERIFICATION_FAILURE
-from mythic_vibe_cli.mythic_data import DEFAULT_METHOD_NOTES, MethodStore
+from mythic_vibe_cli.mythic_data import DEFAULT_METHOD_NOTES, MethodStore, resolve_method_source
 
 
 class FakeResponse:
@@ -66,6 +66,37 @@ class MethodCommandTests(unittest.TestCase):
             self.assertFalse(payload["method"]["cached"])
             self.assertIn("workflow", payload["method"]["sections"])
             self.assertIn("verification method", payload["method"]["sections"])
+
+    def test_method_status_reports_project_configured_source(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            root.joinpath(".mythic-vibe.json").write_text(
+                '{"method": {"source": "https://github.com/example/custom-method"}}',
+                encoding="utf-8",
+            )
+
+            output = io.StringIO()
+            with patch.dict(os.environ, {"MYTHIC_HOME": str(root / "home")}), redirect_stdout(output):
+                code = app.main(["method", "status", "--path", tmp, "--json"])
+
+            payload = json.loads(output.getvalue())
+
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(payload["method"]["configured_source"], "https://github.com/example/custom-method")
+            self.assertEqual(payload["method"]["source"], "fallback")
+
+    def test_resolve_method_source_builds_github_endpoints(self) -> None:
+        source = resolve_method_source("https://github.com/example/custom-method")
+
+        self.assertEqual(source.source, "https://github.com/example/custom-method")
+        self.assertEqual(
+            source.readme_raw,
+            "https://raw.githubusercontent.com/example/custom-method/main/README.md",
+        )
+        self.assertEqual(
+            source.tree_api,
+            "https://api.github.com/repos/example/custom-method/git/trees/main?recursive=1",
+        )
 
     def test_fallback_method_profile_keeps_the_full_seven_phase_loop(self) -> None:
         expected = ["1) Intent", "2) Constraints", "3) Architecture", "4) Plan", "5) Build", "6) Verify", "7) Reflect"]

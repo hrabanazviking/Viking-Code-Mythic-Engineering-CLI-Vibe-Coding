@@ -7,6 +7,37 @@
 
 ---
 
+## 2026-04-27 - Stage 15 Method Source Configuration
+
+**Session:** Continuing Stage 15 Mythic Engineering Method Integration.
+**Status:** Method source configuration now flows through config, method commands, import, sync, and init.
+**Scope:** Configurability slice for method source ownership.
+
+### What changed
+
+- Added `method.source` to `AppConfig`.
+- Added `MYTHIC_METHOD_SOURCE` as the environment override.
+- Added GitHub method-source URL resolution for README, tree API, and raw markdown URLs.
+- Threaded configured method sources into `init`, `import-md`, `method status`, `method show`, `method sync`, `method diff`, and `method pin`.
+- Updated `config` output to report `method.source`.
+- Added tests for config layering, env override, method status source reporting, and GitHub endpoint derivation.
+
+### Why it matters
+
+The method corpus is no longer hardwired to one repository at the command layer. A project can point the CLI at a chosen GitHub method source and still use the same status, import, diff, and pin machinery.
+
+### Verification
+
+- `pytest -q tests/test_method.py tests/test_config_and_bridge.py` -> `18 passed, 7 subtests passed`
+- `ruff check mythic_vibe_cli/config.py mythic_vibe_cli/mythic_data.py mythic_vibe_cli/app.py mythic_vibe_cli/commands.py tests/test_method.py tests/test_config_and_bridge.py` -> passed
+- `mypy mythic_vibe_cli` -> passed
+
+### Continuity thread
+
+- The next Stage 15 slice is the method excerpt selector for packet building.
+
+_A method can be canonical, but the tool must know who is allowed to name the canon._
+
 ## 2026-04-27 - Stage 15 Method Corpus Pin
 
 **Session:** Continuing Stage 15 Mythic Engineering Method Integration.
