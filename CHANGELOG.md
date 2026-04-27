@@ -8,6 +8,10 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Added
 
+- Added `mythic-vibe plunder inspect|plan|fetch|apply|record` for staged, lawful single-file reuse.
+- Added `mythic_vibe_cli.plunder` helpers for GitHub fetches, license posture, provenance manifests, and NOTICE updates.
+- Added `mythic/imports/plunder_plan.json`, `mythic/imports/plunder_manifest.json`, and local plunder cache support.
+- Added Apache/MIT/BSD compatibility notes and "Do not plunder" warnings for unknown or incompatible licenses.
 - Added `mythic-vibe reflect`, `mythic-vibe handoff create|show|latest`, and `mythic-vibe resume` for durable session continuity.
 - Added timestamped handoff artifacts under `mythic/handoffs/` plus `docs/SESSION_HANDOFF.md` generation.
 - Added latest-handoff linkage in `status` output so the current session handoff is easy to recover.
@@ -59,6 +63,7 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Changed
 
+- Legacy `plunder --repo --source --dest` now refuses silent overwrites unless `--force` is supplied.
 - `status` now includes the latest handoff path, ID, and next recommended action when a handoff exists.
 - `doctor --repo-boundary` now stays focused on runtime boundary checks, while the normal doctor path handles docs drift and ADR checks.
 - Project scaffolding now creates the canonical docs index and command contract files by default.
