@@ -7,6 +7,35 @@
 
 ---
 
+## 2026-04-27 - Packet Ingest and Diff Lifecycle
+
+**Session:** Continuing the Mythic Vibe CLI implementation on `development`.
+**Status:** Packet artifacts can now be ingested and compared as first-class local records.
+**Scope:** Stage 6 packet workflow completion for ingest/diff.
+
+### What changed
+
+- Added `mythic-vibe packet ingest` for importing Markdown or JSON packet artifacts into the local packet store.
+- Added `mythic-vibe packet diff` for unified diffs between stored packet artifacts.
+- Packet ingest preserves source path metadata and records a new canonical packet ID.
+- Packet JSON records now carry optional source metadata for provenance.
+
+### Why it matters
+
+The packet system is now a real artifact lifecycle instead of a one-way emitter. That makes packet reuse, comparison, and handoff much more practical.
+
+### Verification
+
+- `pytest -q` -> `29 passed`
+
+### Continuity thread
+
+- Stage 6 still has additional work left: richer roles, output formats, safety sections, and a context source manifest.
+
+_May the artifact remember its own lineage._
+
+---
+
 ## 2026-04-27 - Packet Command Family and Artifact Store
 
 **Session:** Continuing the Mythic Vibe CLI implementation on `development`.

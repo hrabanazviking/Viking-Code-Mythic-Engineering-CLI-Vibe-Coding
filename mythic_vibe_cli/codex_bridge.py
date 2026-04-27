@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import difflib
 import json
 from pathlib import Path
 import textwrap
@@ -27,9 +28,11 @@ class PacketRecord:
     audience: str
     packet_path: str
     metadata_path: str
+    source_path: str | None = None
+    source_packet_id: str | None = None
 
     def to_dict(self) -> dict[str, str]:
-        return {
+        payload: dict[str, str] = {
             "packet_id": self.packet_id,
             "created_at": self.created_at,
             "phase": self.phase,
@@ -39,6 +42,11 @@ class PacketRecord:
             "packet_path": self.packet_path,
             "metadata_path": self.metadata_path,
         }
+        if self.source_path is not None:
+            payload["source_path"] = self.source_path
+        if self.source_packet_id is not None:
+            payload["source_packet_id"] = self.source_packet_id
+        return payload
 
 
 class PacketBuilder:
@@ -55,6 +63,28 @@ class PacketBuilder:
         record = self._create_record(request, out_file=out_file)
         self._write_record(record, request)
         return Path(record.packet_path if out_file is None else out_file)
+
+    def ingest_packet(self, source: Path) -> PacketRecord:
+        source_path = self._resolve_path(source)
+        if not source_path.exists():
+            raise FileNotFoundError(source_path)
+
+        packet_text, source_metadata = self._read_ingest_source(source_path)
+        packet_id = self._next_packet_id()
+        record = PacketRecord(
+            packet_id=packet_id,
+            created_at=self._now(),
+            phase=str(source_metadata.get("phase") or "build"),
+            role=str(source_metadata.get("role") or "Forge Worker"),
+            task=str(source_metadata.get("task") or source_path.name),
+            audience=str(source_metadata.get("audience") or "beginner"),
+            packet_path=str(self.packet_dir / f"{packet_id}.md"),
+            metadata_path=str(self.packet_dir / f"{packet_id}.json"),
+            source_path=str(source_path),
+            source_packet_id=str(source_metadata.get("packet_id")) if source_metadata.get("packet_id") else None,
+        )
+        self._write_ingested_record(record, packet_text, source_metadata)
+        return record
 
     def list_packets(self) -> list[PacketRecord]:
         if not self.packet_dir.exists():
@@ -103,7 +133,27 @@ class PacketBuilder:
             audience=str(payload.get("audience", "")),
             packet_path=str(payload.get("packet_path", "")),
             metadata_path=str(metadata_path),
+            source_path=str(payload.get("source_path")) if payload.get("source_path") else None,
+            source_packet_id=str(payload.get("source_packet_id")) if payload.get("source_packet_id") else None,
         )
+
+    def diff_packets(self, left_packet_id: str, right_packet_id: str) -> str:
+        left_text = self.load_packet_text(left_packet_id)
+        right_text = self.load_packet_text(right_packet_id)
+        if left_text is None:
+            raise FileNotFoundError(self.packet_dir / f"{left_packet_id}.md")
+        if right_text is None:
+            raise FileNotFoundError(self.packet_dir / f"{right_packet_id}.md")
+
+        diff = difflib.unified_diff(
+            left_text.splitlines(),
+            right_text.splitlines(),
+            fromfile=f"{left_packet_id}.md",
+            tofile=f"{right_packet_id}.md",
+            lineterm="",
+        )
+        rendered = "\n".join(diff)
+        return rendered or "No differences."
 
     def _create_record(self, request: CodexPacketRequest, *, out_file: Path | None = None) -> PacketRecord:
         packet_id = self._next_packet_id()
@@ -136,6 +186,75 @@ class PacketBuilder:
         if out_path != canonical_packet:
             out_path.parent.mkdir(parents=True, exist_ok=True)
             out_path.write_text(self._render_packet(request, record.packet_id, record.created_at), encoding="utf-8")
+
+    def _write_ingested_record(self, record: PacketRecord, packet_text: str, source_metadata: dict[str, object]) -> None:
+        canonical_packet = self.packet_dir / f"{record.packet_id}.md"
+        canonical_meta = self.packet_dir / f"{record.packet_id}.json"
+        canonical_packet.parent.mkdir(parents=True, exist_ok=True)
+        canonical_packet.write_text(packet_text, encoding="utf-8")
+        payload = record.to_dict()
+        payload["source_metadata"] = source_metadata if isinstance(source_metadata, dict) else {}
+        canonical_meta.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+    def _read_ingest_source(self, source_path: Path) -> tuple[str, dict[str, object]]:
+        if source_path.suffix.lower() == ".json":
+            metadata = json.loads(source_path.read_text(encoding="utf-8"))
+            if not isinstance(metadata, dict):
+                metadata = {}
+            text = self._ingest_text_from_metadata(source_path, metadata)
+            return text, metadata
+
+        text = source_path.read_text(encoding="utf-8")
+        metadata = self._parse_packet_metadata(text)
+        sidecar = source_path.with_suffix(".json")
+        if sidecar.exists():
+            try:
+                payload = json.loads(sidecar.read_text(encoding="utf-8"))
+                if isinstance(payload, dict):
+                    metadata = {**payload, **metadata}
+            except json.JSONDecodeError:
+                pass
+        return text, metadata
+
+    def _ingest_text_from_metadata(self, source_path: Path, metadata: dict[str, object]) -> str:
+        packet_text_path = metadata.get("packet_path")
+        if isinstance(packet_text_path, str):
+            candidate = Path(packet_text_path)
+            if not candidate.is_absolute():
+                candidate = (source_path.parent / candidate).resolve()
+            if candidate.exists():
+                return candidate.read_text(encoding="utf-8")
+
+        candidate = source_path.with_suffix(".md")
+        if candidate.exists():
+            return candidate.read_text(encoding="utf-8")
+
+        packet_text = metadata.get("text")
+        if isinstance(packet_text, str):
+            return packet_text
+
+        raise FileNotFoundError(f"No packet text found for ingest source: {source_path}")
+
+    def _parse_packet_metadata(self, text: str) -> dict[str, object]:
+        metadata: dict[str, object] = {}
+        for line in text.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("Packet ID:"):
+                metadata["packet_id"] = stripped.split(":", 1)[1].strip()
+            elif stripped.startswith("Created At:"):
+                metadata["created_at"] = stripped.split(":", 1)[1].strip()
+            elif stripped.startswith("Role:"):
+                metadata["role"] = stripped.split(":", 1)[1].strip()
+            elif stripped.startswith("My audience level:"):
+                metadata["audience"] = stripped.split(":", 1)[1].strip()
+            elif stripped.startswith("Current phase:"):
+                metadata["phase"] = stripped.split(":", 1)[1].strip()
+            elif stripped.startswith("Task request:"):
+                metadata["task"] = stripped.split(":", 1)[1].strip()
+        return metadata
+
+    def _resolve_path(self, source: Path) -> Path:
+        return source if source.is_absolute() else (self.root / source).resolve()
 
     def _read_optional(self, path: Path, fallback: str = "(missing)") -> str:
         if not path.exists():

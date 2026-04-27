@@ -343,6 +343,76 @@ def cmd_packet_list(args: argparse.Namespace) -> int:
     return SUCCESS
 
 
+def cmd_packet_ingest(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    source = Path(args.source)
+    bridge = CodexBridge(root)
+    if _flag(args, "dry_run"):
+        payload = {
+            "command": _command_name(args, "packet ingest"),
+            "dry_run": True,
+            "path": str(root),
+            "source": str(source),
+        }
+        if _flag(args, "json"):
+            write_json(payload)
+        else:
+            write_line("Dry run: no packet will be ingested.")
+            write_key_value("Source", source)
+        return SUCCESS
+
+    try:
+        record = bridge.ingest_packet(source)
+    except (FileNotFoundError, json.JSONDecodeError, OSError) as exc:
+        write_error(str(exc))
+        return USER_INPUT_ERROR
+
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": _command_name(args, "packet ingest"),
+                "dry_run": False,
+                "path": str(root),
+                "source": str(source),
+                "packet": record.to_dict(),
+            }
+        )
+        return SUCCESS
+
+    write_line("Packet ingested.")
+    write_key_value("Packet ID", record.packet_id)
+    write_key_value("Source", source)
+    return SUCCESS
+
+
+def cmd_packet_diff(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    bridge = CodexBridge(root)
+    left_id = args.left
+    right_id = args.right
+
+    try:
+        diff = bridge.diff_packets(left_id, right_id)
+    except FileNotFoundError as exc:
+        write_error(str(exc))
+        return USER_INPUT_ERROR
+
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": _command_name(args, "packet diff"),
+                "path": str(root),
+                "left": left_id,
+                "right": right_id,
+                "diff": diff,
+            }
+        )
+        return SUCCESS
+
+    write_line(diff)
+    return SUCCESS
+
+
 def cmd_codex_log(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
     if _flag(args, "dry_run"):
@@ -899,6 +969,10 @@ def cmd_packet_dispatch(args: argparse.Namespace) -> int:
         return cmd_packet_show(args)
     if args.packet_command == "list":
         return cmd_packet_list(args)
+    if args.packet_command == "ingest":
+        return cmd_packet_ingest(args)
+    if args.packet_command == "diff":
+        return cmd_packet_diff(args)
     return USER_INPUT_ERROR
 
 

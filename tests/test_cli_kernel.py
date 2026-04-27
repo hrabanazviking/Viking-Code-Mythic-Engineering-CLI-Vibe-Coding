@@ -171,6 +171,26 @@ class CliKernelTests(unittest.TestCase):
             self.assertEqual(payload["role"], "Forge Worker")
             self.assertTrue(Path(payload["output_file"]).exists())
 
+            original_packet_path = Path(payload["output_file"])
+            modified_source = root / "external_packet.md"
+            modified_source.write_text(
+                original_packet_path.read_text(encoding="utf-8").replace(
+                    "Task request: wire packet storage",
+                    "Task request: wire packet ingest",
+                ),
+                encoding="utf-8",
+            )
+
+            ingest_output = io.StringIO()
+            with redirect_stdout(ingest_output):
+                ingest_code = app.main(["packet", "ingest", "--path", str(root), "--source", str(modified_source), "--json"])
+
+            ingest_payload = json.loads(ingest_output.getvalue())
+            self.assertEqual(ingest_code, SUCCESS)
+            self.assertEqual(ingest_payload["command"], "packet ingest")
+            self.assertEqual(ingest_payload["packet"]["packet_id"], "PKT-000002")
+            self.assertEqual(ingest_payload["packet"]["source_path"], str(modified_source))
+
             list_output = io.StringIO()
             with redirect_stdout(list_output):
                 list_code = app.main(["packet", "list", "--path", str(root), "--json"])
@@ -178,8 +198,18 @@ class CliKernelTests(unittest.TestCase):
             listing = json.loads(list_output.getvalue())
             self.assertEqual(list_code, SUCCESS)
             self.assertEqual(listing["command"], "packet list")
-            self.assertEqual(len(listing["packets"]), 1)
+            self.assertEqual(len(listing["packets"]), 2)
             self.assertEqual(listing["packets"][0]["packet_id"], "PKT-000001")
+            self.assertEqual(listing["packets"][1]["packet_id"], "PKT-000002")
+
+            diff_output = io.StringIO()
+            with redirect_stdout(diff_output):
+                diff_code = app.main(["packet", "diff", "--path", str(root), "--left", "PKT-000001", "--right", "PKT-000002", "--json"])
+
+            diff_payload = json.loads(diff_output.getvalue())
+            self.assertEqual(diff_code, SUCCESS)
+            self.assertEqual(diff_payload["command"], "packet diff")
+            self.assertIn("wire packet ingest", diff_payload["diff"])
 
             show_output = io.StringIO()
             with redirect_stdout(show_output):
