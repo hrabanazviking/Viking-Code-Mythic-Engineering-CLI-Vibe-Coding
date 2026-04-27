@@ -7,6 +7,41 @@
 
 ---
 
+## 2026-04-27 - Stage 13 Packaging, Release, and Install Quality
+
+**Session:** Continuing the Mythic Vibe CLI implementation on `development`.
+**Status:** Packaging metadata, CI, install docs, and release checks are now defined.
+**Scope:** Stage 13 pass, focused on fresh-user install quality and reproducible release verification.
+
+### What changed
+
+- Expanded `pyproject.toml` with fuller metadata, Python classifiers, package URLs, optional dependency groups, ruff, mypy, and coverage config.
+- Added GitHub Actions CI for tests, coverage, lint, type checks, changelog checks, package build, and distribution validation.
+- Added `docs/INSTALL.md` for Windows PowerShell, Linux, macOS, venv, `uv`, and `pipx`.
+- Added `docs/RELEASE_CHECKLIST.md` for release and artifact verification.
+- Added `scripts/check_changelog.py` as a lightweight changelog release gate.
+- Added packaging contract tests so console scripts, dependency groups, tooling config, docs, and CI files stay present.
+
+### Why it matters
+
+Stage 13 turns the CLI from "runs in this checkout" into something closer to a releasable tool. Fresh installs, CI checks, and release artifacts now have a documented path.
+
+### Verification
+
+- `pytest -q` -> `51 passed`
+- `pytest -q --cov=mythic_vibe_cli --cov-report=term-missing` -> `51 passed`
+- `ruff check mythic_vibe_cli tests scripts` -> passed
+- `mypy mythic_vibe_cli` -> passed with the initial non-strict baseline
+- `python scripts/check_changelog.py` -> passed
+- `python -m build` -> built wheel and sdist
+- `twine check dist/*` -> passed
+
+### Continuity thread
+
+- The next useful improvement is to run the full CI workflow on GitHub and tighten any lint/type findings that only appear on a clean Linux runner.
+
+_A tool that cannot be installed is only a rumor._
+
 ## 2026-04-27 - Stage 12 Plugin and Grimoire System
 
 **Session:** Continuing the Mythic Vibe CLI implementation on `development`.

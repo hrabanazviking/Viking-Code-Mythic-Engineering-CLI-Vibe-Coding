@@ -8,23 +8,75 @@ version = "0.1.0"
 description = "Beginner-friendly CLI that enforces Mythic Engineering vibe-coding workflow"
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "Apache-2.0" }
+license = "Apache-2.0"
 authors = [
+  { name = "Mythic Vibe Contributors" }
+]
+maintainers = [
   { name = "Mythic Vibe Contributors" }
 ]
 keywords = ["cli", "vibe-coding", "mythic-engineering", "developer-tools"]
 classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
   "Programming Language :: Python :: 3",
-  "License :: OSI Approved :: Apache Software License",
-  "Operating System :: OS Independent"
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Operating System :: OS Independent",
+  "Topic :: Software Development :: Build Tools",
+  "Topic :: Software Development :: Documentation"
 ]
 
 [project.urls]
 Homepage = "https://github.com/hrabanazviking/Mythic-Engineering"
+Repository = "https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding"
+Issues = "https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/issues"
+Changelog = "https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/blob/development/CHANGELOG.md"
 
 [project.scripts]
 mythic-vibe = "mythic_vibe_cli.cli:main"
 mythic = "mythic_vibe_cli.cli:main"
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8.0",
+  "pytest-cov>=5.0",
+  "tomli>=2.0; python_version < '3.11'"
+]
+lint = [
+  "ruff>=0.8"
+]
+type = [
+  "mypy>=1.10"
+]
+build = [
+  "build>=1.2",
+  "twine>=5.0"
+]
+docs = [
+  "mkdocs>=1.6"
+]
+ai = [
+  "anthropic>=0.34",
+  "google-genai>=1.0",
+  "openai>=1.40"
+]
+dev = [
+  "anthropic>=0.34",
+  "build>=1.2",
+  "google-genai>=1.0",
+  "mkdocs>=1.6",
+  "mypy>=1.10",
+  "openai>=1.40",
+  "pytest>=8.0",
+  "pytest-cov>=5.0",
+  "ruff>=0.8",
+  "tomli>=2.0; python_version < '3.11'",
+  "twine>=5.0"
+]
 
 [tool.setuptools.packages.find]
 include = ["mythic_vibe_cli*"]
@@ -35,3 +87,39 @@ mythic_vibe_cli = ["resources/schemas/*.json"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+
+[tool.coverage.run]
+branch = true
+source = ["mythic_vibe_cli"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_lines = [
+  "pragma: no cover",
+  "if __name__ == .__main__.:",
+  "raise SystemExit"
+]
+
+[tool.ruff]
+line-length = 140
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["mythic_vibe_cli"]
+
+[tool.mypy]
+python_version = "3.10"
+packages = ["mythic_vibe_cli"]
+ignore_missing_imports = true
+warn_unused_configs = true
+no_strict_optional = false
+check_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = "mythic_vibe_cli.*"
+ignore_errors = true

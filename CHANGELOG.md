@@ -8,6 +8,9 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Added
 
+- Added Stage 13 packaging and release-quality configuration, including optional dependency groups for `dev`, `ai`, `docs`, `test`, `lint`, `type`, and `build`.
+- Added GitHub Actions CI for tests, coverage, ruff, mypy, changelog checks, package builds, and distribution checks.
+- Added `docs/INSTALL.md`, `docs/RELEASE_CHECKLIST.md`, and `scripts/check_changelog.py`.
 - Added `mythic-vibe plugin list|inspect|disable` for visible plugin health and control.
 - Added `mythic_vibe_cli.plugins` helpers for plugin API contracts, versioned registry records, and entrypoint inspection.
 - Added hook declarations for `before_scan`, `after_scan`, `before_packet`, `after_packet`, `before_verify`, `after_verify`, `before_reflect`, and `after_reflect`.
@@ -67,6 +70,7 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Changed
 
+- Expanded `pyproject.toml` metadata, Python classifiers, package URLs, ruff config, mypy config, and coverage config.
 - `grimoire add|list` now writes a versioned plugin registry while preserving the legacy `plugins` list for compatibility.
 - Legacy `plunder --repo --source --dest` now refuses silent overwrites unless `--force` is supplied.
 - `status` now includes the latest handoff path, ID, and next recommended action when a handoff exists.

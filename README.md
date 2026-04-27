@@ -124,6 +124,8 @@ Recommended:
 - A virtual environment (`venv`, `uv`, `conda`)
 - Linting/formatting tools in your editor
 
+For platform-specific setup, release-quality development installs, `uv`, and `pipx`, see `docs/INSTALL.md`.
+
 ---
 
 ![https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/development/6cd73309-165e-44ff-aee3-d66afb691e78.jpg](https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/development/6cd73309-165e-44ff-aee3-d66afb691e78.jpg)
