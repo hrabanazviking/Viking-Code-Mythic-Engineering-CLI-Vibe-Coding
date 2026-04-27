@@ -7,6 +7,36 @@
 
 ---
 
+## 2026-04-27 - Stage 7 Provider Execution and Log Redaction
+
+**Session:** Continuing the Mythic Vibe CLI implementation on `development`.
+**Status:** Direct providers now execute real HTTP calls when configured, while the local bridge modes stay dry-run safe.
+**Scope:** Stage 7 follow-through, focused on live provider execution, packet resolution, and redacted provider call logs.
+
+### What changed
+
+- Threaded project roots into the AI provider registry so provider runs can write logs under `mythic/ai/provider_calls.jsonl`.
+- Added packet resolution for `ai test` and `ai run`, including stored packet IDs and on-disk packet files.
+- Kept `ai test` dry-run-only and made `ai run` honor `--dry-run` explicitly.
+- Added real HTTP execution for `openai`, `anthropic`, `gemini`, and `openrouter` providers with explicit API-key checks.
+- Added request and response logging with secret redaction before persistence.
+- Preserved `copy-paste` and `local` as always-available bridge modes with `manual` and `local` packet labels for inline input.
+- Added focused tests for live provider execution, redacted logs, and packet-ID resolution.
+
+### Why it matters
+
+Stage 7 now does the thing the CLI promised: it can talk to real providers when configured, but it still refuses to blur dry-run previews into live calls.
+
+### Verification
+
+- `pytest -q` -> `37 passed`
+
+### Continuity thread
+
+- The remaining Stage 7 work is mostly polish and safety hardening around provider request/response metadata, cost estimates, and any final adapter refinements.
+
+_May the bridge stay explicit, and the logs stay honest._
+
 ## 2026-04-27 - Stage 7 Provider Adapter Spine
 
 **Session:** Continuing the Mythic Vibe CLI implementation on `development`.
