@@ -8,6 +8,9 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Added
 
+- Added canonical `docs/INDEX.md` and `docs/COMMAND_CONTRACTS.md` scaffolding during project initialization.
+- Added `docs/ADRS/ADR-0003-verification-gates.md` and `docs/ADRS/ADR-0004-doctor-diagnostics.md`.
+- Added structured `doctor` reporting with required-artifact, state-coherence, docs-drift, and boundary sections.
 - Added `mythic-vibe verify` with command execution, changed-file review, docs checks, invariant checks, and durable verification records.
 - Added `mythic/verifications/` artifacts with a `latest.json` pointer.
 - Added a reflect gate so `mythic-vibe checkin --phase reflect` refuses to proceed until a successful verification exists.
@@ -53,6 +56,8 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Changed
 
+- `doctor --repo-boundary` now stays focused on runtime boundary checks, while the normal doctor path handles docs drift and ADR checks.
+- Project scaffolding now creates the canonical docs index and command contract files by default.
 - Successful verification now updates `last_verification_id` in project state.
 - Verification artifacts are now durable, and blocked reflection emits a clear reason instead of pretending the gate passed.
 - Real provider responses now include request IDs, usage, estimated cost, and observed cost metadata when available.

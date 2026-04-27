@@ -856,7 +856,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
     workflow = MythicWorkflow(root)
     repo_boundary = _flag(args, "repo_boundary")
-    errors, warnings = workflow.doctor(
+    report = workflow.doctor_report(
         repo_boundary=repo_boundary,
         project_scaffold=not repo_boundary,
     )
@@ -865,33 +865,34 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             {
                 "path": str(root),
                 "repo_boundary": repo_boundary,
-                "ok": not errors,
-                "errors": errors,
-                "warnings": warnings,
+                "ok": bool(report["ok"]),
+                "errors": list(report["errors"]),
+                "warnings": list(report["warnings"]),
+                "sections": report["sections"],
             }
         )
-        return OPERATIONAL_FAILURE if errors else SUCCESS
+        return OPERATIONAL_FAILURE if report["errors"] else SUCCESS
 
     write_line("Mythic project diagnostics")
     write_key_value("Path", root)
     if repo_boundary:
         write_line("- Repo boundary checks: enabled")
 
-    if errors:
+    if report["errors"]:
         write_line("- Errors:")
-        for item in errors:
+        for item in report["errors"]:
             write_bullet(item, indent=2)
     else:
         write_line("- Errors: none")
 
-    if warnings:
+    if report["warnings"]:
         write_line("- Warnings:")
-        for item in warnings:
+        for item in report["warnings"]:
             write_bullet(item, indent=2)
     else:
         write_line("- Warnings: none")
 
-    return OPERATIONAL_FAILURE if errors else SUCCESS
+    return OPERATIONAL_FAILURE if report["errors"] else SUCCESS
 
 
 def cmd_sync(_args: argparse.Namespace) -> int:

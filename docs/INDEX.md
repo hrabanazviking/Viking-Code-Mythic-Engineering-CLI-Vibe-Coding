@@ -1,8 +1,6 @@
-# Documentation Hub (Legacy Alias)
+# Documentation Hub
 
 This hub orients contributors to the active Mythic Vibe CLI product and the surrounding mythic engineering workspace.
-
-The canonical navigation file is [docs/INDEX.md](INDEX.md). This lowercase hub remains for compatibility and mirrors the same structure.
 
 ## Start Here
 
@@ -13,11 +11,14 @@ The canonical navigation file is [docs/INDEX.md](INDEX.md). This lowercase hub r
 - `docs/DOMAIN_MAP.md` - ownership map and routing rules.
 - `docs/COMMAND_CONTRACTS.md` - CLI entrypoints, dispatch registry, aliases, and exit codes.
 - `docs/DATA_FLOW.md` - state and artifact movement through the active CLI.
+- `docs/INDEX.md` - this canonical navigation hub.
 
 ## Architecture Decisions
 
 - `docs/ADRS/ADR-0001-active-runtime-boundary.md` - accepted active runtime boundary.
 - `docs/ADRS/ADR-0002-no-direct-vendor-imports.md` - no direct dormant-island or vendor imports.
+- `docs/ADRS/ADR-0003-verification-gates.md` - verification records and reflect gating.
+- `docs/ADRS/ADR-0004-doctor-diagnostics.md` - doctor as a first-class diagnostic scanner.
 
 ## Operator Docs
 
@@ -42,4 +43,4 @@ python -m mythic_vibe_cli.cli doctor --repo-boundary --path .
 pytest -q
 ```
 
-If this file is reached through the lowercase `docs/index.md` path, treat it as the same canonical navigation hub.
+If this file is reached through the lowercase `docs/index2.md` path, treat it as the same canonical navigation hub.

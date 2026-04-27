@@ -7,6 +7,35 @@
 
 ---
 
+## 2026-04-27 - Stage 9 Doctor Diagnostics and Drift Checks
+
+**Session:** Continuing the Mythic Vibe CLI implementation on `development`.
+**Status:** `doctor` is now a structured diagnostic scanner with state coherence, docs drift, and ADR checks.
+**Scope:** Stage 9 pass, focused on health scanning, boundary-aware diagnostics, and canonical docs upkeep.
+
+### What changed
+
+- Added canonical `docs/INDEX.md` and made project scaffolding create it alongside `docs/COMMAND_CONTRACTS.md`.
+- Added ADRs for verification gates and doctor diagnostics.
+- Expanded `MythicWorkflow.doctor_report()` into a structured diagnostic report with required-artifact, state, docs, and boundary sections.
+- Added state coherence checks for phase regression and stale verification linkage.
+- Added docs/code drift checks for the command contract, canonical index, and major-change ADRs.
+- Kept `doctor --repo-boundary` focused on active runtime boundary checks while leaving docs drift to the normal doctor path.
+
+### Why it matters
+
+Stage 9 makes the CLI feel like a real health scanner instead of a polite file lister. It can now catch phase incoherence, missing canonical docs, and drift between the runtime contract and the written contract.
+
+### Verification
+
+- `pytest -q` -> `39 passed`
+
+### Continuity thread
+
+- The next useful step after Stage 9 would be to deepen the doctor with history-aware age/staleness checks, but the core diagnostic spine is now in place.
+
+_May the scryer report what is true._
+
 ## 2026-04-27 - Stage 8 Verification Gate and Durable Records
 
 **Session:** Continuing the Mythic Vibe CLI implementation on `development`.
