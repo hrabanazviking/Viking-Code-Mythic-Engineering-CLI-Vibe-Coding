@@ -1537,7 +1537,7 @@ The method source should not be a loose README sync. The CLI should treat Mythic
 - [ ] Add method source config.
 - [x] Add `method sync`.
 - [x] Add `method status`.
-- [ ] Add `method diff`.
+- [x] Add `method diff`.
 - [ ] Add `method pin`.
 - [x] Add local cache.
 - [x] Add fallback method profile.

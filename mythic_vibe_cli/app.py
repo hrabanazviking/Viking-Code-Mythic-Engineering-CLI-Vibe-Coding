@@ -199,6 +199,14 @@ def build_parser() -> argparse.ArgumentParser:
     add_runtime_options(method_show, json_output=True)
     method_sync = method_sub.add_parser("sync", help="Sync Mythic Engineering method notes into the local cache")
     add_runtime_options(method_sync, json_output=True, dry_run=True)
+    method_diff = method_sub.add_parser("diff", help="Compare an imported method corpus against its manifest")
+    method_diff.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    method_diff.add_argument(
+        "--target",
+        default="docs/mythic_source",
+        help="Imported method corpus folder inside project (default: docs/mythic_source)",
+    )
+    add_runtime_options(method_diff, json_output=True)
 
     doctor = sub.add_parser(
         "doctor",

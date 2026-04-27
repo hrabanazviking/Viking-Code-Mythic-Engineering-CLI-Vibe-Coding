@@ -94,6 +94,27 @@ class MethodImportManifest:
 
 
 @dataclass
+class MethodDiff:
+    manifest_path: Path
+    missing: list[str]
+    changed: list[str]
+    untracked: list[str]
+
+    @property
+    def clean(self) -> bool:
+        return not self.missing and not self.changed and not self.untracked
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "manifest_path": str(self.manifest_path),
+            "clean": self.clean,
+            "missing": self.missing,
+            "changed": self.changed,
+            "untracked": self.untracked,
+        }
+
+
+@dataclass
 class MethodStatus:
     source: str
     profile: str
@@ -214,3 +235,45 @@ class MethodStore:
         manifest.manifest_path.write_text(json.dumps(manifest.to_dict(), indent=2), encoding="utf-8")
         (target_dir / "_import_index.json").write_text(json.dumps(manifest.to_dict(), indent=2), encoding="utf-8")
         return manifest
+
+    def diff_import_manifest(self, target_dir: Path) -> MethodDiff:
+        manifest_path = target_dir / "method_manifest.json"
+        if not manifest_path.exists():
+            raise FileNotFoundError(manifest_path)
+
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        entries = manifest.get("files", [])
+        expected: dict[str, MethodManifestEntry] = {}
+        for entry in entries:
+            path = str(entry.get("path", ""))
+            if not path:
+                continue
+            expected[path] = MethodManifestEntry(
+                path=path,
+                bytes=int(entry.get("bytes", 0)),
+                sha256=str(entry.get("sha256", "")),
+            )
+
+        missing: list[str] = []
+        changed: list[str] = []
+        for rel_path, entry in expected.items():
+            file_path = target_dir / rel_path
+            if not file_path.exists():
+                missing.append(rel_path)
+                continue
+            content = file_path.read_bytes()
+            if len(content) != entry.bytes or hashlib.sha256(content).hexdigest() != entry.sha256:
+                changed.append(rel_path)
+
+        actual_md = {
+            str(path.relative_to(target_dir)).replace("\\", "/")
+            for path in target_dir.rglob("*.md")
+            if path.is_file()
+        }
+        untracked = sorted(actual_md.difference(expected))
+        return MethodDiff(
+            manifest_path=manifest_path,
+            missing=sorted(missing),
+            changed=sorted(changed),
+            untracked=untracked,
+        )
