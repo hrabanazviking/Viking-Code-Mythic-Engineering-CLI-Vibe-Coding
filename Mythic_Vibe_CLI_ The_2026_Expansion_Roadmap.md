@@ -799,7 +799,7 @@ The forge is lit. The hall is wide enough. The work is worthy.
 
 ---
 
-Now move on to the plan in ().
+Now move on to the plan in (MYTHIC_VIBE_CLI_EXPANSION_ROADMAP_V2.md).
 
 ---
 
