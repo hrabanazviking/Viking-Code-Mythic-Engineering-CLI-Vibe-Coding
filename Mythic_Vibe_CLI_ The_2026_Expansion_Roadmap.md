@@ -155,7 +155,7 @@ This phase establishes the structural foundation upon which all subsequent expan
 
 The most urgent structural problem is the `yggdrasil_core` ghost import in Island B. The files `core/emotional.py` and `core/dream_system.py` import a package that does not exist anywhere in the repository. This creates false-positive coupling and prevents any future integration work from reasoning cleanly about the codebase.
 
-The resolution strategy is to audit every file in `ai/`, `core/`, `systems/`, `sessions/`, and `yggdrasil/` for broken imports, stub or remove them, and document the findings in a new `ISLAND_B_AUDIT.md`. The `yggdrasil/` directory should be renamed or reorganized to match the import path that Island B expects, or the import should be formally deprecated with a migration note.
+The resolution strategy is to audit every file in `ai/`, `core/`, `systems/`, `sessions/`, and `yggdrasil/` for broken imports, and document the findings in a new `ISLAND_B_AUDIT.md`, so they can be integrated. The `yggdrasil/` directory should be renamed or reorganized to match the import path that Island B expects.
 
 ### 1.2 Domain Boundary Enforcement
 
@@ -473,17 +473,7 @@ This command will:
 
 ### 5.3 Agent Configuration
 
-Each agent can be configured to use a different provider and model, allowing users to optimize for cost, speed, and capability:
-
-```json
-{
-  "agents": {
-    "architect": {"provider": "anthropic", "model": "claude-3-7-sonnet"},
-    "planner": {"provider": "openai", "model": "gpt-4.1"},
-    "builder": {"provider": "ollama", "model": "qwen2.5-coder:7b"},
-    "verifier": {"provider": "anthropic", "model": "claude-3-7-sonnet"}
-  }
-}
+There are 6 agents, as per https://github.com/hrabanazviking/Mythic-Engineering
 ```
 
 This configuration honors Law 8 (the user owns the work) by making every AI interaction explicit, configurable, and replaceable.
@@ -806,6 +796,10 @@ The `Viking-Code-Mythic-Engineering-CLI-Vibe-Coding` repository is built on a pr
 This roadmap charts a 24-month path from the current early skeleton to a fully realized, multi-agent, knowledge-graph-backed, TUI-equipped operating system for disciplined AI-assisted software creation. Each phase builds on the last, and each is governed by the ten design laws that define what this tool is and what it refuses to become.
 
 The forge is lit. The hall is wide enough. The work is worthy.
+
+---
+
+Now move on to the plan in ().
 
 ---
 
