@@ -1,4 +1,7 @@
 - After all of the current roadmap steps(both present and upcoming) are completed 100% and the current list if steps are done, the  start on Mythic_Vibe_CLI_ The_2026_Expansion_Roadmap.md
 - Work on all steps in MYTHIC_VIBE_CLI_EXPANSION_ROADMAP_V2.md
 - Work on all repo issues.
+- Create a massive amount of / commands, including all the ones that other cli vibe coding apps have.
+- Read and study Vibe_Coding_CLI_Tools_-_Aggregate_Feature_and_Interface_Report.md and come up with a massive multistep MD file plased plan to implement, in a very robust amd advanced way, every single feature that Vibe_Coding_CLI_Tools_-_Aggregate_Feature_and_Interface_Report.md  lists.
+- Start the plan to implement every feature from Vibe_Coding_CLI_Tools_-_Aggregate_Feature_and_Interface_Report.md
 - 
