@@ -4,4 +4,5 @@
 - Create a massive amount of / commands, including all the ones that other cli vibe coding apps have.
 - Read and study Vibe_Coding_CLI_Tools_-_Aggregate_Feature_and_Interface_Report.md and come up with a massive multistep MD file plased plan to implement, in a very robust amd advanced way, every single feature that Vibe_Coding_CLI_Tools_-_Aggregate_Feature_and_Interface_Report.md  lists.
 - Start the plan to implement every feature from Vibe_Coding_CLI_Tools_-_Aggregate_Feature_and_Interface_Report.md
+- Check all code for bugs, incomplete code, missing features, not integrated code, orphaned code, imcomplete features, issues, inefficiencies, etc, and make a MD multiple step plan to fix all and improve all, only using additive methods. After consulting with Volmarr the human, begin the first step of the plan.
 - 
