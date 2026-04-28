@@ -1,1 +1,4 @@
 - After all of the current roadmap steps(both present and upcoming) are completed 100% and the current list if steps are done, the  start on Mythic_Vibe_CLI_ The_2026_Expansion_Roadmap.md
+- Work on all steps in MYTHIC_VIBE_CLI_EXPANSION_ROADMAP_V2.md
+- Work on all repo issues.
+- 
