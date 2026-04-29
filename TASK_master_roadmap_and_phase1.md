@@ -173,8 +173,10 @@ additive, cross-platform, open-source):
 | 22 | Phase 2 Slice 2.8 — REPL/TUI/plugin parity tests | done — `69be161` — +11 tests |
 | 23 | Update memory + project status (after slices 2.7+2.8) | done — pushed at 50887a6 |
 | 24 | Phase 3 Slice 3.1 — agent contract spec | done — `2920aa4` — +38 tests |
-| 25 | Update memory + project status (after slice 3.1) | in progress |
-| 26 | Phase 3 Slice 3.2 — handoff ledger | next |
+| 25 | Update memory + project status (after slice 3.1) | done — pushed at a27ba0b |
+| 26 | Phase 3 Slice 3.2 — handoff ledger | done — `adc6ae1` — +28 tests |
+| 27 | Update memory + project status (after slice 3.2) | in progress |
+| 28 | Phase 3 Slice 3.3 — forge command (dry-run) | next |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
@@ -315,12 +317,30 @@ module — converting it to a directory would be non-additive.
 
 See `PHASE3_SLICE_3_1_CLOSEOUT.md` for the full memo.
 
-## Next slice (PH-03 slice 3.2)
+## PH-03 slice 3.2 results
 
-Handoff ledger — extend or add `mythic/forge_ledger.json` to record
-per-agent handoff steps with `AgentInput` / `AgentOutput` payloads.
-Pure persistence layer, no orchestrator yet. Underpins everything
-3.3+ needs to persist.
+New module `mythic_vibe_cli/forge_ledger.py` implements the per-agent
+step ledger persisted at `mythic/forge_ledger.json`. ForgeLedgerEntry
+is a frozen dataclass holding the typed AgentInput/AgentOutput from
+slice 3.1 plus status/timing/notes metadata. ForgeLedger class owns
+load / append / update_step / latest / find_by_workflow / find_step
+with concurrent-safe writes via file_mutation_queue.
+
+Two files, separate purposes: `workflow_history.json` is one entry
+per plan (existing); `forge_ledger.json` is one entry per step (new).
+
+Tests 402 → 430 (+28). Ruff/mypy clean. Strictly additive — no
+existing module modified.
+
+See `PHASE3_SLICE_3_2_CLOSEOUT.md` for the full memo.
+
+## Next slice (PH-03 slice 3.3)
+
+Forge command (dry-run). First user-facing Phase 3 slice:
+`mythic-vibe forge --dry-run --task "X"` builds a workflow plan,
+materialises an `AgentInput` per step, writes a pending
+`ForgeLedgerEntry` per step, and prints the per-agent packets
+without invoking any provider.
 
 ---
 
