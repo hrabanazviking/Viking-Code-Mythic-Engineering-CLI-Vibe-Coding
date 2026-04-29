@@ -64,17 +64,17 @@ Pi uses async handlers because Node is async-first. We use sync handlers because
 
 - [x] Task file written
 - [x] Task file committed + pushed
-- [ ] Port `event_bus.py`
-- [ ] Update `runtime/__init__.py` re-exports
-- [ ] Write tests (subscribe/emit/multi-handler/channel-isolation/unsubscribe/error-containment/clear/threading)
-- [ ] `pytest -q` green
-- [ ] `ruff` + `mypy` green
-- [ ] Plunder map row added
-- [ ] Per-file Pi attribution header
-- [ ] CHANGELOG entry
-- [ ] DEVLOG entry
-- [ ] Memory snapshot updated
-- [ ] Final commit + push
+- [x] Port `event_bus.py` (sync, threading.Lock, snapshot-before-iterate, log-and-continue)
+- [x] Update `runtime/__init__.py` re-exports (`EventBus`, `EventBusController`, `create_event_bus`)
+- [x] Write tests — 11 cases (subscribe / multi-handler / channel-isolation / unsubscribe / idempotent unsubscribe / no-listener safety / error containment / self-unsubscribe-during-dispatch / clear / threading stress)
+- [x] `pytest -q` green — 168 passed, 14 subtests passed
+- [x] `ruff` + `mypy` green — 56 source files
+- [x] Plunder map row added to `THIRD_PARTY_NOTICES.md`
+- [x] Per-file Pi attribution header
+- [x] CHANGELOG entry
+- [x] DEVLOG entry with continuity thread
+- [x] Memory snapshot updated
+- [x] Final commit + push
 
 ## Resume Instructions
 

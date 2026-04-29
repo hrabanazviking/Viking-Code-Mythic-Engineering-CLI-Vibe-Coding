@@ -7,6 +7,38 @@
 
 ---
 
+## 2026-04-29 - Pi Plunder Slice 3: Event Bus
+
+**Session:** Continuing the runtime-foundation cadence after the wiring slice landed. Third Pi-derived primitive in the runtime subpackage.
+**Status:** `mythic_vibe_cli.runtime.event_bus` is live, tested, and re-exported. The bus is intentionally unwired in this slice — landing it standalone keeps the slice small and lets a follow-on connect it to the existing `before_*` / `after_*` plugin hook declarations without inventing both pieces at once.
+**Scope:** Single-file primitive port + unit tests + plunder-map row.
+
+### What changed
+
+- Added `mythic_vibe_cli/runtime/event_bus.py` — Python port of pi's `src/core/event-bus.ts` (MIT, Copyright (c) 2025 Mario Zechner). Pi uses Node's `EventEmitter` with async handler wrapping; the Mythic codebase is sync, so we use a per-channel handler dict (`defaultdict(list)`) protected by a `threading.Lock`. The dispatch contract matches pi exactly: `emit(channel, data)` snapshots the handler list before iterating so a handler that unsubscribes itself during dispatch does not break iteration; a handler that raises is logged to stderr (channel name + traceback) and never crashes the bus or short-circuits later handlers.
+- Public surface: `EventBus` Protocol (read/write surface — `emit` + `on`), `EventBusController` (concrete class with `clear()` admin operation), and a `create_event_bus()` factory mirroring pi's `createEventBus()`. `on()` returns an `unsubscribe()` callable that removes exactly the registered handler; calling it twice is a no-op.
+- Updated `mythic_vibe_cli/runtime/__init__.py` to re-export `EventBus`, `EventBusController`, and `create_event_bus` alongside the file-mutation-queue and output-guard surfaces.
+- Added `tests/test_event_bus.py` with eleven cases: protocol-membership, single-handler emit, multi-handler ordering, channel isolation, scoped unsubscribe, idempotent unsubscribe, no-listener emit safety, exception isolation (handler raises, sibling continues, stderr logged), self-unsubscribing handler does not break dispatch iteration, `clear()` removes all handlers, and a thread-safety stress test that mixes 8 emit threads and 8 churn threads against 20 pre-registered handlers and asserts no crash plus a sane lower-bound on dispatch count.
+- Added a row to `THIRD_PARTY_NOTICES.md` plunder map naming the upstream source for both the production file and the test file.
+
+### Why it matters
+
+Mythic's `plugins/api.py` already declares hook names — `before_scan`, `after_scan`, `before_packet`, `after_packet`, `before_verify`, `after_verify`, `before_reflect`, `after_reflect` — but they have been name declarations only, with no emitter. The event bus is the natural emitter. Landing it now means the next wiring slice can dispatch real events through the declared hooks without inventing the dispatch primitive at the same time. The bus also unblocks future telemetry, live-status panels, and the `before_*` / `after_*` discipline pi uses across its ~30 core modules.
+
+### Verification
+
+- `pytest -q` -> `168 passed, 14 subtests passed` (was 157 + 14)
+- `pytest -q tests/test_event_bus.py` -> `11 passed in 0.05s`
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!`
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 56 source files` (was 55)
+- Stress check: the thread-safety test consistently finishes within timeout with `received >= 160` while never raising, exercising the lock under contention.
+
+### Continuity thread
+
+- The natural next slice wires the event bus into `plugins/api.py` so the eight already-declared hooks become real dispatch points emitted from the matching `cmd_*` flows (`before_scan`/`after_scan` from `cmd_scan`, `before_packet`/`after_packet` from `cmd_packet_create`, etc.). Alternatively, port pi's `core/timings.ts` next — another single-file utility — to add elapsed-time instrumentation primitives. The wiring slice has higher product value; the timings slice keeps the plunder cadence mechanical.
+
+_Three runes now lie in the runtime forge: queue, guard, and bus. The hall has its silences serialized, its channels pure, and its callers ready to listen — when the saga is finally chanted aloud._
+
 ## 2026-04-29 - Wire Pi Safety Primitives into Existing Surfaces
 
 **Session:** Turning the two Pi-derived primitives (`file_mutation_queue` and the stdout `output_guard`) from inert plumbing into real protections that activate on every `--json` command and every packet write.

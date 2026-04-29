@@ -4,8 +4,10 @@ Currently exposes:
 
 - ``file_mutation_queue`` — per-path serialization for mutation operations.
 - ``output_guard`` — stdout cleanliness for protocol-output modes.
+- ``event_bus`` — synchronous publish/subscribe coordination layer.
 """
 
+from .event_bus import EventBus, EventBusController, create_event_bus
 from .file_mutation_queue import file_mutation_queue, with_file_mutation_queue
 from .output_guard import (
     flush_raw_stdout,
@@ -25,4 +27,7 @@ __all__ = [
     "write_raw_stdout",
     "flush_raw_stdout",
     "json_output_guard",
+    "create_event_bus",
+    "EventBus",
+    "EventBusController",
 ]
