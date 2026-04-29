@@ -181,8 +181,10 @@ additive, cross-platform, open-source):
 | 30 | Phase 3 Slice 3.4 — approval gates | done — `9231073` — +17 tests |
 | 31 | Update memory + project status (after slice 3.4) | done — pushed at 60251bb |
 | 32 | Phase 3 Slice 3.5 — provider-backed forge | done — `fe763e1` — +15 tests |
-| 33 | Update memory + project status (after slice 3.5) | in progress |
-| 34 | Phase 3 Slice 3.6 — verifier integration | next |
+| 33 | Update memory + project status (after slice 3.5) | done — pushed at c326ec9 |
+| 34 | Phase 3 Slice 3.6 — verifier integration | done — `c0da15b` — +18 tests, 501 total |
+| 35 | Update memory + project status (after slice 3.6) | in progress |
+| 36 | Phase 3 Slice 3.7 — reflection capture | next |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
@@ -403,12 +405,33 @@ key needed. Ruff/mypy clean.
 
 See `PHASE3_SLICE_3_5_CLOSEOUT.md` for the full memo.
 
-## Next slice (PH-03 slice 3.6)
+## PH-03 slice 3.6 results
 
-Verifier integration. Wire the Auditor agent's output through the
-existing `verify/` module so contract gates like
-`diff-reviewed-against-architecture` and `no-invariant-violation`
-become real machine-checks rather than just declarations.
+New module `mythic_vibe_cli/forge_verifier.py` with three gate
+runners reusing existing verify/ helpers (collect_changed_files,
+check_invariants, load_latest_verification). DEFAULT_AUDITOR_GATES
+registry. cmd_forge_run grew an `auditor_gates` keyword (None=
+defaults, {}=opt-out, dict=inject) and a `--strict` flag. Failed
+Auditor gates transition the step from succeeded → failed with the
+gate failure summary in notes.
+
+Tests 483 → 501 (+18 in test_forge_verifier.py covering each gate's
+pass/fail edges, the run_auditor_gates dispatcher, and orchestrator
+integration). Slice-3.5 tests updated to opt out via
+`auditor_gates={}`.
+
+Six of eight Phase 3 slices closed (3.1–3.6).
+
+See `PHASE3_SLICE_3_6_CLOSEOUT.md` for the full memo.
+
+## Next slice (PH-03 slice 3.7)
+
+Reflection capture. The Scribe agent's response gets routed into
+a structured reflection artifact at `mythic/reflections/`,
+separate from the existing per-session handoff. Each forge run
+produces one reflection summarising what the cycle did, what
+verifier failed (if any), and what the operator's next step
+should be.
 
 ---
 
