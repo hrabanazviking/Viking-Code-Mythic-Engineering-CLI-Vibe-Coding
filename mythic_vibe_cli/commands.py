@@ -351,17 +351,36 @@ def cmd_packet_create(args: argparse.Namespace) -> int:
             write_key_value("Task", args.task)
         return SUCCESS
 
+    source_name = _command_name(args, "packet create")
+    base_payload = {
+        "source": source_name,
+        "path": str(root),
+        "phase": args.phase,
+        "role": args.role,
+        "task": args.task,
+        "audience": args.audience,
+        "format": args.format,
+    }
     bridge = CodexBridge(root)
-    packet = bridge.create_packet(
-        request=CodexPacketRequest(
-            task=args.task,
-            phase=args.phase,
-            audience=args.audience,
-            role=args.role,
-            output_format=args.format,
-        ),
-        out_file=out_path,
-    )
+    with PluginHookDispatcher(root) as dispatcher:
+        dispatcher.load_and_subscribe()
+        dispatcher.emit("before_packet", dict(base_payload))
+        packet = bridge.create_packet(
+            request=CodexPacketRequest(
+                task=args.task,
+                phase=args.phase,
+                audience=args.audience,
+                role=args.role,
+                output_format=args.format,
+            ),
+            out_file=out_path,
+        )
+        records = bridge.list_packets()
+        record = records[-1] if records else None
+        after_payload = dict(base_payload)
+        after_payload["packet_id"] = record.packet_id if record else packet.stem
+        after_payload["packet_path"] = str(record.packet_path) if record else str(packet)
+        dispatcher.emit("after_packet", after_payload)
     if _flag(args, "json"):
         write_json(
             {
@@ -543,11 +562,37 @@ def cmd_packet_ingest(args: argparse.Namespace) -> int:
             write_key_value("Source", source)
         return SUCCESS
 
-    try:
-        record = bridge.ingest_packet(source)
-    except (FileNotFoundError, json.JSONDecodeError, OSError) as exc:
-        write_error(str(exc))
-        return USER_INPUT_ERROR
+    source_name = _command_name(args, "packet ingest")
+    with PluginHookDispatcher(root) as dispatcher:
+        dispatcher.load_and_subscribe()
+        dispatcher.emit(
+            "before_packet",
+            {
+                "source": source_name,
+                "path": str(root),
+                "ingest_source": str(source),
+            },
+        )
+        try:
+            record = bridge.ingest_packet(source)
+        except (FileNotFoundError, json.JSONDecodeError, OSError) as exc:
+            write_error(str(exc))
+            return USER_INPUT_ERROR
+        dispatcher.emit(
+            "after_packet",
+            {
+                "source": source_name,
+                "path": str(root),
+                "ingest_source": str(source),
+                "phase": record.phase,
+                "role": record.role,
+                "task": record.task,
+                "audience": record.audience,
+                "format": record.output_format,
+                "packet_id": record.packet_id,
+                "packet_path": record.packet_path,
+            },
+        )
 
     if _flag(args, "json"):
         write_json(
@@ -733,17 +778,36 @@ def cmd_workflow_plan(args: argparse.Namespace) -> int:
     if _flag(args, "packets"):
         builder = CodexBridge(root)
         packet_artifacts = []
-        for request in packet_requests:
-            packet_path = builder.create_packet(request)
-            record = builder.load_packet_record(packet_path.stem)
-            packet_artifacts.append(
-                record.to_dict()
-                if record
-                else {
-                    "packet_id": packet_path.stem,
-                    "packet_path": str(packet_path),
+        source_name = _command_name(args, "workflow plan")
+        with PluginHookDispatcher(root) as dispatcher:
+            dispatcher.load_and_subscribe()
+            for request in packet_requests:
+                base_payload = {
+                    "source": source_name,
+                    "path": str(root),
+                    "phase": request.phase,
+                    "role": request.role,
+                    "task": request.task,
+                    "audience": request.audience,
+                    "format": request.output_format,
+                    "workflow_id": request.workflow_id,
+                    "workflow_step_id": request.workflow_step_id,
                 }
-            )
+                dispatcher.emit("before_packet", dict(base_payload))
+                packet_path = builder.create_packet(request)
+                record = builder.load_packet_record(packet_path.stem)
+                after_payload = dict(base_payload)
+                after_payload["packet_id"] = record.packet_id if record else packet_path.stem
+                after_payload["packet_path"] = str(record.packet_path) if record else str(packet_path)
+                dispatcher.emit("after_packet", after_payload)
+                packet_artifacts.append(
+                    record.to_dict()
+                    if record
+                    else {
+                        "packet_id": packet_path.stem,
+                        "packet_path": str(packet_path),
+                    }
+                )
         payload["packet_artifacts"] = packet_artifacts
 
     if _flag(args, "json"):
