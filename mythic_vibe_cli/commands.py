@@ -64,7 +64,7 @@ from .verify import VerificationArtifact, load_latest_verification, new_verifica
 from .verify.doc_checker import check_docs
 from .verify.git_diff import review_changed_files
 from .verify.invariant_checker import check_invariants
-from .verify.test_runner import run_default_commands
+from .verify.test_runner import discover_default_commands, run_command, run_default_commands
 
 
 CommandHandler = Callable[[argparse.Namespace], int]
@@ -1494,6 +1494,370 @@ def cmd_completion(args: argparse.Namespace) -> int:
         write_json({"command": "completion", "shell": shell, "script": script})
     else:
         write_line(script, force=True)
+    return SUCCESS
+
+
+def _run_tool(
+    args: argparse.Namespace,
+    *,
+    label: str,
+    default_argv: list[str],
+    description: str,
+) -> int:
+    """Shared body for ``test`` / ``lint`` / ``typecheck`` shortcuts.
+
+    Each shortcut is a thin wrapper around :func:`runtime.exec.exec_command`
+    that runs an external developer tool (pytest / ruff / mypy) on the
+    project root. ``--command`` overrides the default invocation; the tool's
+    exit code is returned verbatim so CI integrations behave identically to
+    invoking the underlying tool directly.
+    """
+    root = Path(getattr(args, "path", ".")).resolve()
+    override = getattr(args, "override_command", None)
+    argv = list(override) if override else list(default_argv)
+
+    if _flag(args, "dry_run"):
+        if _flag(args, "json"):
+            write_json(
+                {
+                    "command": label,
+                    "dry_run": True,
+                    "tool": argv[0] if argv else "",
+                    "argv": argv,
+                    "cwd": str(root),
+                    "description": description,
+                }
+            )
+        else:
+            write_line(f"Dry run: would run {label}")
+            write_key_value("Tool", argv[0] if argv else "(none)")
+            write_key_value("Argv", " ".join(argv))
+            write_key_value("Cwd", root)
+        return SUCCESS
+
+    if not argv:
+        write_error(f"No command supplied for {label}.")
+        return USER_INPUT_ERROR
+
+    result = run_command(argv, cwd=root)
+
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": label,
+                "tool": argv[0],
+                "argv": argv,
+                "cwd": str(root),
+                "exit_code": result.exit_code,
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+                "ok": result.exit_code == 0,
+            }
+        )
+        return SUCCESS if result.exit_code == 0 else VERIFICATION_FAILURE
+
+    if result.stdout:
+        write_line(result.stdout, force=True)
+    if result.stderr:
+        write_line(result.stderr, stream=__import__("sys").stderr, force=True)
+    if result.exit_code == 0:
+        write_line(f"{label}: ok")
+        return SUCCESS
+    write_error(f"{label} failed (exit code {result.exit_code})")
+    return VERIFICATION_FAILURE
+
+
+def cmd_test(args: argparse.Namespace) -> int:
+    """Run the project's test suite via pytest.
+
+    Without ``--command``, auto-discovers a sensible default
+    (``python -m pytest -q`` if a tests/ directory with test*.py exists).
+    """
+    root = Path(getattr(args, "path", ".")).resolve()
+    discovered = discover_default_commands(root)
+    default_argv = discovered[0] if discovered else [__import__("sys").executable, "-m", "pytest", "-q"]
+    return _run_tool(
+        args,
+        label="test",
+        default_argv=default_argv,
+        description="Run the project's test suite (pytest).",
+    )
+
+
+def cmd_lint(args: argparse.Namespace) -> int:
+    """Run ruff check on the project."""
+    return _run_tool(
+        args,
+        label="lint",
+        default_argv=["ruff", "check", "."],
+        description="Run ruff check across the project.",
+    )
+
+
+def cmd_typecheck(args: argparse.Namespace) -> int:
+    """Run mypy on the project."""
+    return _run_tool(
+        args,
+        label="typecheck",
+        default_argv=["mypy", "."],
+        description="Run mypy across the project.",
+    )
+
+
+_ADR_TEMPLATE = """# {title}
+
+- ID: ADR-{number:04d}
+- Status: proposed
+- Date: {date}
+- Author:
+
+## Context
+
+(Why this decision is being made — the situation, constraints, and forces.)
+
+## Decision
+
+(What we are doing.)
+
+## Consequences
+
+- Positive:
+- Negative:
+- Neutral:
+
+## Links
+
+- (related ADRs, issues, or roadmap slices)
+"""
+
+
+def _next_adr_number(adr_dir: Path) -> int:
+    if not adr_dir.exists():
+        return 1
+    highest = 0
+    for path in adr_dir.glob("ADR-*.md"):
+        prefix = path.stem
+        digits = ""
+        for ch in prefix[len("ADR-"):]:
+            if ch.isdigit():
+                digits += ch
+            else:
+                break
+        if digits:
+            try:
+                highest = max(highest, int(digits))
+            except ValueError:
+                continue
+    return highest + 1
+
+
+def _slugify_adr_title(title: str) -> str:
+    cleaned = "".join(ch.lower() if ch.isalnum() else "-" for ch in title.strip())
+    while "--" in cleaned:
+        cleaned = cleaned.replace("--", "-")
+    return cleaned.strip("-") or "untitled"
+
+
+def cmd_scaffold(args: argparse.Namespace) -> int:
+    """Add a new artefact to an existing Mythic project.
+
+    Today only ``scaffold adr <title>`` is implemented. The remaining
+    artefact types (task / interface / invariant / risk) are routed to
+    PH-10 slice 10.4 (artefact-template extension points).
+    """
+    root = Path(getattr(args, "path", ".")).resolve()
+    artefact = getattr(args, "artefact", None)
+
+    if artefact != "adr":
+        write_error(
+            f"Scaffold artefact {artefact!r} not yet implemented. "
+            "Available now: adr. Future types (task/interface/invariant/risk) land in PH-10 slice 10.4."
+        )
+        return USER_INPUT_ERROR
+
+    title = (getattr(args, "title", "") or "").strip()
+    if not title:
+        write_error("scaffold adr requires --title <text>.")
+        return USER_INPUT_ERROR
+
+    adr_dir = root / "docs" / "ADRS"
+    number = _next_adr_number(adr_dir)
+    slug = _slugify_adr_title(title)
+    target = adr_dir / f"ADR-{number:04d}-{slug}.md"
+
+    if _flag(args, "dry_run"):
+        payload = {
+            "command": "scaffold adr",
+            "dry_run": True,
+            "target": str(target),
+            "number": number,
+            "title": title,
+            "slug": slug,
+        }
+        if _flag(args, "json"):
+            write_json(payload)
+        else:
+            write_line("Dry run: no ADR file will be written.")
+            write_key_value("Target", target)
+            write_key_value("Number", number)
+            write_key_value("Title", title)
+        return SUCCESS
+
+    if target.exists():
+        write_error(f"Refusing to overwrite existing ADR: {target}")
+        return UNSAFE_OPERATION_BLOCKED
+
+    adr_dir.mkdir(parents=True, exist_ok=True)
+    rendered = _ADR_TEMPLATE.format(title=title, number=number, date=utc_now())
+    target.write_text(rendered, encoding="utf-8")
+
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "scaffold adr",
+                "dry_run": False,
+                "target": str(target),
+                "number": number,
+                "title": title,
+                "slug": slug,
+            }
+        )
+    else:
+        write_line("ADR scaffold written.")
+        write_key_value("Path", target)
+        write_key_value("Number", number)
+        write_key_value("Title", title)
+    return SUCCESS
+
+
+def _changelog_unreleased_section(text: str) -> tuple[str, list[str]]:
+    """Return ``(section_text, warnings)`` for the [Unreleased] block.
+
+    Walks the markdown in linear order. The block ends at the next top-level
+    ``## `` header or end-of-file, whichever comes first.
+    """
+    lines = text.splitlines()
+    in_block = False
+    section: list[str] = []
+    warnings: list[str] = []
+    for line in lines:
+        if line.startswith("## ") and "[Unreleased]" in line:
+            in_block = True
+            section.append(line)
+            continue
+        if in_block and line.startswith("## "):
+            break
+        if in_block:
+            section.append(line)
+    if not section:
+        warnings.append("CHANGELOG.md does not contain an [Unreleased] section.")
+    return "\n".join(section).rstrip() + "\n" if section else "", warnings
+
+
+def cmd_changelog(args: argparse.Namespace) -> int:
+    """Print the CHANGELOG.md [Unreleased] section.
+
+    With ``--check``, runs ``scripts/check_changelog.py`` if present and
+    returns its exit code.
+    """
+    root = Path(getattr(args, "path", ".")).resolve()
+    changelog = root / "CHANGELOG.md"
+
+    if not changelog.exists():
+        message = f"CHANGELOG.md not found at {changelog}"
+        if _flag(args, "json"):
+            write_json({"command": "changelog", "ok": False, "errors": [message]})
+        else:
+            write_error(message)
+        return USER_INPUT_ERROR
+
+    section, warnings = _changelog_unreleased_section(changelog.read_text(encoding="utf-8"))
+
+    if _flag(args, "check"):
+        check_script = root / "scripts" / "check_changelog.py"
+        if not check_script.exists():
+            if _flag(args, "json"):
+                write_json(
+                    {
+                        "command": "changelog",
+                        "check": True,
+                        "ok": False,
+                        "errors": [f"Validator script not found: {check_script}"],
+                    }
+                )
+            else:
+                write_error(f"Validator script not found: {check_script}")
+            return USER_INPUT_ERROR
+        result = run_command(
+            [__import__("sys").executable, str(check_script)],
+            cwd=root,
+        )
+        if _flag(args, "json"):
+            write_json(
+                {
+                    "command": "changelog",
+                    "check": True,
+                    "ok": result.exit_code == 0,
+                    "exit_code": result.exit_code,
+                    "stdout": result.stdout,
+                    "stderr": result.stderr,
+                }
+            )
+            return SUCCESS if result.exit_code == 0 else VERIFICATION_FAILURE
+        if result.stdout:
+            write_line(result.stdout, force=True)
+        if result.stderr:
+            write_line(result.stderr, stream=__import__("sys").stderr, force=True)
+        return SUCCESS if result.exit_code == 0 else VERIFICATION_FAILURE
+
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "changelog",
+                "path": str(changelog),
+                "unreleased": section,
+                "warnings": warnings,
+            }
+        )
+        return SUCCESS
+
+    if warnings:
+        for warning in warnings:
+            write_error(warning)
+        return USER_INPUT_ERROR if not section else SUCCESS
+    write_line(section, force=True)
+    return SUCCESS
+
+
+def cmd_version(args: argparse.Namespace) -> int:
+    """Print the CLI version (and Python interpreter info on --verbose).
+
+    The root ``--version`` flag still works for argparse-style invocation;
+    this subcommand exists so the slash surface (``/version``) and the
+    argparse layer expose the same shape.
+    """
+    import platform
+    import sys as _sys
+
+    from . import __version__ as cli_version
+
+    payload: dict[str, object] = {
+        "command": "version",
+        "mythic_vibe_cli": cli_version,
+        "python": platform.python_version(),
+        "platform": platform.platform(),
+        "executable": _sys.executable,
+    }
+
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+
+    write_key_value("mythic-vibe", cli_version)
+    if _flag(args, "verbose"):
+        write_key_value("Python", platform.python_version())
+        write_key_value("Platform", platform.platform())
+        write_key_value("Executable", _sys.executable)
     return SUCCESS
 
 
@@ -3122,4 +3486,10 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "slash": cmd_slash_dispatch,
     "shell": cmd_shell,
     "tui": cmd_tui,
+    "test": cmd_test,
+    "lint": cmd_lint,
+    "typecheck": cmd_typecheck,
+    "scaffold": cmd_scaffold,
+    "changelog": cmd_changelog,
+    "version": cmd_version,
 }

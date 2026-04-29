@@ -198,7 +198,14 @@ class SlashPickerTests(unittest.TestCase):
                     initial_count = option_list.option_count
                     search = picker.query_one("#picker-search")
                     search.value = "scan"
-                    await pilot.pause()
+                    # Pump the Textual event loop several times: setting
+                    # ``Input.value`` posts a ``Changed`` message that has
+                    # to traverse the message queue before
+                    # ``on_input_changed`` runs and the OptionList
+                    # rebuilds. With ~46 builtin entries (PH-02 slice 2.2),
+                    # one pause is not enough on a busy test suite.
+                    for _ in range(5):
+                        await pilot.pause()
                     filtered_count = option_list.option_count
                     return initial_count, filtered_count
 
