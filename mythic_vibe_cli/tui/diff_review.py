@@ -359,7 +359,7 @@ if _Screen is not None:
         * ``j`` / ``down`` — next hunk (no decision change)
         * ``k`` / ``up``   — previous hunk
         * ``q`` / ``escape`` — pop the screen
-        * ``?`` — toggle the inline bindings hint
+        * ``?`` — push the shared HelpOverlayScreen (slice 4.7)
         """
 
         BINDINGS = [
@@ -370,7 +370,7 @@ if _Screen is not None:
             _Binding("down", "next", "Next", show=False),
             _Binding("k", "prev", "Prev"),
             _Binding("up", "prev", "Prev", show=False),
-            _Binding("question_mark", "toggle_help", "Help"),
+            _Binding("question_mark", "show_help", "Help"),
             _Binding("q", "app.pop_screen", "Quit"),
             _Binding("escape", "app.pop_screen", "Quit", show=False),
         ]
@@ -395,32 +395,22 @@ if _Screen is not None:
             padding: 1 2;
             height: 1fr;
         }
-
-        #diff-review-help {
-            padding: 0 1;
-            height: auto;
-            color: $text-muted;
-        }
         """
 
         def __init__(self, session: DiffReviewSession) -> None:
             super().__init__()
             self.session = session
-            self._show_help = False
             self._header_widget: Any = None
             self._hunk_widget: Any = None
-            self._help_widget: Any = None
 
         def compose(self) -> Any:
             yield _Header(show_clock=False)
             self._header_widget = _Static(id="diff-review-header")
             self._hunk_widget = _Static(id="diff-review-hunk")
             self._hunk_widget.border_title = "Diff hunk"
-            self._help_widget = _Static(id="diff-review-help")
             with _Vertical(id="diff-review-body"):
                 yield self._header_widget
                 yield self._hunk_widget
-                yield self._help_widget
             yield _Footer()
 
         def on_mount(self) -> None:
@@ -435,11 +425,6 @@ if _Screen is not None:
                 self._hunk_widget.update("[dim]No hunks to review.[/dim]")
             else:
                 self._hunk_widget.update(_format_hunk_for_review(current))
-            if self._help_widget is not None:
-                if self._show_help:
-                    self._help_widget.update(f"[dim]{DIFF_REVIEW_BINDINGS_TEXT}[/dim]")
-                else:
-                    self._help_widget.update("")
 
         def _decide_and_advance(self, decision: HunkDecision) -> None:
             self.session.record_decision(decision)
@@ -463,9 +448,14 @@ if _Screen is not None:
             self.session.retreat()
             self._refresh()
 
-        def action_toggle_help(self) -> None:
-            self._show_help = not self._show_help
-            self._refresh()
+        def action_show_help(self) -> None:
+            from .help_overlay import HelpOverlayScreen, binding_help_pairs
+
+            self.app.push_screen(
+                HelpOverlayScreen(
+                    "Diff review — keys", binding_help_pairs(self.BINDINGS)
+                )
+            )
 
 
 __all__ = [

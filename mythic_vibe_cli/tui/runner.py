@@ -61,6 +61,7 @@ class RunningCommandScreen(Screen):
     BINDINGS = [
         Binding("escape", "app.pop_screen", "Back"),
         Binding("q", "app.pop_screen", "Back", show=False),
+        Binding("question_mark", "show_help", "Help"),
     ]
 
     DEFAULT_CSS = """
@@ -185,3 +186,12 @@ class RunningCommandScreen(Screen):
             return f"[b]{label}:[/b] (empty)"
         snippet = text[-self.OUTPUT_TAIL_BYTES :]
         return f"[b]{label}:[/b]\n{snippet}"
+
+    def action_show_help(self) -> None:
+        from .help_overlay import HelpOverlayScreen, binding_help_pairs
+
+        self.app.push_screen(
+            HelpOverlayScreen(
+                "Running command — keys", binding_help_pairs(self.BINDINGS)
+            )
+        )

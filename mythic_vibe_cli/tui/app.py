@@ -694,6 +694,7 @@ class StatusScreen(Screen):
         Binding("ctrl+c", "quit", "Quit", show=False),
         Binding("r", "refresh_now", "Refresh"),
         Binding("slash", "open_picker", "/  Slash picker"),
+        Binding("question_mark", "show_help", "Help"),
     ]
 
     DEFAULT_CSS = """
@@ -795,6 +796,13 @@ class StatusScreen(Screen):
         from .picker import SlashPickerScreen
 
         self.app.push_screen(SlashPickerScreen(self.root))
+
+    def action_show_help(self) -> None:
+        from .help_overlay import HelpOverlayScreen, binding_help_pairs
+
+        self.app.push_screen(
+            HelpOverlayScreen("Status — keys", binding_help_pairs(self.BINDINGS))
+        )
 
     def _refresh_panels(self) -> None:
         data = build_status_data(self.root)
