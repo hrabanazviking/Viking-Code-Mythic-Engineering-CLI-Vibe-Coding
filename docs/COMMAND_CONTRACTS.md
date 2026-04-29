@@ -71,6 +71,8 @@ Current workflow orchestration contract:
 - `workflow plan --packets` stamps `workflow_id` and `workflow_step_id` on every generated packet's `.meta.json` payload so packet readiness can be traced by ID instead of exact task text.
 - `workflow packets` and `workflow run --packets-only` prefer ID-based matching when both plan and packet carry the IDs; legacy plans or packets without IDs fall back to the existing `(role, phase, task, audience, output_format)` text match. Each `packet_status` entry reports the chosen `match_strategy` (`"id"`, `"text"`, or `null` when no match).
 - `packet list --workflow <id>` filters stored packets to those stamped with the supplied `workflow_id`. Adding `--step <step_id>` further narrows to a single workflow step; `--step` requires `--workflow` and returns `USER_INPUT_ERROR` otherwise. Legacy packets without an ID are excluded when a workflow filter is set. JSON output includes a `filters` object reporting the applied `workflow_id` and `workflow_step_id`.
+- `packet show --workflow <id> --step <step_id>` resolves to the latest packet stamped with that workflow id and step. `--workflow` and `--step` must appear together and cannot be combined with `--packet-id`; either constraint violation returns `USER_INPUT_ERROR`. Missing matches also return `USER_INPUT_ERROR`.
+- `packet diff --left` and `--right` accept either a bare `PKT-...` packet ID or a `WF-<id>:<step_id>` shorthand; the shorthand resolves to the matching packet at run time, with unresolved references returning `USER_INPUT_ERROR`. JSON output reports both the original `left_ref`/`right_ref` and the resolved `left`/`right` packet IDs.
 
 Current Stage 14 UX commands:
 

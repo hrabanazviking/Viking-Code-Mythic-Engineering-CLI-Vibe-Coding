@@ -7,6 +7,38 @@
 
 ---
 
+## 2026-04-29 - Stage 16 Workflow Addressing on Packet Show and Diff
+
+**Session:** Continuing the Stage 16 cadence — letting operators address packets by `(workflow_id, step_id)` instead of having to look up the bare `PKT-` ID first.
+**Status:** `packet show --workflow <id> --step <step_id>` resolves to a single packet, and `packet diff --left` / `--right` accept a `WF-<id>:<step_id>` shorthand alongside the existing `PKT-...` IDs.
+**Scope:** Strictly additive addressing layer on top of the IDs added in earlier Stage 16 slices.
+
+### What changed
+
+- Added `PacketBuilder.find_packet_by_workflow_step(workflow_id, step_id)` returning the latest matching `PacketRecord` (or `None`).
+- Added `--workflow` and `--step` flags to `packet show` with mutual-exclusion guards: both flags must appear together, and they cannot be combined with `--packet-id`. Missing matches return `USER_INPUT_ERROR`.
+- Added `WF-<id>:<step_id>` shorthand to `packet diff --left` and `--right` via a small `_resolve_packet_ref` helper. Bare `PKT-...` IDs continue to work unchanged.
+- Surfaced `left_ref` / `right_ref` (raw input) alongside `left` / `right` (resolved IDs) in `packet diff` JSON output for traceability.
+- Added six CLI-kernel tests covering: workflow-step resolution, the both-flags-required guard, the packet-id-vs-workflow-flags exclusion, missing-step error, the diff shorthand happy path, and unresolved-shorthand error.
+- Updated `docs/COMMAND_CONTRACTS.md`, `docs/api.md`, and `CHANGELOG.md` to name the new addressing surface.
+
+### Why it matters
+
+Once a workflow is run, the packet IDs (`PKT-000001`, `PKT-000002`, ...) are not memorable; `(workflow_id, step_id)` is. Iterating on one role's output across runs — for example diffing the Skald packet from this run against the Skald packet from the previous run — is now a one-liner instead of a list-then-look-up dance.
+
+### Verification
+
+- `pytest -q` -> `102 passed, 14 subtests passed` (was 96 + 14)
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!`
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 51 source files`
+- Smoke: built a two-step workflow, then `packet show --workflow <id> --step step-02 --json` returned the expected `PKT-000002`; `packet diff --left WF-...:step-01 --right WF-...:step-02 --json` resolved both refs to distinct `PKT-` IDs and produced a real diff.
+
+### Continuity thread
+
+- The next slice can introduce a `--latest-workflow` convenience for `packet show`/`packet diff` that auto-resolves to the most recently saved `mythic/workflow_plan.json`, removing one more lookup step when iterating on the active workflow.
+
+_To name a thing by its origin is to bind it to its purpose; bare ids are merely numbered, but workflow refs remember why they were forged._
+
 ## 2026-04-29 - Stage 16 Packet List Workflow Filter
 
 **Session:** Continuing the Stage 16 cadence after landing workflow IDs — letting users see all packets belonging to one workflow run from the packet command surface.

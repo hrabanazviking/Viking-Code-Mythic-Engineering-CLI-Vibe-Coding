@@ -281,9 +281,11 @@ def build_parser() -> argparse.ArgumentParser:
     packet_create.add_argument("--path", default=".", help="Project directory (default: current directory)")
     packet_create.add_argument("--out", default=None, help="Optional output file path")
     add_runtime_options(packet_create, json_output=True, dry_run=True)
-    packet_show = packet_sub.add_parser("show", help="Show a stored packet by packet ID")
+    packet_show = packet_sub.add_parser("show", help="Show a stored packet by packet ID or workflow+step")
     packet_show.add_argument("--path", default=".", help="Project directory (default: current directory)")
     packet_show.add_argument("--packet-id", default="", help="Packet ID to show (default: latest)")
+    packet_show.add_argument("--workflow", default="", help="Workflow ID stamped on the packet (requires --step)")
+    packet_show.add_argument("--step", default="", help="Workflow step ID stamped on the packet (requires --workflow)")
     add_runtime_options(packet_show, json_output=True)
     packet_list = packet_sub.add_parser("list", help="List stored packet records")
     packet_list.add_argument("--path", default=".", help="Project directory (default: current directory)")
@@ -296,8 +298,8 @@ def build_parser() -> argparse.ArgumentParser:
     add_runtime_options(packet_ingest, json_output=True, dry_run=True)
     packet_diff = packet_sub.add_parser("diff", help="Diff two stored packet artifacts")
     packet_diff.add_argument("--path", default=".", help="Project directory (default: current directory)")
-    packet_diff.add_argument("--left", required=True, help="Left packet ID")
-    packet_diff.add_argument("--right", required=True, help="Right packet ID")
+    packet_diff.add_argument("--left", required=True, help="Left packet reference: PKT-... ID or WF-<id>:<step_id> shorthand")
+    packet_diff.add_argument("--right", required=True, help="Right packet reference: PKT-... ID or WF-<id>:<step_id> shorthand")
     add_runtime_options(packet_diff, json_output=True)
 
     workflow = sub.add_parser(

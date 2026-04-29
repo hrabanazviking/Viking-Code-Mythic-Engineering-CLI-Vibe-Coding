@@ -140,6 +140,16 @@ class PacketBuilder:
                 )
         return records
 
+    def find_packet_by_workflow_step(self, workflow_id: str, step_id: str) -> PacketRecord | None:
+        if not workflow_id or not step_id:
+            return None
+        match: PacketRecord | None = None
+        for record in self.list_packets():
+            if record.workflow_id == workflow_id and record.workflow_step_id == step_id:
+                if match is None or record.created_at >= match.created_at:
+                    match = record
+        return match
+
     def load_packet_text(self, packet_id: str) -> str | None:
         for suffix in (".md", ".json"):
             packet_path = self.packet_dir / f"{packet_id}{suffix}"
