@@ -166,8 +166,10 @@ additive, cross-platform, open-source):
 | 15 | Phase 2 Slice 2.1 — slash inventory + catalog mirror | done — 14→40 entries, +1 parity test |
 | 16 | Update memory + project status (after slice 2.1) | done — pushed at b0e6ec8 |
 | 17 | Phase 2 Slice 2.2 — dev-tool shortcuts (test/lint/typecheck/scaffold/changelog/version) | done — 40→46 slash entries, +17 tests, F-023 logged |
-| 18 | Update memory + project status (after slice 2.2) | in progress |
-| 19 | Phase 2 Slice 2.3 — workflow-phase capture commands | next |
+| 18 | Update memory + project status (after slice 2.2) | done — pushed at 26ee284 |
+| 19 | Phase 2 Slice 2.3 — workflow-phase capture commands | done — 46→51 slash entries, +13 tests |
+| 20 | Update memory + project status (after slice 2.3) | in progress |
+| 21 | Phase 2 Slice 2.7 (slash help/introspect) OR 2.8 (parity tests) OR PH-03 slice 3.1 | awaiting Volmarr |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
@@ -284,12 +286,25 @@ clean. New finding F-023 documents the argparse `--command` /
 
 See `PHASE2_SLICE_2_2_CLOSEOUT.md` for the full memo.
 
-## Next slice (PH-02 slice 2.3)
+## PH-02 slice 2.3 results
 
-Workflow-phase capture commands (`/intent`, `/constraints`,
-`/architecture`, `/plan`, `/build`) as NEW handlers that write
-durable phase records under `mythic/checkins/`. Shape proposed in
-the original Production Roadmap stage 4.
+Five new argparse parents (`intent`/`constraints`/`architecture`/
+`plan`/`build`), each with a single `capture` subcommand, write
+Mythic Phase Records under `mythic/checkins/<iso-ts>-<phase>.md`.
+The shape follows the production-roadmap stage 4 template. Catalog
+46 → 51, tests 327 → 340, ruff/mypy clean.
+
+See `PHASE2_SLICE_2_3_CLOSEOUT.md` for the full memo.
+
+## Next slice — three viable options
+
+1. **PH-02 slice 2.7** — slash help & introspection (`/help <cmd>`,
+   `slash inspect`).
+2. **PH-02 slice 2.8** — REPL/TUI/plugin parity tests (test-only).
+3. **PH-03 slice 3.1** — multi-agent forge agent contract spec
+   (foundation for 2.4 and 2.5).
+
+Slices 2.4, 2.5, 2.6 are all blocked on later-phase work.
 
 ---
 
