@@ -2600,6 +2600,29 @@ class CliKernelTests(unittest.TestCase):
             self.assertEqual(reflect_code, SUCCESS)
             self.assertIn("Mythic check-in recorded.", reflect_output.getvalue())
 
+    def test_packet_ingest_malformed_sidecar_emits_verbose_warning(self) -> None:
+        from mythic_vibe_cli import output as output_module
+        from mythic_vibe_cli.codex_bridge import PacketBuilder
+
+        with tempfile.TemporaryDirectory() as project_root:
+            project_path = Path(project_root)
+            md_packet = project_path / "src.md"
+            md_packet.write_text("# Mythic Engineering Task Packet\n", encoding="utf-8")
+            sidecar = md_packet.with_suffix(".json")
+            sidecar.write_text("{not json", encoding="utf-8")
+
+            builder = PacketBuilder(project_path)
+            output_module.configure_output(verbose=True)
+            stdout = io.StringIO()
+            try:
+                with redirect_stdout(stdout):
+                    builder._read_ingest_source(md_packet)
+            finally:
+                output_module.configure_output(verbose=False)
+
+            self.assertIn("not valid JSON", stdout.getvalue())
+            self.assertIn(str(sidecar), stdout.getvalue())
+
     def test_slash_dispatch_unknown_subcommand_emits_error(self) -> None:
         import argparse as argparse_module
 
