@@ -8,6 +8,9 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Added
 
+- Added deterministic `workflow_id` (form `WF-<UTC compact>-<sha8(task+created_at)>`) to every freshly built workflow plan, persisted in `mythic/workflow_plan.json` and surfaced in `workflow plan`, `workflow packets`, and `workflow run` JSON output.
+- Added `workflow_id` and `workflow_step_id` stamping on packets generated via `workflow plan --packets`, written to each packet's `.meta.json`.
+- Added ID-first packet matching to `workflow packets` and `workflow run --dry-run --packets-only`, with the existing `(role, phase, task, audience, output_format)` text match preserved as a legacy fallback. Each `packet_status` entry now reports `match_strategy` (`"id"`, `"text"`, or `null`).
 - Added `mythic-vibe workflow packets` for read-only packet readiness listings, including `--missing-only` filtering.
 - Added `workflow run --dry-run --packets-only` to validate that every workflow step has a matching packet artifact before provider execution is introduced.
 - Added `mythic-vibe workflow run --dry-run` for safe ordered role-execution previews from saved or generated workflow plans.

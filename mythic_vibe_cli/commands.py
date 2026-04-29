@@ -8,7 +8,7 @@ from pathlib import Path
 import sqlite3
 import urllib.error
 
-from .codex_bridge import CodexBridge, CodexPacketRequest
+from .codex_bridge import CodexBridge, CodexPacketRequest, PacketRecord
 from .ai.registry import ProviderRegistry
 from .context.indexer import ProjectIndexer
 from .config import ConfigStore
@@ -502,6 +502,7 @@ def cmd_workflow_plan(args: argparse.Namespace) -> int:
         "output_file": str(output_path),
         "packets_requested": _flag(args, "packets"),
         "packet_artifacts": [],
+        "workflow_id": plan.workflow_id,
         "plan": plan.to_dict(),
         "packet_requests": [request.__dict__ for request in packet_requests],
     }
@@ -514,6 +515,8 @@ def cmd_workflow_plan(args: argparse.Namespace) -> int:
             write_key_value("Project path", root)
             write_key_value("Output", output_path)
             write_key_value("Task", plan.task)
+            if plan.workflow_id:
+                write_key_value("Workflow ID", plan.workflow_id)
             write_line("Role sequence:")
             for step in plan.steps:
                 write_bullet(f"{step.step_id}: {step.role} -> {step.phase} ({step.handoff_to or 'done'})")
@@ -548,6 +551,8 @@ def cmd_workflow_plan(args: argparse.Namespace) -> int:
     write_line("Workflow orchestration plan written.")
     write_key_value("Output", path)
     write_key_value("Task", plan.task)
+    if plan.workflow_id:
+        write_key_value("Workflow ID", plan.workflow_id)
     write_line("Role sequence:")
     for step in plan.steps:
         write_bullet(f"{step.step_id}: {step.role} -> {step.phase} ({step.handoff_to or 'done'})")
@@ -565,18 +570,35 @@ def _workflow_packet_status(root: Path, plan: WorkflowPlan, *, audience: str = "
     statuses: list[dict[str, object]] = []
     for request in requests:
         request.output_format = output_format
-        match = next(
-            (
-                record
-                for record in records
-                if record.role == request.role
-                and record.phase == request.phase
-                and record.task == request.task
-                and record.audience == request.audience
-                and record.output_format == request.output_format
-            ),
-            None,
-        )
+        match: PacketRecord | None = None
+        match_strategy: str | None = None
+        if request.workflow_id and request.workflow_step_id:
+            match = next(
+                (
+                    record
+                    for record in records
+                    if record.workflow_id == request.workflow_id
+                    and record.workflow_step_id == request.workflow_step_id
+                ),
+                None,
+            )
+            if match is not None:
+                match_strategy = "id"
+        if match is None:
+            match = next(
+                (
+                    record
+                    for record in records
+                    if record.role == request.role
+                    and record.phase == request.phase
+                    and record.task == request.task
+                    and record.audience == request.audience
+                    and record.output_format == request.output_format
+                ),
+                None,
+            )
+            if match is not None:
+                match_strategy = "text"
         statuses.append(
             {
                 "role": request.role,
@@ -584,7 +606,10 @@ def _workflow_packet_status(root: Path, plan: WorkflowPlan, *, audience: str = "
                 "task": request.task,
                 "audience": request.audience,
                 "output_format": request.output_format,
+                "workflow_id": request.workflow_id,
+                "workflow_step_id": request.workflow_step_id,
                 "found": match is not None,
+                "match_strategy": match_strategy,
                 "packet_id": match.packet_id if match else None,
                 "packet_path": match.packet_path if match else None,
                 "metadata_path": match.metadata_path if match else None,
@@ -2466,6 +2491,7 @@ def cmd_workflow_run(args: argparse.Namespace) -> int:
         "dry_run": True,
         "path": str(root),
         "plan_source": plan_source,
+        "workflow_id": plan.workflow_id,
         "plan": plan.to_dict(),
         "steps": steps,
         "provider_execution": "disabled",
@@ -2492,6 +2518,8 @@ def cmd_workflow_run(args: argparse.Namespace) -> int:
     write_key_value("Project path", root)
     write_key_value("Plan source", plan_source)
     write_key_value("Task", plan.task)
+    if plan.workflow_id:
+        write_key_value("Workflow ID", plan.workflow_id)
     write_line("Execution preview:")
     for step in steps:
         write_bullet(f"{step['step_id']}: {step['role']} -> {step['phase']} ({step['handoff_to'] or 'done'})")
@@ -2499,7 +2527,8 @@ def cmd_workflow_run(args: argparse.Namespace) -> int:
         write_line("Packet readiness:")
         for item in packet_status:
             status = "ready" if item["found"] else "missing"
-            write_bullet(f"{item['role']} -> {item['phase']}: {status}")
+            via = f" via {item['match_strategy']}" if item["match_strategy"] else ""
+            write_bullet(f"{item['role']} -> {item['phase']}: {status}{via}")
     return SUCCESS
 
 
@@ -2526,6 +2555,7 @@ def cmd_workflow_packets(args: argparse.Namespace) -> int:
         "command": "workflow packets",
         "path": str(root),
         "plan_source": plan_source,
+        "workflow_id": plan.workflow_id,
         "packets_ready": all(item["found"] for item in packet_status) if not _flag(args, "missing_only") else not packet_status,
         "packet_status": packet_status,
     }
@@ -2536,13 +2566,16 @@ def cmd_workflow_packets(args: argparse.Namespace) -> int:
     write_line("Workflow packet readiness")
     write_key_value("Project path", root)
     write_key_value("Plan source", plan_source)
+    if plan.workflow_id:
+        write_key_value("Workflow ID", plan.workflow_id)
     if not packet_status:
         write_line("No matching workflow packet steps to show.")
         return SUCCESS
     for item in packet_status:
         status = "ready" if item["found"] else "missing"
         packet_id = f" ({item['packet_id']})" if item["packet_id"] else ""
-        write_bullet(f"{item['role']} -> {item['phase']}: {status}{packet_id}")
+        via = f" via {item['match_strategy']}" if item["match_strategy"] else ""
+        write_bullet(f"{item['role']} -> {item['phase']}: {status}{packet_id}{via}")
     return SUCCESS
 
 
