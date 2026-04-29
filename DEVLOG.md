@@ -7,6 +7,40 @@
 
 ---
 
+## 2026-04-29 - Wire `before_verify` / `after_verify` Emitters
+
+**Session:** Continuing the dispatcher emission cadence. Third hook pair lit up — verify. Six of eight declared plugin hooks now emit; only `before_reflect` / `after_reflect` remain.
+**Status:** `cmd_verify` brackets its check work and artifact write with `PluginHookDispatcher`. Single emission site, no dry-run path, so timing is straightforward.
+**Scope:** One command wiring + tests + docs. No verify-internals refactor; the dispatcher block sits at the top and bottom of the existing function.
+
+### What changed
+
+- `cmd_verify` now constructs a `PluginHookDispatcher`, calls `load_and_subscribe()`, emits `before_verify` with the selected check flags before any check work begins. After the verification artifact has been written, emits `after_verify` with a scalar summary, then calls `dispatcher.teardown()` before the JSON/text output is written. The dispatcher is intentionally NOT a context manager here because the function already has multiple early returns embedded in the existing flow; using explicit `teardown()` keeps the diff small and correctness obvious. Dispatcher remains exception-safe via the underlying bus contract — handler errors are logged to stderr and never break the command.
+- Payload contracts:
+  - `before_verify`: `{path, selected: {commands, changed_files, docs, invariants}}`
+  - `after_verify`: `{path, result, level, verification_id, artifact_path, errors_count, warnings_count, blocked_count}`
+  Large lists (warnings, errors, command outputs, changed_files, docs_checked, invariants_checked) stay out of the payload — plugins that need them can read the full record at `artifact_path`. Keeping the payload small keeps the contract stable and avoids accidental schema churn when verify internals grow.
+- Added two CLI-kernel integration tests in `tests/test_cli_kernel.py`: a synthetic plugin observes both events on `cmd_verify --commands --json` (with a smoke test scaffolded in the project so the verify pass actually completes) and asserts the payload shapes; a sibling test confirms the `selected` payload reflects exactly the flags requested. Both use `--commands` rather than `--docs` / `--invariants` because the deeper checks need project-state setup that is unrelated to what this slice is testing.
+- Updated `docs/COMMAND_CONTRACTS.md` plugin-dispatch section to record the new emitter.
+- Updated `CHANGELOG.md`.
+
+### Why it matters
+
+Plugins observing the verify lifecycle now get a clean signal: a `before_verify` notice with the selection scope, then an `after_verify` notice with the result and a path to the full artifact. Audit, telemetry, gate-keeping, and "did the gate pass" reactor patterns all become trivial to implement against a stable summary. The remaining slice (reflect) closes out all eight declared hooks and turns the plugin layer into a fully-functional emitter for every life-cycle moment in the CLI.
+
+### Verification
+
+- `pytest -q` -> `184 passed, 14 subtests passed` (was 182 + 14)
+- `pytest -q tests/test_cli_kernel.py -k "verify_emits or verify_default"` -> `2 passed`
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!`
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 57 source files`
+
+### Continuity thread
+
+- The next slice closes out the eighth declared hook by wiring `before_reflect` / `after_reflect` into `cmd_reflect`. After that, every declared hook in `PLUGIN_HOOKS` has a real emitter, and the plugin layer is fully load-bearing. Alternatively, port pi's `core/timings.ts` or `core/keybindings.ts` next as smaller standalone primitives.
+
+_The third pair sings now: scan, packet, verify. One channel left in the chant — reflect — and then the dispatcher is no longer a quiet altar but a hall full of named voices, each waiting to be invoked._
+
 ## 2026-04-29 - Wire `before_packet` / `after_packet` Emitters
 
 **Session:** Continuing the dispatcher-emission cadence. Second pair of plugin hooks lit up: `before_packet` / `after_packet` across every packet-write call site in the CLI.

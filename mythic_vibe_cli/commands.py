@@ -1080,6 +1080,16 @@ def cmd_verify(args: argparse.Namespace) -> int:
     if not any(selected.values()):
         selected = {key: True for key in selected}
 
+    dispatcher = PluginHookDispatcher(root)
+    dispatcher.load_and_subscribe()
+    dispatcher.emit(
+        "before_verify",
+        {
+            "path": str(root),
+            "selected": dict(selected),
+        },
+    )
+
     command_runs: list[dict[str, object]] = []
     warnings: list[str] = []
     errors: list[str] = []
@@ -1187,6 +1197,21 @@ def cmd_verify(args: argparse.Namespace) -> int:
     state.last_verification_id = verification_id
     state.updated_at = utc_now()
     store.write_state(state)
+
+    dispatcher.emit(
+        "after_verify",
+        {
+            "path": str(root),
+            "result": result,
+            "level": level,
+            "verification_id": verification_id,
+            "artifact_path": str(artifact_path),
+            "errors_count": len(errors),
+            "warnings_count": len(warnings),
+            "blocked_count": len(blocked_reasons),
+        },
+    )
+    dispatcher.teardown()
 
     if _flag(args, "json"):
         write_json(
