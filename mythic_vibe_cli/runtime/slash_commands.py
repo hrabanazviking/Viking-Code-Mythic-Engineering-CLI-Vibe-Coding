@@ -50,10 +50,24 @@ class BuiltinSlashCommand:
 
 @dataclass(frozen=True)
 class SlashCommandInfo:
+    """Metadata for any non-builtin slash command.
+
+    PH-02 slice 2.6 added the optional ``argv`` field — a tuple of
+    string arguments the picker uses to actually dispatch the
+    command via ``RunningCommandScreen``. When ``argv`` is empty
+    (the default), the slash entry is **discoverable but not
+    runnable** — the picker shows a "(plugin dispatch not yet
+    implemented)" notice and the operator must fall back to the
+    plugin's documented invocation. This keeps the contract
+    backwards-compatible: existing plugins that contribute
+    descriptions only continue to work.
+    """
+
     name: str
     source: SlashCommandSource
     source_info: SourceInfo
     description: str = ""
+    argv: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -61,6 +75,7 @@ class SlashCommandInfo:
             "source": self.source,
             "source_info": self.source_info.to_dict(),
             "description": self.description,
+            "argv": list(self.argv),
         }
 
 

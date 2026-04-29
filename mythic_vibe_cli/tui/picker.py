@@ -35,12 +35,20 @@ from ..runtime.slash_commands import (
 class PickerEntry:
     """Catalog entry the picker displays. Source is one of:
     ``"builtin"`` | ``"extension"`` | ``"prompt"`` | ``"skill"`` | ``"plugin"``.
+
+    PH-02 slice 2.6: ``argv`` is the dispatch payload for non-builtin
+    entries (a contributed slash command can supply the exact argv
+    list to subprocess-launch). Empty for builtins (the dispatcher
+    constructs ``[python, -m, mythic_vibe_cli, <name>]`` from the
+    name) and for contributed entries that haven't opted into
+    runnability.
     """
 
     name: str
     description: str
     source: str
     source_info_path: str = ""
+    argv: tuple[str, ...] = ()
 
     @classmethod
     def from_builtin(cls, item: BuiltinSlashCommand) -> "PickerEntry":
@@ -53,7 +61,16 @@ class PickerEntry:
             description=item.description,
             source=item.source,
             source_info_path=item.source_info.path if item.source_info else "",
+            argv=item.argv,
         )
+
+    @property
+    def is_dispatchable(self) -> bool:
+        """Whether the picker has enough information to dispatch this
+        entry. Builtins are always dispatchable (argv is reconstructed
+        from the name). Contributed entries are dispatchable when
+        they supplied an explicit argv at registration time."""
+        return self.source == "builtin" or bool(self.argv)
 
     def render_label(self) -> str:
         tag = f"[dim]\\[{self.source}][/dim]"
@@ -142,11 +159,13 @@ class CommandPreviewScreen(Screen):
     def _format_body(self) -> str:
         description = self.entry.description or "(no description)"
         path = self.entry.source_info_path or "(builtin)"
-        run_hint = (
-            "[b]Press r[/b] to run this command."
-            if self.entry.source == "builtin"
-            else "[dim](plugin dispatch not yet implemented; press Esc to return.)[/dim]"
-        )
+        if self.entry.is_dispatchable:
+            run_hint = "[b]Press r[/b] to run this command."
+        else:
+            run_hint = (
+                "[dim](plugin dispatch not yet implemented; "
+                "press Esc to return.)[/dim]"
+            )
         return (
             f"[b]Source:[/b]      {self.entry.source}\n"
             f"[b]Source info:[/b] {path}\n\n"
@@ -155,12 +174,18 @@ class CommandPreviewScreen(Screen):
         )
 
     def action_run_command(self) -> None:
-        if self.entry.source != "builtin":
+        if not self.entry.is_dispatchable:
             return
-        from .runner import RunningCommandScreen, command_for_builtin
+        from .runner import RunningCommandScreen, RunSpec, command_for_builtin
 
         cwd = self.project_root if self.project_root is not None else Path.cwd()
-        spec = command_for_builtin(self.entry.name, project_root=cwd)
+        if self.entry.source == "builtin":
+            spec = command_for_builtin(self.entry.name, project_root=cwd)
+        else:
+            # Slice 2.6: contributed slash with an explicit argv list.
+            # The plugin owns the invocation shape — no --path injection,
+            # no Python-interpreter wrapping; the argv is taken as-is.
+            spec = RunSpec(label=f"/{self.entry.name}", argv=list(self.entry.argv))
         self.app.push_screen(RunningCommandScreen(spec, cwd=cwd))
 
     def action_show_help(self) -> None:

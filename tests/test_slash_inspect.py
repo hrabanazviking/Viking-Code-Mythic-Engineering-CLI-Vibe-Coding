@@ -137,7 +137,7 @@ class SlashInspectPluginContributedTests(unittest.TestCase):
                         from mythic_vibe_cli.runtime.source_info import synthetic_source_info
                         return [
                             SlashCommandInfo(
-                                name="audit",
+                                name="audit-probe",
                                 source="plugin",
                                 source_info=synthetic_source_info(
                                     "audit_plugin:Plugin",
@@ -178,7 +178,7 @@ class SlashInspectPluginContributedTests(unittest.TestCase):
                 stdout = io.StringIO()
                 with redirect_stdout(stdout):
                     code = app.main(
-                        ["slash", "inspect", "audit", "--json", "--path", str(project_path)]
+                        ["slash", "inspect", "audit-probe", "--json", "--path", str(project_path)]
                     )
                 payload = json.loads(stdout.getvalue())
             finally:
@@ -186,7 +186,7 @@ class SlashInspectPluginContributedTests(unittest.TestCase):
 
             self.assertEqual(code, SUCCESS)
             self.assertTrue(payload["ok"])
-            self.assertEqual(payload["name"], "audit")
+            self.assertEqual(payload["name"], "audit-probe")
             self.assertEqual(payload["source"], "plugin")
             self.assertFalse(payload["interactive_local"])
             self.assertIsNone(payload["argparse_help"])

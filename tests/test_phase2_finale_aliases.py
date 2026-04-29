@@ -48,7 +48,7 @@ class ProviderAliasTests(unittest.TestCase):
         self.assertTrue(ns.json)
 
     def test_provider_handler_is_registered(self) -> None:
-        from mythic_vibe_cli.commands import cmd_ai_providers, cmd_provider
+        from mythic_vibe_cli.commands import cmd_provider
 
         self.assertIs(COMMAND_HANDLERS["provider"], cmd_provider)
         # And the wrapper delegates to cmd_ai_providers — confirmed by
@@ -95,7 +95,7 @@ class AuditAliasTests(unittest.TestCase):
         self.assertEqual(ns.command, "audit")
 
     def test_audit_handler_is_registered(self) -> None:
-        from mythic_vibe_cli.commands import cmd_audit, cmd_doctor
+        from mythic_vibe_cli.commands import cmd_audit
 
         self.assertIs(COMMAND_HANDLERS["audit"], cmd_audit)
         # cmd_audit forces json=True before delegating to cmd_doctor.
