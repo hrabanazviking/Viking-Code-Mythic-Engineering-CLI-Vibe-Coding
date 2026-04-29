@@ -15,6 +15,7 @@ from .method_excerpt import (
     select_method_excerpts,
     sections_for,
 )
+from .output import write_verbose
 from .runtime.file_mutation_queue import file_mutation_queue
 
 PACKET_OUTPUT_FORMATS = [
@@ -279,8 +280,11 @@ class PacketBuilder:
                 payload = json.loads(sidecar.read_text(encoding="utf-8"))
                 if isinstance(payload, dict):
                     metadata = {**payload, **metadata}
-            except json.JSONDecodeError:
-                pass
+            except json.JSONDecodeError as exc:
+                write_verbose(
+                    f"Packet sidecar {sidecar} is not valid JSON; "
+                    f"falling back to in-text metadata only ({exc.msg})."
+                )
         return text, metadata
 
     def _validate_request(self, request: CodexPacketRequest) -> None:
