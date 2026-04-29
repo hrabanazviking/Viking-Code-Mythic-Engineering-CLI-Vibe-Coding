@@ -164,8 +164,10 @@ additive, cross-platform, open-source):
 | 13 | F-022 hot-fix | done — `5ed5980` — 1-line return tuple fix + regression test |
 | 14 | Phase 1 Slice 1.5 — boundary re-audit | done — clean, 0 ADRs filed |
 | 15 | Phase 2 Slice 2.1 — slash inventory + catalog mirror | done — 14→40 entries, +1 parity test |
-| 16 | Update memory + project status (after slice 2.1) | in progress |
-| 17 | Phase 2 Slice 2.2+ (workflow-phase + verify-shorthand aliases) | next |
+| 16 | Update memory + project status (after slice 2.1) | done — pushed at b0e6ec8 |
+| 17 | Phase 2 Slice 2.2 — dev-tool shortcuts (test/lint/typecheck/scaffold/changelog/version) | done — 40→46 slash entries, +17 tests, F-023 logged |
+| 18 | Update memory + project status (after slice 2.2) | in progress |
+| 19 | Phase 2 Slice 2.3 — workflow-phase capture commands | next |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
@@ -272,19 +274,22 @@ hygiene) delivered:
 coverage holds at 76%; ruff/mypy clean throughout. All commits
 pushed to `origin/development`.
 
-## Next slice (PH-02 slice 2.2)
+## PH-02 slice 2.2 results
 
-Implement workflow-phase aliases and verify-shorthand commands as
-NEW handlers (not just slash entries — these need argparse subparsers
-and command implementations). Targets:
+Six new argparse handlers landed (`test` / `lint` / `typecheck` /
+`scaffold adr` / `changelog` / `version`) plus matching slash
+entries. Catalog grew 40 → 46. Tests 310 → 327 (+17). Ruff/mypy
+clean. New finding F-023 documents the argparse `--command` /
+`dest="command"` collision footgun for future subparser additions.
 
-- `/test`, `/lint`, `/typecheck` → thin wrappers over `verify --commands`
-- `/scaffold` → calls into existing template helpers (PH-10 will
-  expand)
-- `/changelog`, `/version` → new metadata commands
+See `PHASE2_SLICE_2_2_CLOSEOUT.md` for the full memo.
 
-The workflow-phase commands (`/intent`, `/constraints`,
-`/architecture`, `/plan`, `/build`) are a slice 2.3 concern.
+## Next slice (PH-02 slice 2.3)
+
+Workflow-phase capture commands (`/intent`, `/constraints`,
+`/architecture`, `/plan`, `/build`) as NEW handlers that write
+durable phase records under `mythic/checkins/`. Shape proposed in
+the original Production Roadmap stage 4.
 
 ---
 
