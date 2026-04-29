@@ -25,6 +25,7 @@ This hub orients contributors to the active Mythic Vibe CLI product and the surr
 - `docs/quickstart.md` - first workflow and setup path.
 - `docs/INSTALL.md` - platform install paths for venv, uv, and pipx.
 - `docs/api.md` - command/API contract overview.
+- `docs/plugins.md` - operator guide for writing and registering Mythic plugins (eight life-cycle hooks).
 - `docs/hardware_profiles.md` - hardware-oriented guidance.
 - `docs/DOCUMENTATION_STANDARDS.md` - documentation maintenance rules.
 - `docs/RELEASE_CHECKLIST.md` - release and packaging verification checklist.
