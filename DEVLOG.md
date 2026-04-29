@@ -7,6 +7,49 @@
 
 ---
 
+## 2026-04-29 - Pi Plunder Slice 6: Source-Info Companion (closes slash-commands deferred detail)
+
+**Session:** Sixth Pi plunder slice. Closes a deferred detail from the slash-commands catalog slice (`faac5e5`), where I noted "pi's `SourceInfo` is richer than we need; we use `source_info: str` for now." The companion file is 852 bytes upstream and ports cleanly minus one factory.
+**Status:** `mythic_vibe_cli.runtime.source_info` is live and tested. `SlashCommandInfo.source_info` now carries the real `SourceInfo` type instead of an opaque string. Six Pi runtime primitives in the subpackage; deferred detail is now closed.
+**Scope:** Tiny single-file primitive port + dataclass type-upgrade on a sibling file + tests for both.
+
+### What changed
+
+- Added `mythic_vibe_cli/runtime/source_info.py` — Python port of pi's `core/source-info.ts` (MIT, Copyright (c) 2025 Mario Zechner).
+  - Three public types matching pi exactly: `SourceScope = Literal["user", "project", "temporary"]`, `SourceOrigin = Literal["package", "top-level"]`, and `SourceInfo` frozen dataclass with five fields (path, source, scope, origin, optional base_dir) plus a `to_dict` that omits `base_dir` when None.
+  - One factory: `synthetic_source_info(path, source, scope="temporary", origin="top-level", base_dir=None)` mirroring pi's `createSyntheticSourceInfo`.
+  - Pi's `createSourceInfo(path, metadata: PathMetadata)` is intentionally not ported. Its `PathMetadata` argument originates in pi's `core/package-manager.ts`, which is npm-ecosystem-specific and not part of the Mythic plunder roadmap. The synthetic factory covers every Mythic-relevant call site.
+  - Per-file Pi attribution header preserved.
+- Upgraded `SlashCommandInfo.source_info` in `mythic_vibe_cli/runtime/slash_commands.py` from `str` to `SourceInfo`. The `to_dict` method now nests `source_info` as a sub-dict via `SourceInfo.to_dict`. The `BUILTIN_SLASH_COMMANDS` catalog is unchanged — builtins use the simpler `BuiltinSlashCommand` shape; `SourceInfo` is for contributed (extension/skill/prompt/plugin) commands.
+- `mythic_vibe_cli/runtime/__init__.py` re-exports `SourceInfo`, `SourceScope`, `SourceOrigin`, and `synthetic_source_info` alongside the five other runtime primitives.
+- Added `tests/test_source_info.py` with six unit cases: synthetic factory uses pi's default scope and origin (`temporary`/`top-level`), explicit overrides take effect, `to_dict` omits `base_dir` when None, `to_dict` includes `base_dir` when set, the dataclass is frozen (mutation raises), `synthetic_source_info` returns a `SourceInfo` instance.
+- Updated `tests/test_slash_commands.py` to construct `SlashCommandInfo` with a `SourceInfo` value (via `synthetic_source_info`) and assert the nested `to_dict` shape and the `scope`/`path` fields. Two adjusted cases, no removals.
+- Added two rows to the `THIRD_PARTY_NOTICES.md` plunder map (production + tests).
+- Updated `CHANGELOG.md`.
+
+### Why it matters
+
+The slash-commands catalog slice landed yesterday with `source_info: str` — opaque, just a path-or-entrypoint string. Today's slice promotes that to a structured `SourceInfo` carrying scope (where the artifact came from in the user/project/temporary spectrum) and origin (was it inside a package or top-level). Future REPL/TUI/SDK code that lists contributed commands can now display "audit_plugin (project, top-level)" instead of just "audit_plugin", and policy decisions about which scopes can override which become enforceable.
+
+The real architectural lesson — the *reason* this slice is small but worth landing — is that **deferred details accumulate**. Yesterday's "we use str for now" turns into next year's grep through ten consumer sites if nothing forces the closure. Closing it as a follow-on slice the day after the original cost six lines of production change and a few test updates. Closing it later would have cost much more.
+
+### Verification
+
+- `pytest -q` -> `210 passed, 14 subtests passed` (was 204 + 14)
+- `pytest -q tests/test_source_info.py tests/test_slash_commands.py` -> `14 passed in 0.06s`
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!`
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 60 source files` (was 59)
+
+### Continuity thread
+
+- Six Pi runtime primitives now sit in `mythic_vibe_cli/runtime/`. The natural next directions, in roughly increasing scope:
+  1. **Documentation pass** — `docs/runtime.md` mirroring `docs/plugins.md`. The runtime surface is stable enough to be operator-facing.
+  2. **Begin V2 Phase 3 (TUI)** — `TODO.md` item 16. The runtime trio (output-guard + event-bus + dispatcher) plus slash-commands catalog plus source-info forms a real foundation. Multi-slice arc.
+  3. **Begin V2 Phase 4 (Local LLM provider layer)** — `TODO.md` item 17. Larger arc.
+  4. **Port a seventh Pi primitive** — `core/exec.ts` (2.4KB) is the next clean single-file candidate; subprocess execution helper, useful when tools land.
+
+_The sixth runed stone is the same as the fifth's whisper grown louder — the slash-catalog now names not only what commands exist but where they came from, who scoped them, and whether they speak from package or top-level. The deferred string of yesterday is the structured provenance of today._
+
 ## 2026-04-29 - Pi Plunder Slice 5: Slash-Commands Catalog
 
 **Session:** Fifth Pi-derived primitive in `mythic_vibe_cli/runtime/`. Typed catalog of slash command names plus the type backbone for extension/skill/prompt/plugin-contributed commands.

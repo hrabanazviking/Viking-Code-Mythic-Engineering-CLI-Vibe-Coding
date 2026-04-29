@@ -7,6 +7,7 @@ Currently exposes:
 - ``event_bus`` — synchronous publish/subscribe coordination layer.
 - ``timings`` — lightweight elapsed-time instrumentation (env-gated).
 - ``slash_commands`` — typed catalog of slash commands (no dispatcher).
+- ``source_info`` — provenance type for contributed artifacts.
 """
 
 from .event_bus import EventBus, EventBusController, create_event_bus
@@ -24,6 +25,12 @@ from .slash_commands import (
     BuiltinSlashCommand,
     SlashCommandInfo,
     SlashCommandSource,
+)
+from .source_info import (
+    SourceInfo,
+    SourceOrigin,
+    SourceScope,
+    synthetic_source_info,
 )
 from .timings import print_timings, record, reset_timings
 
@@ -46,4 +53,8 @@ __all__ = [
     "BuiltinSlashCommand",
     "SlashCommandInfo",
     "SlashCommandSource",
+    "SourceInfo",
+    "SourceOrigin",
+    "SourceScope",
+    "synthetic_source_info",
 ]

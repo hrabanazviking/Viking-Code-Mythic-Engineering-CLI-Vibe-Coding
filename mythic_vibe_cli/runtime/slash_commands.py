@@ -33,6 +33,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
+from .source_info import SourceInfo
+
 
 SlashCommandSource = Literal["extension", "prompt", "skill", "plugin"]
 
@@ -50,14 +52,14 @@ class BuiltinSlashCommand:
 class SlashCommandInfo:
     name: str
     source: SlashCommandSource
-    source_info: str
+    source_info: SourceInfo
     description: str = ""
 
-    def to_dict(self) -> dict[str, str]:
+    def to_dict(self) -> dict[str, object]:
         return {
             "name": self.name,
             "source": self.source,
-            "source_info": self.source_info,
+            "source_info": self.source_info.to_dict(),
             "description": self.description,
         }
 

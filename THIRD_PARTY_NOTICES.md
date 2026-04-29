@@ -35,6 +35,8 @@ listed in the plunder map below.
 | `tests/test_timings.py` | (no upstream unit-test analog) | 2026-04-29 |
 | `mythic_vibe_cli/runtime/slash_commands.py` | `packages/coding-agent/src/core/slash-commands.ts` | 2026-04-29 |
 | `tests/test_slash_commands.py` | (no upstream unit-test analog) | 2026-04-29 |
+| `mythic_vibe_cli/runtime/source_info.py` | `packages/coding-agent/src/core/source-info.ts` (synthetic factory only; PathMetadata-dependent factory not ported) | 2026-04-29 |
+| `tests/test_source_info.py` | (no upstream unit-test analog) | 2026-04-29 |
 
 This project is independent and is not affiliated with, endorsed by, or
 sponsored by Mario Zechner, the pi-mono authors, or pi.dev.
