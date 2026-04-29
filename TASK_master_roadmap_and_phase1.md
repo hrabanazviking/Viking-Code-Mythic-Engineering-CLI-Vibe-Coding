@@ -156,9 +156,11 @@ additive, cross-platform, open-source):
 | 5 | Begin Phase 1 Slice 1.1 — `PHASE1_RUNTIME_AUDIT.md` | done — 20 findings catalogued |
 | 6 | Update memory + project status (after slice 1.1) | done — pushed at 00daa67 |
 | 7 | Phase 1 Slice 1.2 — `PHASE1_ISSUE_TRIAGE.md` | done — 21 issues mapped, 5 duplicate clusters identified |
-| 8 | Update memory + project status (after slice 1.2) | in progress |
-| 9 | Phase 1 Slice 1.3 — quick-fix sweep | next |
-| 10 | Hand off / await further instruction | end of slice |
+| 8 | Update memory + project status (after slice 1.2) | done — pushed at 25b177e |
+| 9 | Phase 1 Slice 1.3 — quick-fix sweep | done — 7 findings closed, +6 tests, see PHASE1_SLICE_1_3_CLOSEOUT.md |
+| 10 | Update memory + project status (after slice 1.3) | in progress |
+| 11 | Phase 1 Slice 1.4 — coverage hygiene | next |
+| 12 | Hand off / await further instruction | end of slice |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
@@ -195,21 +197,28 @@ See `PHASE1_RUNTIME_AUDIT.md` for the full table + remediation plan.
 See `PHASE1_ISSUE_TRIAGE.md` for the full per-issue table, duplicate
 clusters, and disposition codes.
 
-## Next slice (1.3)
+## Phase 1 Slice 1.3 — quick-fix sweep results
 
-Quick-fix sweep — first code-changing slice. Scoped to the seven
-info-severity additive findings from the audit:
+All seven info-severity additive findings closed in six commits:
 
-- F-006 — error message for unknown `slash` subcommand
-- F-007 — error message for unknown `ai` subcommand
-- F-010 — verbose-log JSON sidecar parse failure
-- F-014 — `# noqa: BLE001` comments on three best-effort `pass` sites
-- F-017 — ownership header docstrings on `cli.py` and `app.py`
-- F-018 — decision flag for the untracked `vibe_research_part1_tier1a.md`
-- F-019 — `MYTHIC_EVENT_LOG_LIMIT` env var
+| Finding | Commit |
+|---|---|
+| F-006 / F-007 | `f9c8f38` |
+| F-010 | `816efbb` |
+| F-014 | `b6e22c3` |
+| F-017 | `30c9964` |
+| F-018 | `7d0a455` |
+| F-019 | `74ffa45` |
 
-All trivial, additive, no risk to the 270-test baseline. Each fix is
-its own commit. Tests must stay green throughout.
+Test deltas: 270 → 276 (+6, 0 regressions). Ruff and mypy stay clean.
+See `PHASE1_SLICE_1_3_CLOSEOUT.md` for the full close-out memo.
+
+## Next slice (1.4)
+
+Coverage hygiene. Run `pytest --cov=mythic_vibe_cli`, identify
+untested public surface, add tests only (no behavioural changes).
+Target ≥ 85% line coverage on the active runtime, exclusive of the
+TUI subpackage.
 
 ---
 
