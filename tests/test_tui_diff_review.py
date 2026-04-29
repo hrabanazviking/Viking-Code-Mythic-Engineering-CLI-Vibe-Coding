@@ -390,29 +390,36 @@ class DiffReviewScreenTests(unittest.TestCase):
         self.assertEqual(session.decisions[2], "pending")
         self.assertEqual(session.current_index, 2)
 
-    def test_help_toggle_shows_bindings_text(self) -> None:
+    def test_question_mark_pushes_help_overlay(self) -> None:
+        """Slice 4.7 generalised the diff-review screen's `?` key from
+        an inline toggle to the shared HelpOverlayScreen — same as
+        every other TUI screen. The overlay's render must include the
+        primary `Accept` action so the operator sees it on demand."""
         from mythic_vibe_cli.tui.app import MythicTuiApp
         from mythic_vibe_cli.tui.diff_review import DiffReviewScreen
+        from mythic_vibe_cli.tui.help_overlay import HelpOverlayScreen
 
         session = self._make_session()
 
-        async def run_test() -> tuple[str, str]:
+        async def run_test() -> tuple[bool, str]:
             with tempfile.TemporaryDirectory() as tmp:
                 app = MythicTuiApp(Path(tmp))
                 async with app.run_test() as pilot:
                     await pilot.pause()
                     app.push_screen(DiffReviewScreen(session))
                     await pilot.pause()
-                    before = str(app.screen.query_one("#diff-review-help").render())
                     await pilot.press("question_mark")
                     await pilot.pause()
-                    after = str(app.screen.query_one("#diff-review-help").render())
-                    return before, after
+                    on_overlay = isinstance(app.screen, HelpOverlayScreen)
+                    card = app.screen.query_one("#help-overlay-card")
+                    return on_overlay, str(card.render())
 
-        before, after = asyncio.run(run_test())
-        self.assertNotIn("accept", before.lower())
-        # The help line uses the canonical bindings constant.
-        self.assertIn("accept", after.lower())
+        on_overlay, rendered = asyncio.run(run_test())
+        self.assertTrue(on_overlay)
+        self.assertIn("Accept", rendered)
+        self.assertIn("a", rendered)
+        # The legacy bindings-line constant is still exported for any
+        # text-rendering callers that don't push a screen.
         self.assertIn("a accept", DIFF_REVIEW_BINDINGS_TEXT)
 
 

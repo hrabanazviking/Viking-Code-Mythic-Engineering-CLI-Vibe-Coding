@@ -108,6 +108,7 @@ class CommandPreviewScreen(Screen):
         Binding("q", "app.pop_screen", "Back", show=False),
         Binding("r", "run_command", "Run"),
         Binding("enter", "run_command", "Run", show=False),
+        Binding("question_mark", "show_help", "Help"),
     ]
 
     DEFAULT_CSS = """
@@ -161,6 +162,15 @@ class CommandPreviewScreen(Screen):
         spec = command_for_builtin(self.entry.name, project_root=cwd)
         self.app.push_screen(RunningCommandScreen(spec, cwd=cwd))
 
+    def action_show_help(self) -> None:
+        from .help_overlay import HelpOverlayScreen, binding_help_pairs
+
+        self.app.push_screen(
+            HelpOverlayScreen(
+                "Command preview — keys", binding_help_pairs(self.BINDINGS)
+            )
+        )
+
 
 class SlashPickerScreen(Screen):
     """Filterable list of slash commands. Pushes ``CommandPreviewScreen`` on
@@ -168,6 +178,7 @@ class SlashPickerScreen(Screen):
 
     BINDINGS = [
         Binding("escape", "app.pop_screen", "Cancel"),
+        Binding("question_mark", "show_help", "Help"),
     ]
 
     DEFAULT_CSS = """
@@ -240,3 +251,12 @@ class SlashPickerScreen(Screen):
 
     def _select_entry(self, entry: PickerEntry) -> None:
         self.app.push_screen(CommandPreviewScreen(entry, project_root=self.root))
+
+    def action_show_help(self) -> None:
+        from .help_overlay import HelpOverlayScreen, binding_help_pairs
+
+        self.app.push_screen(
+            HelpOverlayScreen(
+                "Slash picker — keys", binding_help_pairs(self.BINDINGS)
+            )
+        )
