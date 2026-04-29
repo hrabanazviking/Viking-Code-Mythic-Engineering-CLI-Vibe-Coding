@@ -66,6 +66,7 @@ class HelpOverlayScreen(Screen):
         Binding("escape", "app.pop_screen", "Close"),
         Binding("q", "app.pop_screen", "Close", show=False),
         Binding("question_mark", "app.pop_screen", "Close", show=False),
+        Binding("t", "app.cycle_theme", "Theme"),
     ]
 
     DEFAULT_CSS = """

@@ -695,6 +695,7 @@ class StatusScreen(Screen):
         Binding("r", "refresh_now", "Refresh"),
         Binding("slash", "open_picker", "/  Slash picker"),
         Binding("question_mark", "show_help", "Help"),
+        Binding("t", "app.cycle_theme", "Theme"),
     ]
 
     DEFAULT_CSS = """
@@ -829,15 +830,35 @@ class MythicTuiApp(App):
     TITLE = "Mythic Vibe TUI"
     SUB_TITLE = "Project status"
 
-    def __init__(self, root: Path) -> None:
+    def __init__(self, root: Path, *, theme: str | None = None) -> None:
         super().__init__()
         self.root = root
+        self._initial_theme = theme
 
     def on_mount(self) -> None:
+        if self._initial_theme is not None:
+            # Defer to Textual's setter, which will raise on unknown
+            # names. ``cmd_tui`` already validates via argparse choices,
+            # so this should not normally fire — guarded so a direct
+            # in-process caller (tests, embeddings) can't crash the app.
+            try:
+                self.theme = self._initial_theme
+            except Exception:  # noqa: BLE001 — never crash the TUI on a bad theme name
+                self._initial_theme = None
         self.push_screen(StatusScreen(self.root))
 
+    def action_cycle_theme(self) -> None:
+        """Advance to the next entry in :data:`THEME_CYCLE`. Bound to ``t``
+        on every screen via ``Binding("t", "app.cycle_theme", ...)``."""
+        from .themes import next_theme
 
-def run_tui(root: Path) -> int:
+        try:
+            self.theme = next_theme(self.theme)
+        except Exception:  # noqa: BLE001 — never crash the TUI on a theme bug
+            return
+
+
+def run_tui(root: Path, *, theme: str | None = None) -> int:
     """Entry point invoked by ``cmd_tui`` — opens the app and blocks until quit."""
-    MythicTuiApp(root).run()
+    MythicTuiApp(root, theme=theme).run()
     return 0

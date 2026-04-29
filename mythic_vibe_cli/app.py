@@ -728,6 +728,16 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     tui.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    from .tui.themes import TEXTUAL_BUILTIN_THEMES
+
+    tui.add_argument(
+        "--theme",
+        choices=TEXTUAL_BUILTIN_THEMES,
+        default=None,
+        metavar="NAME",
+        help="Override the initial Textual theme (default: textual-dark). "
+        "Use 't' inside the TUI to cycle through a curated subset.",
+    )
     add_runtime_options(tui)
 
     # --- PH-02 slice 2.2: developer-tool shortcuts ---

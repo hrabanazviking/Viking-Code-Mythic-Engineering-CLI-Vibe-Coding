@@ -371,6 +371,7 @@ if _Screen is not None:
             _Binding("k", "prev", "Prev"),
             _Binding("up", "prev", "Prev", show=False),
             _Binding("question_mark", "show_help", "Help"),
+            _Binding("t", "app.cycle_theme", "Theme"),
             _Binding("q", "app.pop_screen", "Quit"),
             _Binding("escape", "app.pop_screen", "Quit", show=False),
         ]
