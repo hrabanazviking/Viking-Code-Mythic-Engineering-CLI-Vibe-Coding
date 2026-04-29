@@ -50,11 +50,11 @@ Argument parsing and top-level dispatch live in `mythic_vibe_cli.app`. Command i
 - `status`
   - Reports current progress and phase state.
 - `workflow plan`
-  - Writes a deterministic six-role orchestration artifact and exposes packet-ready requests. With `--packets`, creates one packet artifact per role step without provider execution.
+  - Writes a deterministic six-role orchestration artifact and exposes packet-ready requests. With `--packets`, creates one packet artifact per role step without provider execution. Each freshly built plan carries a deterministic `workflow_id` of the form `WF-<UTC compact>-<sha8(task+created_at)>`, persisted in `mythic/workflow_plan.json` and stamped onto every generated packet's `.meta.json` payload.
 - `workflow run`
-  - Previews ordered role execution with `--dry-run`; `--packets-only` validates required packet artifacts; real provider execution is intentionally blocked until safety gates are added.
+  - Previews ordered role execution with `--dry-run`; `--packets-only` validates required packet artifacts; real provider execution is intentionally blocked until safety gates are added. Surfaces the plan's `workflow_id` in JSON output, and each `packet_status` entry reports a `match_strategy` of `"id"`, `"text"`, or `null`.
 - `workflow packets`
-  - Lists packet readiness for saved or generated workflow plans without executing providers.
+  - Lists packet readiness for saved or generated workflow plans without executing providers. Prefers `(workflow_id, workflow_step_id)` matches when both plan and packet carry IDs; falls back to the legacy `(role, phase, task, audience, output_format)` text match when either side is missing IDs.
 - `state show`
   - Displays schema-versioned project state from `mythic/status.json`.
 - `state validate`

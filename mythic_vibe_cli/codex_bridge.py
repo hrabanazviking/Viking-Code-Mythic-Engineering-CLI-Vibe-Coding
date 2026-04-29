@@ -29,6 +29,8 @@ class CodexPacketRequest:
     audience: str
     role: str = "Forge Worker"
     output_format: str = "markdown"
+    workflow_id: str | None = None
+    workflow_step_id: str | None = None
 
 
 @dataclass
@@ -44,6 +46,8 @@ class PacketRecord:
     source_path: str | None = None
     source_packet_id: str | None = None
     output_format: str = "markdown"
+    workflow_id: str | None = None
+    workflow_step_id: str | None = None
 
     def to_dict(self) -> dict[str, str]:
         payload: dict[str, str] = {
@@ -61,6 +65,10 @@ class PacketRecord:
             payload["source_path"] = self.source_path
         if self.source_packet_id is not None:
             payload["source_packet_id"] = self.source_packet_id
+        if self.workflow_id is not None:
+            payload["workflow_id"] = self.workflow_id
+        if self.workflow_step_id is not None:
+            payload["workflow_step_id"] = self.workflow_step_id
         return payload
 
 
@@ -99,6 +107,8 @@ class PacketBuilder:
             source_path=str(source_path),
             source_packet_id=str(source_metadata.get("packet_id")) if source_metadata.get("packet_id") else None,
             output_format=str(source_metadata.get("output_format") or "markdown"),
+            workflow_id=str(source_metadata.get("workflow_id")) if source_metadata.get("workflow_id") else None,
+            workflow_step_id=str(source_metadata.get("workflow_step_id")) if source_metadata.get("workflow_step_id") else None,
         )
         self._write_ingested_record(record, packet_text, source_metadata)
         return record
@@ -124,6 +134,8 @@ class PacketBuilder:
                         packet_path=str(payload.get("packet_path", "")),
                         metadata_path=str(path),
                         output_format=str(payload.get("output_format", "markdown")),
+                        workflow_id=str(payload["workflow_id"]) if payload.get("workflow_id") else None,
+                        workflow_step_id=str(payload["workflow_step_id"]) if payload.get("workflow_step_id") else None,
                     )
                 )
         return records
@@ -155,6 +167,8 @@ class PacketBuilder:
             source_path=str(payload.get("source_path")) if payload.get("source_path") else None,
             source_packet_id=str(payload.get("source_packet_id")) if payload.get("source_packet_id") else None,
             output_format=str(payload.get("output_format", "markdown")),
+            workflow_id=str(payload["workflow_id"]) if payload.get("workflow_id") else None,
+            workflow_step_id=str(payload["workflow_step_id"]) if payload.get("workflow_step_id") else None,
         )
 
     def diff_packets(self, left_packet_id: str, right_packet_id: str) -> str:
@@ -195,6 +209,8 @@ class PacketBuilder:
             packet_path=str(packet_output),
             metadata_path=str(metadata_path),
             output_format=request.output_format,
+            workflow_id=request.workflow_id,
+            workflow_step_id=request.workflow_step_id,
         )
 
     def _write_record(self, record: PacketRecord, request: CodexPacketRequest) -> None:

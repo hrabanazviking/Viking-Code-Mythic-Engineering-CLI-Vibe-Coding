@@ -537,6 +537,117 @@ class CliKernelTests(unittest.TestCase):
             self.assertEqual(code, UNSAFE_OPERATION_BLOCKED)
             self.assertIn("dry-run", output.getvalue())
 
+    def test_workflow_plan_stamps_workflow_id_on_generated_packets(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(
+                    [
+                        "workflow",
+                        "plan",
+                        "--task",
+                        "Stamp packets with workflow id",
+                        "--path",
+                        str(root),
+                        "--role",
+                        "Skald",
+                        "--packets",
+                        "--json",
+                    ]
+                )
+
+            payload = json.loads(output.getvalue())
+
+            self.assertEqual(code, SUCCESS)
+            self.assertTrue(payload["workflow_id"].startswith("WF-"))
+            self.assertEqual(payload["plan"]["workflow_id"], payload["workflow_id"])
+            self.assertEqual(len(payload["packet_artifacts"]), 1)
+            artifact = payload["packet_artifacts"][0]
+            self.assertEqual(artifact["workflow_id"], payload["workflow_id"])
+            self.assertEqual(artifact["workflow_step_id"], "step-01")
+            metadata_path = Path(artifact["metadata_path"])
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+            self.assertEqual(metadata["workflow_id"], payload["workflow_id"])
+            self.assertEqual(metadata["workflow_step_id"], "step-01")
+
+    def test_workflow_packets_matches_by_workflow_id(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with redirect_stdout(io.StringIO()):
+                app.main(
+                    [
+                        "workflow",
+                        "plan",
+                        "--task",
+                        "ID-based match",
+                        "--path",
+                        str(root),
+                        "--role",
+                        "Skald",
+                        "--role",
+                        "Auditor",
+                        "--packets",
+                    ]
+                )
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(["workflow", "packets", "--path", str(root), "--json"])
+
+            payload = json.loads(output.getvalue())
+
+            self.assertEqual(code, SUCCESS)
+            self.assertTrue(payload["packets_ready"])
+            self.assertTrue(payload["workflow_id"].startswith("WF-"))
+            self.assertEqual(len(payload["packet_status"]), 2)
+            for item in payload["packet_status"]:
+                self.assertTrue(item["found"])
+                self.assertEqual(item["match_strategy"], "id")
+                self.assertEqual(item["workflow_id"], payload["workflow_id"])
+
+    def test_workflow_packets_falls_back_to_text_match_for_legacy_plans(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with redirect_stdout(io.StringIO()):
+                app.main(
+                    [
+                        "workflow",
+                        "plan",
+                        "--task",
+                        "Legacy text match",
+                        "--path",
+                        str(root),
+                        "--role",
+                        "Skald",
+                        "--packets",
+                    ]
+                )
+
+            plan_path = root / "mythic" / "workflow_plan.json"
+            plan_payload = json.loads(plan_path.read_text(encoding="utf-8"))
+            plan_payload.pop("workflow_id", None)
+            plan_path.write_text(json.dumps(plan_payload, indent=2) + "\n", encoding="utf-8")
+
+            packet_dir = root / "mythic" / "packets"
+            for meta_path in packet_dir.glob("PKT-*.meta.json"):
+                meta_payload = json.loads(meta_path.read_text(encoding="utf-8"))
+                meta_payload.pop("workflow_id", None)
+                meta_payload.pop("workflow_step_id", None)
+                meta_path.write_text(json.dumps(meta_payload, indent=2) + "\n", encoding="utf-8")
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(["workflow", "packets", "--path", str(root), "--json"])
+
+            payload = json.loads(output.getvalue())
+
+            self.assertEqual(code, SUCCESS)
+            self.assertTrue(payload["packets_ready"])
+            self.assertIsNone(payload["workflow_id"])
+            self.assertEqual(payload["packet_status"][0]["match_strategy"], "text")
+            self.assertIsNone(payload["packet_status"][0]["workflow_id"])
+
     def test_grimoire_json_has_no_human_prefix(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             output = io.StringIO()

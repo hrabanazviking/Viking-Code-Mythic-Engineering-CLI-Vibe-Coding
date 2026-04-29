@@ -68,18 +68,19 @@ Per Mythic Engineering law: no subtraction. New fields are optional. Legacy plan
 
 - [x] Task file written
 - [x] Task file committed + pushed to development
-- [ ] Code change: `workflow_engine.py`
-- [ ] Code change: `codex_bridge.py`
-- [ ] Code change: `commands.py`
-- [ ] Tests added
-- [ ] `pytest` green (target: 87 + new tests)
-- [ ] `ruff check mythic_vibe_cli tests` green
-- [ ] `mypy mythic_vibe_cli` green
-- [ ] Smoke: `python -m mythic_vibe_cli workflow plan --task ... --packets --json` shows `workflow_id`
-- [ ] Smoke: `workflow packets` matches by id when both sides have one
-- [ ] Docs (COMMAND_CONTRACTS, api.md) updated
-- [ ] CHANGELOG Unreleased entries added
-- [ ] DEVLOG entry written
+- [x] Code change: `workflow_engine.py`
+- [x] Code change: `codex_bridge.py`
+- [x] Code change: `commands.py`
+- [x] Tests added (4 engine + 3 CLI-kernel)
+- [x] `pytest` green — `93 passed, 14 subtests passed`
+- [x] `ruff check mythic_vibe_cli tests` green
+- [x] `mypy mythic_vibe_cli` green — 51 source files
+- [x] Smoke: `workflow plan --packets --json` -> `workflow_id: WF-20260429074552-75add827` stamped on packet
+- [x] Smoke: `workflow packets --json` -> `match_strategy: "id"` on saved plan
+- [x] Smoke: stripped IDs -> `match_strategy: "text"` legacy fallback intact
+- [x] Docs (COMMAND_CONTRACTS, api.md) updated
+- [x] CHANGELOG Unreleased entries added
+- [x] DEVLOG entry written
 - [ ] Memory `project_mythic_engineering_cli_status.md` updated with new HEAD
 - [ ] Final commit + push
 

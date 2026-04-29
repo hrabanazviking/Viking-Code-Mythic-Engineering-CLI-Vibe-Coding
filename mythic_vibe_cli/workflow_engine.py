@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -71,12 +73,20 @@ class WorkflowStep:
             "handoff_to": self.handoff_to,
         }
 
-    def packet_request(self, task: str, audience: str = "advanced") -> CodexPacketRequest:
+    def packet_request(
+        self,
+        task: str,
+        audience: str = "advanced",
+        *,
+        workflow_id: str | None = None,
+    ) -> CodexPacketRequest:
         return CodexPacketRequest(
             task=f"{task}\n\nStep objective: {self.objective}",
             phase=self.phase,
             audience=audience,
             role=self.role,
+            workflow_id=workflow_id,
+            workflow_step_id=self.step_id or None,
         )
 
 
@@ -85,16 +95,23 @@ class WorkflowPlan:
     task: str
     created_at: str
     steps: tuple[WorkflowStep, ...]
+    workflow_id: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        payload: dict[str, Any] = {
             "task": self.task,
             "created_at": self.created_at,
             "steps": [step.to_dict() for step in self.steps],
         }
+        if self.workflow_id:
+            payload["workflow_id"] = self.workflow_id
+        return payload
 
     def packet_requests(self, audience: str = "advanced") -> list[CodexPacketRequest]:
-        return [step.packet_request(self.task, audience=audience) for step in self.steps]
+        return [
+            step.packet_request(self.task, audience=audience, workflow_id=self.workflow_id)
+            for step in self.steps
+        ]
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> WorkflowPlan:
@@ -121,10 +138,13 @@ class WorkflowPlan:
                 )
             )
 
+        raw_workflow_id = payload.get("workflow_id")
+        workflow_id = str(raw_workflow_id) if raw_workflow_id else None
         plan = cls(
             task=str(payload.get("task") or ""),
             created_at=str(payload.get("created_at") or ""),
             steps=tuple(steps),
+            workflow_id=workflow_id,
         )
         plan.validate()
         return plan
@@ -169,7 +189,20 @@ class WorkflowEngine:
             handoff_to = role_sequence[index] if index < len(role_sequence) else None
             steps.append(self._build_step(index, prompt, handoff_to=handoff_to))
 
-        return WorkflowPlan(task=normalized_task, created_at=utc_now(), steps=tuple(steps))
+        created_at = utc_now()
+        workflow_id = self._make_workflow_id(normalized_task, created_at)
+        return WorkflowPlan(
+            task=normalized_task,
+            created_at=created_at,
+            steps=tuple(steps),
+            workflow_id=workflow_id,
+        )
+
+    @staticmethod
+    def _make_workflow_id(task: str, created_at: str) -> str:
+        compact = re.sub(r"[^0-9]", "", created_at)[:14] or "00000000000000"
+        digest = hashlib.sha256(f"{task}|{created_at}".encode("utf-8")).hexdigest()[:8]
+        return f"WF-{compact}-{digest}"
 
     def write_plan(
         self,

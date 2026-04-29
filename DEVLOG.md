@@ -7,6 +7,43 @@
 
 ---
 
+## 2026-04-29 - Stage 16 Workflow Identifiers on Plans and Packets
+
+**Session:** Picking up the continuity thread from "Stage 16 Workflow Packet Listing" — making packet readiness traceable by workflow ID instead of exact task text.
+**Status:** Workflow plans now carry a deterministic `workflow_id`; generated packets are stamped with `workflow_id` + `workflow_step_id`; `workflow packets` and `workflow run --packets-only` prefer ID-based matching with legacy text matching preserved as a fallback.
+**Scope:** Strictly additive identity layer over the existing workflow / packet contract.
+
+### What changed
+
+- Added `workflow_id` to `WorkflowPlan`, generated as `WF-<UTC compact>-<sha8(task+created_at)>` in `WorkflowEngine.build_plan`.
+- Added optional `workflow_id` and `workflow_step_id` fields to `CodexPacketRequest` and `PacketRecord`, persisted into each packet's `.meta.json` when set.
+- `WorkflowStep.packet_request()` now propagates the plan's `workflow_id` and the step's `step_id` into every generated packet request.
+- `_workflow_packet_status` now does ID-first matching (`workflow_id` + `workflow_step_id`) and falls back to the existing `(role, phase, task, audience, output_format)` text match when either side lacks IDs.
+- `workflow plan`, `workflow packets`, and `workflow run` JSON now expose the plan's `workflow_id`; each `packet_status` entry now reports `match_strategy` (`"id"`, `"text"`, or `null`).
+- Added round-trip support to `WorkflowPlan.from_dict` so legacy plans with no `workflow_id` continue to validate and resolve packets via text matching.
+- Added engine-level tests for ID generation format, packet-request propagation, dict round-trip, and legacy plan loading.
+- Added CLI-kernel tests for `workflow plan --packets` ID stamping, `workflow packets` ID-based matching, and the legacy text-fallback path.
+- Updated `docs/COMMAND_CONTRACTS.md`, `docs/api.md`, and `CHANGELOG.md` to name the new identity contract.
+
+### Why it matters
+
+Before this slice, packet readiness depended on exact text on the human-readable task plus four other fields. A user editing the saved plan's task wording, or running two different plans with the same task wording, could silently break or cross-match. The workflow identity layer gives packets a stable provenance: once a plan is written, its packets carry the same `workflow_id` and remain matchable regardless of text drift. The legacy text path keeps every existing plan and packet usable.
+
+### Verification
+
+- `pytest -q` -> `93 passed, 14 subtests passed` (was 87 + 14)
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!`
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 51 source files`
+- Smoke: `workflow plan --task "Smoke ID stamp" --role Skald --packets --json` -> `workflow_id: WF-20260429074552-75add827`, packet artifact carries the same `workflow_id` and `workflow_step_id: step-01`.
+- Smoke: `workflow packets --json` against the same plan -> `packets_ready: true`, `match_strategy: "id"` for every entry.
+- Smoke: stripping `workflow_id` from saved plan + every packet's `.meta.json`, then `workflow packets --json` -> `match_strategy: "text"`, `found: true`. Legacy fallback is intact.
+
+### Continuity thread
+
+- The next slice can add a workflow-scoped packet filter to `packet list --workflow <id>`, so users can show only the packets belonging to one workflow run without going through the workflow command surface.
+
+_A packet without provenance is a rumor; a packet with a workflow id is a witnessed fact._
+
 ## 2026-04-29 - Stage 16 Workflow Packet Listing
 
 **Session:** Making workflow packet readiness inspectable without using the runner.

@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from mythic_vibe_cli.workflow_engine import DEFAULT_ROLE_SEQUENCE, WorkflowEngine
+from mythic_vibe_cli.workflow_engine import DEFAULT_ROLE_SEQUENCE, WorkflowEngine, WorkflowPlan
 
 
 class WorkflowEngineTests(unittest.TestCase):
@@ -52,6 +52,61 @@ class WorkflowEngineTests(unittest.TestCase):
 
             with self.assertRaisesRegex(ValueError, "Unsupported workflow roles"):
                 engine.build_plan("Bad role", role_sequence=("Skald", "Unknown"))
+
+    def test_build_plan_assigns_workflow_id_and_propagates_into_packet_requests(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            engine = WorkflowEngine(Path(tmp))
+
+            plan = engine.build_plan("Trace packet readiness by id")
+
+            self.assertIsNotNone(plan.workflow_id)
+            assert plan.workflow_id is not None
+            self.assertTrue(plan.workflow_id.startswith("WF-"))
+            self.assertEqual(plan.workflow_id.count("-"), 2)
+            requests = plan.packet_requests()
+            self.assertTrue(all(request.workflow_id == plan.workflow_id for request in requests))
+            self.assertEqual(
+                [request.workflow_step_id for request in requests],
+                [step.step_id for step in plan.steps],
+            )
+
+    def test_workflow_id_round_trips_through_to_dict_and_from_dict(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            engine = WorkflowEngine(Path(tmp))
+
+            plan = engine.build_plan("Persist the workflow id")
+            payload = plan.to_dict()
+            restored = WorkflowPlan.from_dict(payload)
+
+            self.assertIn("workflow_id", payload)
+            self.assertEqual(restored.workflow_id, plan.workflow_id)
+
+    def test_legacy_plan_without_workflow_id_still_loads(self) -> None:
+        legacy_payload = {
+            "task": "Older plan with no id",
+            "created_at": "2026-04-29T00:00:00Z",
+            "steps": [
+                {
+                    "step_id": "step-01",
+                    "role": "Skald",
+                    "phase": "intent",
+                    "objective": "Frame the work",
+                    "identity": "Sigrún Ljósbrá",
+                    "focus": "vision",
+                    "system_prompt": "You are the Skald.",
+                    "invariants": [],
+                    "verification": [],
+                    "handoff_to": None,
+                }
+            ],
+        }
+
+        plan = WorkflowPlan.from_dict(legacy_payload)
+
+        self.assertIsNone(plan.workflow_id)
+        requests = plan.packet_requests()
+        self.assertIsNone(requests[0].workflow_id)
+        self.assertEqual(requests[0].workflow_step_id, "step-01")
 
 
 if __name__ == "__main__":
