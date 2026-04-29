@@ -13,6 +13,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import time
+
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Grid, Horizontal, Vertical
@@ -117,6 +119,204 @@ def _format_loop_navigator(data: LoopNavigatorData) -> str:
             lines.append(f"[dim]{entry.marker} {entry.phase}[/dim]")
         else:
             lines.append(f"{entry.marker} {entry.phase}")
+    return "\n".join(lines)
+
+
+# ---- Artifact Viewer (PH-04 slice 4.2) ---------------------------------
+
+
+ARTIFACT_STATUS_PRESENT = "present"
+ARTIFACT_STATUS_MISSING = "missing"
+ARTIFACT_STATUS_STALE = "stale"
+
+# Single-character markers (ASCII; Windows legacy code page-safe).
+_ARTIFACT_GLYPHS: dict[str, str] = {
+    ARTIFACT_STATUS_PRESENT: "+",
+    ARTIFACT_STATUS_MISSING: "-",
+    ARTIFACT_STATUS_STALE: "~",
+}
+
+# Per-phase canonical artefact list. Paths are relative to the
+# project root. Each phase's entries are a mix of files the
+# operator should have authored or updated by the time they reach
+# that phase's verify gate.
+PHASE_ARTEFACTS: dict[str, list[str]] = {
+    "intent": [
+        "MYTHIC_ENGINEERING.md",
+        "SYSTEM_VISION.md",
+        "docs/PHILOSOPHY.md",
+    ],
+    "constraints": [
+        "docs/INVARIANTS.md",
+        "docs/RISK_REGISTER.md",
+        "docs/PHILOSOPHY.md",
+    ],
+    "architecture": [
+        "docs/ARCHITECTURE.md",
+        "docs/DOMAIN_MAP.md",
+        "docs/DATA_FLOW.md",
+        "docs/ADRS",
+    ],
+    "plan": [
+        "tasks/current_GOALS.md",
+        "tasks/backlog.md",
+        "docs/INTERFACES",
+    ],
+    "build": [
+        "mythic/codex_prompt.md",
+        "mythic/packets",
+        "CHANGELOG.md",
+    ],
+    "verify": [
+        "docs/VERIFICATION.md",
+        "mythic/verifications",
+        "mythic/verifications/latest.json",
+    ],
+    "reflect": [
+        "docs/SESSION_HANDOFF.md",
+        "docs/DEVLOG.md",
+        "mythic/handoffs",
+        "mythic/reflections",
+    ],
+}
+
+ARTIFACT_STALE_AFTER_DAYS = 14
+
+
+@dataclass
+class ArtifactEntry:
+    """One row in the Artifact Viewer panel."""
+
+    relpath: str
+    status: str  # one of ARTIFACT_STATUS_*
+    marker: str
+    age_days: int | None = None  # mtime age in days; None for missing
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "relpath": self.relpath,
+            "status": self.status,
+            "marker": self.marker,
+            "age_days": self.age_days,
+        }
+
+
+@dataclass
+class ArtifactViewerData:
+    """The full artefact list for the current phase."""
+
+    phase: str
+    entries: list[ArtifactEntry] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "phase": self.phase,
+            "entries": [entry.to_dict() for entry in self.entries],
+        }
+
+
+def _classify_artifact(
+    target: Path,
+    *,
+    now: float,
+    stale_after_seconds: float,
+) -> tuple[str, int | None]:
+    """Return ``(status, age_days)`` for one artefact path.
+
+    A path is ``present`` when it exists; ``missing`` otherwise.
+    A present path is further marked ``stale`` when its mtime is
+    older than ``stale_after_seconds`` ago. Directories are checked
+    against the most recent mtime of their immediate contents
+    (recursive walk would be too slow on large dirs).
+    """
+    if not target.exists():
+        return ARTIFACT_STATUS_MISSING, None
+    try:
+        if target.is_dir():
+            # For directories, use the most recent mtime among the
+            # directory itself and its immediate contents. Empty dirs
+            # use the dir mtime.
+            candidate_times: list[float] = [target.stat().st_mtime]
+            for child in target.iterdir():
+                try:
+                    candidate_times.append(child.stat().st_mtime)
+                except OSError:
+                    continue
+            mtime = max(candidate_times)
+        else:
+            mtime = target.stat().st_mtime
+    except OSError:
+        return ARTIFACT_STATUS_MISSING, None
+
+    age_seconds = max(0.0, now - mtime)
+    age_days = int(age_seconds // 86400)
+    if age_seconds > stale_after_seconds:
+        return ARTIFACT_STATUS_STALE, age_days
+    return ARTIFACT_STATUS_PRESENT, age_days
+
+
+def build_artifact_viewer_data(
+    root: Path,
+    phase: str,
+    *,
+    stale_after_days: int = ARTIFACT_STALE_AFTER_DAYS,
+    now: float | None = None,
+) -> ArtifactViewerData:
+    """Pure function (no Textual deps) that classifies every artefact
+    declared for ``phase`` against the project state on disk.
+
+    Falls back to an empty entry list when ``phase`` is unknown
+    (operator-edited status.json with a bogus phase name shouldn't
+    crash the TUI). The ``now`` keyword exists for tests; production
+    callers leave it as None and use ``time.time()``.
+    """
+    expected_paths = PHASE_ARTEFACTS.get(phase, [])
+    if now is None:
+        now = time.time()
+    stale_after_seconds = float(stale_after_days * 86400)
+
+    entries: list[ArtifactEntry] = []
+    for relpath in expected_paths:
+        target = root / relpath
+        status, age_days = _classify_artifact(
+            target,
+            now=now,
+            stale_after_seconds=stale_after_seconds,
+        )
+        entries.append(
+            ArtifactEntry(
+                relpath=relpath,
+                status=status,
+                marker=_ARTIFACT_GLYPHS[status],
+                age_days=age_days,
+            )
+        )
+    return ArtifactViewerData(phase=phase, entries=entries)
+
+
+def _format_artifact_viewer(data: ArtifactViewerData) -> str:
+    """Render the artefact list as Rich-tagged markup.
+
+    Present artefacts keep default colour; missing ones tagged red
+    (Rich ``$error`` colour); stale ones tagged yellow (``$warning``).
+    Each row carries the relative path and, for present files, the
+    age in days.
+    """
+    if not data.phase:
+        return "[dim](no phase set; nothing to track)[/dim]"
+    if not data.entries:
+        return f"[dim](no canonical artefacts declared for phase '{data.phase}')[/dim]"
+    lines: list[str] = []
+    for entry in data.entries:
+        suffix = ""
+        if entry.age_days is not None:
+            suffix = f" [dim]({entry.age_days}d)[/dim]"
+        if entry.status == ARTIFACT_STATUS_MISSING:
+            lines.append(f"[red]{entry.marker}[/red] {entry.relpath}{suffix}")
+        elif entry.status == ARTIFACT_STATUS_STALE:
+            lines.append(f"[yellow]{entry.marker}[/yellow] {entry.relpath}{suffix}")
+        else:
+            lines.append(f"[green]{entry.marker}[/green] {entry.relpath}{suffix}")
     return "\n".join(lines)
 
 
@@ -304,11 +504,23 @@ class StatusScreen(Screen):
         height: 14;
     }
 
+    #mid-row {
+        layout: horizontal;
+        height: 1fr;
+        margin: 0 1 1 1;
+    }
+
     #events-panel {
         border: round $secondary;
         padding: 1 2;
-        margin: 0 1 1 1;
-        height: 1fr;
+        width: 1fr;
+        margin: 0 1 0 0;
+    }
+
+    #artifact-panel {
+        border: round $secondary;
+        padding: 1 2;
+        width: 1fr;
     }
 
     .panel {
@@ -333,6 +545,7 @@ class StatusScreen(Screen):
         self._handoff_widget = Static(id="panel-handoff", classes="panel")
         self._plugins_widget = Static(id="panel-plugins", classes="panel")
         self._events_widget = Static(id="events-panel")
+        self._artifact_widget = Static(id="artifact-panel")
         self._footer_widget = Static(id="footer-line")
 
     def compose(self) -> ComposeResult:
@@ -345,7 +558,9 @@ class StatusScreen(Screen):
                     yield self._verify_widget
                     yield self._handoff_widget
                     yield self._plugins_widget
-                yield self._events_widget
+                with Horizontal(id="mid-row"):
+                    yield self._events_widget
+                    yield self._artifact_widget
         yield self._footer_widget
         yield Footer()
 
@@ -364,6 +579,7 @@ class StatusScreen(Screen):
     def _refresh_panels(self) -> None:
         data = build_status_data(self.root)
         loop_nav_data = build_loop_navigator_data(self.root)
+        artifact_data = build_artifact_viewer_data(self.root, loop_nav_data.current_phase)
         events = read_recent(event_log_path_for(self.root), limit=12)
         self._loop_nav_widget.border_title = "Loop"
         self._status_widget.border_title = "Status"
@@ -371,12 +587,15 @@ class StatusScreen(Screen):
         self._handoff_widget.border_title = "Latest Handoff"
         self._plugins_widget.border_title = "Plugins"
         self._events_widget.border_title = "Recent Events"
+        artifact_phase = artifact_data.phase or "(none)"
+        self._artifact_widget.border_title = f"Artefacts ({artifact_phase})"
         self._loop_nav_widget.update(_format_loop_navigator(loop_nav_data))
         self._status_widget.update(_format_status_panel(data))
         self._verify_widget.update(_format_verify_panel(data))
         self._handoff_widget.update(_format_handoff_panel(data))
         self._plugins_widget.update(_format_plugins_panel(data))
         self._events_widget.update(_format_events_panel(events))
+        self._artifact_widget.update(_format_artifact_viewer(artifact_data))
         self._footer_widget.update(_format_footer_line(data))
 
 

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -565,6 +566,197 @@ class TuiLoopNavigatorIntegrationTests(unittest.TestCase):
         # Should contain at least the canonical phase names.
         for phase in ("intent", "constraints", "architecture", "plan", "build", "verify", "reflect"):
             self.assertIn(phase, rendered)
+
+
+# ---- PH-04 slice 4.2 — Artifact Viewer panel ----------------------------
+
+
+class ArtifactViewerDataTests(unittest.TestCase):
+    """Pure-data layer: build_artifact_viewer_data() classifies the
+    current phase's expected artefacts as present / missing / stale."""
+
+    def test_unknown_phase_yields_empty_entries(self) -> None:
+        from mythic_vibe_cli.tui.app import build_artifact_viewer_data
+
+        with tempfile.TemporaryDirectory() as tmp:
+            data = build_artifact_viewer_data(Path(tmp), "no-such-phase")
+        self.assertEqual(data.phase, "no-such-phase")
+        self.assertEqual(data.entries, [])
+
+    def test_empty_phase_yields_empty_entries(self) -> None:
+        from mythic_vibe_cli.tui.app import build_artifact_viewer_data
+
+        with tempfile.TemporaryDirectory() as tmp:
+            data = build_artifact_viewer_data(Path(tmp), "")
+        self.assertEqual(data.phase, "")
+        self.assertEqual(data.entries, [])
+
+    def test_intent_phase_returns_three_entries_all_missing_on_bare_dir(self) -> None:
+        from mythic_vibe_cli.tui.app import (
+            ARTIFACT_STATUS_MISSING,
+            PHASE_ARTEFACTS,
+            build_artifact_viewer_data,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            data = build_artifact_viewer_data(Path(tmp), "intent")
+        self.assertEqual(len(data.entries), len(PHASE_ARTEFACTS["intent"]))
+        for entry in data.entries:
+            self.assertEqual(entry.status, ARTIFACT_STATUS_MISSING)
+            self.assertIsNone(entry.age_days)
+            self.assertEqual(entry.marker, "-")
+
+    def test_present_recent_artefact_marked_present(self) -> None:
+        from mythic_vibe_cli.tui.app import (
+            ARTIFACT_STATUS_PRESENT,
+            build_artifact_viewer_data,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "MYTHIC_ENGINEERING.md").write_text("hello", encoding="utf-8")
+            data = build_artifact_viewer_data(root, "intent")
+        match = next(e for e in data.entries if e.relpath == "MYTHIC_ENGINEERING.md")
+        self.assertEqual(match.status, ARTIFACT_STATUS_PRESENT)
+        self.assertEqual(match.marker, "+")
+        self.assertIsNotNone(match.age_days)
+
+    def test_old_artefact_marked_stale(self) -> None:
+        import os
+
+        from mythic_vibe_cli.tui.app import (
+            ARTIFACT_STATUS_STALE,
+            build_artifact_viewer_data,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = root / "MYTHIC_ENGINEERING.md"
+            target.write_text("old content", encoding="utf-8")
+            # Set mtime to 30 days ago.
+            thirty_days_ago = time.time() - (30 * 86400)
+            os.utime(target, (thirty_days_ago, thirty_days_ago))
+
+            data = build_artifact_viewer_data(root, "intent")
+        match = next(e for e in data.entries if e.relpath == "MYTHIC_ENGINEERING.md")
+        self.assertEqual(match.status, ARTIFACT_STATUS_STALE)
+        self.assertEqual(match.marker, "~")
+        self.assertGreaterEqual(match.age_days or 0, 14)
+
+    def test_directory_artefact_uses_most_recent_mtime(self) -> None:
+        import os
+
+        from mythic_vibe_cli.tui.app import (
+            ARTIFACT_STATUS_PRESENT,
+            ARTIFACT_STATUS_STALE,
+            build_artifact_viewer_data,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            adr_dir = root / "docs" / "ADRS"
+            adr_dir.mkdir(parents=True)
+
+            # Old file in the directory.
+            old_adr = adr_dir / "ADR-0001-old.md"
+            old_adr.write_text("old", encoding="utf-8")
+            old_time = time.time() - (60 * 86400)
+            os.utime(old_adr, (old_time, old_time))
+            os.utime(adr_dir, (old_time, old_time))
+
+            data = build_artifact_viewer_data(root, "architecture")
+            adr_entry = next(e for e in data.entries if e.relpath == "docs/ADRS")
+            self.assertEqual(adr_entry.status, ARTIFACT_STATUS_STALE)
+
+            # Adding a fresh file inside the dir resets the dir's effective mtime.
+            (adr_dir / "ADR-0002-new.md").write_text("fresh", encoding="utf-8")
+            data = build_artifact_viewer_data(root, "architecture")
+            adr_entry = next(e for e in data.entries if e.relpath == "docs/ADRS")
+            self.assertEqual(adr_entry.status, ARTIFACT_STATUS_PRESENT)
+
+    def test_custom_now_keyword_lets_tests_pin_clock(self) -> None:
+        from mythic_vibe_cli.tui.app import (
+            ARTIFACT_STATUS_STALE,
+            build_artifact_viewer_data,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "MYTHIC_ENGINEERING.md").write_text("x", encoding="utf-8")
+            # Pin "now" 30 days in the future so the artefact looks stale.
+            future = time.time() + (30 * 86400)
+            data = build_artifact_viewer_data(root, "intent", now=future)
+        match = next(e for e in data.entries if e.relpath == "MYTHIC_ENGINEERING.md")
+        self.assertEqual(match.status, ARTIFACT_STATUS_STALE)
+
+    def test_to_dict_round_trip_shape(self) -> None:
+        from mythic_vibe_cli.tui.app import build_artifact_viewer_data
+
+        with tempfile.TemporaryDirectory() as tmp:
+            data = build_artifact_viewer_data(Path(tmp), "intent")
+            payload = data.to_dict()
+        self.assertEqual(payload["phase"], "intent")
+        self.assertIsInstance(payload["entries"], list)
+        for entry_payload in payload["entries"]:
+            self.assertEqual(
+                set(entry_payload.keys()),
+                {"relpath", "status", "marker", "age_days"},
+            )
+
+
+class ArtifactViewerFormatTests(unittest.TestCase):
+    def test_unknown_phase_yields_placeholder(self) -> None:
+        from mythic_vibe_cli.tui.app import (
+            ArtifactViewerData,
+            _format_artifact_viewer,
+        )
+
+        rendered = _format_artifact_viewer(ArtifactViewerData(phase="", entries=[]))
+        self.assertIn("no phase set", rendered)
+
+    def test_empty_entries_yields_placeholder(self) -> None:
+        from mythic_vibe_cli.tui.app import (
+            ArtifactViewerData,
+            _format_artifact_viewer,
+        )
+
+        rendered = _format_artifact_viewer(
+            ArtifactViewerData(phase="rituals", entries=[])
+        )
+        self.assertIn("no canonical artefacts declared", rendered)
+        self.assertIn("rituals", rendered)
+
+    def test_render_marks_missing_with_red_tag(self) -> None:
+        from mythic_vibe_cli.tui.app import (
+            _format_artifact_viewer,
+            build_artifact_viewer_data,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            data = build_artifact_viewer_data(Path(tmp), "intent")
+            rendered = _format_artifact_viewer(data)
+        self.assertIn("[red]", rendered)
+        self.assertIn("MYTHIC_ENGINEERING.md", rendered)
+
+
+@unittest.skipIf(textual_unavailable, "textual not installed")
+class TuiArtifactViewerIntegrationTests(unittest.TestCase):
+    def test_artifact_panel_renders_in_status_screen(self) -> None:
+        from mythic_vibe_cli.tui.app import MythicTuiApp
+
+        async def run_test() -> str:
+            with tempfile.TemporaryDirectory() as tmp:
+                app = MythicTuiApp(Path(tmp))
+                async with app.run_test() as pilot:
+                    await pilot.pause()
+                    panel = app.screen.query_one("#artifact-panel")
+                    return str(panel.render())
+
+        rendered = asyncio.run(run_test())
+        # Default state's current_phase is "intent"; that means the
+        # intent artefacts should appear in the panel.
+        self.assertIn("MYTHIC_ENGINEERING.md", rendered)
+        self.assertIn("SYSTEM_VISION.md", rendered)
 
 
 class CmdTuiFallbackTests(unittest.TestCase):
