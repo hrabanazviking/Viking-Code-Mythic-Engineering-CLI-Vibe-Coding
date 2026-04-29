@@ -59,6 +59,9 @@ Current workflow orchestration contract:
 - `workflow plan --json` emits the full plan plus packet-ready requests for each step.
 - Repeated `--role` flags customize the role sequence while preserving the supplied order.
 - The default sequence is `Skald -> Architect -> Cartographer -> Forge Worker -> Auditor -> Scribe`.
+- `workflow plan --packets` creates one packet artifact per workflow step under `mythic/packets/`.
+- `workflow plan --audience` and `--format` control the generated packet requests and packet artifacts.
+- `workflow plan --dry-run --packets` previews packet generation without writing plan or packet files.
 
 Current Stage 14 UX commands:
 

@@ -483,6 +483,7 @@ def cmd_workflow_plan(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
     role_sequence = tuple(getattr(args, "role", []) or DEFAULT_ROLE_SEQUENCE)
     engine = WorkflowEngine(root)
+    output_format = getattr(args, "format", "markdown")
 
     try:
         plan = engine.build_plan(args.task, role_sequence=role_sequence)
@@ -492,12 +493,17 @@ def cmd_workflow_plan(args: argparse.Namespace) -> int:
 
     out_file = Path(args.out).resolve() if getattr(args, "out", "") else None
     output_path = out_file or root / "mythic" / WORKFLOW_PLAN_FILENAME
+    packet_requests = plan.packet_requests(audience=args.audience)
+    for request in packet_requests:
+        request.output_format = output_format
     payload = {
         "command": "workflow plan",
         "dry_run": _flag(args, "dry_run"),
         "output_file": str(output_path),
+        "packets_requested": _flag(args, "packets"),
+        "packet_artifacts": [],
         "plan": plan.to_dict(),
-        "packet_requests": [request.__dict__ for request in plan.packet_requests()],
+        "packet_requests": [request.__dict__ for request in packet_requests],
     }
 
     if _flag(args, "dry_run"):
@@ -511,10 +517,30 @@ def cmd_workflow_plan(args: argparse.Namespace) -> int:
             write_line("Role sequence:")
             for step in plan.steps:
                 write_bullet(f"{step.step_id}: {step.role} -> {step.phase} ({step.handoff_to or 'done'})")
+            if _flag(args, "packets"):
+                write_line("Packet preview:")
+                for request in packet_requests:
+                    write_bullet(f"{request.role} packet ({request.phase}, {request.output_format})")
         return SUCCESS
 
     path = engine.write_plan(args.task, role_sequence=role_sequence, out_file=out_file)
     payload["output_file"] = str(path)
+    if _flag(args, "packets"):
+        builder = CodexBridge(root)
+        packet_artifacts = []
+        for request in packet_requests:
+            packet_path = builder.create_packet(request)
+            record = builder.load_packet_record(packet_path.stem)
+            packet_artifacts.append(
+                record.to_dict()
+                if record
+                else {
+                    "packet_id": packet_path.stem,
+                    "packet_path": str(packet_path),
+                }
+            )
+        payload["packet_artifacts"] = packet_artifacts
+
     if _flag(args, "json"):
         write_json(payload)
         return SUCCESS
@@ -525,6 +551,10 @@ def cmd_workflow_plan(args: argparse.Namespace) -> int:
     write_line("Role sequence:")
     for step in plan.steps:
         write_bullet(f"{step.step_id}: {step.role} -> {step.phase} ({step.handoff_to or 'done'})")
+    if payload["packet_artifacts"]:
+        write_line("Packet artifacts:")
+        for artifact in payload["packet_artifacts"]:
+            write_bullet(f"{artifact['packet_id']}: {artifact['packet_path']}")
     return SUCCESS
 
 

@@ -292,6 +292,8 @@ class CliKernelTests(unittest.TestCase):
                         "Coordinate the next implementation slice",
                         "--path",
                         str(root),
+                        "--audience",
+                        "beginner",
                         "--json",
                     ]
                 )
@@ -308,6 +310,48 @@ class CliKernelTests(unittest.TestCase):
             self.assertEqual(stored["steps"][0]["role"], "Skald")
             self.assertEqual(stored["steps"][-1]["role"], "Scribe")
             self.assertEqual(payload["packet_requests"][0]["role"], "Skald")
+            self.assertEqual(payload["packet_requests"][0]["audience"], "beginner")
+            self.assertEqual(payload["packet_requests"][0]["output_format"], "markdown")
+
+    def test_workflow_plan_can_generate_step_packets(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "docs").mkdir(parents=True, exist_ok=True)
+            (root / "tasks").mkdir(parents=True, exist_ok=True)
+            (root / "mythic").mkdir(parents=True, exist_ok=True)
+            (root / "tasks" / "current_GOALS.md").write_text("Ship workflow packets\n", encoding="utf-8")
+            (root / "docs" / "ARCHITECTURE.md").write_text("# Architecture\n", encoding="utf-8")
+            (root / "mythic" / "plan.md").write_text("# Plan\n", encoding="utf-8")
+            (root / "mythic" / "loop.md").write_text("# Loop\n", encoding="utf-8")
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(
+                    [
+                        "workflow",
+                        "plan",
+                        "--task",
+                        "Generate role packets",
+                        "--path",
+                        str(root),
+                        "--role",
+                        "Skald",
+                        "--role",
+                        "Auditor",
+                        "--packets",
+                        "--json",
+                    ]
+                )
+
+            payload = json.loads(output.getvalue())
+            packet_paths = [Path(item["packet_path"]) for item in payload["packet_artifacts"]]
+
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual([item["role"] for item in payload["packet_artifacts"]], ["Skald", "Auditor"])
+            self.assertEqual(len(packet_paths), 2)
+            self.assertTrue(all(path.exists() for path in packet_paths))
+            self.assertEqual(packet_paths[0].name, "PKT-000001.md")
+            self.assertEqual(packet_paths[1].name, "PKT-000002.md")
 
     def test_workflow_plan_dry_run_does_not_write(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
