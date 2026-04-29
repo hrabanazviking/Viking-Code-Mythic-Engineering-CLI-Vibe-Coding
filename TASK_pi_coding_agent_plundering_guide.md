@@ -56,12 +56,12 @@ Match the canonical Aider-guide structure:
 
 - [x] Task file written
 - [x] Task file committed + pushed to development
-- [ ] License confirmed via WebFetch
-- [ ] Repo structure surveyed
-- [ ] Coding-agent package surveyed
-- [ ] Guide draft landed at `Pi_Coding_Agent_Plundering_Guide.md`
-- [ ] Memory snapshot updated
-- [ ] Final commit + push
+- [x] License confirmed (MIT, Copyright (c) 2025 Mario Zechner)
+- [x] Repo structure surveyed via `gh api` (root + src + core + tools + modes + utils + test + docs)
+- [x] Coding-agent package surveyed (README + LICENSE + ~30 src files + ~90 test files mapped)
+- [x] Guide draft landed at `Pi_Coding_Agent_Plundering_Guide.md` (759 lines, 13 sections + footnotes)
+- [x] Memory snapshot updated
+- [x] Final commit + push
 
 ## Resume Instructions
 
