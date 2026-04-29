@@ -54,15 +54,15 @@ after_reflect:
 
 - [x] Task file written
 - [x] Task file committed + pushed
-- [ ] Wrap `cmd_reflect` real-work path with dispatcher
-- [ ] Integration tests (≥2 cases — real path emits both; dry-run emits nothing)
-- [ ] `pytest -q` green
-- [ ] `ruff` + `mypy` green
-- [ ] Docs updated; promote summary line
-- [ ] CHANGELOG entry
-- [ ] DEVLOG entry — closeout
-- [ ] Memory snapshot updated
-- [ ] Final commit + push
+- [x] Wrap `cmd_reflect` real-work path with dispatcher (context manager — single return)
+- [x] Integration tests — 2 cases (real path emits both with handoff_id + json_path + markdown_path; dry-run emits nothing)
+- [x] `pytest -q` green — 186 passed, 14 subtests passed
+- [x] `ruff` + `mypy` green
+- [x] `docs/COMMAND_CONTRACTS.md` updated; summary line promoted to record closeout
+- [x] CHANGELOG entry with closeout framing
+- [x] DEVLOG entry — full closeout milestone with the 8-hook table
+- [x] Memory snapshot updated
+- [x] Final commit + push
 
 ## Resume Instructions
 
