@@ -177,8 +177,10 @@ additive, cross-platform, open-source):
 | 26 | Phase 3 Slice 3.2 — handoff ledger | done — `adc6ae1` — +28 tests |
 | 27 | Update memory + project status (after slice 3.2) | done — pushed at 888e710 |
 | 28 | Phase 3 Slice 3.3 — forge command (dry-run) | done — `cbc2b24` — +21 tests, 52 slash entries |
-| 29 | Update memory + project status (after slice 3.3) | in progress |
-| 30 | Phase 3 Slice 3.4 — approval gates | next |
+| 29 | Update memory + project status (after slice 3.3) | done — pushed at e3adc5b |
+| 30 | Phase 3 Slice 3.4 — approval gates | done — `9231073` — +17 tests |
+| 31 | Update memory + project status (after slice 3.4) | in progress |
+| 32 | Phase 3 Slice 3.5 — provider-backed forge | next |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
@@ -359,12 +361,35 @@ clean. Strictly additive.
 
 See `PHASE3_SLICE_3_3_CLOSEOUT.md` for the full memo.
 
-## Next slice (PH-03 slice 3.4)
+## PH-03 slice 3.4 results
 
-Approval gates. Between each forge step, the operator gets a
-short summary and is prompted `y/n/?` to advance. CLI inline
-prompt + future TUI modal. Once gate logic exists, slice 3.5
-wires real provider calls behind it.
+`mythic-vibe forge plan --dry-run --task "X" --interactive` now
+gates between each pair of steps. Operator chooses `y/n/?/s`:
+advance / abort (mark remaining steps blocked) / detail-then-reprompt
+/ skip-next-step.
+
+New public API in forge.py: `ForgeGateContext` frozen dataclass,
+`GateDecision` literal, `GateHandler` callable type,
+`default_gate_handler` (stdin-driven). `cmd_forge_plan` accepts
+optional `gate_handler` keyword for tests + future slices.
+
+Empty input defaults to advance; EOFError → advance (safe default
+for piped flows). `?` prints a compact gate context and re-prompts.
+
+Tests 451 → 468 (+17 across 5 test classes covering invocation
+count, abort/skip decisions, ForgeGateContext round-trip, and
+all stdin parsing paths via mocked input()).
+
+See `PHASE3_SLICE_3_4_CLOSEOUT.md` for the full memo.
+
+## Next slice (PH-03 slice 3.5)
+
+Provider-backed forge. Lifts the UNSAFE_OPERATION_BLOCKED gate
+that today wraps non-dry-run runs. Routes each agent's packet
+through the configured provider, captures response into
+AgentOutput, transitions ledger entries pending → running →
+succeeded/failed, and reuses the slice 3.4 gate machinery
+between agents.
 
 ---
 
