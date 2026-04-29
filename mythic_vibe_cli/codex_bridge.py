@@ -8,16 +8,7 @@ import textwrap
 
 from .context.indexer import ProjectIndexer
 from .config import AppConfig, ConfigStore
-
-PACKET_ROLES = [
-    "Architect",
-    "Forge Worker",
-    "Auditor",
-    "Cartographer",
-    "Scribe",
-    "Debugger",
-    "Refactorer",
-]
+from .ai.prompts.roles import PACKET_ROLES, ROLE_PRESETS
 
 PACKET_OUTPUT_FORMATS = [
     "markdown",
@@ -29,73 +20,6 @@ PACKET_OUTPUT_FORMATS = [
     "roo",
     "goose",
 ]
-
-
-ROLE_PRESETS: dict[str, dict[str, list[str]]] = {
-    "Architect": {
-        "invariants": [
-            "Keep boundaries explicit and ownership narrow.",
-            "Prefer durable structure over quick coupling.",
-        ],
-        "verification": [
-            "Run structural or boundary checks for the touched modules.",
-        ],
-    },
-    "Forge Worker": {
-        "invariants": [
-            "Keep the smallest safe implementation path.",
-            "Do not widen the edit surface without reason.",
-        ],
-        "verification": [
-            "Run the most relevant unit or smoke tests for the change.",
-        ],
-    },
-    "Auditor": {
-        "invariants": [
-            "Do not accept claims without evidence.",
-            "Surface contradictions and edge cases directly.",
-        ],
-        "verification": [
-            "Review the diff and run the failing or nearby tests.",
-        ],
-    },
-    "Cartographer": {
-        "invariants": [
-            "Map relationships before proposing changes.",
-            "Keep data flow and dependency direction visible.",
-        ],
-        "verification": [
-            "Confirm the affected paths and references are correctly mapped.",
-        ],
-    },
-    "Scribe": {
-        "invariants": [
-            "Preserve continuity and keep records legible.",
-            "Match documentation to implementation reality.",
-        ],
-        "verification": [
-            "Check documentation updates and handoff completeness.",
-        ],
-    },
-    "Debugger": {
-        "invariants": [
-            "Reproduce the issue before patching.",
-            "Keep fixes minimal and measurable.",
-        ],
-        "verification": [
-            "Run the failing test, then the smallest confirming test set.",
-        ],
-    },
-    "Refactorer": {
-        "invariants": [
-            "Preserve behavior while improving shape.",
-            "Do not mix cleanup with unrelated feature work.",
-        ],
-        "verification": [
-            "Run the affected tests before and after the refactor.",
-        ],
-    },
-}
 
 
 @dataclass

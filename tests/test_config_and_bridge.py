@@ -9,6 +9,7 @@ import unittest
 from pathlib import Path
 
 from mythic_vibe_cli import app
+from mythic_vibe_cli.ai.prompts.roles import PACKET_ROLES, ROLE_PRESETS
 from mythic_vibe_cli.codex_bridge import CodexBridge, CodexPacketRequest
 from mythic_vibe_cli.config import ConfigStore
 
@@ -132,6 +133,27 @@ class ConfigAndBridgeTests(unittest.TestCase):
             # Keep this test focused on compaction behavior, not exact prompt phrasing.
             self.assertIn("## 1. Role", packet)
             self.assertIn("Phase: plan", packet)
+
+    def test_skald_is_first_class_packet_role(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "docs").mkdir(parents=True, exist_ok=True)
+            (root / "tasks").mkdir(parents=True, exist_ok=True)
+            (root / "mythic").mkdir(parents=True, exist_ok=True)
+            (root / "tasks" / "current_GOALS.md").write_text("Name the next capability\n", encoding="utf-8")
+            (root / "docs" / "ARCHITECTURE.md").write_text("# Architecture\n", encoding="utf-8")
+            (root / "mythic" / "plan.md").write_text("# Plan\n", encoding="utf-8")
+            (root / "mythic" / "loop.md").write_text("# Loop\n", encoding="utf-8")
+
+            bridge = CodexBridge(root)
+            packet = bridge._render_packet(
+                CodexPacketRequest(task="Frame the feature vision", phase="intent", audience="advanced", role="Skald")
+            )
+
+            self.assertIn("Skald", PACKET_ROLES)
+            self.assertIn("Skald", ROLE_PRESETS)
+            self.assertIn("Role: Skald", packet)
+            self.assertIn("Preserve the true purpose", packet)
 
     def test_codex_bridge_writes_project_index_context(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
