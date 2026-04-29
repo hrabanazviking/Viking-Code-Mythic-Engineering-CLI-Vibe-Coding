@@ -63,18 +63,18 @@ The async `flushRawStdout()` becomes a sync `flush_raw_stdout()` because Python 
 
 - [x] Task file written
 - [x] Task file committed + pushed
-- [ ] Port output_guard to Python
-- [ ] Update runtime __init__ re-exports
-- [ ] Port tests
-- [ ] `pytest -q` green
-- [ ] `ruff check mythic_vibe_cli tests` green
-- [ ] `mypy mythic_vibe_cli` green
-- [ ] Update THIRD_PARTY_NOTICES plunder map
-- [ ] Per-file Pi attribution header
-- [ ] CHANGELOG entry
-- [ ] DEVLOG entry
-- [ ] Memory snapshot updated
-- [ ] Final commit + push
+- [x] Port output_guard to Python (sys.stdout proxy + module-level state)
+- [x] Update runtime __init__ re-exports
+- [x] Port tests (10 unit tests; subprocess integration deferred per task spec)
+- [x] `pytest -q` green — 151 passed, 14 subtests passed
+- [x] `ruff check mythic_vibe_cli tests` green
+- [x] `mypy mythic_vibe_cli` green — 55 source files
+- [x] Update THIRD_PARTY_NOTICES plunder map
+- [x] Per-file Pi attribution header
+- [x] CHANGELOG entry
+- [x] DEVLOG entry with continuity thread
+- [x] Memory snapshot updated
+- [x] Final commit + push
 
 ## Resume Instructions
 

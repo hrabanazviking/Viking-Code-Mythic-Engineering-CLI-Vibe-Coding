@@ -27,6 +27,8 @@ listed in the plunder map below.
 |---|---|---|
 | `mythic_vibe_cli/runtime/file_mutation_queue.py` | `packages/coding-agent/src/core/tools/file-mutation-queue.ts` | 2026-04-29 |
 | `tests/test_file_mutation_queue.py` | `packages/coding-agent/test/file-mutation-queue.test.ts` | 2026-04-29 |
+| `mythic_vibe_cli/runtime/output_guard.py` | `packages/coding-agent/src/core/output-guard.ts` | 2026-04-29 |
+| `tests/test_output_guard.py` | `packages/coding-agent/test/stdout-cleanliness.test.ts` (adapted to unit-test shape) | 2026-04-29 |
 
 This project is independent and is not affiliated with, endorsed by, or
 sponsored by Mario Zechner, the pi-mono authors, or pi.dev.
