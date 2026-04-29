@@ -48,14 +48,14 @@ Land `docs/runtime.md` modelled on `docs/plugins.md` — concise, anchored secti
 
 - [x] Task file written
 - [x] Task file committed + pushed
-- [ ] Draft `docs/runtime.md`
-- [ ] Add INDEX.md link
-- [ ] Cross-link from `docs/plugins.md`
-- [ ] Validate code snippets compile (paste-and-run sanity)
-- [ ] CHANGELOG entry
-- [ ] DEVLOG entry
-- [ ] Memory snapshot updated
-- [ ] Final commit + push
+- [x] Draft `docs/runtime.md` (10 sections, 334 lines)
+- [x] Add INDEX.md link under Operator Docs
+- [x] Cross-link from `docs/plugins.md` "See also" section
+- [x] Validate code snippets — all imports resolve, dataclass constructions are valid, MYTHIC_TIMING example matches actual CLI behavior
+- [x] CHANGELOG entry
+- [x] DEVLOG entry with continuity thread
+- [x] Memory snapshot updated
+- [x] Final commit + push
 
 ## Resume Instructions
 

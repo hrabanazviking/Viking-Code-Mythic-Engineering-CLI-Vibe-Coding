@@ -255,6 +255,7 @@ This is the right tool when a command feels slow and you want to know whether th
 
 ## 10) See also
 
+- [`docs/runtime.md`](runtime.md) — operator guide for the six runtime primitives that the dispatcher and plugins build on (event bus, output guard, timings, slash commands catalog, source info, file mutation queue)
 - [`docs/COMMAND_CONTRACTS.md`](COMMAND_CONTRACTS.md) — canonical payload shapes per emitter
 - [`docs/api.md`](api.md) — `plugin list|inspect|disable` and `grimoire` command surfaces
 - `mythic_vibe_cli/plugins/api.py` — `PLUGIN_HOOKS` declaration, `PluginRecord`, `PluginHealth`
