@@ -33,14 +33,22 @@ from pathlib import Path
 import sys
 from typing import Any, Callable, Literal
 
+from .ai.providers.base import ProviderResponse
+from .ai.registry import ProviderRegistry
 from .core.state import utc_now
 from .errors import CliError, format_error
-from .exit_codes import SUCCESS, UNSAFE_OPERATION_BLOCKED, USER_INPUT_ERROR
+from .exit_codes import (
+    OPERATIONAL_FAILURE,
+    SUCCESS,
+    UNSAFE_OPERATION_BLOCKED,
+    USER_INPUT_ERROR,
+)
 from .forge_ledger import ForgeLedger, ForgeLedgerEntry
 from .output import write_bullet, write_error, write_json, write_key_value, write_line
 from .workflow_agents import (
     AGENT_CONTRACTS,
     AgentInput,
+    AgentOutput,
     contract_for,
     validate_input,
 )
@@ -50,6 +58,15 @@ from .workflow_engine import (
     WorkflowPlan,
     WorkflowStep,
 )
+
+
+# Provider duck-type — anything matching this Protocol works.
+# Tests inject stubs; production uses ProviderRegistry().providers()[name].
+class _SupportsRun:
+    name: str
+
+    def run(self, packet: object, *, dry_run: bool = False) -> ProviderResponse:  # pragma: no cover
+        ...
 
 
 # ---- Gate machinery (PH-03 slice 3.4) -----------------------------------
@@ -168,13 +185,20 @@ def _flag(args: argparse.Namespace, name: str) -> bool:
     return bool(getattr(args, name, False))
 
 
-def materialize_agent_input(plan: WorkflowPlan, step: WorkflowStep) -> AgentInput:
+def materialize_agent_input(
+    plan: WorkflowPlan,
+    step: WorkflowStep,
+    *,
+    prior_outputs: tuple[str, ...] = (),
+) -> AgentInput:
     """Build the typed :class:`AgentInput` for one step in ``plan``.
 
-    Slice 3.3 dry-run builds a minimum-viable input: role / task /
-    phase plus the workflow identity. ``prior_outputs`` is left
-    empty in dry-run; slice 3.5 will populate it from the ledger
-    when a previous agent has actually completed.
+    Slice 3.3 dry-run callers leave ``prior_outputs`` empty, which
+    causes contract validation to fail for every role except Skald
+    (whose contract requires only ``task`` + ``phase``). Slice 3.5
+    callers populate ``prior_outputs`` with serialised ``AgentOutput``
+    JSON of every prior step that has completed, unblocking the
+    downstream contract gates.
     """
     contract = AGENT_CONTRACTS.get(step.role)
     invariants: tuple[str, ...] = step.invariants
@@ -191,7 +215,7 @@ def materialize_agent_input(plan: WorkflowPlan, step: WorkflowStep) -> AgentInpu
         phase=step.phase,
         workflow_id=plan.workflow_id,
         workflow_step_id=step.step_id or None,
-        prior_outputs=(),
+        prior_outputs=prior_outputs,
         context_files=(),
         forbidden_files=(),
         invariants=invariants,
@@ -510,6 +534,410 @@ def cmd_forge_plan(
     return SUCCESS
 
 
+# ---- forge run (PH-03 slice 3.5) ----------------------------------------
+
+
+# Type alias for the provider factory test injection point.
+ProviderFactory = Callable[[str, Path], Any]
+
+
+def prior_outputs_for_step(
+    plan: WorkflowPlan,
+    step: WorkflowStep,
+    ledger: ForgeLedger,
+) -> tuple[str, ...]:
+    """Walk the plan up to ``step`` and collect the JSON-serialised
+    ``AgentOutput`` of every prior step that has a recorded output in
+    the ledger.
+
+    Skipped / blocked / failed prior steps contribute nothing — only
+    entries with a populated ``agent_output`` are included. The
+    surviving outputs unblock contract validation for downstream
+    roles whose contracts require ``prior_outputs`` (Architect /
+    Cartographer / Forge Worker / Auditor / Scribe).
+    """
+    workflow_id = plan.workflow_id or ""
+    prior_step_ids: list[str] = []
+    for candidate in plan.steps:
+        if candidate.step_id == step.step_id:
+            break
+        prior_step_ids.append(candidate.step_id)
+
+    out: list[str] = []
+    for prior_id in prior_step_ids:
+        entry = ledger.find_step(workflow_id, prior_id)
+        if entry is None or entry.agent_output is None:
+            continue
+        out.append(json.dumps(entry.agent_output.to_dict()))
+    return tuple(out)
+
+
+def build_agent_output_from_response(
+    response: ProviderResponse,
+    agent_input: AgentInput,
+) -> AgentOutput:
+    """Minimal text → :class:`AgentOutput` translation.
+
+    Slice 3.5 captures the provider's full response as
+    ``raw_response`` and uses the first non-empty line as the
+    summary. Structured fields (artefacts / decisions / risks /
+    handoff_notes / verification_results) stay empty until a
+    structured-extraction pass lands in a later slice — operators
+    can fill them in by re-ingesting via ``packet ingest`` if they
+    need provenance richer than the raw text.
+    """
+    text = (response.content or "").strip()
+    summary = ""
+    for line in text.splitlines():
+        clean = line.strip()
+        if clean:
+            summary = clean[:200]
+            break
+    return AgentOutput(
+        role=agent_input.role,
+        timestamp=utc_now(),
+        workflow_id=agent_input.workflow_id,
+        workflow_step_id=agent_input.workflow_step_id,
+        summary=summary,
+        artefacts=(),
+        decisions=(),
+        risks=(),
+        handoff_notes=(),
+        verification_results=(),
+        raw_response=response.content,
+    )
+
+
+def _resolve_provider(
+    name: str,
+    root: Path,
+    *,
+    provider_factory: ProviderFactory | None,
+) -> tuple[Any | None, str | None]:
+    """Resolve a provider by name. Returns ``(provider, error_message)``.
+
+    Tests pass ``provider_factory`` to inject stubs without going
+    through ``ProviderRegistry``. Real CLI invocations use the
+    registry.
+    """
+    if provider_factory is not None:
+        try:
+            return provider_factory(name, root), None
+        except Exception as exc:  # noqa: BLE001 - factory is test-controlled
+            return None, f"Provider factory rejected {name!r}: {exc}"
+
+    providers = ProviderRegistry(root=root).providers()
+    provider = providers.get(name)
+    if provider is None:
+        valid = ", ".join(sorted(providers))
+        return None, f"Unknown provider {name!r}. Available: {valid}"
+    status = provider.validate_config()
+    if not status.configured:
+        joined = "; ".join(status.details) or "provider not configured"
+        return None, f"Provider {name!r} is not configured: {joined}"
+    return provider, None
+
+
+def cmd_forge_run(
+    args: argparse.Namespace,
+    *,
+    gate_handler: GateHandler | None = None,
+    provider_factory: ProviderFactory | None = None,
+) -> int:
+    """``mythic-vibe forge run`` — provider-backed forge execution.
+
+    Walks the workflow plan, populates ``prior_outputs`` per step
+    from the ledger, calls the configured provider for each role,
+    captures responses into ``AgentOutput`` records, and persists
+    each transition through ``ForgeLedger``.
+
+    Status transitions per step:
+
+    - contract validation fails → ``blocked`` (no provider call)
+    - provider call begins → ``running``
+    - provider call returns → ``succeeded``
+    - provider call raises → ``failed``
+    - operator aborts at gate → all remaining steps ``blocked``
+    - operator skips at gate → next step ``blocked``
+
+    Returns ``SUCCESS`` if every executed step succeeded;
+    ``OPERATIONAL_FAILURE`` if at least one step failed;
+    ``UNSAFE_OPERATION_BLOCKED`` if the operator aborted via gate;
+    ``USER_INPUT_ERROR`` for missing task / unknown provider.
+    """
+    root = Path(getattr(args, "path", ".")).resolve()
+    task = (getattr(args, "task", "") or "").strip()
+    if not task:
+        write_error("forge run requires --task <text>.")
+        return USER_INPUT_ERROR
+
+    provider_name = (getattr(args, "provider", "") or "").strip()
+    if not provider_name:
+        write_error("forge run requires --provider <name>.")
+        return USER_INPUT_ERROR
+
+    provider, provider_err = _resolve_provider(
+        provider_name, root, provider_factory=provider_factory
+    )
+    if provider is None:
+        write_error(provider_err or f"Could not resolve provider {provider_name!r}.")
+        return USER_INPUT_ERROR
+
+    engine = WorkflowEngine(root)
+    try:
+        plan = engine.build_plan(task, role_sequence=DEFAULT_ROLE_SEQUENCE)
+    except ValueError as exc:
+        write_error(format_error(CliError(f"Workflow plan build failed: {exc}")))
+        return USER_INPUT_ERROR
+
+    skip_ledger = _flag(args, "skip_ledger")
+    interactive = _flag(args, "interactive")
+    handler: GateHandler = gate_handler or default_gate_handler
+    ledger = ForgeLedger(root=root)
+
+    step_payloads: list[dict[str, Any]] = []
+    started_at = utc_now()
+    aborted = False
+    skip_next_step = False
+    failure_count = 0
+    success_count = 0
+
+    total = len(plan.steps)
+    for index, step in enumerate(plan.steps):
+        if skip_next_step:
+            skip_next_step = False
+            payload = _record_aborted_step(
+                plan=plan,
+                step=step,
+                started_at=started_at,
+                note="operator skipped at preceding gate",
+                skip_ledger=skip_ledger,
+                ledger=ledger,
+            )
+            step_payloads.append(payload)
+            continue
+
+        prior_outputs = prior_outputs_for_step(plan, step, ledger)
+        agent_input = materialize_agent_input(plan, step, prior_outputs=prior_outputs)
+        contract = contract_for(step.role)
+        validation_errors = validate_input(agent_input, contract)
+
+        if validation_errors:
+            # Contract failure — record blocked and continue (operator
+            # decides whether to abort at the next gate).
+            if not skip_ledger:
+                entry = ForgeLedgerEntry(
+                    workflow_id=plan.workflow_id or "",
+                    step_id=step.step_id,
+                    role=step.role,
+                    status="blocked",
+                    started_at=started_at,
+                    agent_input=agent_input,
+                    notes=tuple(validation_errors),
+                )
+                ledger.append(entry)
+            step_payloads.append(
+                {
+                    "step_id": step.step_id,
+                    "role": step.role,
+                    "phase": step.phase,
+                    "objective": step.objective,
+                    "handoff_to": step.handoff_to,
+                    "agent_input": agent_input.to_dict(),
+                    "validation_errors": list(validation_errors),
+                    "status": "blocked",
+                    "agent_output": None,
+                }
+            )
+        else:
+            # Append running entry, call provider, transition to
+            # succeeded or failed.
+            running_entry = ForgeLedgerEntry(
+                workflow_id=plan.workflow_id or "",
+                step_id=step.step_id,
+                role=step.role,
+                status="running",
+                started_at=utc_now(),
+                agent_input=agent_input,
+            )
+            if not skip_ledger:
+                ledger.append(running_entry)
+
+            packet_text = render_forge_packet(plan, step, agent_input)
+            packet_view = {
+                "text": packet_text,
+                "packet_id": f"{plan.workflow_id or 'WF'}:{step.step_id}",
+                "source": "forge",
+            }
+
+            try:
+                response = provider.run(packet_view)
+            except Exception as exc:  # noqa: BLE001 - provider failure is recoverable
+                failure_count += 1
+                failed_at = utc_now()
+                if not skip_ledger:
+                    duration = _duration_ms(running_entry.started_at, failed_at)
+                    ledger.update_step(
+                        running_entry.workflow_id,
+                        running_entry.step_id,
+                        status="failed",
+                        completed_at=failed_at,
+                        duration_ms=duration,
+                        notes=(f"provider raised: {exc}",),
+                    )
+                step_payloads.append(
+                    {
+                        "step_id": step.step_id,
+                        "role": step.role,
+                        "phase": step.phase,
+                        "objective": step.objective,
+                        "handoff_to": step.handoff_to,
+                        "agent_input": agent_input.to_dict(),
+                        "validation_errors": [],
+                        "status": "failed",
+                        "agent_output": None,
+                        "error": str(exc),
+                    }
+                )
+            else:
+                agent_output = build_agent_output_from_response(response, agent_input)
+                success_count += 1
+                completed_at = agent_output.timestamp
+                if not skip_ledger:
+                    duration = _duration_ms(running_entry.started_at, completed_at)
+                    ledger.update_step(
+                        running_entry.workflow_id,
+                        running_entry.step_id,
+                        status="succeeded",
+                        completed_at=completed_at,
+                        duration_ms=duration,
+                        agent_output=agent_output,
+                    )
+                step_payloads.append(
+                    {
+                        "step_id": step.step_id,
+                        "role": step.role,
+                        "phase": step.phase,
+                        "objective": step.objective,
+                        "handoff_to": step.handoff_to,
+                        "agent_input": agent_input.to_dict(),
+                        "validation_errors": [],
+                        "status": "succeeded",
+                        "agent_output": agent_output.to_dict(),
+                    }
+                )
+
+        # Gate after this step before advancing — but never after the
+        # final step.
+        if interactive and index + 1 < total:
+            next_step = plan.steps[index + 1]
+            context = ForgeGateContext(
+                workflow_id=plan.workflow_id or "",
+                completed_step_index=index,
+                completed_step_id=step.step_id,
+                completed_role=step.role,
+                completed_status=step_payloads[-1]["status"],
+                completed_validation_errors=tuple(step_payloads[-1]["validation_errors"]),
+                next_step_id=next_step.step_id,
+                next_role=next_step.role,
+                total_steps=total,
+            )
+            decision = handler(context)
+            if decision == "abort":
+                aborted = True
+                for remaining in plan.steps[index + 1 :]:
+                    payload = _record_aborted_step(
+                        plan=plan,
+                        step=remaining,
+                        started_at=started_at,
+                        note="operator aborted at gate",
+                        skip_ledger=skip_ledger,
+                        ledger=ledger,
+                    )
+                    step_payloads.append(payload)
+                break
+            if decision == "skip":
+                skip_next_step = True
+
+    # Determine final exit code.
+    if aborted:
+        final_code: int = UNSAFE_OPERATION_BLOCKED
+    elif failure_count > 0:
+        final_code = OPERATIONAL_FAILURE
+    else:
+        final_code = SUCCESS
+
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "forge run",
+                "provider": provider_name,
+                "skip_ledger": skip_ledger,
+                "interactive": interactive,
+                "aborted": aborted,
+                "workflow_id": plan.workflow_id,
+                "task": plan.task,
+                "created_at": plan.created_at,
+                "ledger_path": str(ledger.path) if not skip_ledger else None,
+                "role_sequence": list(DEFAULT_ROLE_SEQUENCE),
+                "success_count": success_count,
+                "failure_count": failure_count,
+                "steps": step_payloads,
+            }
+        )
+        return final_code
+
+    write_line("Mythic forge run")
+    write_key_value("Workflow", plan.workflow_id or "(no id)")
+    write_key_value("Task", plan.task)
+    write_key_value("Provider", provider_name)
+    write_key_value("Steps", total)
+    write_key_value("Succeeded", success_count)
+    write_key_value("Failed", failure_count)
+    if interactive:
+        write_key_value("Interactive", "yes")
+    if aborted:
+        write_key_value("Aborted", "yes (operator declined a gate)")
+    if not skip_ledger:
+        write_key_value("Ledger", ledger.path)
+    write_line("")
+
+    for payload in step_payloads:
+        write_line(
+            f"- {payload['step_id']} :: {payload['role']} ({payload['phase']}) -> {payload['handoff_to'] or 'end'}"
+        )
+        write_bullet(f"status: {payload['status']}", indent=2)
+        if payload.get("validation_errors"):
+            write_bullet("validation errors:", indent=2)
+            for err in payload["validation_errors"]:
+                write_bullet(err, indent=4)
+        if payload.get("error"):
+            write_bullet(f"error: {payload['error']}", indent=2)
+        if payload.get("blocked_reason"):
+            write_bullet(f"blocked: {payload['blocked_reason']}", indent=2)
+        if payload.get("agent_output") and payload["agent_output"].get("summary"):
+            write_bullet(f"summary: {payload['agent_output']['summary']}", indent=2)
+
+    return final_code
+
+
+def _duration_ms(started_at: str, ended_at: str) -> int | None:
+    """Best-effort millisecond delta between two ISO-8601 timestamps.
+
+    Returns ``None`` if either string fails to parse — duration is
+    decorative metadata, not load-bearing.
+    """
+    from datetime import datetime as _dt
+
+    try:
+        start = _dt.fromisoformat(started_at.replace("Z", "+00:00"))
+        end = _dt.fromisoformat(ended_at.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    delta = end - start
+    return int(delta.total_seconds() * 1000)
+
+
 # ---- forge ledger --------------------------------------------------------
 
 
@@ -681,11 +1109,15 @@ def cmd_forge_dispatch(args: argparse.Namespace) -> int:
     sub = getattr(args, "forge_command", None)
     if sub == "plan":
         return cmd_forge_plan(args)
+    if sub == "run":
+        return cmd_forge_run(args)
     if sub == "ledger":
         return cmd_forge_ledger_dispatch(args)
     write_error(
         f"Unknown forge subcommand: {sub!r}. "
-        "Try `mythic-vibe forge plan --dry-run --task <X>` or `mythic-vibe forge ledger list`."
+        "Try `mythic-vibe forge plan --dry-run --task <X>`, "
+        "`mythic-vibe forge run --provider <name> --task <X>`, "
+        "or `mythic-vibe forge ledger list`."
     )
     return USER_INPUT_ERROR
 
@@ -694,13 +1126,17 @@ __all__ = [
     "ForgeGateContext",
     "GateDecision",
     "GateHandler",
+    "ProviderFactory",
+    "build_agent_output_from_response",
     "cmd_forge_dispatch",
     "cmd_forge_ledger_dispatch",
     "cmd_forge_ledger_latest",
     "cmd_forge_ledger_list",
     "cmd_forge_ledger_show",
     "cmd_forge_plan",
+    "cmd_forge_run",
     "default_gate_handler",
     "materialize_agent_input",
+    "prior_outputs_for_step",
     "render_forge_packet",
 ]
