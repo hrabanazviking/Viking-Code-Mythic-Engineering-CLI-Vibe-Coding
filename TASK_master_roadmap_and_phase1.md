@@ -207,8 +207,12 @@ additive, cross-platform, open-source):
 | 56 | Update memory + project status (after slice 4.8) | done — pushed at a01e36a |
 | 57 | Phase 4 Slice 4.9 — Accessibility audit (Phase 4 finale) | done — +13 tests, 664 total |
 | 58 | **PHASE 4 FULLY COMPLETE.** PHASE4_FINALE_CLOSEOUT.md written. | done |
-| 59 | Update memory + project status (after slice 4.9 + finale) | in progress |
-| 60 | Choose next active phase (PH-05 / PH-02 finish / PH-13) | pending |
+| 59 | Update memory + project status (after slice 4.9 + finale) | done — pushed at 6f307d6 |
+| 60 | Phase 2 Slices 2.4 + 2.5 — `/provider` + `/audit` aliases | done — `9e877e1` — +12 tests, 676 total |
+| 61 | Phase 2 Slice 2.6 — plugin slash dispatch contract | done — `2fa5097` — +10 tests, 686 total |
+| 62 | **PHASE 2 FULLY COMPLETE.** PHASE2_FINALE_CLOSEOUT.md written. | done |
+| 63 | Update memory + project status (after PH-02 finale) | in progress |
+| 64 | Choose next active phase (PH-05 / PH-13 / etc.) | pending |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
