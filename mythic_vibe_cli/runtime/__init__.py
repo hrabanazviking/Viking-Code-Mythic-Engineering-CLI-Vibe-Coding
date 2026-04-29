@@ -5,6 +5,7 @@ Currently exposes:
 - ``file_mutation_queue`` — per-path serialization for mutation operations.
 - ``output_guard`` — stdout cleanliness for protocol-output modes.
 - ``event_bus`` — synchronous publish/subscribe coordination layer.
+- ``timings`` — lightweight elapsed-time instrumentation (env-gated).
 """
 
 from .event_bus import EventBus, EventBusController, create_event_bus
@@ -17,6 +18,7 @@ from .output_guard import (
     take_over_stdout,
     write_raw_stdout,
 )
+from .timings import print_timings, record, reset_timings
 
 __all__ = [
     "file_mutation_queue",
@@ -30,4 +32,7 @@ __all__ = [
     "create_event_bus",
     "EventBus",
     "EventBusController",
+    "reset_timings",
+    "record",
+    "print_timings",
 ]
