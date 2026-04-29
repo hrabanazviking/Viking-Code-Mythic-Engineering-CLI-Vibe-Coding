@@ -706,6 +706,126 @@ def build_parser() -> argparse.ArgumentParser:
     tui.add_argument("--path", default=".", help="Project directory (default: current directory)")
     add_runtime_options(tui)
 
+    # --- PH-02 slice 2.2: developer-tool shortcuts ---
+
+    test_cmd = sub.add_parser(
+        "test",
+        help="Run the project's test suite (pytest by default)",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe test
+              mythic-vibe test --command pytest -k slow
+              mythic-vibe test --json
+            """
+        ),
+    )
+    test_cmd.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    test_cmd.add_argument(
+        "--command",
+        dest="override_command",
+        nargs="+",
+        help="Override the discovered test invocation (e.g. --command pytest -q tests/)",
+    )
+    add_runtime_options(test_cmd, json_output=True, dry_run=True)
+
+    lint_cmd = sub.add_parser(
+        "lint",
+        help="Run ruff check across the project",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe lint
+              mythic-vibe lint --command ruff check src/ tests/
+              mythic-vibe lint --json
+            """
+        ),
+    )
+    lint_cmd.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    lint_cmd.add_argument(
+        "--command",
+        dest="override_command",
+        nargs="+",
+        help="Override the default `ruff check .` invocation",
+    )
+    add_runtime_options(lint_cmd, json_output=True, dry_run=True)
+
+    typecheck_cmd = sub.add_parser(
+        "typecheck",
+        help="Run mypy across the project",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe typecheck
+              mythic-vibe typecheck --command mypy mythic_vibe_cli
+              mythic-vibe typecheck --json
+            """
+        ),
+    )
+    typecheck_cmd.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    typecheck_cmd.add_argument(
+        "--command",
+        dest="override_command",
+        nargs="+",
+        help="Override the default `mypy .` invocation",
+    )
+    add_runtime_options(typecheck_cmd, json_output=True, dry_run=True)
+
+    scaffold_cmd = sub.add_parser(
+        "scaffold",
+        help="Add an artefact to an existing Mythic project (today: adr)",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe scaffold adr --title "Adopt knowledge graph"
+              mythic-vibe scaffold adr --title "Use SQLite for state" --dry-run
+              mythic-vibe scaffold adr --title "Pin Python 3.11" --json
+
+            Notes:
+              Today only `scaffold adr` is implemented. Other artefact types
+              (task / interface / invariant / risk) land in PH-10 slice 10.4.
+            """
+        ),
+    )
+    scaffold_cmd.add_argument("artefact", choices=["adr"], help="Artefact type (adr)")
+    scaffold_cmd.add_argument("--title", required=True, help="Human-readable title for the artefact")
+    scaffold_cmd.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    add_runtime_options(scaffold_cmd, json_output=True, dry_run=True)
+
+    changelog_cmd = sub.add_parser(
+        "changelog",
+        help="Print or validate the project's CHANGELOG.md [Unreleased] section",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe changelog
+              mythic-vibe changelog --check
+              mythic-vibe changelog --json
+            """
+        ),
+    )
+    changelog_cmd.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    changelog_cmd.add_argument(
+        "--check",
+        action="store_true",
+        help="Run scripts/check_changelog.py if present and return its exit code",
+    )
+    add_runtime_options(changelog_cmd, json_output=True)
+
+    version_cmd = sub.add_parser(
+        "version",
+        help="Print the CLI version (subcommand form of --version)",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe version
+              mythic-vibe version --verbose
+              mythic-vibe version --json
+            """
+        ),
+    )
+    add_runtime_options(version_cmd, json_output=True)
+
     return parser
 
 

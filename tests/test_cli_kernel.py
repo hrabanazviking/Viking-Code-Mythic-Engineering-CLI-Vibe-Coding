@@ -76,6 +76,13 @@ class CliKernelTests(unittest.TestCase):
             "slash",
             "shell",
             "tui",
+            # PH-02 slice 2.2 — developer-tool shortcuts
+            "test",
+            "lint",
+            "typecheck",
+            "scaffold",
+            "changelog",
+            "version",
         }
 
         self.assertEqual(set(COMMAND_HANDLERS), expected)
