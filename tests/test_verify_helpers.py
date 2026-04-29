@@ -21,7 +21,10 @@ from mythic_vibe_cli.verify.git_diff import (
     collect_changed_files,
     review_changed_files,
 )
-from mythic_vibe_cli.verify.invariant_checker import InvariantCheckResult
+from mythic_vibe_cli.verify.invariant_checker import (
+    InvariantCheckResult,
+    check_invariants,
+)
 
 
 GIT_AVAILABLE = shutil.which("git") is not None
@@ -90,13 +93,23 @@ class InvariantCheckerTests(unittest.TestCase):
         self.assertTrue(result.ok)
         self.assertTrue(result.to_dict()["ok"])
 
-    # NOTE: a direct integration test of ``check_invariants(root)`` is
-    # intentionally not included here. ``MythicWorkflow.doctor(repo_boundary=True)``
-    # currently raises ``TypeError`` on any project that does not contain
-    # an active ``mythic_vibe_cli/`` package at its root — see new finding
-    # F-022 in PHASE1_SLICE_1_4_CLOSEOUT.md (bare ``return`` on workflow.py:269
-    # drops the expected (errors, warnings, sections) tuple). The integration
-    # test will be added when F-022 is fixed in PH-13.
+    def test_check_invariants_on_bare_directory_returns_errors_not_typeerror(self) -> None:
+        """Regression test for F-022 (fixed): MythicWorkflow.doctor(repo_boundary=True)
+        previously dropped its return tuple via a bare ``return`` on
+        workflow.py:269 when the project lacked a ``mythic_vibe_cli/``
+        package at its root, causing the caller to crash with
+        ``TypeError: cannot unpack non-iterable NoneType object``.
+        After the hot-fix the function returns the partial 3-tuple and
+        callers receive a structured error instead of a crash.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            result = check_invariants(root)
+            self.assertIsInstance(result, InvariantCheckResult)
+            self.assertFalse(result.ok)
+            joined_errors = " | ".join(result.errors)
+            self.assertIn("Missing active runtime package", joined_errors)
+            self.assertIn("project state schema", result.checked)
 
 
 @unittest.skipUnless(GIT_AVAILABLE, "git not available on PATH")

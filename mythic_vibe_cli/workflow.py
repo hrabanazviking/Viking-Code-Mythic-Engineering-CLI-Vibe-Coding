@@ -266,7 +266,7 @@ class MythicWorkflow:
         active_package = self.root / "mythic_vibe_cli"
         if not active_package.exists():
             errors.append("Missing active runtime package: mythic_vibe_cli")
-            return
+            return errors, warnings, sections
 
         for path in sorted(active_package.rglob("*.py")):
             try:
