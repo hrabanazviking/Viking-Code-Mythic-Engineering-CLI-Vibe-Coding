@@ -1710,13 +1710,33 @@ def cmd_reflect(args: argparse.Namespace) -> int:
             write_key_value("Next recommended action", record.next_steps[0] if record.next_steps else "review the handoff")
         return SUCCESS
 
-    record, json_path, md_path = _create_handoff(
-        root,
-        objective=getattr(args, "summary", None) or getattr(args, "objective", None),
-        next_step=getattr(args, "next_step", None),
-        note=getattr(args, "note", None),
-        session_type="reflect",
-    )
+    summary_value = getattr(args, "summary", None) or getattr(args, "objective", None)
+    next_step_value = getattr(args, "next_step", None)
+    note_value = getattr(args, "note", None)
+    base_payload = {
+        "path": str(root),
+        "summary": summary_value,
+        "next_step": next_step_value,
+        "note": note_value,
+    }
+    with PluginHookDispatcher(root) as dispatcher:
+        dispatcher.load_and_subscribe()
+        dispatcher.emit("before_reflect", dict(base_payload))
+        record, json_path, md_path = _create_handoff(
+            root,
+            objective=summary_value,
+            next_step=next_step_value,
+            note=note_value,
+            session_type="reflect",
+        )
+        next_recommended = record.next_steps[0] if record.next_steps else "review the handoff"
+        after_payload = dict(base_payload)
+        after_payload["handoff_id"] = record.handoff_id
+        after_payload["json_path"] = str(json_path)
+        after_payload["markdown_path"] = str(md_path)
+        after_payload["next_recommended_action"] = next_recommended
+        dispatcher.emit("after_reflect", after_payload)
+
     if _flag(args, "json"):
         write_json({"command": "reflect", "path": str(root), "handoff": _handoff_payload(root, record)})
         return SUCCESS
@@ -1725,7 +1745,7 @@ def cmd_reflect(args: argparse.Namespace) -> int:
     write_key_value("Handoff ID", record.handoff_id)
     write_key_value("Markdown", md_path)
     write_key_value("JSON", json_path)
-    write_key_value("Next recommended action", record.next_steps[0] if record.next_steps else "review the handoff")
+    write_key_value("Next recommended action", next_recommended)
     return SUCCESS
 
 

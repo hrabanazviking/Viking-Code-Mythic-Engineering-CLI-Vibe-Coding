@@ -683,6 +683,123 @@ class CliKernelTests(unittest.TestCase):
             pass
         sys.modules.pop(module_name, None)
 
+    def _setup_reflect_probe_plugin(self, project_path: Path, module_name: str) -> None:
+        import textwrap
+
+        from mythic_vibe_cli.plugins import PluginRegistry
+
+        plugin_dir = project_path / f"_synthetic_plugin_{module_name}"
+        plugin_dir.mkdir()
+        (plugin_dir / f"{module_name}.py").write_text(
+            textwrap.dedent(
+                """
+                class Plugin:
+                    received = []
+
+                    @classmethod
+                    def before_reflect(cls, payload):
+                        cls.received.append(("before", dict(payload)))
+
+                    @classmethod
+                    def after_reflect(cls, payload):
+                        cls.received.append(("after", dict(payload)))
+                """
+            ),
+            encoding="utf-8",
+        )
+        sys.path.insert(0, str(plugin_dir))
+        registry = PluginRegistry(project_path)
+        registry.add(
+            f"{module_name}:Plugin",
+            hooks=["before_reflect", "after_reflect"],
+        )
+
+    def _teardown_reflect_probe_plugin(self, project_path: Path, module_name: str) -> None:
+        plugin_dir = project_path / f"_synthetic_plugin_{module_name}"
+        try:
+            sys.path.remove(str(plugin_dir))
+        except ValueError:
+            pass
+        sys.modules.pop(module_name, None)
+
+    def test_cmd_reflect_emits_before_and_after_reflect(self) -> None:
+        import importlib as importlib_module
+
+        with tempfile.TemporaryDirectory() as project_root:
+            project_path = Path(project_root)
+            (project_path / "tests").mkdir(parents=True, exist_ok=True)
+            (project_path / "tests" / "test_smoke.py").write_text(
+                "def test_smoke():\n    assert True\n", encoding="utf-8"
+            )
+            with redirect_stdout(io.StringIO()):
+                app.main(["verify", "--path", str(project_path), "--commands", "--json"])
+
+            self._setup_reflect_probe_plugin(project_path, "reflect_probe")
+            try:
+                output = io.StringIO()
+                with redirect_stdout(output), redirect_stderr(io.StringIO()):
+                    code = app.main(
+                        [
+                            "reflect",
+                            "--path",
+                            str(project_path),
+                            "--summary",
+                            "Hooked summary",
+                            "--next-step",
+                            "Hooked next step",
+                            "--note",
+                            "Hooked note",
+                            "--json",
+                        ]
+                    )
+                module = importlib_module.import_module("reflect_probe")
+                received = list(module.Plugin.received)
+                module.Plugin.received.clear()
+            finally:
+                self._teardown_reflect_probe_plugin(project_path, "reflect_probe")
+
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(len(received), 2)
+            before, after = received
+            self.assertEqual(before[0], "before")
+            self.assertEqual(after[0], "after")
+            self.assertEqual(before[1]["summary"], "Hooked summary")
+            self.assertEqual(before[1]["next_step"], "Hooked next step")
+            self.assertEqual(before[1]["note"], "Hooked note")
+            self.assertNotIn("handoff_id", before[1])
+            self.assertTrue(after[1]["handoff_id"])
+            self.assertTrue(after[1]["markdown_path"])
+            self.assertTrue(after[1]["json_path"])
+            self.assertTrue(Path(after[1]["json_path"]).exists())
+            self.assertEqual(after[1]["summary"], "Hooked summary")
+
+    def test_cmd_reflect_dry_run_does_not_emit_reflect_hooks(self) -> None:
+        import importlib as importlib_module
+
+        with tempfile.TemporaryDirectory() as project_root:
+            project_path = Path(project_root)
+            self._setup_reflect_probe_plugin(project_path, "reflect_dry_probe")
+            try:
+                with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                    code = app.main(
+                        [
+                            "reflect",
+                            "--path",
+                            str(project_path),
+                            "--summary",
+                            "Dry preview",
+                            "--dry-run",
+                        ]
+                    )
+                module = importlib_module.import_module("reflect_dry_probe")
+                received = list(module.Plugin.received)
+                module.Plugin.received.clear()
+            finally:
+                self._teardown_reflect_probe_plugin(project_path, "reflect_dry_probe")
+
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(received, [])
+
     def _setup_verify_probe_plugin(self, project_path: Path, module_name: str) -> None:
         import textwrap
 

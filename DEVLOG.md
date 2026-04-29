@@ -7,6 +7,51 @@
 
 ---
 
+## 2026-04-29 - Plugin Hook Coverage Closeout: Wire `before_reflect` / `after_reflect`
+
+**Session:** Closing the dispatcher emitter set. Eighth and final declared plugin hook lit up — reflect.
+**Status:** All eight names in `mythic_vibe_cli.plugins.api.PLUGIN_HOOKS` (scan/packet/verify/reflect × before/after) now have real emitters. The plugin layer is fully load-bearing — every life-cycle moment in the CLI announces itself.
+**Scope:** One command wiring + tests + docs + closeout framing in CHANGELOG/DEVLOG.
+
+### What changed
+
+- `cmd_reflect` real-work path now wraps `_create_handoff` with `with PluginHookDispatcher(root) as dispatcher:`. `before_reflect` fires before the handoff is created, `after_reflect` fires after with the resolved handoff IDs and paths. Dry-run skips emission, matching the established pattern across the seven other emission sites.
+- Payload contracts:
+  - `before_reflect`: `{path, summary, next_step, note}` — the user's intent
+  - `after_reflect`: `before_reflect` payload + `{handoff_id, json_path, markdown_path, next_recommended_action}` — the resolved handoff record
+- Added two CLI-kernel integration tests in `tests/test_cli_kernel.py`: a synthetic plugin observes both events on `cmd_reflect --summary "..." --next-step "..." --note "..." --json` (with a smoke-test scaffolded so the prior `verify` step can pass and unblock reflect's verification-gate); a sibling test confirms `--dry-run` emits nothing.
+- Updated `docs/COMMAND_CONTRACTS.md` with the reflect entry and promoted the summary line to record the closeout.
+- Updated `CHANGELOG.md` with the closeout framing.
+
+### Why it matters
+
+This is the milestone slice in the dispatcher arc. Before today's session, `plugins/api.py` had eight hook *names* and zero emitters. After this slice, every name has a real call site emitting a stable small-key payload at the right life-cycle moment:
+
+| Hook | Emitter | Slice landed |
+|---|---|---|
+| `before_scan` / `after_scan` | `cmd_scan` | `97dea12` |
+| `before_packet` / `after_packet` | `cmd_packet_create` (+ `evoke` / `codex-pack` aliases), `cmd_packet_ingest`, `cmd_workflow_plan --packets` | `078226a` |
+| `before_verify` / `after_verify` | `cmd_verify` | `85ccc1b` |
+| `before_reflect` / `after_reflect` | `cmd_reflect` | this slice |
+
+Total: **8 hooks, 6 commands wired (counting aliases as one), 4 distinct life-cycle pairs.** A subscribed plugin can now react to every life-cycle moment without inventing its own emitter or monkey-patching the runtime. Audit, telemetry, derivation pipelines, gate-keeping, and continuity tools all become first-class extensibility points.
+
+### Verification
+
+- `pytest -q` -> `186 passed, 14 subtests passed` (was 184 + 14)
+- `pytest -q tests/test_cli_kernel.py -k "reflect_emits or reflect_dry"` -> `2 passed`
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!`
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 57 source files`
+
+### Continuity thread
+
+- The dispatcher emitter set is now closed. The next slice can do one of three things, in roughly increasing scope:
+  1. **Polish the plugin docs** — add a "writing your first plugin" page that shows the eight hook signatures, payload shapes, and the registration ritual. The wiring is mechanical now; what's missing is operator-facing prose.
+  2. **Port a fourth Pi primitive** — `core/timings.ts` for elapsed-time instrumentation, or `core/keybindings.ts` if V2 Phase 3 (TUI) is the next priority.
+  3. **Begin V2 Phase 3 (TUI)** — Volmarr queued this in `TODO.md` item 16. The output-guard + event-bus + dispatcher trio is exactly what a TUI needs.
+
+_The hall now has eight named voices in its chant. When the saga is finally chanted aloud, no part of the work passes unwitnessed: the scan that found the path, the packet that carried the task, the verify that judged the work, and the reflect that named what came next — each calls out its own moment, and any hand subscribed to the names hears._
+
 ## 2026-04-29 - Wire `before_verify` / `after_verify` Emitters
 
 **Session:** Continuing the dispatcher emission cadence. Third hook pair lit up — verify. Six of eight declared plugin hooks now emit; only `before_reflect` / `after_reflect` remain.
