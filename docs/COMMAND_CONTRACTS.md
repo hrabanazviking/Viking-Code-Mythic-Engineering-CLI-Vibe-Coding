@@ -110,7 +110,10 @@ Current Stage 15 method commands:
 Current plugin hook dispatch:
 
 - `mythic-vibe scan` (real-work path) emits `before_scan` to enabled plugins before building the project index, and `after_scan` after, via a per-invocation `PluginHookDispatcher`. Dry-run scans skip both hooks. Payloads are small dicts (`path`, scan flags) and (`path`, `index_path`, scalar counts). Plugin handler exceptions are logged to stderr and never break the command.
-- Other declared hooks (`before_packet`, `after_packet`, `before_verify`, `after_verify`, `before_reflect`, `after_reflect`) remain wired through the dispatcher contract but are not yet emitted from the corresponding command code; they will be wired in subsequent slices.
+- `mythic-vibe packet create` (and its `codex-pack` / `evoke` aliases) emits `before_packet` and `after_packet` per packet on the real-work path. Dry-run skips both. Payload includes `source` (the alias used), `path`, `phase`, `role`, `task`, `audience`, `format`; `after_packet` adds `packet_id` and `packet_path`.
+- `mythic-vibe packet ingest` emits `before_packet` and `after_packet` on the real-work path; the payload also includes `ingest_source` (the file path being ingested). `after_packet` adds the resolved `packet_id`, `packet_path`, plus `phase`, `role`, `task`, `audience`, and `format` from the resolved record.
+- `mythic-vibe workflow plan --packets` (real-work path) emits one `before_packet`/`after_packet` pair per generated workflow step under a single dispatcher instance. The payload also includes `workflow_id` and `workflow_step_id`. `workflow plan` without `--packets` and any dry-run path skip emission entirely.
+- Other declared hooks (`before_verify`, `after_verify`, `before_reflect`, `after_reflect`) remain wired through the dispatcher contract but are not yet emitted from the corresponding command code; they will be wired in subsequent slices.
 - Plugins whose entrypoints fail to import are skipped silently during dispatch; surface plugin health via `mythic-vibe plugin inspect` instead.
 
 Current compatibility aliases:

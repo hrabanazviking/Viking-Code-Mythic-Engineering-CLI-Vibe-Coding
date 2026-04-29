@@ -7,6 +7,39 @@
 
 ---
 
+## 2026-04-29 - Wire `before_packet` / `after_packet` Emitters
+
+**Session:** Continuing the dispatcher-emission cadence. Second pair of plugin hooks lit up: `before_packet` / `after_packet` across every packet-write call site in the CLI.
+**Status:** Three emission sites wired (`packet create` + aliases, `packet ingest`, `workflow plan --packets` step loop). Remaining four declared hooks — `before_verify`/`after_verify` and `before_reflect`/`after_reflect` — stay wired through the dispatcher contract for follow-on slices.
+**Scope:** Three command-level wirings + tests + docs. No bridge changes; the `PacketBuilder` stays plugin-agnostic. A subtle resolution bug in the `cmd_packet_create` after-payload was caught and fixed.
+
+### What changed
+
+- `cmd_packet_create` (the shared body for `packet create` / `codex-pack` / `evoke`) now wraps its real-work path with `PluginHookDispatcher`. `before_packet` fires before `bridge.create_packet(...)`; `after_packet` fires after with the resolved canonical packet record. Dry-run path skips emission entirely.
+- `cmd_packet_ingest` wraps its real-work path the same way. `before_packet` carries `ingest_source` (the file path being ingested) so plugins can react to the source. `after_packet` carries the resolved `packet_id`, `packet_path`, and the record's role/phase/task/audience/format fields.
+- `cmd_workflow_plan` `--packets` block now wraps the per-step packet generation loop in a single `PluginHookDispatcher`, emitting one `before_packet` and one `after_packet` per workflow step. Payload includes `workflow_id` and `workflow_step_id` so a subscribed plugin can correlate packets with the workflow that produced them. Workflow plans without `--packets` and dry-run plans both skip emission.
+- Resolution bug caught by tests: `cmd_packet_create` returns the user-specified `out_file` path (default `mythic/codex_prompt.md`), not the canonical `PKT-NNNNNN.md` path. Initial wiring used `bridge.load_packet_record(packet.stem)` which returned `None` because the stem was `codex_prompt`, not a `PKT-` id. Fix uses `bridge.list_packets()[-1]` which returns the just-written canonical record. The `cmd_workflow_plan` site is unaffected because its `create_packet` calls don't pass `out_file=`, so the returned path IS the canonical PKT path.
+- Added six CLI-kernel integration tests in `tests/test_cli_kernel.py`: `cmd_packet_create` emits both hooks with correct payload shape; `cmd_packet_create --dry-run` does NOT emit; the `evoke` alias emits with `source: "evoke"` proving alias surfacing works; `cmd_workflow_plan --packets` emits N before/after pairs for N steps with `source: "workflow plan"`; `cmd_workflow_plan` without `--packets` emits nothing; `cmd_packet_ingest` emits both hooks. A small private helper (`_setup_packet_probe_plugin` / `_teardown_packet_probe_plugin`) materializes a synthetic plugin per test in a dedicated subdirectory under the project root, registers it via `PluginRegistry.add(...)`, and prepends the directory to `sys.path` for the duration of the test.
+- Updated `docs/COMMAND_CONTRACTS.md` plugin-dispatch section to record the four new emission sites (counting `evoke` and `codex-pack` as alias surfaces of `packet create`).
+- Updated `CHANGELOG.md`.
+
+### Why it matters
+
+Before this slice, the dispatcher fired only on `cmd_scan`. Plugins that wanted to observe packet creation — for audit, telemetry, derivation pipelines, or simply to watch what the AI was being prompted with — had no signal at all. Now every packet artifact written to disk fires both hooks with a stable small-key payload. The wiring proves the dispatcher pattern is mechanical: `with PluginHookDispatcher(root) as d: d.load_and_subscribe(); d.emit("before_*", payload); ...real work...; d.emit("after_*", after_payload)`. The remaining six emission sites for verify and reflect follow the same template.
+
+### Verification
+
+- `pytest -q` -> `182 passed, 14 subtests passed` (was 176 + 14)
+- `pytest -q tests/test_cli_kernel.py -k "packet_create_emits or packet_create_dry or evoke_alias or workflow_plan_with_packets or workflow_plan_without_packets or packet_ingest_emits"` -> `6 passed`
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!`
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 57 source files`
+
+### Continuity thread
+
+- The next slice wires `before_verify` / `after_verify` into `cmd_verify`. That command already exists and already runs check commands + emits structured records; bracketing the work with the dispatcher follows the same template as `cmd_scan`. After verify, `before_reflect` / `after_reflect` close out the eight declared hooks. Alternatively, port pi's `core/timings.ts` next — single-file utility, mechanical.
+
+_Five hooks live now: scan/scan + packet/packet + packet/packet + packet/packet + packet/packet — no, three hooks, six emissions, three sites. The pattern is no longer a single voice in the hall: it is a chant the workflow itself can join._
+
 ## 2026-04-29 - Wire Event Bus into Plugin Hooks via Dispatcher
 
 **Session:** Connecting the just-landed event bus to the project's eight pre-declared plugin hook names via a new dispatcher class. First emitter wired through is `cmd_scan`.

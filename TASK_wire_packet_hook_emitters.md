@@ -61,17 +61,17 @@ after_packet:
 
 - [x] Task file written
 - [x] Task file committed + pushed
-- [ ] Wire `cmd_packet_create` (real-work path; skip dry-run)
-- [ ] Wire `cmd_packet_ingest` (real-work path; skip dry-run)
-- [ ] Wire `cmd_workflow_plan --packets` loop (skip dry-run + skip when --packets not set)
-- [ ] Integration tests (≥5 cases)
-- [ ] `pytest -q` green
-- [ ] `ruff` + `mypy` green
-- [ ] `docs/COMMAND_CONTRACTS.md` updated
-- [ ] CHANGELOG entry
-- [ ] DEVLOG entry
-- [ ] Memory snapshot updated
-- [ ] Final commit + push
+- [x] Wire `cmd_packet_create` (real-work path; skip dry-run; covers `evoke`/`codex-pack` aliases via shared body)
+- [x] Wire `cmd_packet_ingest` (real-work path; skip dry-run; payload carries `ingest_source`)
+- [x] Wire `cmd_workflow_plan --packets` loop (single dispatcher, N before/after pairs; skip dry-run + skip when `--packets` not set)
+- [x] Integration tests — 6 cases (create + create-dry + evoke-alias + workflow+packets + workflow-no-packets + ingest)
+- [x] `pytest -q` green — 182 passed, 14 subtests passed
+- [x] `ruff` + `mypy` green
+- [x] `docs/COMMAND_CONTRACTS.md` updated
+- [x] CHANGELOG entry
+- [x] DEVLOG entry with continuity thread
+- [x] Memory snapshot updated
+- [x] Final commit + push
 
 ## Resume Instructions
 

@@ -639,6 +639,278 @@ class CliKernelTests(unittest.TestCase):
             self.assertIn("languages", received[1][1])
             module.Plugin.received.clear()
 
+    def _setup_packet_probe_plugin(
+        self, project_path: Path, module_name: str
+    ) -> None:
+        """Materialize a synthetic plugin that records every before_/after_packet
+        call into a class-level list, register it against the project, and
+        prepend the plugin dir to sys.path."""
+        import textwrap
+
+        from mythic_vibe_cli.plugins import PluginRegistry
+
+        plugin_dir = project_path / f"_synthetic_plugin_{module_name}"
+        plugin_dir.mkdir()
+        (plugin_dir / f"{module_name}.py").write_text(
+            textwrap.dedent(
+                """
+                class Plugin:
+                    received = []
+
+                    @classmethod
+                    def before_packet(cls, payload):
+                        cls.received.append(("before", dict(payload)))
+
+                    @classmethod
+                    def after_packet(cls, payload):
+                        cls.received.append(("after", dict(payload)))
+                """
+            ),
+            encoding="utf-8",
+        )
+        sys.path.insert(0, str(plugin_dir))
+        registry = PluginRegistry(project_path)
+        registry.add(
+            f"{module_name}:Plugin",
+            hooks=["before_packet", "after_packet"],
+        )
+
+    def _teardown_packet_probe_plugin(self, project_path: Path, module_name: str) -> None:
+        plugin_dir = project_path / f"_synthetic_plugin_{module_name}"
+        try:
+            sys.path.remove(str(plugin_dir))
+        except ValueError:
+            pass
+        sys.modules.pop(module_name, None)
+
+    def test_cmd_packet_create_emits_before_and_after_packet(self) -> None:
+        import importlib as importlib_module
+
+        with tempfile.TemporaryDirectory() as project_root:
+            project_path = Path(project_root)
+            self._setup_packet_probe_plugin(project_path, "pkt_create_probe")
+            try:
+                output = io.StringIO()
+                with redirect_stdout(output):
+                    code = app.main(
+                        [
+                            "packet",
+                            "create",
+                            "--task",
+                            "Hooked task",
+                            "--phase",
+                            "build",
+                            "--role",
+                            "Forge Worker",
+                            "--path",
+                            str(project_path),
+                            "--json",
+                        ]
+                    )
+                module = importlib_module.import_module("pkt_create_probe")
+                received = list(module.Plugin.received)
+                module.Plugin.received.clear()
+            finally:
+                self._teardown_packet_probe_plugin(project_path, "pkt_create_probe")
+
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(len(received), 2)
+            before, after = received
+            self.assertEqual(before[0], "before")
+            self.assertEqual(after[0], "after")
+            self.assertEqual(before[1]["task"], "Hooked task")
+            self.assertEqual(before[1]["phase"], "build")
+            self.assertEqual(before[1]["role"], "Forge Worker")
+            self.assertEqual(before[1]["source"], "packet create")
+            self.assertNotIn("packet_id", before[1])
+            self.assertTrue(after[1]["packet_id"].startswith("PKT-"))
+            self.assertIn("packet_path", after[1])
+
+    def test_cmd_packet_create_dry_run_does_not_emit_packet_hooks(self) -> None:
+        import importlib as importlib_module
+
+        with tempfile.TemporaryDirectory() as project_root:
+            project_path = Path(project_root)
+            self._setup_packet_probe_plugin(project_path, "pkt_create_dry_probe")
+            try:
+                with redirect_stdout(io.StringIO()):
+                    code = app.main(
+                        [
+                            "packet",
+                            "create",
+                            "--task",
+                            "Dry preview",
+                            "--phase",
+                            "intent",
+                            "--role",
+                            "Skald",
+                            "--path",
+                            str(project_path),
+                            "--dry-run",
+                        ]
+                    )
+                module = importlib_module.import_module("pkt_create_dry_probe")
+                received = list(module.Plugin.received)
+                module.Plugin.received.clear()
+            finally:
+                self._teardown_packet_probe_plugin(project_path, "pkt_create_dry_probe")
+
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(received, [])
+
+    def test_cmd_packet_create_via_evoke_alias_emits_with_alias_source(self) -> None:
+        import importlib as importlib_module
+
+        with tempfile.TemporaryDirectory() as project_root:
+            project_path = Path(project_root)
+            self._setup_packet_probe_plugin(project_path, "pkt_evoke_probe")
+            try:
+                with redirect_stdout(io.StringIO()):
+                    code = app.main(
+                        [
+                            "evoke",
+                            "--task",
+                            "Evoked task",
+                            "--phase",
+                            "architecture",
+                            "--role",
+                            "Architect",
+                            "--path",
+                            str(project_path),
+                        ]
+                    )
+                module = importlib_module.import_module("pkt_evoke_probe")
+                received = list(module.Plugin.received)
+                module.Plugin.received.clear()
+            finally:
+                self._teardown_packet_probe_plugin(project_path, "pkt_evoke_probe")
+
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(len(received), 2)
+            self.assertEqual(received[0][1]["source"], "evoke")
+            self.assertEqual(received[1][1]["source"], "evoke")
+
+    def test_cmd_workflow_plan_with_packets_emits_before_after_per_step(self) -> None:
+        import importlib as importlib_module
+
+        with tempfile.TemporaryDirectory() as project_root:
+            project_path = Path(project_root)
+            self._setup_packet_probe_plugin(project_path, "pkt_workflow_probe")
+            try:
+                with redirect_stdout(io.StringIO()):
+                    code = app.main(
+                        [
+                            "workflow",
+                            "plan",
+                            "--task",
+                            "Workflow with hooked packets",
+                            "--path",
+                            str(project_path),
+                            "--role",
+                            "Skald",
+                            "--role",
+                            "Auditor",
+                            "--role",
+                            "Scribe",
+                            "--packets",
+                        ]
+                    )
+                module = importlib_module.import_module("pkt_workflow_probe")
+                received = list(module.Plugin.received)
+                module.Plugin.received.clear()
+            finally:
+                self._teardown_packet_probe_plugin(project_path, "pkt_workflow_probe")
+
+            self.assertEqual(code, SUCCESS)
+            kinds = [item[0] for item in received]
+            roles = [item[1].get("role") for item in received]
+            sources = {item[1].get("source") for item in received}
+            self.assertEqual(len(received), 6)
+            self.assertEqual(kinds, ["before", "after", "before", "after", "before", "after"])
+            self.assertEqual(roles, ["Skald", "Skald", "Auditor", "Auditor", "Scribe", "Scribe"])
+            self.assertEqual(sources, {"workflow plan"})
+
+    def test_cmd_workflow_plan_without_packets_does_not_emit_packet_hooks(self) -> None:
+        import importlib as importlib_module
+
+        with tempfile.TemporaryDirectory() as project_root:
+            project_path = Path(project_root)
+            self._setup_packet_probe_plugin(project_path, "pkt_workflow_no_packets_probe")
+            try:
+                with redirect_stdout(io.StringIO()):
+                    code = app.main(
+                        [
+                            "workflow",
+                            "plan",
+                            "--task",
+                            "Plan without packets",
+                            "--path",
+                            str(project_path),
+                            "--role",
+                            "Skald",
+                        ]
+                    )
+                module = importlib_module.import_module("pkt_workflow_no_packets_probe")
+                received = list(module.Plugin.received)
+                module.Plugin.received.clear()
+            finally:
+                self._teardown_packet_probe_plugin(
+                    project_path, "pkt_workflow_no_packets_probe"
+                )
+
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(received, [])
+
+    def test_cmd_packet_ingest_emits_before_and_after_packet(self) -> None:
+        import importlib as importlib_module
+
+        with tempfile.TemporaryDirectory() as project_root:
+            project_path = Path(project_root)
+            with redirect_stdout(io.StringIO()):
+                app.main(
+                    [
+                        "packet",
+                        "create",
+                        "--task",
+                        "Source for ingest",
+                        "--phase",
+                        "build",
+                        "--role",
+                        "Forge Worker",
+                        "--path",
+                        str(project_path),
+                    ]
+                )
+            source_packet = project_path / "mythic" / "codex_prompt.md"
+            self.assertTrue(source_packet.exists())
+
+            self._setup_packet_probe_plugin(project_path, "pkt_ingest_probe")
+            try:
+                with redirect_stdout(io.StringIO()):
+                    code = app.main(
+                        [
+                            "packet",
+                            "ingest",
+                            "--source",
+                            str(source_packet),
+                            "--path",
+                            str(project_path),
+                        ]
+                    )
+                module = importlib_module.import_module("pkt_ingest_probe")
+                received = list(module.Plugin.received)
+                module.Plugin.received.clear()
+            finally:
+                self._teardown_packet_probe_plugin(project_path, "pkt_ingest_probe")
+
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(len(received), 2)
+            self.assertEqual(received[0][0], "before")
+            self.assertEqual(received[1][0], "after")
+            self.assertEqual(received[0][1]["source"], "packet ingest")
+            self.assertEqual(received[1][1]["source"], "packet ingest")
+            self.assertTrue(received[1][1]["packet_id"].startswith("PKT-"))
+
     def test_cmd_scan_dry_run_does_not_emit_plugin_hooks(self) -> None:
         import importlib as importlib_module
         import textwrap
