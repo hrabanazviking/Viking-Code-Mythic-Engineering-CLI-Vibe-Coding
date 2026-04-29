@@ -1861,6 +1861,216 @@ def cmd_version(args: argparse.Namespace) -> int:
     return SUCCESS
 
 
+# --- PH-02 slice 2.3: workflow-phase capture commands ---------------------
+
+PHASE_CAPTURE_PHASES: tuple[str, ...] = (
+    "intent",
+    "constraints",
+    "architecture",
+    "plan",
+    "build",
+)
+
+_PHASE_TEMPLATE = """# Mythic Phase Record
+
+- Phase: {phase}
+- Task: {task}
+- Timestamp: {timestamp}
+- Operator: {operator}
+- Confidence: {confidence}
+- Risk: {risk}
+
+## Summary
+
+{summary}
+
+## Notes
+
+{notes_block}
+
+## Action Taken
+
+(filled in during the build phase or after this capture)
+
+## Verification
+
+(filled in during the verify phase)
+
+## Reflection
+
+(filled in during the reflect phase)
+
+## Next Step
+
+{next_step}
+"""
+
+
+def _filename_safe_timestamp(timestamp: str) -> str:
+    """Make an ISO timestamp safe to use as part of a filename.
+
+    ``utc_now()`` returns ``2026-04-29T18:30:00Z``; colons are illegal in
+    Windows file paths, so we swap them for hyphens. Cross-platform safe.
+    """
+    return timestamp.replace(":", "-")
+
+
+def _render_notes_block(notes: list[str]) -> str:
+    cleaned = [note.strip() for note in notes if note and note.strip()]
+    if not cleaned:
+        return "(none)"
+    return "\n".join(f"- {item}" for item in cleaned)
+
+
+def _resolve_operator(args: argparse.Namespace) -> str:
+    candidate = getattr(args, "operator", None)
+    if candidate:
+        return str(candidate)
+    return os.environ.get("USERNAME") or os.environ.get("USER") or "unknown"
+
+
+def _write_phase_record(
+    args: argparse.Namespace,
+    *,
+    phase: str,
+) -> int:
+    """Capture a Mythic Phase Record to ``mythic/checkins/<ts>-<phase>.md``.
+
+    Shared body for the five capture handlers (intent / constraints /
+    architecture / plan / build). Each handler is a one-liner that
+    forwards its phase string here.
+    """
+    if phase not in PHASE_CAPTURE_PHASES:
+        write_error(f"Unsupported capture phase: {phase!r}")
+        return USER_INPUT_ERROR
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    task = (getattr(args, "task", "") or "").strip()
+    summary = (getattr(args, "summary", "") or "").strip()
+    if not task:
+        write_error(f"{phase} capture requires --task <text>.")
+        return USER_INPUT_ERROR
+    if not summary:
+        write_error(f"{phase} capture requires --summary <text>.")
+        return USER_INPUT_ERROR
+
+    notes: list[str] = list(getattr(args, "note", None) or [])
+    confidence = (getattr(args, "confidence", None) or "unspecified").strip() or "unspecified"
+    risk = (getattr(args, "risk", "") or "").strip() or "unspecified"
+    next_step = (getattr(args, "next_step", "") or "").strip() or "(not specified)"
+    operator = _resolve_operator(args)
+    timestamp = utc_now()
+    safe_ts = _filename_safe_timestamp(timestamp)
+    target = root / "mythic" / "checkins" / f"{safe_ts}-{phase}.md"
+
+    rendered = _PHASE_TEMPLATE.format(
+        phase=phase,
+        task=task,
+        timestamp=timestamp,
+        operator=operator,
+        confidence=confidence,
+        risk=risk,
+        summary=summary,
+        notes_block=_render_notes_block(notes),
+        next_step=next_step,
+    )
+
+    payload = {
+        "command": f"{phase} capture",
+        "phase": phase,
+        "task": task,
+        "summary": summary,
+        "notes": notes,
+        "confidence": confidence,
+        "risk": risk,
+        "next_step": next_step,
+        "operator": operator,
+        "timestamp": timestamp,
+        "target": str(target),
+    }
+
+    if _flag(args, "dry_run"):
+        if _flag(args, "json"):
+            write_json({**payload, "dry_run": True})
+        else:
+            write_line(f"Dry run: no {phase} capture record will be written.")
+            write_key_value("Target", target)
+            write_key_value("Task", task)
+            write_key_value("Summary", summary)
+            write_key_value("Notes", len(notes))
+        return SUCCESS
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(rendered, encoding="utf-8")
+
+    if _flag(args, "json"):
+        write_json({**payload, "dry_run": False})
+        return SUCCESS
+
+    write_line(f"{phase.capitalize()} capture recorded.")
+    write_key_value("Path", target)
+    write_key_value("Task", task)
+    write_key_value("Operator", operator)
+    return SUCCESS
+
+
+def cmd_intent_capture(args: argparse.Namespace) -> int:
+    return _write_phase_record(args, phase="intent")
+
+
+def cmd_constraints_capture(args: argparse.Namespace) -> int:
+    return _write_phase_record(args, phase="constraints")
+
+
+def cmd_architecture_capture(args: argparse.Namespace) -> int:
+    return _write_phase_record(args, phase="architecture")
+
+
+def cmd_plan_capture(args: argparse.Namespace) -> int:
+    return _write_phase_record(args, phase="plan")
+
+
+def cmd_build_capture(args: argparse.Namespace) -> int:
+    return _write_phase_record(args, phase="build")
+
+
+def _phase_capture_dispatch(args: argparse.Namespace, *, phase: str, dest: str) -> int:
+    """Shared dispatcher body for the five phase parents.
+
+    Each parent has a single ``capture`` subcommand today. Future
+    slices may add ``show``, ``list``, etc.; the dispatcher protects
+    against unknown subcommands the same way ``cmd_ai_dispatch`` does
+    (visible error before USER_INPUT_ERROR).
+    """
+    sub = getattr(args, dest, None)
+    if sub == "capture":
+        return _write_phase_record(args, phase=phase)
+    write_error(
+        f"Unknown {phase} subcommand: {sub!r}. Try `mythic-vibe {phase} capture --help`."
+    )
+    return USER_INPUT_ERROR
+
+
+def cmd_intent_dispatch(args: argparse.Namespace) -> int:
+    return _phase_capture_dispatch(args, phase="intent", dest="intent_command")
+
+
+def cmd_constraints_dispatch(args: argparse.Namespace) -> int:
+    return _phase_capture_dispatch(args, phase="constraints", dest="constraints_command")
+
+
+def cmd_architecture_dispatch(args: argparse.Namespace) -> int:
+    return _phase_capture_dispatch(args, phase="architecture", dest="architecture_command")
+
+
+def cmd_plan_dispatch(args: argparse.Namespace) -> int:
+    return _phase_capture_dispatch(args, phase="plan", dest="plan_command")
+
+
+def cmd_build_dispatch(args: argparse.Namespace) -> int:
+    return _phase_capture_dispatch(args, phase="build", dest="build_command")
+
+
 def cmd_config(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
     loaded = ConfigStore(root).load()
@@ -3492,4 +3702,9 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "scaffold": cmd_scaffold,
     "changelog": cmd_changelog,
     "version": cmd_version,
+    "intent": cmd_intent_dispatch,
+    "constraints": cmd_constraints_dispatch,
+    "architecture": cmd_architecture_dispatch,
+    "plan": cmd_plan_dispatch,
+    "build": cmd_build_dispatch,
 }

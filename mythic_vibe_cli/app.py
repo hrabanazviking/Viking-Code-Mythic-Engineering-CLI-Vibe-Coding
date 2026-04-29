@@ -826,6 +826,50 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_runtime_options(version_cmd, json_output=True)
 
+    # --- PH-02 slice 2.3: workflow-phase capture commands ---
+    # Each phase parent has a single `capture` subcommand today; future
+    # slices may add `show`, `list`, etc. Subparser dest names use a
+    # phase-specific suffix (`intent_command`, `constraints_command`,
+    # ...) to avoid the F-023 argparse collision between subparser
+    # dests and any future top-level subcommand named `command`.
+    for _phase in ("intent", "constraints", "architecture", "plan", "build"):
+        _phase_parent = sub.add_parser(
+            _phase,
+            help=f"Capture a Mythic Phase Record for the {_phase} phase",
+            **_example_parser_kwargs(
+                f"""
+                Examples:
+                  mythic-vibe {_phase} capture --task "Refactor router" --summary "Move command handlers into modules"
+                  mythic-vibe {_phase} capture --task "Refactor router" --summary "..." --note "Keep alias compatibility" --confidence high --risk low
+                  mythic-vibe {_phase} capture --task "Refactor router" --summary "..." --json
+                  mythic-vibe {_phase} capture --task "Refactor router" --summary "..." --dry-run
+                """
+            ),
+        )
+        _phase_sub = _phase_parent.add_subparsers(dest=f"{_phase}_command", required=True)
+        _capture = _phase_sub.add_parser(
+            "capture",
+            help=f"Write a Mythic Phase Record under mythic/checkins/<ts>-{_phase}.md",
+        )
+        _capture.add_argument("--task", required=True, help="Short task name (also recorded inside the file)")
+        _capture.add_argument("--summary", required=True, help="One-paragraph summary for the {_phase} phase")
+        _capture.add_argument("--note", action="append", default=[], help="Additional bullet (repeatable)")
+        _capture.add_argument(
+            "--confidence",
+            choices=["high", "medium", "low", "unspecified"],
+            default="unspecified",
+            help="Operator confidence in the captured material",
+        )
+        _capture.add_argument("--risk", default="", help="Short risk note recorded in the phase header")
+        _capture.add_argument(
+            "--next-step",
+            default="",
+            help="What the operator intends to do next (rendered into the Next Step section)",
+        )
+        _capture.add_argument("--operator", default="", help="Operator name override (default: $USER / $USERNAME)")
+        _capture.add_argument("--path", default=".", help="Project directory (default: current directory)")
+        add_runtime_options(_capture, json_output=True, dry_run=True)
+
     return parser
 
 
