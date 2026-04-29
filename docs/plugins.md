@@ -228,7 +228,32 @@ Don't reach for a plugin when you want to:
 
 ---
 
-## 9) See also
+## 9) Profiling slow commands (`MYTHIC_TIMING`)
+
+Set `MYTHIC_TIMING=1` in the environment to print a startup-and-command profile to stderr after every CLI invocation:
+
+```bash
+MYTHIC_TIMING=1 mythic-vibe scan --path .
+```
+
+Sample output:
+
+```text
+--- Mythic Timings ---
+  argparse: 27.8ms
+  configure_output: 0.0ms
+  handler:scan: 142.3ms
+  TOTAL: 170.1ms
+------------------------
+```
+
+The labels record elapsed time at the boundaries of `app.main()`: argparse build + parse, output configuration, and the resolved command handler. When the env var is unset, the profile is silent and the call has zero observable cost.
+
+This is the right tool when a command feels slow and you want to know whether the cost is in argparse, your handler, or somewhere else. Plugin code is not measured separately — its time is rolled into the `handler:<command>` entry.
+
+---
+
+## 10) See also
 
 - [`docs/COMMAND_CONTRACTS.md`](COMMAND_CONTRACTS.md) — canonical payload shapes per emitter
 - [`docs/api.md`](api.md) — `plugin list|inspect|disable` and `grimoire` command surfaces
