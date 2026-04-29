@@ -7,6 +7,67 @@
 
 ---
 
+## 2026-04-29 - V2 Phase 3 Second Slice: Textual TUI `mythic-vibe tui`
+
+**Session:** Second slice of the V2 Phase 3 (TUI) arc. Volmarr confirmed Textual as the TUI library and reaffirmed the durable cross-platform / open-source-only requirement (also saved to `feedback_volmarr_preferences.md` as a memory). This slice adds a minimal Textual app with auto-refresh.
+**Status:** `mythic-vibe tui` opens a four-panel status screen via Textual. Cross-platform, MIT-licensed, no native deps, no per-OS branches. When the optional `[tui]` extra is not installed, the command surfaces a helpful install message instead of raising.
+**Scope:** New TUI subpackage + `cmd_tui` + sub-parser + tests + docs + pyproject extra.
+
+### Cross-platform / open-source compliance recorded
+
+Volmarr stated explicitly: "we are to keep this and all projects 100% cross platform to run on all platforms so we never rely on anything that is only on a certain platform and we don't use any proprietory systems.. only opensourse." The requirement is now durable in `~/.claude/projects/.../memory/feedback_volmarr_preferences.md`. Every dependency choice and every code path going forward must satisfy this rule.
+
+Textual passes:
+- License: **MIT** (open-source)
+- Implementation: **pure Python** (no native deps; supports Windows / macOS / Linux uniformly)
+- Wheels: `pip install textual` works on every platform Python supports
+- No proprietary services; no platform-specific APIs leak through Textual's surface
+
+### What changed
+
+- Added the `[tui]` optional dependency in `pyproject.toml` (`textual>=0.80`); also added `textual>=0.80` to the `dev` group so test runs cover the TUI.
+- Added `mythic_vibe_cli/tui/__init__.py` (lazy public surface) and `mythic_vibe_cli/tui/app.py` containing:
+  - `StatusData` frozen dataclass with eleven fields covering phase, active task, last verification (id/result/level), latest handoff (id/created/next-step), plugin enabled/disabled counts, and a `refreshed_at` UTC stamp.
+  - `build_status_data(root)` — pure function (no Textual deps) that gathers the snapshot. Tested without Textual.
+  - `StatusScreen` — Textual `Screen` subclass with a 2×2 grid of `Static` panels, `Header` + `Footer`, auto-refresh interval at 2.0s, keybindings (`q`/`Ctrl+C` quit, `r` refresh).
+  - `MythicTuiApp(root)` — top-level `App` subclass that pushes `StatusScreen`.
+  - `run_tui(root)` — the entry point invoked by `cmd_tui`.
+- Added `cmd_tui(args)` in `mythic_vibe_cli/commands.py` that **late-imports** `tui.app.run_tui`. If Textual isn't installed, the import raises `ImportError`; the command catches it, prints `Textual is not installed. Install the optional TUI extra...` to stderr, and returns `OPERATIONAL_FAILURE`. Registered in `COMMAND_HANDLERS`.
+- Added the `tui` sub-parser in `mythic_vibe_cli/app.py` with `--path` and standard runtime options. Help epilog includes the install command for the extra.
+- Updated `tests/test_cli_kernel.py`'s `test_command_registry_preserves_current_commands_and_aliases` expected set to include `tui`.
+- Added `tests/test_tui.py` with three test classes:
+  - `StatusDataTests` (3 cases) — pure-data tests on `build_status_data` (safe defaults on empty project, `to_dict` round-trip with all eleven fields, path resolution).
+  - `TuiHeadlessTests` (2 cases) — Textual headless tests via `App.run_test()` driving the screen and pressing `q` to quit. Uses Textual's built-in async test driver.
+  - `CmdTuiFallbackTests` (1 case) — simulates a missing-textual import and verifies `cmd_tui` returns `OPERATIONAL_FAILURE` with the install message in stderr. Saves and restores `sys.modules` around the test so other tests aren't disturbed.
+- Updated `docs/COMMAND_CONTRACTS.md` and `docs/api.md` with the `tui` contract; CHANGELOG records the new optional dep + cross-platform note.
+
+### Why it matters
+
+The shell REPL from yesterday is text-only. The TUI gives the same project status a glance-friendly visual surface with auto-refresh — a developer running `mythic-vibe verify` can have `mythic-vibe tui` open in another pane and watch the verification record update in real time without re-running anything. The slice also commits the project to Textual rather than other TUI options (urwid, prompt-toolkit's full UI mode, blessed, etc.) — Textual was chosen because:
+
+1. MIT-licensed and pure Python, satisfying the cross-platform rule.
+2. Active development and documentation maturity.
+3. `App.run_test()` provides headless async testing without subprocess invocation.
+4. The async event-loop architecture is the right shape for future real-time progress bars (V2 Phase 3 calls for these explicitly).
+
+### Verification
+
+- `pytest -q` -> `246 passed, 14 subtests passed` (was 240 + 14)
+- `pytest -q tests/test_tui.py` -> `6 passed in 0.50s`
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!` (after one `# noqa: E402` for a deliberate post-`textual_unavailable` import)
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 64 source files` (was 62 — `tui/__init__.py` and `tui/app.py` added)
+- Smoke: `python -m mythic_vibe_cli tui --help` prints the help text including the `pip install "mythic-vibe-cli[tui]"` epilog.
+
+### Continuity thread
+
+- The TUI is live with one screen. Possible follow-on slices, in roughly increasing scope:
+  1. **Add a status-stream view** — log tail of recent commands run, plus their exit codes and timings (uses the event bus — every `before_*` / `after_*` emission becomes a row in the stream).
+  2. **Add a slash-commands picker screen** — pressing `/` opens a fuzzy-match picker over `BUILTIN_SLASH_COMMANDS` + plugin-contributed entries; selecting one runs it inline. This wires the slash catalog directly into the TUI.
+  3. **Add real-time progress bars for long-running agent tasks** — V2 Phase 3 explicitly calls for this; needs a non-blocking command runner that can stream output to a Textual widget.
+  4. **Move on to V2 Phase 4 (Local LLM provider layer)** — `TODO.md` item 17.
+
+_The hall has its first lit panels. The status of the work — phase, verification, handoff, plugins — is visible at a glance, and refreshes itself without command. The first interactive eye is open; the first TUI keybinding sounds the closing-bell when the work ends._
+
 ## 2026-04-29 - V2 Phase 3 First Slice: Minimal `mythic-vibe shell` REPL
 
 **Session:** First slice of the V2 Phase 3 (TUI) arc. Ships a minimal interactive surface using only the runtime + plugin primitives we already have. No Textual, no readline/history, no rendering library — just `input()` + `print()`. Establishes the REPL contract a future TUI will wrap.

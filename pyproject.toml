@@ -62,6 +62,9 @@ docs = [
 ux = [
   "rich>=13.0"
 ]
+tui = [
+  "textual>=0.80"
+]
 ai = [
   "anthropic>=0.34",
   "google-genai>=1.0",
@@ -78,6 +81,7 @@ dev = [
   "pytest-cov>=5.0",
   "rich>=13.0",
   "ruff>=0.8",
+  "textual>=0.80",
   "tomli>=2.0; python_version < '3.11'",
   "twine>=5.0"
 ]
