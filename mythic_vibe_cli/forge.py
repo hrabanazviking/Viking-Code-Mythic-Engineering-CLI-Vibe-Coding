@@ -45,6 +45,13 @@ from .exit_codes import (
     USER_INPUT_ERROR,
 )
 from .forge_ledger import ForgeLedger, ForgeLedgerEntry
+from .forge_reflection import (
+    build_forge_reflection,
+    list_forge_reflections,
+    load_forge_reflection,
+    render_forge_reflection_markdown,
+    write_forge_reflection,
+)
 from .forge_verifier import DEFAULT_AUDITOR_GATES, GateRunner, run_auditor_gates
 from .output import write_bullet, write_error, write_json, write_key_value, write_line
 from .workflow_agents import (
@@ -956,6 +963,14 @@ def cmd_forge_run(
     else:
         final_code = SUCCESS
 
+    # Slice 3.7: build + persist a reflection unless skipped.
+    # Skip when the ledger is suppressed (no entries to read from)
+    # or when --skip-reflection was set explicitly.
+    reflection_paths_written: tuple[Path, Path] | None = None
+    if not skip_ledger and not _flag(args, "skip_reflection"):
+        reflection = build_forge_reflection(plan, ledger, aborted=aborted)
+        reflection_paths_written = write_forge_reflection(root, reflection)
+
     if _flag(args, "json"):
         write_json(
             {
@@ -968,6 +983,12 @@ def cmd_forge_run(
                 "task": plan.task,
                 "created_at": plan.created_at,
                 "ledger_path": str(ledger.path) if not skip_ledger else None,
+                "reflection_json_path": (
+                    str(reflection_paths_written[0]) if reflection_paths_written else None
+                ),
+                "reflection_markdown_path": (
+                    str(reflection_paths_written[1]) if reflection_paths_written else None
+                ),
                 "role_sequence": list(DEFAULT_ROLE_SEQUENCE),
                 "success_count": success_count,
                 "failure_count": failure_count,
@@ -989,6 +1010,9 @@ def cmd_forge_run(
         write_key_value("Aborted", "yes (operator declined a gate)")
     if not skip_ledger:
         write_key_value("Ledger", ledger.path)
+    if reflection_paths_written is not None:
+        write_key_value("Reflection (md)", reflection_paths_written[1])
+        write_key_value("Reflection (json)", reflection_paths_written[0])
     write_line("")
 
     for payload in step_payloads:
@@ -1194,6 +1218,112 @@ def cmd_forge_ledger_dispatch(args: argparse.Namespace) -> int:
     return USER_INPUT_ERROR
 
 
+def cmd_forge_reflection_list(args: argparse.Namespace) -> int:
+    """``mythic-vibe forge reflection list`` — every reflection on disk."""
+    root = Path(getattr(args, "path", ".")).resolve()
+    workflow_ids = list_forge_reflections(root)
+
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "forge reflection list",
+                "reflections_dir": str((root / "mythic" / "reflections").resolve()),
+                "count": len(workflow_ids),
+                "workflow_ids": workflow_ids,
+            }
+        )
+        return SUCCESS
+
+    if not workflow_ids:
+        write_line("No forge reflections recorded.")
+        write_key_value("Path", root / "mythic" / "reflections")
+        return SUCCESS
+
+    write_line(f"Forge reflections ({len(workflow_ids)} on disk)")
+    for workflow_id in workflow_ids:
+        write_bullet(workflow_id, indent=2)
+    return SUCCESS
+
+
+def cmd_forge_reflection_show(args: argparse.Namespace) -> int:
+    """``mythic-vibe forge reflection show --workflow <id>`` — read one
+    reflection's JSON sidecar and render it (defaults to markdown)."""
+    root = Path(getattr(args, "path", ".")).resolve()
+    workflow_id = (getattr(args, "workflow", "") or "").strip()
+    if not workflow_id:
+        write_error("forge reflection show requires --workflow <id>.")
+        return USER_INPUT_ERROR
+
+    reflection = load_forge_reflection(root, workflow_id)
+    if reflection is None:
+        message = f"No reflection found for workflow_id={workflow_id!r}."
+        if _flag(args, "json"):
+            write_json(
+                {
+                    "command": "forge reflection show",
+                    "workflow_id": workflow_id,
+                    "ok": False,
+                    "errors": [message],
+                }
+            )
+        else:
+            write_error(message)
+        return USER_INPUT_ERROR
+
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "forge reflection show",
+                "workflow_id": workflow_id,
+                "ok": True,
+                "reflection": reflection.to_dict(),
+            }
+        )
+        return SUCCESS
+
+    write_line(render_forge_reflection_markdown(reflection), force=True)
+    return SUCCESS
+
+
+def cmd_forge_reflection_latest(args: argparse.Namespace) -> int:
+    """``mythic-vibe forge reflection latest`` — show the most recently
+    written reflection."""
+    root = Path(getattr(args, "path", ".")).resolve()
+    workflow_ids = list_forge_reflections(root)
+    if not workflow_ids:
+        message = "No forge reflections recorded."
+        if _flag(args, "json"):
+            write_json(
+                {
+                    "command": "forge reflection latest",
+                    "ok": False,
+                    "errors": [message],
+                }
+            )
+        else:
+            write_line(message)
+        return SUCCESS if not _flag(args, "json") else USER_INPUT_ERROR
+
+    latest_id = workflow_ids[-1]
+    args.workflow = latest_id
+    return cmd_forge_reflection_show(args)
+
+
+def cmd_forge_reflection_dispatch(args: argparse.Namespace) -> int:
+    sub = getattr(args, "reflection_command", None)
+    if sub == "list":
+        return cmd_forge_reflection_list(args)
+    if sub == "show":
+        return cmd_forge_reflection_show(args)
+    if sub == "latest":
+        return cmd_forge_reflection_latest(args)
+    write_error(
+        f"Unknown forge reflection subcommand: {sub!r}. "
+        "Try `forge reflection list`, `latest`, or `show --workflow <id>`."
+    )
+    return USER_INPUT_ERROR
+
+
 def cmd_forge_dispatch(args: argparse.Namespace) -> int:
     sub = getattr(args, "forge_command", None)
     if sub == "plan":
@@ -1202,11 +1332,14 @@ def cmd_forge_dispatch(args: argparse.Namespace) -> int:
         return cmd_forge_run(args)
     if sub == "ledger":
         return cmd_forge_ledger_dispatch(args)
+    if sub == "reflection":
+        return cmd_forge_reflection_dispatch(args)
     write_error(
         f"Unknown forge subcommand: {sub!r}. "
         "Try `mythic-vibe forge plan --dry-run --task <X>`, "
         "`mythic-vibe forge run --provider <name> --task <X>`, "
-        "or `mythic-vibe forge ledger list`."
+        "`mythic-vibe forge ledger list`, "
+        "or `mythic-vibe forge reflection list`."
     )
     return USER_INPUT_ERROR
 
@@ -1223,6 +1356,10 @@ __all__ = [
     "cmd_forge_ledger_list",
     "cmd_forge_ledger_show",
     "cmd_forge_plan",
+    "cmd_forge_reflection_dispatch",
+    "cmd_forge_reflection_latest",
+    "cmd_forge_reflection_list",
+    "cmd_forge_reflection_show",
     "cmd_forge_run",
     "default_gate_handler",
     "materialize_agent_input",
