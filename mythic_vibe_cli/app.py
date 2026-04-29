@@ -1,3 +1,29 @@
+"""Mythic Vibe CLI — argparse construction, dispatch, and runtime flags.
+
+This module owns the full command surface. Concretely:
+
+* :func:`build_parser` constructs every argparse subparser and wires
+  each subcommand's flags. This is the source of truth for the public
+  CLI shape.
+* :func:`main` is the program entry point. It parses argv, configures
+  output (quiet/verbose/json), records startup timings, dispatches to
+  the appropriate handler in :data:`mythic_vibe_cli.commands.COMMAND_HANDLERS`,
+  and emits the timing profile when ``MYTHIC_TIMING`` is set.
+* :data:`COMMAND_HANDLERS` is re-exported from :mod:`mythic_vibe_cli.commands`
+  so the thin :mod:`mythic_vibe_cli.cli` shim can expose it.
+
+What does *not* live here:
+
+* Command implementations — those live in :mod:`mythic_vibe_cli.commands`.
+* Runtime primitives (event bus, exec, timings, output guard) — those
+  live under :mod:`mythic_vibe_cli.runtime`.
+* User-facing terminal rendering — that lives in :mod:`mythic_vibe_cli.output`.
+
+Keep this file focused on *parser shape and dispatch routing*. Any
+command-specific logic that grows here should be moved into
+``commands.py``.
+"""
+
 from __future__ import annotations
 
 import argparse
