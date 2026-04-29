@@ -7,6 +7,39 @@
 
 ---
 
+## 2026-04-29 - Stage 16 Latest Workflow Convenience on Packet List
+
+**Session:** Symmetrizing the `--latest-workflow` shortcut across the entire `packet` family by adding it to `packet list`.
+**Status:** `packet list --latest-workflow` now scopes results to the workflow id stored in `mythic/workflow_plan.json`, with the same error contract as `packet show` and `packet diff`.
+**Scope:** Tiny additive slice that completes the workflow shortcut surface for the `packet` family.
+
+### What changed
+
+- Added `--latest-workflow` to `packet list` argparse.
+- `packet list --latest-workflow` resolves the workflow id via the existing `_resolve_latest_workflow_id(root)` helper and applies it as the `--workflow` filter.
+- `--latest-workflow` cannot be combined with `--workflow`; the conflict returns `USER_INPUT_ERROR`.
+- `--step` continues to work alongside `--latest-workflow` (the existing requires-workflow guard is updated to accept either form).
+- JSON output gained a top-level `latest_workflow_id` field so callers can see what the shortcut resolved to, mirroring `packet diff --latest-workflow`.
+- Added four CLI-kernel tests: filter narrows two-workflow store to one match, `--latest-workflow` conflicts with `--workflow`, missing-plan path errors cleanly, and `--step` further narrows under `--latest-workflow`.
+- Updated `docs/COMMAND_CONTRACTS.md`, `docs/api.md`, and `CHANGELOG.md`.
+
+### Why it matters
+
+The `packet` family now treats `--latest-workflow` consistently. Operators iterating on the active workflow can use the same shortcut for inspection (`packet list`), individual lookup (`packet show`), and comparison (`packet diff`). No restating of workflow ids on any of them.
+
+### Verification
+
+- `pytest -q` -> `112 passed, 14 subtests passed` (was 108 + 14)
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!`
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 51 source files`
+- Smoke: built two workflows in one project, then `packet list --latest-workflow --json` returned only the second workflow's packet and exposed its `latest_workflow_id`.
+
+### Continuity thread
+
+- The next slice can teach the workflow runner to record run history (a small `mythic/workflow_history.json` ledger of saved plan ids and timestamps) so future commands can refer to *previous* workflows by name, not just the latest one. That would unlock `packet diff --left WF-...:step-01 --right --previous-workflow:step-01` patterns for cross-run regression checks.
+
+_Symmetry pleases the hall: a single shortcut for naming the current saga, applied to listing, showing, and comparing alike._
+
 ## 2026-04-29 - Stage 16 Latest Workflow Convenience on Show and Diff
 
 **Session:** Closing out the Stage 16 cadence on packet addressing — letting `packet show` and `packet diff` resolve the workflow id from the saved `mythic/workflow_plan.json` instead of requiring it on every call.

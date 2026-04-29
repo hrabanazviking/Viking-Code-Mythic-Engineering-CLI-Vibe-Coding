@@ -56,7 +56,9 @@ Argument parsing and top-level dispatch live in `mythic_vibe_cli.app`. Command i
 - `workflow packets`
   - Lists packet readiness for saved or generated workflow plans without executing providers. Prefers `(workflow_id, workflow_step_id)` matches when both plan and packet carry IDs; falls back to the legacy `(role, phase, task, audience, output_format)` text match when either side is missing IDs.
 - `packet list --workflow <id>`
-  - Filters stored packets to those stamped with the supplied `workflow_id`. Adding `--step <step_id>` further narrows to a single workflow step (requires `--workflow`). Legacy packets without IDs are excluded when a workflow filter is set. JSON output includes a `filters` object reporting the applied scope.
+  - Filters stored packets to those stamped with the supplied `workflow_id`. Adding `--step <step_id>` further narrows to a single workflow step (requires `--workflow` or `--latest-workflow`). Legacy packets without IDs are excluded when a workflow filter is set. JSON output includes a `filters` object reporting the applied scope.
+- `packet list --latest-workflow`
+  - Resolves the `--workflow` filter from `mythic/workflow_plan.json`. Cannot be combined with `--workflow`. Errors when the saved plan is missing or has no `workflow_id`. JSON output reports the resolved `latest_workflow_id`.
 - `packet show --workflow <id> --step <step_id>`
   - Resolves to the packet stamped with that workflow id and step. Both flags are required together and cannot be combined with `--packet-id`. Missing matches return `USER_INPUT_ERROR`.
 - `packet show --latest-workflow --step <step_id>`

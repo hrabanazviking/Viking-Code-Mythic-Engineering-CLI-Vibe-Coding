@@ -8,6 +8,7 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Added
 
+- Added `packet list --latest-workflow` so packet listings can scope to the saved `mythic/workflow_plan.json` without restating the workflow id. Cannot be combined with `--workflow`. Errors when the saved plan is missing or has no `workflow_id`. JSON output exposes the resolved `latest_workflow_id` for symmetry with `packet show` and `packet diff`.
 - Added `packet show --latest-workflow --step <step_id>` and `packet diff --latest-workflow` so packet refs can resolve against the saved `mythic/workflow_plan.json` without restating the workflow id. With `packet diff --latest-workflow`, `--left` and `--right` additionally accept a bare `step-NN` form. Errors when the saved plan is missing or has no `workflow_id`. JSON output reports the resolved `latest_workflow_id` for `packet diff`.
 - Added `packet show --workflow <id> --step <step_id>` for resolving a packet by its workflow stamp instead of by `PKT-` ID. Both flags are required together and cannot be combined with `--packet-id`; missing matches return `USER_INPUT_ERROR`.
 - Added `WF-<id>:<step_id>` shorthand to `packet diff --left` and `--right`, resolving the shorthand to a stored packet at run time. JSON output reports both the original references (`left_ref`, `right_ref`) and the resolved packet IDs.
