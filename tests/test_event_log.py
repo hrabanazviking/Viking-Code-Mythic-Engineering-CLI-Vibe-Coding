@@ -7,12 +7,16 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import os
+
 from mythic_vibe_cli.runtime.event_log import (
     DEFAULT_MAX_ENTRIES,
+    EVENT_LOG_LIMIT_ENV,
     EventLogEntry,
     append_event,
     event_log_path_for,
     read_recent,
+    resolve_max_entries,
 )
 
 
@@ -100,6 +104,37 @@ class EventLogTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = event_log_path_for(Path(tmp))
             self.assertEqual(path, Path(tmp) / "mythic" / "events.jsonl")
+
+    def test_resolve_max_entries_default_when_env_unset(self) -> None:
+        previous = os.environ.pop(EVENT_LOG_LIMIT_ENV, None)
+        try:
+            self.assertEqual(resolve_max_entries(), DEFAULT_MAX_ENTRIES)
+        finally:
+            if previous is not None:
+                os.environ[EVENT_LOG_LIMIT_ENV] = previous
+
+    def test_resolve_max_entries_honors_positive_env_override(self) -> None:
+        previous = os.environ.get(EVENT_LOG_LIMIT_ENV)
+        os.environ[EVENT_LOG_LIMIT_ENV] = "42"
+        try:
+            self.assertEqual(resolve_max_entries(), 42)
+        finally:
+            if previous is None:
+                os.environ.pop(EVENT_LOG_LIMIT_ENV, None)
+            else:
+                os.environ[EVENT_LOG_LIMIT_ENV] = previous
+
+    def test_resolve_max_entries_ignores_invalid_values(self) -> None:
+        previous = os.environ.get(EVENT_LOG_LIMIT_ENV)
+        try:
+            for bogus in ("not-a-number", "", "0", "-5"):
+                os.environ[EVENT_LOG_LIMIT_ENV] = bogus
+                self.assertEqual(resolve_max_entries(), DEFAULT_MAX_ENTRIES)
+        finally:
+            if previous is None:
+                os.environ.pop(EVENT_LOG_LIMIT_ENV, None)
+            else:
+                os.environ[EVENT_LOG_LIMIT_ENV] = previous
 
 
 if __name__ == "__main__":

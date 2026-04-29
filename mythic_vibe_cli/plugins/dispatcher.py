@@ -23,7 +23,7 @@ from types import TracebackType
 from typing import Callable
 
 from ..runtime.event_bus import EventBusController, create_event_bus
-from ..runtime.event_log import append_event, event_log_path_for
+from ..runtime.event_log import append_event, event_log_path_for, resolve_max_entries
 from ..runtime.slash_commands import SlashCommandInfo
 from .api import PLUGIN_HOOKS, PluginRecord
 from .loader import _split_entrypoint
@@ -87,7 +87,7 @@ class PluginHookDispatcher:
             raise ValueError(f"Unknown plugin hook: {hook}")
         self.bus.emit(hook, payload)
         try:
-            append_event(event_log_path_for(self.root), hook, payload)
+            append_event(event_log_path_for(self.root), hook, payload, max_entries=resolve_max_entries())
         except Exception:  # noqa: BLE001 - event-log persistence is best-effort
             pass
 
