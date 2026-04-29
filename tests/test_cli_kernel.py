@@ -571,6 +571,121 @@ class CliKernelTests(unittest.TestCase):
             self.assertEqual(code, SUCCESS)
             self.assertIn("plugin", output.getvalue().lower())
 
+    def test_cmd_scan_emits_before_and_after_scan_to_subscribed_plugin(self) -> None:
+        """Integration: a synthetic plugin registered against this project receives
+        both ``before_scan`` and ``after_scan`` payloads when ``mythic-vibe scan``
+        runs, demonstrating the dispatcher wired into ``cmd_scan``."""
+        import importlib as importlib_module
+        import textwrap
+
+        from mythic_vibe_cli.plugins import PluginRegistry
+
+        with tempfile.TemporaryDirectory() as project_root:
+            project_path = Path(project_root)
+            (project_path / "tasks").mkdir(parents=True, exist_ok=True)
+            (project_path / "docs").mkdir(parents=True, exist_ok=True)
+            (project_path / "tasks" / "current_GOALS.md").write_text(
+                "Goal\n", encoding="utf-8"
+            )
+
+            plugin_dir = project_path / "_synthetic_plugin"
+            plugin_dir.mkdir()
+            plugin_file = plugin_dir / "scan_emit_probe.py"
+            plugin_file.write_text(
+                textwrap.dedent(
+                    """
+                    class Plugin:
+                        received = []
+
+                        @classmethod
+                        def before_scan(cls, payload):
+                            cls.received.append(("before", dict(payload)))
+
+                        @classmethod
+                        def after_scan(cls, payload):
+                            cls.received.append(("after", dict(payload)))
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            sys.path.insert(0, str(plugin_dir))
+            try:
+                registry = PluginRegistry(project_path)
+                registry.add(
+                    "scan_emit_probe:Plugin", hooks=["before_scan", "after_scan"]
+                )
+
+                output = io.StringIO()
+                with redirect_stdout(output):
+                    code = app.main(["scan", "--path", str(project_path), "--json"])
+                payload = json.loads(output.getvalue())
+                module = importlib_module.import_module("scan_emit_probe")
+                received = module.Plugin.received
+            finally:
+                try:
+                    sys.path.remove(str(plugin_dir))
+                except ValueError:
+                    pass
+                sys.modules.pop("scan_emit_probe", None)
+
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(payload["command"], "scan")
+            self.assertEqual(len(received), 2)
+            self.assertEqual(received[0][0], "before")
+            self.assertEqual(received[1][0], "after")
+            self.assertEqual(received[0][1]["path"], str(project_path))
+            self.assertIn("index_path", received[1][1])
+            self.assertIn("languages", received[1][1])
+            module.Plugin.received.clear()
+
+    def test_cmd_scan_dry_run_does_not_emit_plugin_hooks(self) -> None:
+        import importlib as importlib_module
+        import textwrap
+
+        from mythic_vibe_cli.plugins import PluginRegistry
+
+        with tempfile.TemporaryDirectory() as project_root:
+            project_path = Path(project_root)
+            plugin_dir = project_path / "_synthetic_plugin_dry"
+            plugin_dir.mkdir()
+            plugin_file = plugin_dir / "scan_dry_probe.py"
+            plugin_file.write_text(
+                textwrap.dedent(
+                    """
+                    class Plugin:
+                        received = []
+
+                        @classmethod
+                        def before_scan(cls, payload):
+                            cls.received.append(("before", payload))
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            sys.path.insert(0, str(plugin_dir))
+            try:
+                registry = PluginRegistry(project_path)
+                registry.add("scan_dry_probe:Plugin", hooks=["before_scan"])
+
+                output = io.StringIO()
+                with redirect_stdout(output):
+                    code = app.main(
+                        ["scan", "--path", str(project_path), "--dry-run", "--json"]
+                    )
+                module = importlib_module.import_module("scan_dry_probe")
+                received = list(module.Plugin.received)
+            finally:
+                try:
+                    sys.path.remove(str(plugin_dir))
+                except ValueError:
+                    pass
+                sys.modules.pop("scan_dry_probe", None)
+
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(received, [])
+
     def test_workflow_run_blocks_real_execution(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             output = io.StringIO()

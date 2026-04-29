@@ -36,6 +36,7 @@ from .plunder.provenance import (
     write_plan,
 )
 from .plugins.api import PLUGIN_HOOKS
+from .plugins.dispatcher import PluginHookDispatcher
 from .plugins.loader import inspect_plugin
 from .plugins.registry import PluginRegistry
 from .core.state import PHASES, VerificationRecord, coerce_project_state, utc_now, validate_state_payload
@@ -260,12 +261,39 @@ def cmd_scan(args: argparse.Namespace) -> int:
             write_key_value("Index", indexer.index_path)
         return SUCCESS
 
-    index = indexer.build(
-        changed_only=_flag(args, "changed"),
-        docs_only=_flag(args, "docs"),
-        include_patterns=getattr(args, "include", []) or [],
-        exclude_patterns=getattr(args, "exclude", []) or [],
-    )
+    with PluginHookDispatcher(root) as dispatcher:
+        dispatcher.load_and_subscribe()
+        dispatcher.emit(
+            "before_scan",
+            {
+                "path": str(root),
+                "changed_only": _flag(args, "changed"),
+                "docs_only": _flag(args, "docs"),
+                "include_patterns": list(getattr(args, "include", []) or []),
+                "exclude_patterns": list(getattr(args, "exclude", []) or []),
+            },
+        )
+
+        index = indexer.build(
+            changed_only=_flag(args, "changed"),
+            docs_only=_flag(args, "docs"),
+            include_patterns=getattr(args, "include", []) or [],
+            exclude_patterns=getattr(args, "exclude", []) or [],
+        )
+
+        dispatcher.emit(
+            "after_scan",
+            {
+                "path": str(root),
+                "index_path": str(indexer.index_path),
+                "changed_files": len(index.git.get("changed_files", [])),
+                "languages": len(index.languages),
+                "docs": len(index.docs),
+                "tests": len(index.tests),
+                "risks": len(index.risks),
+            },
+        )
+
     if _flag(args, "json"):
         write_json(
             {

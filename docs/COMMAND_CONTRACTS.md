@@ -107,6 +107,12 @@ Current Stage 15 method commands:
 - `method.source` may be set in configuration or with `MYTHIC_METHOD_SOURCE`; supported sources are GitHub repository URLs.
 - If no canonical method cache exists, method status must use the built-in seven-phase fallback profile and emit a freshness warning.
 
+Current plugin hook dispatch:
+
+- `mythic-vibe scan` (real-work path) emits `before_scan` to enabled plugins before building the project index, and `after_scan` after, via a per-invocation `PluginHookDispatcher`. Dry-run scans skip both hooks. Payloads are small dicts (`path`, scan flags) and (`path`, `index_path`, scalar counts). Plugin handler exceptions are logged to stderr and never break the command.
+- Other declared hooks (`before_packet`, `after_packet`, `before_verify`, `after_verify`, `before_reflect`, `after_reflect`) remain wired through the dispatcher contract but are not yet emitted from the corresponding command code; they will be wired in subsequent slices.
+- Plugins whose entrypoints fail to import are skipped silently during dispatch; surface plugin health via `mythic-vibe plugin inspect` instead.
+
 Current compatibility aliases:
 
 | Alias | Canonical behavior |

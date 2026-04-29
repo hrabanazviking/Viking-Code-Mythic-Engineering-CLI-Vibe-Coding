@@ -7,6 +7,40 @@
 
 ---
 
+## 2026-04-29 - Wire Event Bus into Plugin Hooks via Dispatcher
+
+**Session:** Connecting the just-landed event bus to the project's eight pre-declared plugin hook names via a new dispatcher class. First emitter wired through is `cmd_scan`.
+**Status:** `mythic_vibe_cli.plugins.PluginHookDispatcher` is live. `cmd_scan` emits `before_scan` and `after_scan` to enabled plugins. The other six declared hooks (`before_packet`, `after_packet`, `before_verify`, `after_verify`, `before_reflect`, `after_reflect`) remain wired through the dispatcher contract — emitting them from their matching commands is a follow-on slice each.
+**Scope:** Single dispatcher + single emitter wiring + tests. No refactor of unrelated commands.
+
+### What changed
+
+- Added `mythic_vibe_cli/plugins/dispatcher.py` containing `PluginHookDispatcher`. The dispatcher takes a project root and an optional bus, lazily loads enabled plugins from `PluginRegistry`, resolves each plugin's `before_*` / `after_*` hook methods (matching `getattr(plugin_obj, name, None)` against `PLUGIN_HOOKS`), and subscribes callable handlers to the bus. Tracks each subscription in a list so `teardown()` cleanly unsubscribes everything. Doubles as a context manager: `with PluginHookDispatcher(root) as d:` calls `teardown()` on exit including on exceptions. Plugins whose entrypoints fail to import are skipped silently — surfacing plugin health remains the job of `mythic-vibe plugin inspect`.
+- `emit(hook, payload)` validates `hook in PLUGIN_HOOKS` so a typo at the call site is caught immediately rather than silently ignored.
+- `mythic_vibe_cli/plugins/__init__.py` re-exports `PluginHookDispatcher` alongside the existing surface.
+- Wired `cmd_scan` to emit `before_scan` and `after_scan` via the dispatcher on the real-work path. The dry-run path intentionally skips both hooks. `before_scan` payload: `{path, changed_only, docs_only, include_patterns, exclude_patterns}`. `after_scan` payload: `{path, index_path, changed_files, languages, docs, tests, risks}` (small dict of scalar counts; the full index stays out of the payload to keep the contract stable).
+- Added six dispatcher unit tests in `tests/test_plugin_dispatcher.py`: synthetic plugin receives both events; disabled plugins are skipped; broken entrypoints are skipped silently; emit on unknown hook raises `ValueError`; introspection (`subscribed_hooks`, `loaded_plugins`) works and clears on teardown; one buggy plugin's exception does not stop sibling plugins from running and the error is logged to stderr matching the bus contract.
+- Added two CLI-kernel integration tests in `tests/test_cli_kernel.py`: a synthetic plugin registered against a temp project receives both events when `mythic-vibe scan` runs, with payload assertions on `path` / `index_path` / `languages`; a sibling test confirms `--dry-run` runs do not emit.
+- Updated `docs/COMMAND_CONTRACTS.md` and `CHANGELOG.md`.
+
+### Why it matters
+
+`plugins/api.py` has declared the eight hook names since Stage 12 but no emitter existed. The dispatcher closes that gap — plugins authored against the hook names now actually receive events, starting with the scan lifecycle. The pattern is reusable: each future emitter (packet/verify/reflect) wires a `PluginHookDispatcher` block around its real-work path and emits the matching `before_*` / `after_*` events with a small payload dict. The contract is the same everywhere; the wiring is mechanical.
+
+### Verification
+
+- `pytest -q` -> `176 passed, 14 subtests passed` (was 168 + 14)
+- `pytest -q tests/test_plugin_dispatcher.py` -> `6 passed in 0.16s`
+- Two new CLI-kernel cases: scan emits both hooks (`SUCCESS`, payload received); scan dry-run does not emit
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!` (after pruning an unused test import)
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 57 source files` (was 56)
+
+### Continuity thread
+
+- The next slice wires `before_packet` / `after_packet` into the packet write path. There are several call sites — `cmd_packet_create`, `cmd_codex_pack`, `cmd_evoke`, `cmd_packet_ingest`, and the workflow `cmd_workflow_plan --packets` path — so the slice is small per site but touches several files. Alternatively, port pi's `core/timings.ts` next to keep the runtime subpackage growing while the wiring backlog matures.
+
+_The bus is no longer a tone struck in an empty hall: each scan now sings two notes, and any hand subscribed to those names hears them clearly._
+
 ## 2026-04-29 - Pi Plunder Slice 3: Event Bus
 
 **Session:** Continuing the runtime-foundation cadence after the wiring slice landed. Third Pi-derived primitive in the runtime subpackage.
