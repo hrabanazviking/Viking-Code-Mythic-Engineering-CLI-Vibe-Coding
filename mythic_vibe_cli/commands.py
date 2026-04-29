@@ -52,7 +52,12 @@ from .ux import (
     zsh_completion,
 )
 from .workflow import MythicRunConfig, MythicWorkflow
-from .workflow_engine import DEFAULT_ROLE_SEQUENCE, WORKFLOW_PLAN_FILENAME, WorkflowEngine, WorkflowPlan
+from .workflow_engine import (
+    DEFAULT_ROLE_SEQUENCE,
+    WORKFLOW_PLAN_FILENAME,
+    WorkflowEngine,
+    WorkflowPlan,
+)
 from .verify import VerificationArtifact, load_latest_verification, new_verification_id, write_verification_artifact
 from .verify.doc_checker import check_docs
 from .verify.git_diff import review_changed_files
@@ -2732,6 +2737,47 @@ def cmd_packet_dispatch(args: argparse.Namespace) -> int:
     return USER_INPUT_ERROR
 
 
+def cmd_workflow_history(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    engine = WorkflowEngine(root)
+    entries = engine.load_history()
+    limit = int(getattr(args, "limit", 0) or 0)
+    ordered = list(reversed(entries))
+    if limit > 0:
+        ordered = ordered[:limit]
+
+    payload = {
+        "command": "workflow history",
+        "path": str(root),
+        "history_path": str(engine.history_path()),
+        "count": len(ordered),
+        "total": len(entries),
+        "entries": ordered,
+    }
+
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+
+    if not ordered:
+        write_line("No workflow history recorded yet. Run `mythic-vibe workflow plan` to populate it.")
+        return SUCCESS
+
+    write_line("Workflow history (newest first)")
+    write_key_value("Project path", root)
+    write_key_value("Ledger", engine.history_path())
+    for entry in ordered:
+        write_key_value(
+            entry.get("workflow_id", "?"),
+            f"{entry.get('created_at', '')} | {entry.get('task', '')}",
+            indent=2,
+        )
+        roles = entry.get("role_sequence") or []
+        if roles:
+            write_bullet("roles: " + " -> ".join(str(role) for role in roles), indent=4)
+    return SUCCESS
+
+
 def cmd_workflow_dispatch(args: argparse.Namespace) -> int:
     if args.workflow_command == "plan":
         return cmd_workflow_plan(args)
@@ -2739,6 +2785,8 @@ def cmd_workflow_dispatch(args: argparse.Namespace) -> int:
         return cmd_workflow_run(args)
     if args.workflow_command == "packets":
         return cmd_workflow_packets(args)
+    if args.workflow_command == "history":
+        return cmd_workflow_history(args)
     return USER_INPUT_ERROR
 
 

@@ -22,6 +22,8 @@ DEFAULT_ROLE_SEQUENCE = (
 )
 
 WORKFLOW_PLAN_FILENAME = "workflow_plan.json"
+WORKFLOW_HISTORY_FILENAME = "workflow_history.json"
+WORKFLOW_HISTORY_LIMIT = 50
 
 ROLE_PHASES = {
     "Skald": "intent",
@@ -215,6 +217,53 @@ class WorkflowEngine:
         target = out_file or self.mythic_dir / "workflow_plan.json"
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(json.dumps(plan.to_dict(), indent=2) + "\n", encoding="utf-8")
+        self.append_history(plan, target, role_sequence=role_sequence)
+        return target
+
+    def history_path(self) -> Path:
+        return self.mythic_dir / WORKFLOW_HISTORY_FILENAME
+
+    def load_history(self) -> list[dict[str, Any]]:
+        path = self.history_path()
+        if not path.exists():
+            return []
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return []
+        if not isinstance(payload, dict):
+            return []
+        entries = payload.get("entries", [])
+        if not isinstance(entries, list):
+            return []
+        return [entry for entry in entries if isinstance(entry, dict)]
+
+    def append_history(
+        self,
+        plan: WorkflowPlan,
+        plan_path: Path,
+        *,
+        role_sequence: tuple[str, ...] = DEFAULT_ROLE_SEQUENCE,
+    ) -> Path:
+        if not plan.workflow_id:
+            return self.history_path()
+        entries = self.load_history()
+        entry: dict[str, Any] = {
+            "workflow_id": plan.workflow_id,
+            "task": plan.task,
+            "created_at": plan.created_at,
+            "plan_path": str(plan_path),
+            "role_sequence": list(role_sequence),
+        }
+        entries.append(entry)
+        if len(entries) > WORKFLOW_HISTORY_LIMIT:
+            entries = entries[-WORKFLOW_HISTORY_LIMIT:]
+        target = self.history_path()
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(
+            json.dumps({"version": 1, "entries": entries}, indent=2) + "\n",
+            encoding="utf-8",
+        )
         return target
 
     def load_plan(self, plan_file: Path | None = None) -> WorkflowPlan:

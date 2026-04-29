@@ -7,6 +7,39 @@
 
 ---
 
+## 2026-04-29 - Stage 16 Workflow History Ledger
+
+**Session:** Continuing the Stage 16 cadence — giving the workflow runner a memory of past plan saves so future commands can reference *previous* workflows by name, not just the most recent one.
+**Status:** Every successful `workflow plan` save now appends to `mythic/workflow_history.json`. `workflow history` lets operators inspect that ledger newest-first.
+**Scope:** Persistence + read-only command. Cross-run packet shortcuts (`--previous-workflow`) are deferred to the next slice.
+
+### What changed
+
+- Added `WORKFLOW_HISTORY_FILENAME = "workflow_history.json"` and `WORKFLOW_HISTORY_LIMIT = 50` constants in `mythic_vibe_cli.workflow_engine`.
+- Added `WorkflowEngine.history_path()`, `WorkflowEngine.load_history()`, and `WorkflowEngine.append_history(plan, plan_path, role_sequence)` so engine callers can read and write the ledger.
+- `WorkflowEngine.write_plan` now calls `append_history` after writing the plan file, recording `workflow_id`, `task`, `created_at`, `plan_path`, and the active `role_sequence`. The ledger keeps at most 50 entries (oldest entries are dropped when the cap is reached).
+- Added `mythic-vibe workflow history` command with `--limit N`, `--json`, and a friendly empty-state message. Newest entries are returned first.
+- Added engine tests for: append on each save, oldest-trim at the 50-entry boundary, and clean empty-state load when the file is missing.
+- Added CLI-kernel tests for: newest-first ordering, `--dry-run` not recording, `--limit` capping the returned set, and the empty-state human message.
+- Updated `docs/COMMAND_CONTRACTS.md`, `docs/api.md`, and `CHANGELOG.md`.
+
+### Why it matters
+
+Until now the CLI had no memory of past workflow runs once a new plan was written. `mythic/workflow_plan.json` always reflected only the latest save, and there was no way to look up a previous workflow id without rummaging through git history or saved plan backups. The ledger gives the system a small, durable record of every workflow run, which lets later slices add cross-run regression diffs and previous-workflow shortcuts without inventing new persistence each time.
+
+### Verification
+
+- `pytest -q` -> `119 passed, 14 subtests passed` (was 112 + 14)
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!`
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 51 source files`
+- Smoke: ran three `workflow plan` saves in one project, then `workflow history --json` returned `total: 3, count: 3` with entries newest-first.
+
+### Continuity thread
+
+- The next slice can extend the packet-addressing surface with `--previous-workflow` (and optionally `--workflow-back N`) so `packet diff` and `packet show` can refer to past workflows by their position in the ledger. That would unlock cross-run regression patterns like `packet diff --left WF-current:step-01 --right WF-previous:step-01`.
+
+_The hall keeps its sagas. A workflow once spoken aloud is not forgotten when the next is named._
+
 ## 2026-04-29 - Stage 16 Latest Workflow Convenience on Packet List
 
 **Session:** Symmetrizing the `--latest-workflow` shortcut across the entire `packet` family by adding it to `packet list`.

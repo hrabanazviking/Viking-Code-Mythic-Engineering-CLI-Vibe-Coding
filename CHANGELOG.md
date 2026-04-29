@@ -8,6 +8,9 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Added
 
+- Added `mythic/workflow_history.json` as an append-only ledger of workflow plan saves (workflow_id, task, created_at, plan_path, role_sequence). `workflow plan` (without `--dry-run`) appends an entry on every successful save; the ledger is capped at 50 entries.
+- Added `mythic-vibe workflow history` for inspecting the ledger. Supports `--limit N` to cap the returned entries and `--json` for structured output that exposes `count`, `total`, and the resolved `history_path`.
+- Added `WorkflowEngine.append_history`, `WorkflowEngine.load_history`, and `WorkflowEngine.history_path` plus `WORKFLOW_HISTORY_FILENAME` and `WORKFLOW_HISTORY_LIMIT` constants for callers that need to read or write history programmatically.
 - Added `packet list --latest-workflow` so packet listings can scope to the saved `mythic/workflow_plan.json` without restating the workflow id. Cannot be combined with `--workflow`. Errors when the saved plan is missing or has no `workflow_id`. JSON output exposes the resolved `latest_workflow_id` for symmetry with `packet show` and `packet diff`.
 - Added `packet show --latest-workflow --step <step_id>` and `packet diff --latest-workflow` so packet refs can resolve against the saved `mythic/workflow_plan.json` without restating the workflow id. With `packet diff --latest-workflow`, `--left` and `--right` additionally accept a bare `step-NN` form. Errors when the saved plan is missing or has no `workflow_id`. JSON output reports the resolved `latest_workflow_id` for `packet diff`.
 - Added `packet show --workflow <id> --step <step_id>` for resolving a packet by its workflow stamp instead of by `PKT-` ID. Both flags are required together and cannot be combined with `--packet-id`; missing matches return `USER_INPUT_ERROR`.

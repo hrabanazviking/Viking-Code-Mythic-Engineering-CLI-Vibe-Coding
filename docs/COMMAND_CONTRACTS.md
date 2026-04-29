@@ -67,6 +67,8 @@ Current workflow orchestration contract:
 - `workflow run --dry-run` previews ordered role execution from `mythic/workflow_plan.json` or an in-memory `--task`.
 - `workflow run --dry-run --packets-only` validates that every workflow step has a matching stored packet artifact before any future provider execution is considered.
 - `workflow run` without `--dry-run` is intentionally blocked until provider orchestration safety gates exist.
+- `workflow plan` (without `--dry-run`) appends an entry to `mythic/workflow_history.json` after writing the plan; the ledger keeps at most 50 entries and never grows for `--dry-run` plans.
+- `workflow history` lists recorded workflow plan saves newest-first. `--limit N` caps the returned entries; `--json` exposes the full ledger with `count`, `total`, and the resolved `history_path`.
 - `workflow plan` assigns a deterministic `workflow_id` of the form `WF-<UTC compact>-<sha8(task+created_at)>` to every freshly built plan; the id is persisted in `mythic/workflow_plan.json` and surfaced in `workflow plan`, `workflow packets`, and `workflow run` JSON output.
 - `workflow plan --packets` stamps `workflow_id` and `workflow_step_id` on every generated packet's `.meta.json` payload so packet readiness can be traced by ID instead of exact task text.
 - `workflow packets` and `workflow run --packets-only` prefer ID-based matching when both plan and packet carry the IDs; legacy plans or packets without IDs fall back to the existing `(role, phase, task, audience, output_format)` text match. Each `packet_status` entry reports the chosen `match_strategy` (`"id"`, `"text"`, or `null` when no match).

@@ -5,7 +5,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from mythic_vibe_cli.workflow_engine import DEFAULT_ROLE_SEQUENCE, WorkflowEngine, WorkflowPlan
+from mythic_vibe_cli.workflow_engine import (
+    DEFAULT_ROLE_SEQUENCE,
+    WORKFLOW_HISTORY_LIMIT,
+    WorkflowEngine,
+    WorkflowPlan,
+)
 
 
 class WorkflowEngineTests(unittest.TestCase):
@@ -80,6 +85,43 @@ class WorkflowEngineTests(unittest.TestCase):
 
             self.assertIn("workflow_id", payload)
             self.assertEqual(restored.workflow_id, plan.workflow_id)
+
+    def test_write_plan_appends_workflow_history_entry(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            engine = WorkflowEngine(root)
+
+            engine.write_plan("First saved")
+            engine.write_plan("Second saved", role_sequence=("Skald",))
+
+            history = engine.load_history()
+            self.assertEqual(len(history), 2)
+            self.assertEqual(history[0]["task"], "First saved")
+            self.assertEqual(history[1]["task"], "Second saved")
+            self.assertTrue(history[0]["workflow_id"].startswith("WF-"))
+            self.assertEqual(history[1]["role_sequence"], ["Skald"])
+            history_path = engine.history_path()
+            payload = json.loads(history_path.read_text(encoding="utf-8"))
+            self.assertEqual(payload["version"], 1)
+            self.assertEqual(len(payload["entries"]), 2)
+
+    def test_history_trims_to_limit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            engine = WorkflowEngine(root)
+
+            for index in range(WORKFLOW_HISTORY_LIMIT + 5):
+                engine.write_plan(f"task-{index:03d}", role_sequence=("Skald",))
+
+            history = engine.load_history()
+            self.assertEqual(len(history), WORKFLOW_HISTORY_LIMIT)
+            self.assertEqual(history[0]["task"], f"task-{5:03d}")
+            self.assertEqual(history[-1]["task"], f"task-{WORKFLOW_HISTORY_LIMIT + 4:03d}")
+
+    def test_load_history_returns_empty_list_when_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            engine = WorkflowEngine(Path(tmp))
+            self.assertEqual(engine.load_history(), [])
 
     def test_legacy_plan_without_workflow_id_still_loads(self) -> None:
         legacy_payload = {

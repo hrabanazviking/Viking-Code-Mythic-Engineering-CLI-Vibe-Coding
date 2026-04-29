@@ -648,6 +648,70 @@ class CliKernelTests(unittest.TestCase):
             self.assertEqual(payload["packet_status"][0]["match_strategy"], "text")
             self.assertIsNone(payload["packet_status"][0]["workflow_id"])
 
+    def test_workflow_history_lists_saved_plans_newest_first(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with redirect_stdout(io.StringIO()):
+                app.main(["workflow", "plan", "--task", "First saved", "--path", str(root), "--role", "Skald"])
+                app.main(["workflow", "plan", "--task", "Second saved", "--path", str(root), "--role", "Auditor"])
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(["workflow", "history", "--path", str(root), "--json"])
+
+            payload = json.loads(output.getvalue())
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(payload["command"], "workflow history")
+            self.assertEqual(payload["count"], 2)
+            self.assertEqual(payload["total"], 2)
+            self.assertEqual([entry["task"] for entry in payload["entries"]], ["Second saved", "First saved"])
+            self.assertTrue(payload["entries"][0]["workflow_id"].startswith("WF-"))
+
+    def test_workflow_history_dry_run_does_not_record(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with redirect_stdout(io.StringIO()):
+                app.main(["workflow", "plan", "--task", "Dry preview", "--path", str(root), "--role", "Skald", "--dry-run"])
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(["workflow", "history", "--path", str(root), "--json"])
+            payload = json.loads(output.getvalue())
+
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(payload["count"], 0)
+            self.assertEqual(payload["total"], 0)
+            self.assertFalse((root / "mythic" / "workflow_history.json").exists())
+
+    def test_workflow_history_limit_caps_returned_entries(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with redirect_stdout(io.StringIO()):
+                for index in range(3):
+                    app.main(
+                        ["workflow", "plan", "--task", f"Task {index}", "--path", str(root), "--role", "Skald"]
+                    )
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(
+                    ["workflow", "history", "--path", str(root), "--limit", "2", "--json"]
+                )
+            payload = json.loads(output.getvalue())
+
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(payload["count"], 2)
+            self.assertEqual(payload["total"], 3)
+            self.assertEqual([entry["task"] for entry in payload["entries"]], ["Task 2", "Task 1"])
+
+    def test_workflow_history_empty_returns_friendly_message(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(["workflow", "history", "--path", tmp])
+            self.assertEqual(code, SUCCESS)
+            self.assertIn("No workflow history recorded yet", output.getvalue())
+
     def test_packet_list_filters_by_workflow_id(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -403,6 +403,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_runtime_options(workflow_packets, json_output=True)
 
+    workflow_history = workflow_sub.add_parser(
+        "history",
+        help="List recorded workflow plan saves from mythic/workflow_history.json",
+    )
+    workflow_history.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    workflow_history.add_argument("--limit", type=int, default=0, help="Show only the first N entries (newest first)")
+    add_runtime_options(workflow_history, json_output=True)
+
     handoff = sub.add_parser("handoff", help="Create, inspect, or list session handoff records")
     add_runtime_options(handoff, json_output=True, dry_run=True)
     handoff_sub = handoff.add_subparsers(dest="handoff_command", required=True)
