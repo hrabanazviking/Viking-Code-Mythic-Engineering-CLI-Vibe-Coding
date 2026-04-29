@@ -7,6 +7,47 @@
 
 ---
 
+## 2026-04-29 - Pi Plunder Slice 5: Slash-Commands Catalog
+
+**Session:** Fifth Pi-derived primitive in `mythic_vibe_cli/runtime/`. Typed catalog of slash command names plus the type backbone for extension/skill/prompt/plugin-contributed commands.
+**Status:** `mythic_vibe_cli.runtime.slash_commands` is live and tested. Foundation for future REPL/TUI/SDK surfaces; intentionally has no runtime dispatcher because the dispatcher belongs to whichever surface ultimately consumes the catalog (matches pi's separation-of-concerns design).
+**Scope:** Tiny single-file primitive port + unit tests + plunder-map row.
+
+### What changed
+
+- Added `mythic_vibe_cli/runtime/slash_commands.py` — Python port of pi's `src/core/slash-commands.ts` (MIT, Copyright (c) 2025 Mario Zechner).
+  - Three public types: `BuiltinSlashCommand` (frozen dataclass, name + description), `SlashCommandInfo` (frozen dataclass, name + source + source_info + description for any command including extension-contributed), `SlashCommandSource` Literal (`"extension" | "prompt" | "skill" | "plugin"`).
+  - `BUILTIN_SLASH_COMMANDS` constant — a tuple of 14 Mythic-relevant builtins mirroring the existing sub-command surface (`help`, `status`, `scan`, `packet`, `verify`, `reflect`, `resume`, `method`, `handoff`, `workflow`, `plugin`, `grimoire`, `reload`, `quit`).
+  - Per-file Pi attribution header preserved.
+- Mythic adapts pi's source enum: pi has three sources (`"extension" | "prompt" | "skill"`); we add `"plugin"` because the plugin layer is first-class here. Pi-specific commands (`scoped-models`, `share`, `tree`, `clone`, `fork`, `compact`) are omitted because they're session/model concepts Mythic doesn't have. The TS `Readonly<SlashCommandInfo[]>` signature becomes a `tuple[BuiltinSlashCommand, ...]` for native immutability.
+- `mythic_vibe_cli/runtime/__init__.py` re-exports `BUILTIN_SLASH_COMMANDS`, `BuiltinSlashCommand`, `SlashCommandInfo`, and `SlashCommandSource` alongside the four wired runtime primitives.
+- Added `tests/test_slash_commands.py` with eight unit cases: catalog non-empty, every entry has name + description, names are unique, canonical Mythic commands present (`help`, `status`, `scan`, `packet`, `verify`, `reflect`, `quit`), `BuiltinSlashCommand.to_dict` round-trip, `SlashCommandInfo` carries source/source_info/description, default description is empty string, catalog is an immutable tuple of frozen dataclasses (mutation raises).
+- Added a row to `THIRD_PARTY_NOTICES.md` plunder map (production + tests = 2 rows).
+- Updated `CHANGELOG.md`.
+
+### Why it matters
+
+The runtime subpackage is now five primitives deep. Four are wired into life-cycle paths or startup (queue / guard / bus / timings); the slash-commands catalog is foundation material — useful when a REPL, TUI, or SDK surface lands. Pi's design lesson is the separation: catalogue lives next to the data, dispatcher lives next to the consumer. Mythic now has the catalog and types ready before any consumer exists, which means whoever builds the first slash-command surface (V2 Phase 3 TUI is queued) doesn't have to invent the data model under deadline.
+
+The honest scope note: this is a *catalog only*, ~80 lines of code. The plunder value is the design pattern more than the line count. Tests pin the contract so future consumers can rely on it.
+
+### Verification
+
+- `pytest -q` -> `204 passed, 14 subtests passed` (was 196 + 14)
+- `pytest -q tests/test_slash_commands.py` -> `8 passed in 0.04s`
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!`
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 59 source files` (was 58)
+
+### Continuity thread
+
+- Five Pi runtime primitives are now in the runtime subpackage; four are wired and one is foundation. The next direction depends on what's most useful:
+  1. **Begin V2 Phase 3 (TUI)** — `TODO.md` item 16. The runtime trio (output-guard, event-bus, dispatcher) plus the slash-commands catalog form a real foundation. This would be a multi-slice arc.
+  2. **Begin V2 Phase 4 (Local LLM provider layer)** — `TODO.md` item 17. Larger arc, several slices.
+  3. **Documentation pass** — write `docs/runtime.md` mirroring `docs/plugins.md` for the five runtime primitives. Closes out the operator-facing story.
+  4. **Port a sixth Pi primitive** if a clean single-file candidate exists (the larger ones — agent-session trio, compaction, session-manager — are multi-slice arcs of their own).
+
+_The fifth runed stone rests with the others now: queue, guard, bus, bell, and book. Four of them already speak; the book lies open and patient, its names of slash-rituals waiting for a tongue to read them aloud — when at last a TUI is born, every name it needs is already inscribed._
+
 ## 2026-04-29 - Wire Timings into `app.main()` Startup
 
 **Session:** Activating yesterday's plumbing. The timings primitive landed as a no-op-when-disabled utility; this slice gives it a real call site so `MYTHIC_TIMING=1` actually does something.
