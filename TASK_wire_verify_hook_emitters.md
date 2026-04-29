@@ -56,15 +56,15 @@ after_verify:
 
 - [x] Task file written
 - [x] Task file committed + pushed
-- [ ] Wrap `cmd_verify` with dispatcher block
-- [ ] Integration tests (≥2 cases — passing path + failing path)
-- [ ] `pytest -q` green
-- [ ] `ruff` + `mypy` green
-- [ ] Docs updated
-- [ ] CHANGELOG entry
-- [ ] DEVLOG entry
-- [ ] Memory snapshot updated
-- [ ] Final commit + push
+- [x] Wrap `cmd_verify` with dispatcher block (explicit teardown rather than context-manager because of multiple early-return paths)
+- [x] Integration tests — 2 cases (emits both hooks with correct shape; selected payload reflects flags)
+- [x] `pytest -q` green — 184 passed, 14 subtests passed
+- [x] `ruff` + `mypy` green
+- [x] `docs/COMMAND_CONTRACTS.md` updated
+- [x] CHANGELOG entry
+- [x] DEVLOG entry with continuity thread
+- [x] Memory snapshot updated
+- [x] Final commit + push
 
 ## Resume Instructions
 

@@ -683,6 +683,123 @@ class CliKernelTests(unittest.TestCase):
             pass
         sys.modules.pop(module_name, None)
 
+    def _setup_verify_probe_plugin(self, project_path: Path, module_name: str) -> None:
+        import textwrap
+
+        from mythic_vibe_cli.plugins import PluginRegistry
+
+        plugin_dir = project_path / f"_synthetic_plugin_{module_name}"
+        plugin_dir.mkdir()
+        (plugin_dir / f"{module_name}.py").write_text(
+            textwrap.dedent(
+                """
+                class Plugin:
+                    received = []
+
+                    @classmethod
+                    def before_verify(cls, payload):
+                        cls.received.append(("before", dict(payload)))
+
+                    @classmethod
+                    def after_verify(cls, payload):
+                        cls.received.append(("after", dict(payload)))
+                """
+            ),
+            encoding="utf-8",
+        )
+        sys.path.insert(0, str(plugin_dir))
+        registry = PluginRegistry(project_path)
+        registry.add(
+            f"{module_name}:Plugin",
+            hooks=["before_verify", "after_verify"],
+        )
+
+    def _teardown_verify_probe_plugin(self, project_path: Path, module_name: str) -> None:
+        plugin_dir = project_path / f"_synthetic_plugin_{module_name}"
+        try:
+            sys.path.remove(str(plugin_dir))
+        except ValueError:
+            pass
+        sys.modules.pop(module_name, None)
+
+    def test_cmd_verify_emits_before_and_after_verify(self) -> None:
+        import importlib as importlib_module
+
+        with tempfile.TemporaryDirectory() as project_root:
+            project_path = Path(project_root)
+            (project_path / "tests").mkdir(parents=True, exist_ok=True)
+            (project_path / "tests" / "test_smoke.py").write_text(
+                "def test_smoke():\n    assert True\n",
+                encoding="utf-8",
+            )
+
+            self._setup_verify_probe_plugin(project_path, "verify_probe")
+            try:
+                output = io.StringIO()
+                with redirect_stdout(output):
+                    code = app.main(
+                        [
+                            "verify",
+                            "--path",
+                            str(project_path),
+                            "--commands",
+                            "--json",
+                        ]
+                    )
+                module = importlib_module.import_module("verify_probe")
+                received = list(module.Plugin.received)
+                module.Plugin.received.clear()
+            finally:
+                self._teardown_verify_probe_plugin(project_path, "verify_probe")
+
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(len(received), 2)
+            before, after = received
+            self.assertEqual(before[0], "before")
+            self.assertEqual(after[0], "after")
+            self.assertEqual(before[1]["path"], str(project_path))
+            self.assertEqual(before[1]["selected"]["commands"], True)
+            self.assertEqual(before[1]["selected"]["docs"], False)
+            self.assertEqual(before[1]["selected"]["invariants"], False)
+            self.assertEqual(before[1]["selected"]["changed_files"], False)
+            self.assertIn(after[1]["result"], {"pass", "fail", "blocked"})
+            self.assertIn(after[1]["level"], {"none", "smoke", "unit", "integration"})
+            self.assertTrue(after[1]["verification_id"])
+            self.assertIn("artifact_path", after[1])
+            self.assertTrue(Path(after[1]["artifact_path"]).exists())
+            self.assertIsInstance(after[1]["errors_count"], int)
+            self.assertIsInstance(after[1]["warnings_count"], int)
+            self.assertIsInstance(after[1]["blocked_count"], int)
+
+    def test_cmd_verify_default_selection_is_all_checks(self) -> None:
+        """When no specific check flag is set, verify enables all four. The probe
+        only needs to observe the selected dict — it does not need verify to
+        actually pass, so the plugin is registered but no real artifacts need
+        scaffolding."""
+        import importlib as importlib_module
+
+        with tempfile.TemporaryDirectory() as project_root:
+            project_path = Path(project_root)
+            (project_path / "tests").mkdir(parents=True, exist_ok=True)
+            (project_path / "tests" / "test_smoke.py").write_text(
+                "def test_smoke():\n    assert True\n",
+                encoding="utf-8",
+            )
+            self._setup_verify_probe_plugin(project_path, "verify_default_probe")
+            try:
+                with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                    app.main(["verify", "--path", str(project_path), "--commands", "--json"])
+                module = importlib_module.import_module("verify_default_probe")
+                received = list(module.Plugin.received)
+                module.Plugin.received.clear()
+            finally:
+                self._teardown_verify_probe_plugin(project_path, "verify_default_probe")
+
+            # `--commands` only — confirm the before payload reports just commands selected
+            self.assertGreaterEqual(len(received), 2)
+            self.assertEqual(received[0][0], "before")
+            self.assertEqual(received[0][1]["selected"]["commands"], True)
+
     def test_cmd_packet_create_emits_before_and_after_packet(self) -> None:
         import importlib as importlib_module
 
