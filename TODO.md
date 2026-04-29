@@ -1,0 +1,14 @@
+- After all of the current roadmap steps(both present and upcoming) are completed 100% and the current list if steps are done, the  start on Mythic_Vibe_CLI_ The_2026_Expansion_Roadmap.md
+- Work on all steps in MYTHIC_VIBE_CLI_EXPANSION_ROADMAP_V2.md
+- Work on all repo issues.
+- Create a massive amount of / commands, including all the ones that other cli vibe coding apps have.
+- Read and study Vibe_Coding_CLI_Tools_-_Aggregate_Feature_and_Interface_Report.md and come up with a massive multistep MD file plased plan to implement, in a very robust amd advanced way, every single feature that Vibe_Coding_CLI_Tools_-_Aggregate_Feature_and_Interface_Report.md  lists.
+- Start the plan to implement every feature from Vibe_Coding_CLI_Tools_-_Aggregate_Feature_and_Interface_Report.md
+- Check all code for bugs, incomplete code, missing features, not integrated code, orphaned code, imcomplete features, issues, inefficiencies, etc, and make a MD multiple step plan to fix all and improve all, only using additive methods. After consulting with Volmarr the human, begin the first step of the plan.
+- Consult all plundering documents, and begin lawful code plundering, while keeping mindful of the plundering documents instructions, and any information at the repos of each plundered project. Be sure to keep it legal, ethical, and in alignment with opensource standards for plundering.
+- Make all code robust, error correcting, bug resistant, self healing, platform agnostic, file location agnostic, use api for internal communication, modular.
+- Do a second round of make all code robust, error correcting, bug resistant, self healing, platform agnostic, file location agnostic, use api for internal communication, modular.
+- Do a third round of make all code robust, error correcting, bug resistant, self healing, platform agnostic, file location agnostic, use api for internal communication, modular.
+- Do a fourth round of make all code robust, error correcting, bug resistant, self healing, platform agnostic, file location agnostic, use api for internal communication, modular.
+- Check all code for bugs, incomplete code, missing features, not integrated code, orphaned code, imcomplete features, issues, inefficiencies, etc, and make a MD multiple step plan to fix all and improve all, only using additive methods. After consulting with Volmarr the human, begin the first step of the plan.
+- 
