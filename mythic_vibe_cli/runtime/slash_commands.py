@@ -65,18 +65,63 @@ class SlashCommandInfo:
 
 
 BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
+    # --- Interactive-session locals (REPL/TUI handles directly) ---
     BuiltinSlashCommand(name="help", description="List available slash commands and their sources"),
-    BuiltinSlashCommand(name="status", description="Show project state"),
-    BuiltinSlashCommand(name="scan", description="Run a project context scan"),
-    BuiltinSlashCommand(name="packet", description="Packet operations: create, show, list, ingest, diff"),
-    BuiltinSlashCommand(name="verify", description="Run verification checks against the project"),
-    BuiltinSlashCommand(name="reflect", description="Create a session handoff with summary and next-step"),
-    BuiltinSlashCommand(name="resume", description="Load the latest handoff and show its next-recommended action"),
-    BuiltinSlashCommand(name="method", description="Show active Mythic Engineering method notes"),
-    BuiltinSlashCommand(name="handoff", description="Inspect or list session handoffs"),
-    BuiltinSlashCommand(name="workflow", description="Workflow plan, run, packets, history"),
-    BuiltinSlashCommand(name="plugin", description="List, inspect, or disable plugins"),
-    BuiltinSlashCommand(name="grimoire", description="Plugin registry: add or list entrypoints"),
     BuiltinSlashCommand(name="reload", description="Reload plugins, skills, prompts, and method cache"),
     BuiltinSlashCommand(name="quit", description="Exit the interactive session"),
+
+    # --- Project lifecycle ---
+    BuiltinSlashCommand(name="init", description="Initialize a new Mythic Engineering project scaffold"),
+    BuiltinSlashCommand(name="imbue", description="Alias of init — imbue an existing directory with the Mythic scaffold"),
+    BuiltinSlashCommand(name="start", description="Alias of init — start a new Mythic project"),
+    BuiltinSlashCommand(name="status", description="Show project state and recent verification"),
+    BuiltinSlashCommand(name="next", description="Print the next recommended action for the current phase"),
+    BuiltinSlashCommand(name="checkin", description="Record a phase check-in and append to DEVLOG"),
+
+    # --- Workflow & scanning ---
+    BuiltinSlashCommand(name="scan", description="Scan the project and update the local context index"),
+    BuiltinSlashCommand(name="workflow", description="Workflow plan, run, packets, history"),
+    BuiltinSlashCommand(name="reflect", description="Create a session handoff with summary and next-step"),
+    BuiltinSlashCommand(name="handoff", description="Inspect or list session handoffs"),
+    BuiltinSlashCommand(name="resume", description="Load the latest handoff and show its next-recommended action"),
+
+    # --- Packets & AI ---
+    BuiltinSlashCommand(name="packet", description="Packet operations: create, show, list, ingest, diff"),
+    BuiltinSlashCommand(name="codex-pack", description="Generate a ChatGPT/Codex packet from project context"),
+    BuiltinSlashCommand(name="evoke", description="Mythic alias of codex-pack — evoke a packet"),
+    BuiltinSlashCommand(name="codex-log", description="Log a Codex/AI response back into the project DEVLOG"),
+    BuiltinSlashCommand(name="ai", description="AI provider operations: providers, test, run, ingest-response"),
+
+    # --- Verification & diagnostics ---
+    BuiltinSlashCommand(name="verify", description="Run verification checks against the project"),
+    BuiltinSlashCommand(name="doctor", description="Diagnostic checks across artefacts, state, docs, boundaries"),
+    BuiltinSlashCommand(name="scry", description="Mythic alias of doctor — scry the project's health"),
+
+    # --- Method corpus ---
+    BuiltinSlashCommand(name="method", description="Show / sync / diff / pin the Mythic Engineering method corpus"),
+    BuiltinSlashCommand(name="import-md", description="Import the Mythic Engineering markdown corpus"),
+    BuiltinSlashCommand(name="sync", description="Sync the method corpus from the upstream source"),
+
+    # --- UX helpers ---
+    BuiltinSlashCommand(name="examples", description="Print canonical command-line examples"),
+    BuiltinSlashCommand(name="guide", description="Print the short Mythic Engineering operator guide"),
+    BuiltinSlashCommand(name="explain", description="Explain a phase or artifact in plain language"),
+    BuiltinSlashCommand(name="tutorial", description="Walk through the Mythic Engineering loop interactively"),
+    BuiltinSlashCommand(name="completion", description="Print a shell completion script for the CLI"),
+
+    # --- Rituals (scaffold-mode today; real impl lives at PH-13/14) ---
+    BuiltinSlashCommand(name="weave", description="Record a weave/reflect checkpoint (note: F-021 gates this until verify --record)"),
+    BuiltinSlashCommand(name="prune", description="Prune stale Mythic artefacts (scaffold today; PH-13 grows it)"),
+    BuiltinSlashCommand(name="heal", description="Heal failing-test workflow (scaffold today; PH-13 grows it)"),
+    BuiltinSlashCommand(name="oath", description="Display and accept the AI-review oath"),
+
+    # --- Plugins & registry ---
+    BuiltinSlashCommand(name="plugin", description="List, inspect, or disable plugins"),
+    BuiltinSlashCommand(name="grimoire", description="Plugin registry: add or list entrypoints"),
+
+    # --- Configuration & operational ---
+    BuiltinSlashCommand(name="config", description="Show or set Mythic CLI configuration values"),
+    BuiltinSlashCommand(name="state", description="Project state: show or validate the schema-versioned status.json"),
+    BuiltinSlashCommand(name="db", description="Database operations: migrate the state schema"),
+    BuiltinSlashCommand(name="plunder", description="Lawful single-file reuse from upstream Apache/MIT/BSD repositories"),
 )
