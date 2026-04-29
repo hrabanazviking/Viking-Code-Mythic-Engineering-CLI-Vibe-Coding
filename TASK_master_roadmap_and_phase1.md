@@ -151,11 +151,35 @@ additive, cross-platform, open-source):
 |---|---|---|
 | 1 | Read repo state, all roadmap MDs, rules, active runtime, tests | done (in this session) |
 | 2 | Write `TASK_master_roadmap_and_phase1.md` | done |
-| 3 | Write `MYTHIC_VIBE_CLI_MASTER_ROADMAP.md` | next |
-| 4 | Commit + push task file and master roadmap | after step 3 |
-| 5 | Begin Phase 1 Slice 1 — `PHASE1_RUNTIME_AUDIT.md` | after step 4 |
-| 6 | Update memory + project status | after step 5 |
+| 3 | Write `MYTHIC_VIBE_CLI_MASTER_ROADMAP.md` | done — pushed at d36a4ae |
+| 4 | Commit + push task file and master roadmap | done — pushed at d36a4ae |
+| 5 | Begin Phase 1 Slice 1.1 — `PHASE1_RUNTIME_AUDIT.md` | done — 20 findings catalogued |
+| 6 | Update memory + project status | in progress |
 | 7 | Hand off / await further instruction | end of slice |
+
+## Phase 1 Slice 1.1 — Findings Summary
+
+20 findings catalogued (0 errors, 7 warnings, 13 info). The CLI is
+structurally sound; gaps are feature-shaped and each has a phase home
+in the master roadmap. Most-visible gaps:
+
+- **F-001 / F-002 / F-004 / F-005** — `prune`, `heal`, `oath`, `weave`
+  are scaffold-only; real implementations land in PH-13/14.
+- **F-006 / F-007** — silent-fall-through dispatchers (`slash`, `ai`)
+  return exit code 2 with no message — quick-fix in slice 1.3.
+- **F-008 / F-009** — TUI plugin-dispatch gap and direct
+  `subprocess.Popen` in TUI runner — work for PH-02 / PH-04 / PH-18.
+- **F-020** — no structured-log layer separate from user output —
+  prerequisite for OpenTelemetry in PH-16.
+
+See `PHASE1_RUNTIME_AUDIT.md` for the full table + remediation plan.
+
+## Next slice (1.2)
+
+Repo issue triage. `gh issue list` for the GitHub repo, match each
+issue to a finding/slice/phase, and produce `PHASE1_ISSUE_TRIAGE.md`.
+This is gated on Volmarr's go-ahead so we don't bombard GitHub with
+automated comments.
 
 ---
 
