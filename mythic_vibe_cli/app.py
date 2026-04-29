@@ -287,6 +287,7 @@ def build_parser() -> argparse.ArgumentParser:
     packet_show.add_argument("--workflow", default="", help="Workflow ID stamped on the packet (requires --step)")
     packet_show.add_argument("--step", default="", help="Workflow step ID stamped on the packet (requires --workflow or --latest-workflow)")
     packet_show.add_argument("--latest-workflow", action="store_true", help="Resolve --workflow from mythic/workflow_plan.json (requires --step)")
+    packet_show.add_argument("--previous-workflow", action="store_true", help="Resolve --workflow from the second-most-recent entry in mythic/workflow_history.json (requires --step)")
     add_runtime_options(packet_show, json_output=True)
     packet_list = packet_sub.add_parser("list", help="List stored packet records")
     packet_list.add_argument("--path", default=".", help="Project directory (default: current directory)")
@@ -300,8 +301,8 @@ def build_parser() -> argparse.ArgumentParser:
     add_runtime_options(packet_ingest, json_output=True, dry_run=True)
     packet_diff = packet_sub.add_parser("diff", help="Diff two stored packet artifacts")
     packet_diff.add_argument("--path", default=".", help="Project directory (default: current directory)")
-    packet_diff.add_argument("--left", required=True, help="Left packet reference: PKT-... ID, WF-<id>:<step_id>, or bare step-NN with --latest-workflow")
-    packet_diff.add_argument("--right", required=True, help="Right packet reference: PKT-... ID, WF-<id>:<step_id>, or bare step-NN with --latest-workflow")
+    packet_diff.add_argument("--left", required=True, help="Left packet reference: PKT-... ID, WF-<id>:<step_id>, LATEST:<step_id>, PREVIOUS:<step_id>, or bare step-NN with --latest-workflow")
+    packet_diff.add_argument("--right", required=True, help="Right packet reference: PKT-... ID, WF-<id>:<step_id>, LATEST:<step_id>, PREVIOUS:<step_id>, or bare step-NN with --latest-workflow")
     packet_diff.add_argument("--latest-workflow", action="store_true", help="Allow bare step-NN refs to resolve against mythic/workflow_plan.json")
     add_runtime_options(packet_diff, json_output=True)
 

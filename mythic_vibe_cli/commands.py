@@ -364,24 +364,37 @@ def cmd_packet_show(args: argparse.Namespace) -> int:
     workflow_id = (getattr(args, "workflow", "") or "").strip()
     step_id = (getattr(args, "step", "") or "").strip()
     latest_workflow = bool(_flag(args, "latest_workflow"))
+    previous_workflow = bool(_flag(args, "previous_workflow"))
 
-    if packet_id and (workflow_id or step_id or latest_workflow):
-        write_error("--packet-id cannot be combined with --workflow, --step, or --latest-workflow.")
+    if packet_id and (workflow_id or step_id or latest_workflow or previous_workflow):
+        write_error("--packet-id cannot be combined with --workflow, --step, --latest-workflow, or --previous-workflow.")
         return USER_INPUT_ERROR
-    if latest_workflow and workflow_id:
-        write_error("--latest-workflow cannot be combined with --workflow.")
+    if latest_workflow and previous_workflow:
+        write_error("--latest-workflow cannot be combined with --previous-workflow.")
+        return USER_INPUT_ERROR
+    if (latest_workflow or previous_workflow) and workflow_id:
+        write_error("--latest-workflow and --previous-workflow cannot be combined with --workflow.")
         return USER_INPUT_ERROR
     if latest_workflow and not step_id:
         write_error("--latest-workflow requires --step.")
         return USER_INPUT_ERROR
-    if (workflow_id and not step_id) or (step_id and not workflow_id and not latest_workflow):
-        write_error("Workflow addressing requires both --workflow and --step (or --latest-workflow with --step).")
+    if previous_workflow and not step_id:
+        write_error("--previous-workflow requires --step.")
+        return USER_INPUT_ERROR
+    if (workflow_id and not step_id) or (step_id and not workflow_id and not latest_workflow and not previous_workflow):
+        write_error("Workflow addressing requires both --workflow and --step (or --latest-workflow / --previous-workflow with --step).")
         return USER_INPUT_ERROR
 
     if latest_workflow:
         resolved, error = _resolve_latest_workflow_id(root)
         if error or resolved is None:
             write_error(error or "Could not resolve latest workflow plan.")
+            return USER_INPUT_ERROR
+        workflow_id = resolved
+    elif previous_workflow:
+        resolved, error = _resolve_previous_workflow_id(root)
+        if error or resolved is None:
+            write_error(error or "Could not resolve previous workflow.")
             return USER_INPUT_ERROR
         workflow_id = resolved
 
@@ -537,14 +550,49 @@ def _resolve_latest_workflow_id(root: Path) -> tuple[str | None, str | None]:
     return plan.workflow_id, None
 
 
+def _resolve_previous_workflow_id(root: Path) -> tuple[str | None, str | None]:
+    engine = WorkflowEngine(root)
+    history = engine.load_history()
+    if len(history) < 2:
+        return None, "No previous workflow recorded; need at least two saved plans before --previous-workflow can resolve."
+    entry = history[-2]
+    workflow_id = entry.get("workflow_id")
+    if not workflow_id:
+        return None, "Previous workflow entry has no workflow_id."
+    return str(workflow_id), None
+
+
 def _resolve_packet_ref(
     bridge: CodexBridge,
     ref: str,
     *,
     latest_workflow_id: str | None = None,
+    root: Path | None = None,
 ) -> tuple[str | None, str | None]:
     if not ref:
         return None, "Packet reference is empty."
+    if ref.startswith("LATEST:") and root is not None:
+        _, _, step_id = ref.partition(":")
+        if not step_id:
+            return None, "LATEST shorthand requires a step id (LATEST:<step_id>)."
+        resolved, error = _resolve_latest_workflow_id(root)
+        if error or resolved is None:
+            return None, error or "Could not resolve LATEST workflow."
+        record = bridge.find_packet_by_workflow_step(resolved, step_id)
+        if record is None:
+            return None, f"No packet stamped with workflow {resolved} step {step_id}."
+        return record.packet_id, None
+    if ref.startswith("PREVIOUS:") and root is not None:
+        _, _, step_id = ref.partition(":")
+        if not step_id:
+            return None, "PREVIOUS shorthand requires a step id (PREVIOUS:<step_id>)."
+        resolved, error = _resolve_previous_workflow_id(root)
+        if error or resolved is None:
+            return None, error or "Could not resolve PREVIOUS workflow."
+        record = bridge.find_packet_by_workflow_step(resolved, step_id)
+        if record is None:
+            return None, f"No packet stamped with workflow {resolved} step {step_id}."
+        return record.packet_id, None
     if ref.startswith("WF-") and ":" in ref:
         workflow_id, _, step_id = ref.partition(":")
         record = bridge.find_packet_by_workflow_step(workflow_id, step_id)
@@ -571,11 +619,11 @@ def cmd_packet_diff(args: argparse.Namespace) -> int:
             return USER_INPUT_ERROR
         latest_workflow_id = resolved
 
-    left_id, left_error = _resolve_packet_ref(bridge, args.left, latest_workflow_id=latest_workflow_id)
+    left_id, left_error = _resolve_packet_ref(bridge, args.left, latest_workflow_id=latest_workflow_id, root=root)
     if left_error or left_id is None:
         write_error(left_error or "Could not resolve --left packet reference.")
         return USER_INPUT_ERROR
-    right_id, right_error = _resolve_packet_ref(bridge, args.right, latest_workflow_id=latest_workflow_id)
+    right_id, right_error = _resolve_packet_ref(bridge, args.right, latest_workflow_id=latest_workflow_id, root=root)
     if right_error or right_id is None:
         write_error(right_error or "Could not resolve --right packet reference.")
         return USER_INPUT_ERROR

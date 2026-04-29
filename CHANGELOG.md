@@ -8,6 +8,9 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Added
 
+- Added `packet show --previous-workflow --step <step_id>` for resolving the workflow id from the second-most-recent entry in `mythic/workflow_history.json`. Same exclusivity rules as `--latest-workflow`; cannot be combined with it; errors when the ledger has fewer than two entries.
+- Added `LATEST:<step_id>` and `PREVIOUS:<step_id>` self-describing sentinels to `packet diff --left` and `--right`. Mixing them in one call (e.g., `--left LATEST:step-01 --right PREVIOUS:step-01`) is the canonical cross-run regression diff pattern. The sentinels work without flag toggles and compose with the existing `WF-<id>:<step_id>` shorthand and `--latest-workflow` bare-step form.
+- Added `_resolve_previous_workflow_id` helper for callers that need the second-most-recent workflow id from the ledger.
 - Added `mythic/workflow_history.json` as an append-only ledger of workflow plan saves (workflow_id, task, created_at, plan_path, role_sequence). `workflow plan` (without `--dry-run`) appends an entry on every successful save; the ledger is capped at 50 entries.
 - Added `mythic-vibe workflow history` for inspecting the ledger. Supports `--limit N` to cap the returned entries and `--json` for structured output that exposes `count`, `total`, and the resolved `history_path`.
 - Added `WorkflowEngine.append_history`, `WorkflowEngine.load_history`, and `WorkflowEngine.history_path` plus `WORKFLOW_HISTORY_FILENAME` and `WORKFLOW_HISTORY_LIMIT` constants for callers that need to read or write history programmatically.
