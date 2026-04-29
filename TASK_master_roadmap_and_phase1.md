@@ -190,8 +190,10 @@ additive, cross-platform, open-source):
 | 39 | Update memory + project status (after slice 3.8) | done — pushed at 997f255 |
 | 40 | **PHASE 3 FULLY COMPLETE.** Choose next phase (4 / 5 / 11) | done — Phase 4 chosen |
 | 41 | Phase 4 Slice 4.1 — Loop Navigator sidebar | done — `1f73b3e` — +8 tests, 546 total |
-| 42 | Update memory + project status (after slice 4.1) | in progress |
-| 43 | Phase 4 Slice 4.2 — Artifact Viewer panel | next |
+| 42 | Update memory + project status (after slice 4.1) | done — pushed at 25dd585 |
+| 43 | Phase 4 Slice 4.2 — Artifact Viewer panel | done — `8e1662c` — +12 tests, 558 total |
+| 44 | Update memory + project status (after slice 4.2) | in progress |
+| 45 | Phase 4 Slice 4.3 — Packet Viewer | next |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
