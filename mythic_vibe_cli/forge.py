@@ -27,6 +27,7 @@ Slice 3.4 adds approval gates between steps; slice 3.5 makes
 from __future__ import annotations
 
 import argparse
+import dataclasses
 from dataclasses import dataclass
 import json
 from pathlib import Path
@@ -44,11 +45,13 @@ from .exit_codes import (
     USER_INPUT_ERROR,
 )
 from .forge_ledger import ForgeLedger, ForgeLedgerEntry
+from .forge_verifier import DEFAULT_AUDITOR_GATES, GateRunner, run_auditor_gates
 from .output import write_bullet, write_error, write_json, write_key_value, write_line
 from .workflow_agents import (
     AGENT_CONTRACTS,
     AgentInput,
     AgentOutput,
+    VerificationResult,
     contract_for,
     validate_input,
 )
@@ -643,6 +646,7 @@ def cmd_forge_run(
     *,
     gate_handler: GateHandler | None = None,
     provider_factory: ProviderFactory | None = None,
+    auditor_gates: dict[str, GateRunner] | None = None,
 ) -> int:
     """``mythic-vibe forge run`` — provider-backed forge execution.
 
@@ -651,18 +655,33 @@ def cmd_forge_run(
     captures responses into ``AgentOutput`` records, and persists
     each transition through ``ForgeLedger``.
 
+    For the Auditor step (slice 3.6), the captured ``AgentOutput`` is
+    additionally run through :func:`run_auditor_gates` so the role
+    contract's named gates become real machine-checks. A failing gate
+    transitions the step from ``succeeded`` to ``failed`` even if the
+    provider call itself returned cleanly. Pass
+    ``auditor_gates={}`` to opt out; pass a custom dict to inject
+    stubs.
+
+    With ``--strict``, any failed gate aborts the run: every
+    remaining step is recorded as ``blocked`` with note
+    ``"verifier strict-mode abort"``.
+
     Status transitions per step:
 
     - contract validation fails → ``blocked`` (no provider call)
     - provider call begins → ``running``
     - provider call returns → ``succeeded``
     - provider call raises → ``failed``
+    - Auditor verifier gates fail → ``failed``
     - operator aborts at gate → all remaining steps ``blocked``
     - operator skips at gate → next step ``blocked``
+    - --strict + Auditor gate failure → all remaining ``blocked``
 
     Returns ``SUCCESS`` if every executed step succeeded;
     ``OPERATIONAL_FAILURE`` if at least one step failed;
-    ``UNSAFE_OPERATION_BLOCKED`` if the operator aborted via gate;
+    ``UNSAFE_OPERATION_BLOCKED`` if the operator aborted via gate or
+    --strict triggered;
     ``USER_INPUT_ERROR`` for missing task / unknown provider.
     """
     root = Path(getattr(args, "path", ".")).resolve()
@@ -692,7 +711,11 @@ def cmd_forge_run(
 
     skip_ledger = _flag(args, "skip_ledger")
     interactive = _flag(args, "interactive")
+    strict = _flag(args, "strict")
     handler: GateHandler = gate_handler or default_gate_handler
+    auditor_gates_map = (
+        DEFAULT_AUDITOR_GATES if auditor_gates is None else auditor_gates
+    )
     ledger = ForgeLedger(root=root)
 
     step_payloads: list[dict[str, Any]] = []
@@ -801,17 +824,67 @@ def cmd_forge_run(
                 )
             else:
                 agent_output = build_agent_output_from_response(response, agent_input)
-                success_count += 1
+
+                # Slice 3.6: if this is the Auditor, run the contract's
+                # verification gates against the project state. The
+                # gates either confirm the audit (verification_results
+                # all pass → step still succeeds) or reveal that the
+                # audit missed something (any fail → step transitions
+                # to failed regardless of the provider's response).
+                #
+                # An empty ``auditor_gates_map`` means "opt out" — used
+                # by tests that focus on the orchestration loop rather
+                # than the gate runners. Production callers leave
+                # ``auditor_gates`` as None so DEFAULT_AUDITOR_GATES
+                # is used.
+                gate_results: tuple[VerificationResult, ...] = ()
+                contract_for_step = AGENT_CONTRACTS.get(step.role)
+                if (
+                    step.role == "Auditor"
+                    and contract_for_step is not None
+                    and auditor_gates_map
+                ):
+                    gate_results = run_auditor_gates(
+                        plan,
+                        agent_input,
+                        agent_output,
+                        root,
+                        gate_names=contract_for_step.verification_gate,
+                        gates=auditor_gates_map,
+                    )
+                    if gate_results:
+                        agent_output = dataclasses.replace(
+                            agent_output, verification_results=gate_results
+                        )
+
                 completed_at = agent_output.timestamp
+                gates_ok = agent_output.all_gates_passed
+                if gates_ok:
+                    final_status = "succeeded"
+                    success_count += 1
+                    failed_gate_names: list[str] = []
+                    notes: tuple[str, ...] = ()
+                else:
+                    final_status = "failed"
+                    failure_count += 1
+                    failed_gate_names = [
+                        r.name for r in gate_results if not r.passed
+                    ]
+                    notes = (
+                        "verification gates failed: "
+                        + ", ".join(failed_gate_names),
+                    )
+
                 if not skip_ledger:
                     duration = _duration_ms(running_entry.started_at, completed_at)
                     ledger.update_step(
                         running_entry.workflow_id,
                         running_entry.step_id,
-                        status="succeeded",
+                        status=final_status,
                         completed_at=completed_at,
                         duration_ms=duration,
                         agent_output=agent_output,
+                        notes=notes if notes else None,
                     )
                 step_payloads.append(
                     {
@@ -822,10 +895,26 @@ def cmd_forge_run(
                         "handoff_to": step.handoff_to,
                         "agent_input": agent_input.to_dict(),
                         "validation_errors": [],
-                        "status": "succeeded",
+                        "status": final_status,
                         "agent_output": agent_output.to_dict(),
+                        "failed_gates": failed_gate_names,
                     }
                 )
+
+                # --strict: any auditor gate failure aborts the rest.
+                if not gates_ok and strict and step.role == "Auditor":
+                    aborted = True
+                    for remaining in plan.steps[index + 1 :]:
+                        payload = _record_aborted_step(
+                            plan=plan,
+                            step=remaining,
+                            started_at=started_at,
+                            note="verifier strict-mode abort",
+                            skip_ledger=skip_ledger,
+                            ledger=ledger,
+                        )
+                        step_payloads.append(payload)
+                    break
 
         # Gate after this step before advancing — but never after the
         # final step.

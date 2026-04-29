@@ -940,6 +940,15 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Prompt y/n/?/s between each pair of steps (slice 3.4 gates).",
     )
+    forge_run.add_argument(
+        "--strict",
+        action="store_true",
+        help=(
+            "Abort the run when any Auditor verifier gate fails (slice 3.6). "
+            "Default off: a failed verifier transitions the Auditor step to "
+            "`failed` but the run continues to the Scribe."
+        ),
+    )
     add_runtime_options(forge_run, json_output=True)
 
     forge_ledger = forge_sub.add_parser(
