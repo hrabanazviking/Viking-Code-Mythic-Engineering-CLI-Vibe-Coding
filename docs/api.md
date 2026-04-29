@@ -55,6 +55,8 @@ Argument parsing and top-level dispatch live in `mythic_vibe_cli.app`. Command i
   - Previews ordered role execution with `--dry-run`; `--packets-only` validates required packet artifacts; real provider execution is intentionally blocked until safety gates are added. Surfaces the plan's `workflow_id` in JSON output, and each `packet_status` entry reports a `match_strategy` of `"id"`, `"text"`, or `null`.
 - `workflow packets`
   - Lists packet readiness for saved or generated workflow plans without executing providers. Prefers `(workflow_id, workflow_step_id)` matches when both plan and packet carry IDs; falls back to the legacy `(role, phase, task, audience, output_format)` text match when either side is missing IDs.
+- `workflow history`
+  - Lists recorded workflow plan saves from `mythic/workflow_history.json`, newest first. `--limit N` caps the returned entries. JSON output includes the resolved `history_path`, `count`, `total`, and full entries with `workflow_id`, `task`, `created_at`, `plan_path`, and `role_sequence`. Dry-run plans never grow the ledger; the file is capped at 50 entries.
 - `packet list --workflow <id>`
   - Filters stored packets to those stamped with the supplied `workflow_id`. Adding `--step <step_id>` further narrows to a single workflow step (requires `--workflow` or `--latest-workflow`). Legacy packets without IDs are excluded when a workflow filter is set. JSON output includes a `filters` object reporting the applied scope.
 - `packet list --latest-workflow`
