@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import json
-import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -10,6 +9,7 @@ from uuid import uuid4
 
 from .core.state import ProjectState
 from .persistence.json_store import JsonStateStore
+from .runtime.exec import ExecResult, exec_command
 from .verify import load_latest_verification
 
 
@@ -85,8 +85,8 @@ def session_handoff_doc_path(root: Path) -> Path:
     return root / "docs" / "SESSION_HANDOFF.md"
 
 
-def _git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True, check=False)
+def _git(root: Path, *args: str) -> ExecResult:
+    return exec_command("git", ["-C", str(root), *args], cwd=root)
 
 
 def _git_metadata(root: Path) -> tuple[str, list[str], list[str]]:
@@ -95,13 +95,13 @@ def _git_metadata(root: Path) -> tuple[str, list[str], list[str]]:
     warnings: list[str] = []
 
     branch_proc = _git(root, "rev-parse", "--abbrev-ref", "HEAD")
-    if branch_proc.returncode == 0:
+    if branch_proc.code == 0:
         branch = branch_proc.stdout.strip() or "unknown"
     else:
         warnings.append("No git branch detected for this workspace.")
 
     status_proc = _git(root, "status", "--porcelain")
-    if status_proc.returncode == 0:
+    if status_proc.code == 0:
         for line in status_proc.stdout.splitlines():
             if len(line) >= 4:
                 files_changed.append(line[3:].strip())

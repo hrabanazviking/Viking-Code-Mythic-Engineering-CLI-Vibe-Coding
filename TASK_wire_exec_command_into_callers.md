@@ -58,16 +58,27 @@ This is a wiring slice — no new plunder, no new tests for the primitive itself
 
 - [x] Task file written
 - [x] Task file committed + pushed
-- [ ] Migrate `verify/test_runner.py`
-- [ ] Migrate `verify/git_diff.py`
-- [ ] Migrate `handoff.py`
-- [ ] Migrate `context/scanner.py`
-- [ ] `pytest -q` green
-- [ ] `ruff` + `mypy` green
-- [ ] CHANGELOG entry
-- [ ] DEVLOG entry
-- [ ] Memory snapshot updated
-- [ ] Final commit + push
+- [x] Migrate `verify/test_runner.py` (with empty-command guard)
+- [x] Migrate `verify/git_diff.py` (returns ExecResult; 2 callers updated)
+- [x] Migrate `handoff.py` (_git returns ExecResult; 2 callers updated in `_git_metadata`)
+- [x] Migrate `context/scanner.py` (try/except → if code != 0)
+- [x] `pytest -q` green — 219 passed, 14 subtests passed (unchanged)
+- [x] `ruff` + `mypy` green
+- [x] CHANGELOG entry
+- [x] DEVLOG entry with continuity thread
+- [x] Memory snapshot updated
+- [x] Final commit + push
+
+## Verification grep
+
+After migration, only `mythic_vibe_cli/runtime/exec.py` imports `subprocess` directly:
+
+```
+$ grep "subprocess.run|Popen|check_output|call" mythic_vibe_cli/
+mythic_vibe_cli/runtime/exec.py:69:        proc = subprocess.Popen(
+```
+
+That's the exec primitive's own implementation — exactly the encapsulation goal.
 
 ## Resume Instructions
 
