@@ -183,8 +183,10 @@ additive, cross-platform, open-source):
 | 32 | Phase 3 Slice 3.5 — provider-backed forge | done — `fe763e1` — +15 tests |
 | 33 | Update memory + project status (after slice 3.5) | done — pushed at c326ec9 |
 | 34 | Phase 3 Slice 3.6 — verifier integration | done — `c0da15b` — +18 tests, 501 total |
-| 35 | Update memory + project status (after slice 3.6) | in progress |
-| 36 | Phase 3 Slice 3.7 — reflection capture | next |
+| 35 | Update memory + project status (after slice 3.6) | done — pushed at 45e1af0 |
+| 36 | Phase 3 Slice 3.7 — reflection capture | done — `17e1d57` — +27 tests, 528 total |
+| 37 | Update memory + project status (after slice 3.7) | in progress |
+| 38 | Phase 3 Slice 3.8 — forge resume | next |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
@@ -424,14 +426,38 @@ Six of eight Phase 3 slices closed (3.1–3.6).
 
 See `PHASE3_SLICE_3_6_CLOSEOUT.md` for the full memo.
 
-## Next slice (PH-03 slice 3.7)
+## PH-03 slice 3.7 results
 
-Reflection capture. The Scribe agent's response gets routed into
-a structured reflection artifact at `mythic/reflections/`,
-separate from the existing per-session handoff. Each forge run
-produces one reflection summarising what the cycle did, what
-verifier failed (if any), and what the operator's next step
-should be.
+New module `mythic_vibe_cli/forge_reflection.py` with
+`ForgeReflection` / `ForgeStepReflection` dataclasses,
+`build_forge_reflection`, `render_forge_reflection_markdown`,
+`write_forge_reflection` (both .md and .json), `load_forge_reflection`,
+`list_forge_reflections`. Each forge run auto-writes
+`mythic/reflections/<workflow_id>.{md,json}` (skippable via
+`--skip-reflection`). Three new inspection subcommands: `forge
+reflection list/show/latest`.
+
+Reflection captures: per-role status, summary from AgentOutput,
+Auditor's failed_gates, ledger notes, duration, plus a derived
+next_step_recommendation that points at `forge resume` on failure.
+
+Tests 501 → 528 (+27 across 11 classes covering round-trips,
+build-from-ledger edges, markdown rendering, persistence,
+orchestrator integration, and all three CLI subcommands). Ruff/mypy
+clean.
+
+Seven of eight Phase 3 slices closed.
+
+See `PHASE3_SLICE_3_7_CLOSEOUT.md` for the full memo.
+
+## Next slice (PH-03 slice 3.8)
+
+Forge resume. Read the most recent reflection (or `--workflow <id>`),
+find the first failed/blocked step, resume the run from there.
+Agents that already succeeded keep their AgentOutput from the
+ledger; the resume picks up at the failure boundary. Slice 3.7's
+recommendation already points at `forge resume`, so the operator
+path becomes seamless when 3.8 lands.
 
 ---
 
