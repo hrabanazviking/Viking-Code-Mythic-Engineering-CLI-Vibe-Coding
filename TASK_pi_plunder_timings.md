@@ -56,17 +56,17 @@ Env var: `MYTHIC_TIMING` accepts `1`, `true`, `yes`, `on` (matches the existing 
 
 - [x] Task file written
 - [x] Task file committed + pushed
-- [ ] Port `timings.py`
-- [ ] Update `runtime/__init__.py` re-exports
-- [ ] Write tests (enabled/disabled/reset/format)
-- [ ] `pytest -q` green
-- [ ] `ruff` + `mypy` green
-- [ ] Plunder map row added
-- [ ] Per-file Pi attribution header
-- [ ] CHANGELOG entry
-- [ ] DEVLOG entry
-- [ ] Memory snapshot updated
-- [ ] Final commit + push
+- [x] Port `timings.py` (lazy env-var read, perf_counter clock, pi-style stderr output)
+- [x] Update `runtime/__init__.py` re-exports (`reset_timings`, `record`, `print_timings`)
+- [x] Write tests — 8 cases (disabled no-op, enabled deltas, reset clears, stderr format, no-entry no-op, post-disable no-op, truthy env, falsy env)
+- [x] `pytest -q` green — 194 passed, 14 subtests passed
+- [x] `ruff` + `mypy` green — 58 source files
+- [x] Plunder map row added (production + test)
+- [x] Per-file Pi attribution header
+- [x] CHANGELOG entry
+- [x] DEVLOG entry with continuity thread
+- [x] Memory snapshot updated
+- [x] Final commit + push
 
 ## Resume Instructions
 

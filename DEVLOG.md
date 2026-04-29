@@ -7,6 +7,42 @@
 
 ---
 
+## 2026-04-29 - Pi Plunder Slice 4: Timings Primitive
+
+**Session:** Fourth Pi-derived primitive in `mythic_vibe_cli/runtime/`. Tiny single-file utility for elapsed-time instrumentation — useful for startup profiling, slow-command diagnosis, and anywhere we want to know where the CLI spent its milliseconds.
+**Status:** `mythic_vibe_cli.runtime.timings` is live and tested. Re-exported alongside file-mutation-queue, output-guard, and event-bus.
+**Scope:** Single-file primitive port + unit tests + plunder-map row.
+
+### What changed
+
+- Added `mythic_vibe_cli/runtime/timings.py` — Python port of pi's `src/core/timings.ts` (MIT, Copyright (c) 2025 Mario Zechner). Three module-level functions: `reset_timings()` clears the in-memory record list and re-baselines; `record(label)` appends a labelled millisecond delta since the last record; `print_timings()` flushes a pi-style formatted block to stderr with a TOTAL footer.
+- Env-gated on `MYTHIC_TIMING` (accepts `1` / `true` / `yes` / `on`, matching the existing `_parse_bool_env` pattern). Lazy `_is_enabled()` lookup rather than a module-level constant — keeps tests clean (no module reloading needed to toggle behavior).
+- Pi's TS function name `time(label)` is renamed to `record(label)` in the Python port to avoid shadowing the `time` stdlib module in callers. Pi's `Date.now()` (millisecond resolution) is replaced with `time.perf_counter()` (sub-millisecond resolution; output rounded to one decimal of a millisecond).
+- Per-file Pi attribution header preserved.
+- Updated `mythic_vibe_cli/runtime/__init__.py` to re-export `reset_timings`, `record`, `print_timings`.
+- Added `tests/test_timings.py` with eight unit cases: disabled-mode no-op for `record`, enabled-mode collects labelled deltas, `reset_timings` clears state, `print_timings` emits pi-style format to stderr, no-op when no entries, no-op when env var falsey, all truthy env values enable, all falsy env values keep disabled.
+- Added a row to `THIRD_PARTY_NOTICES.md` plunder map for both the production file and the test file.
+- Updated `CHANGELOG.md`.
+
+### Why it matters
+
+The runtime subpackage now holds **four** Pi-derived primitives. Three are wired into life-cycle paths (queue + guard + bus). The timings primitive is intentionally unwired in this slice — it lands as a reusable utility that any future surface can `import` and use. The natural call sites are CLI startup (`app.main`), provider execution paths (when those land), and the workflow runner once it lifts above the always-blocked dry-run path. Sprinkling `record("x")` calls is cheap when `MYTHIC_TIMING` is unset, so the wiring slice can come whenever someone wants to profile something.
+
+The runtime/ directory now mirrors a clean cross-section of pi's `core/` — file safety, channel cleanliness, event coordination, and instrumentation. Each is a single-file primitive with a clear contract; together they form a foundation that future provider-driven and TUI-driven slices can build on without inventing primitives.
+
+### Verification
+
+- `pytest -q` -> `194 passed, 14 subtests passed` (was 186 + 14)
+- `pytest -q tests/test_timings.py` -> `8 passed in 0.06s`
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!` (after pruning one unused test import)
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 58 source files` (was 57)
+
+### Continuity thread
+
+- The runtime subpackage now has four primitives. The next slice could either (a) wire timings into `app.main()` startup so `MYTHIC_TIMING=1 mythic-vibe scan` produces a startup-and-command profile to stderr, (b) port a fifth Pi primitive — `core/keybindings.ts` is a natural pre-TUI choice, (c) begin V2 Phase 3 (TUI) using the four primitives as foundation, or (d) take a different direction entirely. The wiring slice is small and high-value-per-line; the next-primitive slice keeps the cadence mechanical; the TUI slice is the biggest scope.
+
+_The forge holds four runed stones now: queue, guard, bus, and bell. The bell rings only when its bearer wants to hear it; the rest of the time it is silent and the work proceeds unburdened._
+
 ## 2026-04-29 - Operator-Facing Plugin Guide
 
 **Session:** Documentation slice. The wiring is mechanical now; what was missing is the operator-facing prose that turns the dispatcher arc into something users can actually adopt.
