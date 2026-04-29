@@ -73,6 +73,7 @@ class CliKernelTests(unittest.TestCase):
             "db",
             "plunder",
             "verify",
+            "slash",
         }
 
         self.assertEqual(set(COMMAND_HANDLERS), expected)
@@ -1234,6 +1235,142 @@ class CliKernelTests(unittest.TestCase):
 
         self.assertEqual(code, SUCCESS)
         self.assertNotIn("Mythic Timings", stderr_buf.getvalue())
+
+    def test_slash_list_shows_builtin_commands(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(["slash", "list", "--path", tmp, "--json"])
+
+            payload = json.loads(output.getvalue())
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(payload["command"], "slash list")
+            builtin_names = {entry["name"] for entry in payload["builtin"]}
+            for required in {"help", "status", "scan", "packet", "verify", "reflect", "quit"}:
+                self.assertIn(required, builtin_names)
+            self.assertEqual(payload["contributed"], [])
+
+    def test_slash_list_source_builtin_skips_plugin_loading(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(["slash", "list", "--path", tmp, "--source", "builtin", "--json"])
+
+            payload = json.loads(output.getvalue())
+            self.assertEqual(code, SUCCESS)
+            self.assertGreater(len(payload["builtin"]), 0)
+            self.assertEqual(payload["contributed"], [])
+
+    def test_slash_list_includes_plugin_contributed(self) -> None:
+        import textwrap as textwrap_module
+
+        from mythic_vibe_cli.plugins import PluginRegistry
+
+        with tempfile.TemporaryDirectory() as project_root:
+            project_path = Path(project_root)
+            plugin_dir = project_path / "_synthetic_slash_probe"
+            plugin_dir.mkdir()
+            (plugin_dir / "slash_probe.py").write_text(
+                textwrap_module.dedent(
+                    """
+                    class Plugin:
+                        @staticmethod
+                        def slash_commands():
+                            from mythic_vibe_cli.runtime.slash_commands import SlashCommandInfo
+                            from mythic_vibe_cli.runtime.source_info import synthetic_source_info
+                            return [
+                                SlashCommandInfo(
+                                    name="audit",
+                                    source="plugin",
+                                    source_info=synthetic_source_info(
+                                        "slash_probe:Plugin",
+                                        source="slash_probe",
+                                        scope="project",
+                                    ),
+                                    description="Audit slash command from synthetic probe",
+                                )
+                            ]
+                    """
+                ),
+                encoding="utf-8",
+            )
+            sys.path.insert(0, str(plugin_dir))
+            try:
+                registry = PluginRegistry(project_path)
+                registry.add("slash_probe:Plugin", hooks=[])
+
+                output = io.StringIO()
+                with redirect_stdout(output):
+                    code = app.main(["slash", "list", "--path", str(project_path), "--json"])
+                payload = json.loads(output.getvalue())
+            finally:
+                try:
+                    sys.path.remove(str(plugin_dir))
+                except ValueError:
+                    pass
+                sys.modules.pop("slash_probe", None)
+
+            self.assertEqual(code, SUCCESS)
+            contributed = payload["contributed"]
+            self.assertEqual(len(contributed), 1)
+            self.assertEqual(contributed[0]["name"], "audit")
+            self.assertEqual(contributed[0]["source"], "plugin")
+            self.assertEqual(contributed[0]["source_info"]["scope"], "project")
+
+    def test_slash_list_source_filter_narrows_contributed(self) -> None:
+        import textwrap as textwrap_module
+
+        from mythic_vibe_cli.plugins import PluginRegistry
+
+        with tempfile.TemporaryDirectory() as project_root:
+            project_path = Path(project_root)
+            plugin_dir = project_path / "_synthetic_slash_filter"
+            plugin_dir.mkdir()
+            (plugin_dir / "slash_filter.py").write_text(
+                textwrap_module.dedent(
+                    """
+                    class Plugin:
+                        @staticmethod
+                        def slash_commands():
+                            from mythic_vibe_cli.runtime.slash_commands import SlashCommandInfo
+                            from mythic_vibe_cli.runtime.source_info import synthetic_source_info
+                            return [
+                                SlashCommandInfo(name="alpha", source="plugin",
+                                    source_info=synthetic_source_info("p", source="slash_filter")),
+                                SlashCommandInfo(name="beta", source="extension",
+                                    source_info=synthetic_source_info("p", source="slash_filter")),
+                            ]
+                    """
+                ),
+                encoding="utf-8",
+            )
+            sys.path.insert(0, str(plugin_dir))
+            try:
+                registry = PluginRegistry(project_path)
+                registry.add("slash_filter:Plugin", hooks=[])
+
+                output = io.StringIO()
+                with redirect_stdout(output):
+                    code = app.main(
+                        [
+                            "slash", "list",
+                            "--path", str(project_path),
+                            "--source", "plugin",
+                            "--json",
+                        ]
+                    )
+                payload = json.loads(output.getvalue())
+            finally:
+                try:
+                    sys.path.remove(str(plugin_dir))
+                except ValueError:
+                    pass
+                sys.modules.pop("slash_filter", None)
+
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(payload["builtin"], [])
+            self.assertEqual(len(payload["contributed"]), 1)
+            self.assertEqual(payload["contributed"][0]["name"], "alpha")
 
     def test_workflow_run_blocks_real_execution(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -196,6 +196,137 @@ class PluginHookDispatcherTests(unittest.TestCase):
                 self.assertIn("Event handler error (before_scan)", buffer.getvalue())
                 module.TameplePlugin.received.clear()
 
+    def test_discover_slash_commands_aggregates_from_plugins(self) -> None:
+        with tempfile.TemporaryDirectory() as project_root:
+            with _SyntheticPluginHarness(
+                "synth_slash_a",
+                """
+                class Plugin:
+                    @staticmethod
+                    def slash_commands():
+                        from mythic_vibe_cli.runtime.slash_commands import SlashCommandInfo
+                        from mythic_vibe_cli.runtime.source_info import synthetic_source_info
+                        return [
+                            SlashCommandInfo(
+                                name="audit",
+                                source="plugin",
+                                source_info=synthetic_source_info(
+                                    "synth_slash_a:Plugin",
+                                    source="synth_slash_a",
+                                    scope="project",
+                                ),
+                                description="Audit plugin slash command",
+                            )
+                        ]
+                """,
+            ):
+                registry = PluginRegistry(Path(project_root))
+                registry.add("synth_slash_a:Plugin", hooks=[])
+
+                with PluginHookDispatcher(Path(project_root)) as dispatcher:
+                    dispatcher.load_and_subscribe()
+                    discovered = dispatcher.discover_slash_commands()
+
+                self.assertEqual(len(discovered), 1)
+                self.assertEqual(discovered[0].name, "audit")
+                self.assertEqual(discovered[0].source, "plugin")
+                self.assertEqual(discovered[0].source_info.scope, "project")
+
+    def test_discover_slash_commands_skips_plugin_without_method(self) -> None:
+        with tempfile.TemporaryDirectory() as project_root:
+            with _SyntheticPluginHarness(
+                "synth_slash_b",
+                """
+                class Plugin:
+                    @classmethod
+                    def before_scan(cls, payload):
+                        pass
+                """,
+            ):
+                registry = PluginRegistry(Path(project_root))
+                registry.add("synth_slash_b:Plugin", hooks=["before_scan"])
+
+                with PluginHookDispatcher(Path(project_root)) as dispatcher:
+                    dispatcher.load_and_subscribe()
+                    discovered = dispatcher.discover_slash_commands()
+
+                self.assertEqual(discovered, [])
+
+    def test_discover_slash_commands_isolates_method_exceptions(self) -> None:
+        with tempfile.TemporaryDirectory() as project_root:
+            with _SyntheticPluginHarness(
+                "synth_slash_c",
+                """
+                class BoomPlugin:
+                    @staticmethod
+                    def slash_commands():
+                        raise RuntimeError("slash-explodes")
+
+                class GoodPlugin:
+                    @staticmethod
+                    def slash_commands():
+                        from mythic_vibe_cli.runtime.slash_commands import SlashCommandInfo
+                        from mythic_vibe_cli.runtime.source_info import synthetic_source_info
+                        return [
+                            SlashCommandInfo(
+                                name="good",
+                                source="plugin",
+                                source_info=synthetic_source_info(
+                                    "synth_slash_c:GoodPlugin",
+                                    source="synth_slash_c",
+                                ),
+                                description="Survivor",
+                            )
+                        ]
+                """,
+            ):
+                registry = PluginRegistry(Path(project_root))
+                registry.add("synth_slash_c:BoomPlugin", hooks=[])
+                registry.add("synth_slash_c:GoodPlugin", hooks=[])
+
+                buffer = io.StringIO()
+                with PluginHookDispatcher(Path(project_root)) as dispatcher:
+                    dispatcher.load_and_subscribe()
+                    with redirect_stderr(buffer):
+                        discovered = dispatcher.discover_slash_commands()
+
+                self.assertEqual(len(discovered), 1)
+                self.assertEqual(discovered[0].name, "good")
+                self.assertIn("slash-explodes", buffer.getvalue())
+                self.assertIn("Plugin slash_commands error", buffer.getvalue())
+
+    def test_discover_slash_commands_filters_non_slashcommand_items(self) -> None:
+        with tempfile.TemporaryDirectory() as project_root:
+            with _SyntheticPluginHarness(
+                "synth_slash_d",
+                """
+                class Plugin:
+                    @staticmethod
+                    def slash_commands():
+                        from mythic_vibe_cli.runtime.slash_commands import SlashCommandInfo
+                        from mythic_vibe_cli.runtime.source_info import synthetic_source_info
+                        return [
+                            SlashCommandInfo(
+                                name="real",
+                                source="plugin",
+                                source_info=synthetic_source_info("p", source="p"),
+                            ),
+                            "not-a-slashcommandinfo",
+                            42,
+                            None,
+                        ]
+                """,
+            ):
+                registry = PluginRegistry(Path(project_root))
+                registry.add("synth_slash_d:Plugin", hooks=[])
+
+                with PluginHookDispatcher(Path(project_root)) as dispatcher:
+                    dispatcher.load_and_subscribe()
+                    discovered = dispatcher.discover_slash_commands()
+
+                self.assertEqual(len(discovered), 1)
+                self.assertEqual(discovered[0].name, "real")
+
 
 if __name__ == "__main__":
     unittest.main()

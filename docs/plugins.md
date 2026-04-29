@@ -47,6 +47,8 @@ For the canonical and always-up-to-date payload shape, see [`docs/COMMAND_CONTRA
 
 A plugin module can be either a class with hook methods, or a module-level set of hook functions. Both shapes work. The class form is the most common.
 
+In addition to the eight life-cycle hooks, a plugin may declare a `slash_commands()` callable that returns a list of `SlashCommandInfo` objects. The dispatcher calls this once at load time and aggregates the results across all enabled plugins. See §10 below for the full discovery contract.
+
 Save this as `audit_plugin.py` somewhere on your `PYTHONPATH` (e.g., your project root or a directory you'll add via `PYTHONPATH=...:$PYTHONPATH`):
 
 ```python
@@ -105,6 +107,24 @@ class AuditPlugin:
     @classmethod
     def after_reflect(cls, payload):
         cls._emit("after_reflect", payload)
+
+    # Optional: contribute slash commands to `mythic-vibe slash list`
+    @staticmethod
+    def slash_commands():
+        from mythic_vibe_cli.runtime.slash_commands import SlashCommandInfo
+        from mythic_vibe_cli.runtime.source_info import synthetic_source_info
+        return [
+            SlashCommandInfo(
+                name="audit-show",
+                source="plugin",
+                source_info=synthetic_source_info(
+                    "audit_plugin:AuditPlugin",
+                    source="audit_plugin",
+                    scope="project",
+                ),
+                description="Show the most recent entries from the audit log",
+            )
+        ]
 ```
 
 The plugin only needs to define methods for the hooks it cares about. Omitted methods are simply not subscribed.
@@ -228,7 +248,25 @@ Don't reach for a plugin when you want to:
 
 ---
 
-## 9) Profiling slow commands (`MYTHIC_TIMING`)
+## 9) Contributing slash commands (`slash_commands()`)
+
+A plugin may declare a callable named `slash_commands` that returns an iterable of `SlashCommandInfo` instances. The dispatcher calls this once at load time and aggregates the results across all enabled plugins. The aggregated list surfaces in `mythic-vibe slash list`:
+
+```bash
+mythic-vibe slash list
+```
+
+The discovery contract:
+
+- The callable can be any of: `@staticmethod`, `@classmethod`, or an instance method (the dispatcher reaches it via `getattr(plugin_obj, "slash_commands", None)` + `callable()`).
+- It is invoked with no arguments. Return value: any iterable of objects.
+- Items that are not `SlashCommandInfo` instances are skipped silently.
+- If the callable raises, the channel name and traceback are logged to stderr (matching the bus contract) and the plugin contributes nothing.
+- This is **not** an event hook — it is a one-shot discovery convention separate from `PLUGIN_HOOKS`. There is no `before_slash` / `after_slash` lifecycle.
+
+`SlashCommandInfo` carries the command's `name`, `source` (`extension` / `prompt` / `skill` / `plugin`), structured provenance via `SourceInfo`, and an optional `description`. See [`docs/runtime.md`](runtime.md) §6 and §7 for the full type details.
+
+## 10) Profiling slow commands (`MYTHIC_TIMING`)
 
 Set `MYTHIC_TIMING=1` in the environment to print a startup-and-command profile to stderr after every CLI invocation:
 
@@ -253,7 +291,7 @@ This is the right tool when a command feels slow and you want to know whether th
 
 ---
 
-## 10) See also
+## 11) See also
 
 - [`docs/runtime.md`](runtime.md) — operator guide for the six runtime primitives that the dispatcher and plugins build on (event bus, output guard, timings, slash commands catalog, source info, file mutation queue)
 - [`docs/COMMAND_CONTRACTS.md`](COMMAND_CONTRACTS.md) — canonical payload shapes per emitter

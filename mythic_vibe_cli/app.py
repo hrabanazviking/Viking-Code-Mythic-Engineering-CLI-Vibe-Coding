@@ -621,6 +621,33 @@ def build_parser() -> argparse.ArgumentParser:
     verify.add_argument("--record", action="store_true", help="Promote the verification artifact to latest and update state")
     add_runtime_options(verify, json_output=True)
 
+    slash = sub.add_parser(
+        "slash",
+        help="Inspect slash command catalog (built-in + plugin-contributed)",
+    )
+    slash_sub = slash.add_subparsers(dest="slash_command", required=True)
+    slash_list = slash_sub.add_parser(
+        "list",
+        help="List builtin slash commands and any contributed by enabled plugins",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe slash list
+              mythic-vibe slash list --json
+              mythic-vibe slash list --source builtin
+              mythic-vibe slash list --source plugin --json
+            """
+        ),
+    )
+    slash_list.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    slash_list.add_argument(
+        "--source",
+        default="",
+        choices=["", "builtin", "extension", "prompt", "skill", "plugin"],
+        help="Restrict output to one source (default: show all)",
+    )
+    add_runtime_options(slash_list, json_output=True)
+
     return parser
 
 

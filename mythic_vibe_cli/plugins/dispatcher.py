@@ -16,11 +16,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import importlib
+import sys
+import traceback
 from pathlib import Path
 from types import TracebackType
 from typing import Callable
 
 from ..runtime.event_bus import EventBusController, create_event_bus
+from ..runtime.slash_commands import SlashCommandInfo
 from .api import PLUGIN_HOOKS, PluginRecord
 from .loader import _split_entrypoint
 from .registry import PluginRegistry
@@ -90,6 +93,44 @@ class PluginHookDispatcher:
                 continue
         self._subscriptions.clear()
         self._loaded.clear()
+
+    def discover_slash_commands(self) -> list[SlashCommandInfo]:
+        """Aggregate ``SlashCommandInfo`` entries contributed by enabled plugins.
+
+        A plugin may declare a callable named ``slash_commands`` (class method,
+        static method, or instance method — anything ``getattr`` + ``callable``
+        accepts). When invoked with no arguments, it returns an iterable of
+        :class:`SlashCommandInfo`. Items that fail ``isinstance`` are skipped
+        silently. Exceptions raised by the plugin's method are caught, logged
+        to stderr (channel name + traceback, matching the event bus contract),
+        and the plugin contributes nothing.
+
+        This is a one-shot discovery convention — it is **not** an event hook
+        and is intentionally not part of ``PLUGIN_HOOKS``. Callers run this
+        after :meth:`load_and_subscribe`.
+        """
+        discovered: list[SlashCommandInfo] = []
+        for loaded in self._loaded:
+            method = getattr(loaded.plugin_obj, "slash_commands", None)
+            if not callable(method):
+                continue
+            try:
+                items = method()
+            except Exception:  # noqa: BLE001 - match bus log-and-continue contract
+                print(
+                    f"Plugin slash_commands error ({loaded.record.entrypoint}):",
+                    file=sys.stderr,
+                )
+                traceback.print_exc(file=sys.stderr)
+                continue
+            try:
+                for item in items:
+                    if isinstance(item, SlashCommandInfo):
+                        discovered.append(item)
+            except TypeError:
+                # Returned object was not iterable; skip silently.
+                continue
+        return discovered
 
     @property
     def loaded_plugins(self) -> list[PluginRecord]:
