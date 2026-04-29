@@ -60,9 +60,10 @@ StatusScreen
 
 - [x] Task file written
 - [x] Task file committed + pushed
-- [ ] Implement `SlashPickerScreen` + `CommandPreviewScreen`
-- [ ] Wire `/` binding from `StatusScreen`
-- [ ] Tests: open picker, filter, select, preview, cancel
-- [ ] Gates green
-- [ ] Docs + CHANGELOG + DEVLOG
-- [ ] Memory + push
+- [x] Implement `SlashPickerScreen` + `CommandPreviewScreen` + helpers (`PickerEntry`, `gather_picker_entries`, `filter_entries`)
+- [x] Wire `/` binding from `StatusScreen` via `action_open_picker` (late-imports picker)
+- [x] Lazy `__getattr__` in `tui/__init__.py` keeps the missing-textual fallback test working
+- [x] Tests: 5 cases (gather builtins, filter substring, picker opens + filters, esc cancels, preview shows metadata)
+- [x] Gates green — 263 passed, 14 subtests passed; ruff/mypy clean; 66 source files
+- [x] CHANGELOG + DEVLOG
+- [x] Memory + push

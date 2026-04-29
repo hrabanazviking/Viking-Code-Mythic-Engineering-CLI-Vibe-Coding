@@ -180,6 +180,7 @@ class StatusScreen(Screen):
         Binding("q", "quit", "Quit"),
         Binding("ctrl+c", "quit", "Quit", show=False),
         Binding("r", "refresh_now", "Refresh"),
+        Binding("slash", "open_picker", "/  Slash picker"),
     ]
 
     DEFAULT_CSS = """
@@ -242,6 +243,11 @@ class StatusScreen(Screen):
 
     def action_refresh_now(self) -> None:
         self._refresh_panels()
+
+    def action_open_picker(self) -> None:
+        from .picker import SlashPickerScreen
+
+        self.app.push_screen(SlashPickerScreen(self.root))
 
     def _refresh_panels(self) -> None:
         data = build_status_data(self.root)

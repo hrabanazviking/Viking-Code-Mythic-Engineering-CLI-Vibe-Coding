@@ -7,6 +7,47 @@
 
 ---
 
+## 2026-04-29 - TUI Slice 2: Slash-Commands Picker Screen
+
+**Session:** Second of three sequential TUI slices. Adds a `/`-triggered picker screen so the operator can browse and filter the slash-command catalog from inside the TUI without leaving for the CLI.
+**Status:** Live and tested. 263 tests passing (was 258). The picker shows the entry, lets the user select, and pushes a preview screen — but **does not dispatch** the command. Dispatch is slice 3.
+
+### What changed
+
+- New `mythic_vibe_cli/tui/picker.py` with two screens and three helpers:
+  - `SlashPickerScreen` — `Input` filter widget + `OptionList` of matching commands. Mounts focused on the input. Filter narrows on every keystroke; pressing Enter selects the first match; arrow-keys + Enter on the list works the same way. Esc cancels back via `app.pop_screen`.
+  - `CommandPreviewScreen` — read-only card showing source, source-info path, and full description for the selected entry. Esc / `q` returns.
+  - `PickerEntry` frozen dataclass — minimal projection from `BuiltinSlashCommand` and `SlashCommandInfo` so the picker can render both uniformly. `render_label()` produces a stable display line: `/<name>  [source]  <description>`.
+  - `gather_picker_entries(root)` aggregates builtins + plugin contributions (via `PluginHookDispatcher.discover_slash_commands()`). Plugin failures are silently caught — picker should never crash on a bad plugin.
+  - `filter_entries(entries, query)` — case-insensitive substring match against name OR description; empty query returns everything unchanged.
+- `mythic_vibe_cli/tui/app.py` `StatusScreen` gains a `slash` (`/`) binding that pushes `SlashPickerScreen` via `app.push_screen`. The action is in `action_open_picker` and late-imports `picker.py` so the boot path stays light.
+- `mythic_vibe_cli/tui/__init__.py` adds a lazy `__getattr__` exposing `SlashPickerScreen` / `CommandPreviewScreen` / `PickerEntry` / `filter_entries` / `gather_picker_entries` only when accessed. The lazy guard keeps the existing `CmdTuiFallbackTests` (which simulates missing-textual) intact — top-level imports of `mythic_vibe_cli.tui` no longer pull in textual through the picker module.
+- 5 new tests in `tests/test_tui.py` (new class `SlashPickerTests`):
+  - `gather_picker_entries` returns canonical builtin set
+  - `filter_entries` matches name AND description substring (case-insensitive); empty query returns all
+  - `/` keybinding from the main screen opens the picker; typing `scan` narrows the option count below the unfiltered total
+  - `Esc` from the picker pops back to `StatusScreen`
+  - `CommandPreviewScreen` renders selected-entry metadata (source, source-info-path, description)
+
+### Why it matters
+
+Slice 1 made the TUI passive but informative — status panels plus an event log feed. Slice 2 makes the TUI *navigable*. An operator can now press `/`, type a few characters, and see the right command. They cannot run it yet — slice 3 closes that loop — but they can confirm what they meant to run before going to a separate terminal to run it.
+
+The picker also gives plugin-contributed slash commands their first glance-able interactive surface. A plugin that exposes `slash_commands()` shows up alongside builtins in the picker with a `[plugin]` source tag.
+
+### Verification
+
+- `pytest -q` -> `263 passed, 14 subtests passed` (was 258 + 14)
+- `pytest -q tests/test_tui.py` -> `13 passed in 1.20s`
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!`
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 66 source files` (was 65)
+
+### Continuity thread
+
+- Slice 3 (command runner with live elapsed time) is next — it connects this picker's selection to actual command execution with a progress widget.
+
+_The hall has its second interactive eye now: a list of names, filtered by whisper, each carrying its origin tag. Choosing a name does not yet wake the saga — the next slice will give the chosen name a tongue._
+
 ## 2026-04-29 - TUI Slice 1: Event Log + Recent Events Panel
 
 **Session:** First of three sequential TUI slices Volmarr requested. Adds a bounded JSONL event log to the runtime layer, wires `PluginHookDispatcher.emit()` to persist each emit, and adds a "Recent Events" panel to the TUI that tails the file.
