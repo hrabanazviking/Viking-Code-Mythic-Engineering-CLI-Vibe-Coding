@@ -29,7 +29,7 @@ def write_line(message: str = "", *, stream: TextIO | None = None, force: bool =
 
             Console().print(message)
             return
-        except Exception:
+        except Exception:  # noqa: BLE001 - rich import/render is best-effort; fall back to print
             pass
     print(message, file=target)
 

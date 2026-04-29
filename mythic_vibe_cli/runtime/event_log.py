@@ -143,6 +143,7 @@ def _rewrite_with_tail(path: Path, keep: int) -> None:
         try:
             os.unlink(tmp_name)
         except OSError:
+            # Temp file may already be gone if os.replace partially succeeded; cleanup is best-effort.
             pass
         raise
 
