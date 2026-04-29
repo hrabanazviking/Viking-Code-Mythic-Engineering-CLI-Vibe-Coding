@@ -200,8 +200,10 @@ additive, cross-platform, open-source):
 | 49 | Phase 4 Slice 4.5 — Diff review screen | done — +26 tests, 605 total |
 | 50 | Update memory + project status (after slice 4.5) | done — pushed at 3d59c1d |
 | 51 | Phase 4 Slice 4.6 — Real-time diagnostics | done — +16 tests, 621 total |
-| 52 | Update memory + project status (after slice 4.6) | in progress |
-| 53 | Phase 4 Slice 4.7 — Full keymap + `?` help | next |
+| 52 | Update memory + project status (after slice 4.6) | done — pushed at e7895ba |
+| 53 | Phase 4 Slice 4.7 — Full keymap + `?` help | done — +11 tests, 632 total |
+| 54 | Update memory + project status (after slice 4.7) | in progress |
+| 55 | Phase 4 Slice 4.8 — Theme support | next |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
