@@ -8,6 +8,7 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Added
 
+- Added `packet list --workflow <id>` and `packet list --workflow <id> --step <step_id>` filters for showing only the packets belonging to one workflow run; `--step` requires `--workflow` and returns `USER_INPUT_ERROR` otherwise. Legacy packets without IDs are excluded when a workflow filter is set, and JSON output exposes a `filters` object reporting the applied scope.
 - Added deterministic `workflow_id` (form `WF-<UTC compact>-<sha8(task+created_at)>`) to every freshly built workflow plan, persisted in `mythic/workflow_plan.json` and surfaced in `workflow plan`, `workflow packets`, and `workflow run` JSON output.
 - Added `workflow_id` and `workflow_step_id` stamping on packets generated via `workflow plan --packets`, written to each packet's `.meta.json`.
 - Added ID-first packet matching to `workflow packets` and `workflow run --dry-run --packets-only`, with the existing `(role, phase, task, audience, output_format)` text match preserved as a legacy fallback. Each `packet_status` entry now reports `match_strategy` (`"id"`, `"text"`, or `null`).

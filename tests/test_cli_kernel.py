@@ -648,6 +648,138 @@ class CliKernelTests(unittest.TestCase):
             self.assertEqual(payload["packet_status"][0]["match_strategy"], "text")
             self.assertIsNone(payload["packet_status"][0]["workflow_id"])
 
+    def test_packet_list_filters_by_workflow_id(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with redirect_stdout(io.StringIO()):
+                app.main(
+                    [
+                        "workflow",
+                        "plan",
+                        "--task",
+                        "First workflow",
+                        "--path",
+                        str(root),
+                        "--role",
+                        "Skald",
+                        "--packets",
+                    ]
+                )
+                app.main(
+                    [
+                        "workflow",
+                        "plan",
+                        "--task",
+                        "Second workflow",
+                        "--path",
+                        str(root),
+                        "--role",
+                        "Auditor",
+                        "--packets",
+                    ]
+                )
+
+            unfiltered_output = io.StringIO()
+            with redirect_stdout(unfiltered_output):
+                code = app.main(["packet", "list", "--path", str(root), "--json"])
+
+            unfiltered = json.loads(unfiltered_output.getvalue())
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(len(unfiltered["packets"]), 2)
+            self.assertIsNone(unfiltered["filters"]["workflow_id"])
+            target_id = unfiltered["packets"][0]["workflow_id"]
+            self.assertTrue(target_id.startswith("WF-"))
+
+            filtered_output = io.StringIO()
+            with redirect_stdout(filtered_output):
+                filtered_code = app.main(
+                    ["packet", "list", "--path", str(root), "--workflow", target_id, "--json"]
+                )
+
+            filtered = json.loads(filtered_output.getvalue())
+            self.assertEqual(filtered_code, SUCCESS)
+            self.assertEqual(filtered["filters"]["workflow_id"], target_id)
+            self.assertEqual(len(filtered["packets"]), 1)
+            self.assertEqual(filtered["packets"][0]["workflow_id"], target_id)
+
+            step_output = io.StringIO()
+            with redirect_stdout(step_output):
+                step_code = app.main(
+                    [
+                        "packet",
+                        "list",
+                        "--path",
+                        str(root),
+                        "--workflow",
+                        target_id,
+                        "--step",
+                        "step-01",
+                        "--json",
+                    ]
+                )
+
+            step_payload = json.loads(step_output.getvalue())
+            self.assertEqual(step_code, SUCCESS)
+            self.assertEqual(step_payload["filters"]["workflow_step_id"], "step-01")
+            self.assertEqual(len(step_payload["packets"]), 1)
+            self.assertEqual(step_payload["packets"][0]["workflow_step_id"], "step-01")
+
+    def test_packet_list_step_requires_workflow(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output = io.StringIO()
+            with redirect_stdout(output), redirect_stderr(output):
+                code = app.main(["packet", "list", "--path", tmp, "--step", "step-01"])
+
+            self.assertEqual(code, USER_INPUT_ERROR)
+            self.assertIn("--step requires --workflow", output.getvalue())
+
+    def test_packet_list_workflow_filter_excludes_legacy_packets(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with redirect_stdout(io.StringIO()):
+                app.main(
+                    [
+                        "workflow",
+                        "plan",
+                        "--task",
+                        "Mixed legacy",
+                        "--path",
+                        str(root),
+                        "--role",
+                        "Skald",
+                        "--packets",
+                    ]
+                )
+                app.main(
+                    [
+                        "packet",
+                        "create",
+                        "--task",
+                        "Legacy untracked packet",
+                        "--phase",
+                        "build",
+                        "--path",
+                        str(root),
+                    ]
+                )
+
+            unfiltered_output = io.StringIO()
+            with redirect_stdout(unfiltered_output):
+                app.main(["packet", "list", "--path", str(root), "--json"])
+            unfiltered = json.loads(unfiltered_output.getvalue())
+            self.assertEqual(len(unfiltered["packets"]), 2)
+            workflow_id = next(p["workflow_id"] for p in unfiltered["packets"] if p.get("workflow_id"))
+
+            filtered_output = io.StringIO()
+            with redirect_stdout(filtered_output):
+                code = app.main(
+                    ["packet", "list", "--path", str(root), "--workflow", workflow_id, "--json"]
+                )
+            filtered = json.loads(filtered_output.getvalue())
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(len(filtered["packets"]), 1)
+            self.assertEqual(filtered["packets"][0]["workflow_id"], workflow_id)
+
     def test_grimoire_json_has_no_human_prefix(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             output = io.StringIO()

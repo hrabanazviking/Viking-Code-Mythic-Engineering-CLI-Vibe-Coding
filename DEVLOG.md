@@ -7,6 +7,40 @@
 
 ---
 
+## 2026-04-29 - Stage 16 Packet List Workflow Filter
+
+**Session:** Continuing the Stage 16 cadence after landing workflow IDs — letting users see all packets belonging to one workflow run from the packet command surface.
+**Status:** `packet list --workflow <id>` returns only the packets stamped with that workflow id; `--step <step_id>` further narrows to one workflow step.
+**Scope:** Tiny additive filter on the existing `packet list` command. Uses the `workflow_id` and `workflow_step_id` fields added in the previous slice.
+
+### What changed
+
+- Added `--workflow` and `--step` options to `packet list`.
+- Filtered records by `workflow_id` (and optional `workflow_step_id`) before rendering.
+- `--step` without `--workflow` returns `USER_INPUT_ERROR` to keep the contract obvious.
+- JSON output now exposes a `filters` object reporting the applied `workflow_id` and `workflow_step_id`.
+- Human output shows the workflow scope in the heading and surfaces `step:` lines for ID-stamped records.
+- Legacy packets without `workflow_id` are excluded automatically when a workflow filter is set.
+- Added three CLI-kernel tests: filter narrows two-workflow store to one match; `--step` narrows further; `--step` without `--workflow` errors; legacy packets are excluded.
+- Updated `docs/COMMAND_CONTRACTS.md`, `docs/api.md`, and `CHANGELOG.md` to name the new filter.
+
+### Why it matters
+
+Before this slice, the only way to see packets for one workflow run was through `workflow packets`, which is plan-driven. Operators sometimes want a packet-first view: "show me everything stamped with this workflow id." The filter gives that without expanding the runner surface or duplicating the workflow command.
+
+### Verification
+
+- `pytest -q` -> `96 passed, 14 subtests passed` (was 93 + 14)
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!`
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 51 source files`
+- Smoke: created two workflows in one project, then `packet list --workflow <id> --json` returned exactly the one packet whose metadata carried that id.
+
+### Continuity thread
+
+- The next slice can add a workflow ID flag to `packet show` and `packet diff` so operators can address packets by `(workflow_id, step_id)` instead of having to look up the bare `PKT-` ID — useful when iterating on one role's output across runs.
+
+_The id is the bond. Bound packets remember their workflow; unbound ones remain anonymous, which is its own kind of truth._
+
 ## 2026-04-29 - Stage 16 Workflow Identifiers on Plans and Packets
 
 **Session:** Picking up the continuity thread from "Stage 16 Workflow Packet Listing" — making packet readiness traceable by workflow ID instead of exact task text.
