@@ -1,0 +1,162 @@
+"""Tests for the Textual TUI surface.
+
+Two layers:
+
+1. Pure-data tests on ``build_status_data(root)`` — no Textual needed.
+2. Headless TUI tests via ``App.run_test()`` — Textual's built-in async test driver.
+
+The Textual tests are skipped if Textual is not installed, but in this project
+Textual is in the ``dev`` extras so those tests should always run in CI.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import tempfile
+import unittest
+from pathlib import Path
+
+
+textual_unavailable = False
+try:
+    import textual  # noqa: F401
+except ImportError:
+    textual_unavailable = True
+
+from mythic_vibe_cli.tui.app import build_status_data  # noqa: E402
+
+
+class StatusDataTests(unittest.TestCase):
+    def test_empty_project_returns_safe_defaults(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            data = build_status_data(Path(tmp))
+
+        # ProjectState default current_phase is "intent" — the TUI displays it as-is.
+        self.assertEqual(data.phase, "intent")
+        self.assertEqual(data.active_task_id, "(none)")
+        self.assertEqual(data.last_verification_id, "(none)")
+        self.assertEqual(data.latest_handoff_id, "(none)")
+        self.assertEqual(data.plugins_enabled, 0)
+        self.assertEqual(data.plugins_disabled, 0)
+        self.assertTrue(data.refreshed_at)
+
+    def test_status_data_to_dict_round_trip(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            data = build_status_data(Path(tmp))
+            payload = data.to_dict()
+
+        for key in {
+            "path",
+            "phase",
+            "active_task_id",
+            "last_verification_id",
+            "last_verification_result",
+            "last_verification_level",
+            "latest_handoff_id",
+            "latest_handoff_created_at",
+            "latest_handoff_next_step",
+            "plugins_enabled",
+            "plugins_disabled",
+            "refreshed_at",
+        }:
+            self.assertIn(key, payload)
+
+    def test_status_data_resolves_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            data = build_status_data(tmp_path)
+        self.assertEqual(data.path, str(tmp_path))
+
+
+@unittest.skipIf(textual_unavailable, "textual not installed")
+class TuiHeadlessTests(unittest.TestCase):
+    def test_status_screen_renders_panels_in_headless_mode(self) -> None:
+        from mythic_vibe_cli.tui.app import MythicTuiApp
+
+        async def run_test() -> tuple[bool, str, str]:
+            with tempfile.TemporaryDirectory() as tmp:
+                app = MythicTuiApp(Path(tmp))
+                async with app.run_test() as pilot:
+                    await pilot.pause()
+                    status_widget = app.screen.query_one("#panel-status")
+                    verify_widget = app.screen.query_one("#panel-verify")
+                    handoff_widget = app.screen.query_one("#panel-handoff")
+                    plugins_widget = app.screen.query_one("#panel-plugins")
+                    footer_widget = app.screen.query_one("#footer-line")
+                    rendered_status = str(status_widget.render())
+                    rendered_handoff = str(handoff_widget.render())
+                    rendered_footer = str(footer_widget.render())
+                    rendered_verify = str(verify_widget.render())
+                    rendered_plugins = str(plugins_widget.render())
+                    return (
+                        all(["Path:" in rendered_status, "Phase:" in rendered_status]),
+                        rendered_handoff,
+                        rendered_footer + rendered_verify + rendered_plugins,
+                    )
+
+        all_panels_present, rendered_handoff, rest = asyncio.run(run_test())
+        self.assertTrue(all_panels_present)
+        self.assertIn("ID:", rendered_handoff)
+        self.assertIn("Last refresh:", rest)
+
+    def test_quit_binding_does_not_raise(self) -> None:
+        """Pressing 'q' should trigger the quit action without raising. Textual's
+        run_test context exits cleanly when the app exits via the binding."""
+        from mythic_vibe_cli.tui.app import MythicTuiApp
+
+        async def run_test() -> None:
+            with tempfile.TemporaryDirectory() as tmp:
+                app = MythicTuiApp(Path(tmp))
+                async with app.run_test() as pilot:
+                    await pilot.pause()
+                    await pilot.press("q")
+                    await pilot.pause()
+
+        # Should complete without raising.
+        asyncio.run(run_test())
+
+
+class CmdTuiFallbackTests(unittest.TestCase):
+    def test_missing_textual_returns_operational_failure_with_helpful_error(self) -> None:
+        """If textual cannot be imported, cmd_tui surfaces a helpful error and
+        returns OPERATIONAL_FAILURE rather than raising."""
+        import contextlib
+        import io as _io
+        import sys as _sys
+
+        from mythic_vibe_cli.commands import cmd_tui
+        from mythic_vibe_cli.exit_codes import OPERATIONAL_FAILURE
+
+        class _Args:
+            path = "."
+
+        # Force the import to fail by stashing-out the tui module from sys.modules
+        # and inserting a sentinel that raises ImportError on attribute access.
+        saved = {
+            name: _sys.modules[name]
+            for name in list(_sys.modules)
+            if name == "mythic_vibe_cli.tui" or name.startswith("mythic_vibe_cli.tui.")
+        }
+        for name in list(saved):
+            del _sys.modules[name]
+        # Insert a broken sentinel so `from .tui.app import run_tui` raises ImportError.
+        broken = type(_sys)("mythic_vibe_cli.tui")
+        broken.__path__ = []  # type: ignore[attr-defined]
+        _sys.modules["mythic_vibe_cli.tui"] = broken
+
+        stderr_buf = _io.StringIO()
+        try:
+            with contextlib.redirect_stderr(stderr_buf):
+                code = cmd_tui(_Args())  # type: ignore[arg-type]
+        finally:
+            for name in list(_sys.modules):
+                if name == "mythic_vibe_cli.tui" or name.startswith("mythic_vibe_cli.tui."):
+                    del _sys.modules[name]
+            _sys.modules.update(saved)
+
+        self.assertEqual(code, OPERATIONAL_FAILURE)
+        self.assertIn("Textual is not installed", stderr_buf.getvalue())
+
+
+if __name__ == "__main__":
+    unittest.main()

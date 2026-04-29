@@ -94,21 +94,21 @@ Land:
 
 - [x] Task file written
 - [x] Task file committed + pushed
-- [ ] Update pyproject.toml ([tui] extra + dev)
-- [ ] Implement `tui/__init__.py` and `tui/app.py`
-- [ ] Add `cmd_tui` + dispatch
-- [ ] Add `tui` sub-parser
-- [ ] Update command-registry test expected set
-- [ ] Pure-data tests (no textual needed)
-- [ ] Headless Textual `run_test` test
-- [ ] Missing-textual fallback test (mock the import)
-- [ ] `pytest -q` green
-- [ ] `ruff` + `mypy` green
-- [ ] Doc updates
-- [ ] CHANGELOG entry
-- [ ] DEVLOG entry
-- [ ] Memory snapshot updated
-- [ ] Final commit + push
+- [x] Update pyproject.toml — added `[tui]` extra (`textual>=0.80`) and added textual to `dev`
+- [x] Implement `tui/__init__.py` + `tui/app.py` (StatusData, build_status_data, StatusScreen with 2×2 grid + auto-refresh + keybindings, MythicTuiApp, run_tui)
+- [x] Add `cmd_tui` with late-import + helpful error fallback
+- [x] Add `tui` sub-parser with --path
+- [x] Update command-registry expected set (+`tui`)
+- [x] Pure-data tests — 3 cases (safe defaults, to_dict, path resolution)
+- [x] Headless Textual `run_test` tests — 2 cases (panels render, q binding doesn't raise)
+- [x] Missing-textual fallback test — 1 case (sys.modules mocked, helpful error printed, OPERATIONAL_FAILURE returned)
+- [x] `pytest -q` green — 246 passed, 14 subtests passed
+- [x] `ruff` + `mypy` green — 64 source files
+- [x] Doc updates (COMMAND_CONTRACTS.md, api.md, CHANGELOG)
+- [x] DEVLOG entry with cross-platform compliance note + continuity thread
+- [x] **Cross-platform / open-source rule recorded as durable memory**
+- [x] Memory snapshot updated
+- [x] Final commit + push
 
 ## Resume Instructions
 

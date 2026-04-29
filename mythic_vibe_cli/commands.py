@@ -3045,6 +3045,20 @@ def cmd_shell(args: argparse.Namespace) -> int:
     return run_shell(project_root=project_root)
 
 
+def cmd_tui(args: argparse.Namespace) -> int:
+    project_root = Path(getattr(args, "path", ".")).resolve()
+    try:
+        from .tui.app import run_tui
+    except ImportError as exc:
+        write_error(
+            "Textual is not installed. Install the optional TUI extra with: "
+            "pip install \"mythic-vibe-cli[tui]\"  (or: pip install textual)"
+        )
+        write_error(f"Underlying import error: {exc}")
+        return OPERATIONAL_FAILURE
+    return run_tui(project_root)
+
+
 def cmd_ai_dispatch(args: argparse.Namespace) -> int:
     if args.ai_command == "providers":
         return cmd_ai_providers(args)
@@ -3101,4 +3115,5 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "verify": cmd_verify_dispatch,
     "slash": cmd_slash_dispatch,
     "shell": cmd_shell,
+    "tui": cmd_tui,
 }

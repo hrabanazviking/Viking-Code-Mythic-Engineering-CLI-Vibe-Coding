@@ -75,6 +75,7 @@ class CliKernelTests(unittest.TestCase):
             "verify",
             "slash",
             "shell",
+            "tui",
         }
 
         self.assertEqual(set(COMMAND_HANDLERS), expected)

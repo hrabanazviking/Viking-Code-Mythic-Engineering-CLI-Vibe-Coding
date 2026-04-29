@@ -663,6 +663,23 @@ def build_parser() -> argparse.ArgumentParser:
     shell.add_argument("--path", default=".", help="Project directory (default: current directory)")
     add_runtime_options(shell)
 
+    tui = sub.add_parser(
+        "tui",
+        help="Open the Textual-based TUI showing project status (requires the [tui] extra)",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe tui
+              mythic-vibe tui --path ./project
+
+            Install the optional TUI extra first if needed:
+              pip install "mythic-vibe-cli[tui]"
+            """
+        ),
+    )
+    tui.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    add_runtime_options(tui)
+
     return parser
 
 
