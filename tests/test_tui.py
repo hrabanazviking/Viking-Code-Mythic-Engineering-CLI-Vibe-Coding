@@ -109,34 +109,29 @@ class TuiEventsPanelTests(unittest.TestCase):
 
 @unittest.skipIf(textual_unavailable, "textual not installed")
 class TuiHeadlessTests(unittest.TestCase):
-    def test_status_screen_renders_panels_in_headless_mode(self) -> None:
+    def test_status_screen_renders_status_bar_in_headless_mode(self) -> None:
+        """Slice 4.4 consolidated the 2x2 grid (Status / Verify /
+        Handoff / Plugins panels) into a single #status-bar line.
+        The bar still surfaces every key field; this test asserts the
+        widget is present and the footer-line refresh timestamp still
+        renders alongside it."""
         from mythic_vibe_cli.tui.app import MythicTuiApp
 
-        async def run_test() -> tuple[bool, str, str]:
+        async def run_test() -> tuple[str, str]:
             with tempfile.TemporaryDirectory() as tmp:
                 app = MythicTuiApp(Path(tmp))
                 async with app.run_test() as pilot:
                     await pilot.pause()
-                    status_widget = app.screen.query_one("#panel-status")
-                    verify_widget = app.screen.query_one("#panel-verify")
-                    handoff_widget = app.screen.query_one("#panel-handoff")
-                    plugins_widget = app.screen.query_one("#panel-plugins")
+                    status_bar = app.screen.query_one("#status-bar")
                     footer_widget = app.screen.query_one("#footer-line")
-                    rendered_status = str(status_widget.render())
-                    rendered_handoff = str(handoff_widget.render())
-                    rendered_footer = str(footer_widget.render())
-                    rendered_verify = str(verify_widget.render())
-                    rendered_plugins = str(plugins_widget.render())
-                    return (
-                        all(["Path:" in rendered_status, "Phase:" in rendered_status]),
-                        rendered_handoff,
-                        rendered_footer + rendered_verify + rendered_plugins,
-                    )
+                    return str(status_bar.render()), str(footer_widget.render())
 
-        all_panels_present, rendered_handoff, rest = asyncio.run(run_test())
-        self.assertTrue(all_panels_present)
-        self.assertIn("ID:", rendered_handoff)
-        self.assertIn("Last refresh:", rest)
+        rendered_bar, rendered_footer = asyncio.run(run_test())
+        # Status bar surfaces phase + plugins + warnings.
+        self.assertIn("phase:", rendered_bar)
+        self.assertIn("plugins:", rendered_bar)
+        # Refresh timestamp still on its own line.
+        self.assertIn("Last refresh:", rendered_footer)
 
     def test_quit_binding_does_not_raise(self) -> None:
         """Pressing 'q' should trigger the quit action without raising. Textual's
@@ -944,6 +939,119 @@ class PacketViewerFormatTests(unittest.TestCase):
             rendered = _format_packet_viewer(data)
 
         self.assertIn("(45 more lines)", rendered)
+
+
+# ---- PH-04 slice 4.4 — Status Bar ---------------------------------------
+
+
+class StatusBarFormatTests(unittest.TestCase):
+    """Pure formatter tests against fabricated StatusData instances."""
+
+    def _data(self, **overrides):  # type: ignore[no-untyped-def]
+        from mythic_vibe_cli.tui.app import StatusData
+
+        defaults = {
+            "path": "/tmp/projects/myproj",
+            "phase": "build",
+            "active_task_id": "TASK-0001",
+            "last_verification_id": "VER-ABCDE",
+            "last_verification_result": "pass",
+            "last_verification_level": "unit",
+            "latest_handoff_id": "HO-9XYZ",
+            "latest_handoff_created_at": "2026-04-29T12:00:00Z",
+            "latest_handoff_next_step": "Run forge resume",
+            "plugins_enabled": 2,
+            "plugins_disabled": 0,
+            "refreshed_at": "2026-04-29 12:00:00 UTC",
+        }
+        defaults.update(overrides)
+        return StatusData(**defaults)
+
+    def test_bar_includes_project_basename_phase_verify_handoff_plugins(self) -> None:
+        from mythic_vibe_cli.tui.app import _format_status_bar
+
+        rendered = _format_status_bar(self._data())
+        self.assertIn("myproj", rendered)
+        self.assertIn("phase:", rendered)
+        self.assertIn("build", rendered)
+        self.assertIn("verify: pass", rendered)
+        self.assertIn("VER-ABCDE", rendered)
+        self.assertIn("handoff: HO-9XYZ", rendered)
+        self.assertIn("plugins: 2+0", rendered)
+
+    def test_healthy_state_shows_green_ok_warning(self) -> None:
+        from mythic_vibe_cli.tui.app import _format_status_bar
+
+        rendered = _format_status_bar(self._data())
+        self.assertIn("[green]ok[/green]", rendered)
+
+    def test_failed_verify_surfaces_red_warning(self) -> None:
+        from mythic_vibe_cli.tui.app import _format_status_bar
+
+        rendered = _format_status_bar(self._data(last_verification_result="fail"))
+        self.assertIn("[red]verify-failed[/red]", rendered)
+        # No "ok" in the warnings section when a real warning is present.
+        self.assertNotIn("[green]ok[/green]", rendered)
+
+    def test_disabled_plugins_surface_yellow_warning(self) -> None:
+        from mythic_vibe_cli.tui.app import _format_status_bar
+
+        rendered = _format_status_bar(
+            self._data(plugins_enabled=2, plugins_disabled=3)
+        )
+        self.assertIn("[yellow]3 plugin(s) disabled[/yellow]", rendered)
+
+    def test_multiple_warnings_join_with_middle_dot(self) -> None:
+        from mythic_vibe_cli.tui.app import _format_status_bar
+
+        rendered = _format_status_bar(
+            self._data(last_verification_result="fail", plugins_disabled=1)
+        )
+        self.assertIn("[red]verify-failed[/red]", rendered)
+        self.assertIn("[yellow]1 plugin(s) disabled[/yellow]", rendered)
+        # Both warnings appear, separated by a middle-dot.
+        self.assertIn("verify-failed", rendered)
+        self.assertIn("disabled", rendered)
+
+    def test_missing_verification_renders_dash(self) -> None:
+        from mythic_vibe_cli.tui.app import _format_status_bar
+
+        rendered = _format_status_bar(self._data(last_verification_id="(none)"))
+        self.assertIn("verify: -", rendered)
+
+    def test_missing_handoff_renders_dash(self) -> None:
+        from mythic_vibe_cli.tui.app import _format_status_bar
+
+        rendered = _format_status_bar(self._data(latest_handoff_id="(none)"))
+        self.assertIn("handoff: -", rendered)
+
+    def test_empty_path_falls_back_to_placeholder(self) -> None:
+        from mythic_vibe_cli.tui.app import _format_status_bar
+
+        rendered = _format_status_bar(self._data(path=""))
+        self.assertIn("(no project)", rendered)
+
+
+@unittest.skipIf(textual_unavailable, "textual not installed")
+class TuiStatusBarIntegrationTests(unittest.TestCase):
+    """Headless test confirming the bar appears in the actual screen."""
+
+    def test_status_bar_renders_phase_and_plugins(self) -> None:
+        from mythic_vibe_cli.tui.app import MythicTuiApp
+
+        async def run_test() -> str:
+            with tempfile.TemporaryDirectory() as tmp:
+                app = MythicTuiApp(Path(tmp))
+                async with app.run_test() as pilot:
+                    await pilot.pause()
+                    panel = app.screen.query_one("#status-bar")
+                    return str(panel.render())
+
+        rendered = asyncio.run(run_test())
+        # Default state: phase=intent, plugins=0+0, no warnings -> ok.
+        self.assertIn("phase:", rendered)
+        self.assertIn("intent", rendered)
+        self.assertIn("plugins:", rendered)
 
 
 @unittest.skipIf(textual_unavailable, "textual not installed")
