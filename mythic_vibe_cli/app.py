@@ -949,6 +949,14 @@ def build_parser() -> argparse.ArgumentParser:
             "`failed` but the run continues to the Scribe."
         ),
     )
+    forge_run.add_argument(
+        "--skip-reflection",
+        action="store_true",
+        help=(
+            "Do not write a reflection artefact at mythic/reflections/<workflow_id>.{md,json} "
+            "after the run (slice 3.7)."
+        ),
+    )
     add_runtime_options(forge_run, json_output=True)
 
     forge_ledger = forge_sub.add_parser(
@@ -971,6 +979,33 @@ def build_parser() -> argparse.ArgumentParser:
     ledger_show.add_argument("--step", default="", help="Optional step filter (e.g. step-02)")
     ledger_show.add_argument("--path", default=".", help="Project directory (default: current directory)")
     add_runtime_options(ledger_show, json_output=True)
+
+    forge_reflection = forge_sub.add_parser(
+        "reflection",
+        help="Inspect mythic/reflections/<workflow_id>.{md,json} (slice 3.7 per-cycle reflections)",
+    )
+    forge_reflection_sub = forge_reflection.add_subparsers(
+        dest="reflection_command", required=True
+    )
+
+    reflection_list = forge_reflection_sub.add_parser(
+        "list", help="List every recorded forge reflection"
+    )
+    reflection_list.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    add_runtime_options(reflection_list, json_output=True)
+
+    reflection_latest = forge_reflection_sub.add_parser(
+        "latest", help="Show the most recently written reflection (markdown by default)"
+    )
+    reflection_latest.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    add_runtime_options(reflection_latest, json_output=True)
+
+    reflection_show = forge_reflection_sub.add_parser(
+        "show", help="Show one reflection by workflow id"
+    )
+    reflection_show.add_argument("--workflow", required=True, help="Workflow id")
+    reflection_show.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    add_runtime_options(reflection_show, json_output=True)
 
     # --- PH-02 slice 2.3: workflow-phase capture commands ---
     # Each phase parent has a single `capture` subcommand today; future
