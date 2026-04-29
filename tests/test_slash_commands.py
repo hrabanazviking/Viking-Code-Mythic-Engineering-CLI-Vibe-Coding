@@ -15,6 +15,7 @@ from mythic_vibe_cli.runtime.slash_commands import (
     BuiltinSlashCommand,
     SlashCommandInfo,
 )
+from mythic_vibe_cli.runtime.source_info import synthetic_source_info
 
 
 class SlashCommandsCatalogTests(unittest.TestCase):
@@ -44,19 +45,27 @@ class SlashCommandsCatalogTests(unittest.TestCase):
         self.assertEqual(BuiltinSlashCommand(**payload), entry)
 
     def test_slash_command_info_carries_source_and_source_info(self) -> None:
+        provenance = synthetic_source_info(
+            "audit_plugin:Plugin",
+            source="audit_plugin",
+            scope="project",
+            origin="top-level",
+        )
         info = SlashCommandInfo(
             name="audit",
             source="plugin",
-            source_info="audit_plugin:Plugin",
+            source_info=provenance,
             description="Append-only audit log",
         )
         payload = info.to_dict()
         self.assertEqual(payload["source"], "plugin")
-        self.assertEqual(payload["source_info"], "audit_plugin:Plugin")
-        self.assertEqual(SlashCommandInfo(**payload), info)
+        self.assertEqual(payload["source_info"], provenance.to_dict())
+        self.assertEqual(payload["source_info"]["scope"], "project")
+        self.assertEqual(payload["source_info"]["path"], "audit_plugin:Plugin")
 
     def test_slash_command_info_default_description_is_empty(self) -> None:
-        info = SlashCommandInfo(name="raw", source="extension", source_info="ext.py")
+        provenance = synthetic_source_info("ext.py", source="extension")
+        info = SlashCommandInfo(name="raw", source="extension", source_info=provenance)
         self.assertEqual(info.description, "")
 
     def test_catalog_is_immutable_tuple(self) -> None:
