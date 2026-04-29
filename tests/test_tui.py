@@ -154,6 +154,103 @@ class TuiHeadlessTests(unittest.TestCase):
         asyncio.run(run_test())
 
 
+@unittest.skipIf(textual_unavailable, "textual not installed")
+class SlashPickerTests(unittest.TestCase):
+    def test_gather_picker_entries_includes_builtins(self) -> None:
+        from mythic_vibe_cli.tui.picker import gather_picker_entries
+
+        with tempfile.TemporaryDirectory() as tmp:
+            entries = gather_picker_entries(Path(tmp))
+        names = {entry.name for entry in entries}
+        for required in {"help", "status", "scan", "verify", "quit"}:
+            self.assertIn(required, names)
+
+    def test_filter_entries_substring_matches_name_or_description(self) -> None:
+        from mythic_vibe_cli.tui.picker import PickerEntry, filter_entries
+
+        entries = [
+            PickerEntry(name="scan", description="Run a project context scan", source="builtin"),
+            PickerEntry(name="status", description="Show project state", source="builtin"),
+            PickerEntry(name="verify", description="Run verification checks", source="builtin"),
+        ]
+        # Match by name
+        scan_only = filter_entries(entries, "scan")
+        self.assertEqual([e.name for e in scan_only], ["scan"])
+        # Match by description (case-insensitive)
+        check_match = filter_entries(entries, "CHECKS")
+        self.assertEqual([e.name for e in check_match], ["verify"])
+        # Empty query returns all
+        all_entries = filter_entries(entries, "")
+        self.assertEqual(len(all_entries), 3)
+
+    def test_picker_renders_options_and_filters_on_input(self) -> None:
+        from mythic_vibe_cli.tui.app import MythicTuiApp
+
+        async def run_test() -> tuple[int, int]:
+            with tempfile.TemporaryDirectory() as tmp:
+                app = MythicTuiApp(Path(tmp))
+                async with app.run_test() as pilot:
+                    await pilot.pause()
+                    await pilot.press("slash")
+                    await pilot.pause()
+                    picker = app.screen
+                    option_list = picker.query_one("#picker-list")
+                    initial_count = option_list.option_count
+                    search = picker.query_one("#picker-search")
+                    search.value = "scan"
+                    await pilot.pause()
+                    filtered_count = option_list.option_count
+                    return initial_count, filtered_count
+
+        initial, filtered = asyncio.run(run_test())
+        self.assertGreater(initial, 5)
+        self.assertGreaterEqual(filtered, 1)
+        self.assertLess(filtered, initial)
+
+    def test_picker_escape_pops_back_to_status_screen(self) -> None:
+        from mythic_vibe_cli.tui.app import MythicTuiApp, StatusScreen
+
+        async def run_test() -> bool:
+            with tempfile.TemporaryDirectory() as tmp:
+                app = MythicTuiApp(Path(tmp))
+                async with app.run_test() as pilot:
+                    await pilot.pause()
+                    await pilot.press("slash")
+                    await pilot.pause()
+                    picker_active = type(app.screen).__name__ == "SlashPickerScreen"
+                    await pilot.press("escape")
+                    await pilot.pause()
+                    back_to_status = isinstance(app.screen, StatusScreen)
+                    return picker_active and back_to_status
+
+        self.assertTrue(asyncio.run(run_test()))
+
+    def test_command_preview_shows_selected_entry_metadata(self) -> None:
+        from mythic_vibe_cli.tui.app import MythicTuiApp
+        from mythic_vibe_cli.tui.picker import CommandPreviewScreen, PickerEntry
+
+        async def run_test() -> str:
+            with tempfile.TemporaryDirectory() as tmp:
+                app = MythicTuiApp(Path(tmp))
+                async with app.run_test() as pilot:
+                    await pilot.pause()
+                    entry = PickerEntry(
+                        name="audit",
+                        description="Append audit log",
+                        source="plugin",
+                        source_info_path="audit_plugin:Plugin",
+                    )
+                    app.push_screen(CommandPreviewScreen(entry))
+                    await pilot.pause()
+                    card = app.screen.query_one("#preview-card")
+                    return str(card.render())
+
+        rendered = asyncio.run(run_test())
+        self.assertIn("plugin", rendered)
+        self.assertIn("audit_plugin:Plugin", rendered)
+        self.assertIn("Append audit log", rendered)
+
+
 class CmdTuiFallbackTests(unittest.TestCase):
     def test_missing_textual_returns_operational_failure_with_helpful_error(self) -> None:
         """If textual cannot be imported, cmd_tui surfaces a helpful error and
