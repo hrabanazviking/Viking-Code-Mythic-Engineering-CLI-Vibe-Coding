@@ -14,7 +14,7 @@ This guide is for developers writing CLI features, plugins, or extensions who wa
 | `output_guard` | Reroute `sys.stdout` writes to `sys.stderr` while preserving a "real stdout" path | Every `--json` command |
 | `event_bus` | Synchronous publish/subscribe with exception-isolated handlers | `PluginHookDispatcher` |
 | `timings` | Lightweight elapsed-time profiling, env-gated | `app.main()` startup boundaries |
-| `slash_commands` | Typed catalog of slash command names + sources | Consumed by `mythic-vibe slash list` |
+| `slash_commands` | Typed catalog of slash command names + sources | Consumed by `mythic-vibe slash list` and `mythic-vibe shell` (`/help`) |
 | `source_info` | Provenance dataclass for extension/plugin/skill/prompt-contributed artifacts | Used by `SlashCommandInfo`; surfaced via `mythic-vibe slash list` |
 | `exec` | Subprocess execution with timeout and cancel-event | Wired across `verify/test_runner.py`, `verify/git_diff.py`, `handoff.py`, `context/scanner.py` |
 
@@ -206,7 +206,7 @@ info = SlashCommandInfo(
 
 **When to reach for it.** When building a REPL, TUI, or SDK surface that needs to enumerate or dispatch slash commands. The catalog is intentionally separate from any dispatcher — the dispatcher belongs to the consumer surface, not the catalog.
 
-**Today's consumer.** `mythic-vibe slash list` reads `BUILTIN_SLASH_COMMANDS` and aggregates plugin-contributed entries via the new `discover_slash_commands()` method on `PluginHookDispatcher`. Plugins that want to contribute commands declare a `slash_commands()` callable returning a list of `SlashCommandInfo`; see [`docs/plugins.md`](plugins.md) §9 for the plugin-side contract.
+**Today's consumers.** `mythic-vibe slash list` reads `BUILTIN_SLASH_COMMANDS` and aggregates plugin-contributed entries via `discover_slash_commands()` on `PluginHookDispatcher`. `mythic-vibe shell` is a minimal REPL that prints the same catalog when the user types `/help`. Plugins that want to contribute commands declare a `slash_commands()` callable returning a list of `SlashCommandInfo`; see [`docs/plugins.md`](plugins.md) §9 for the plugin-side contract.
 
 **Source:** `mythic_vibe_cli/runtime/slash_commands.py`
 

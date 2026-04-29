@@ -7,6 +7,55 @@
 
 ---
 
+## 2026-04-29 - V2 Phase 3 First Slice: Minimal `mythic-vibe shell` REPL
+
+**Session:** First slice of the V2 Phase 3 (TUI) arc. Ships a minimal interactive surface using only the runtime + plugin primitives we already have. No Textual, no readline/history, no rendering library — just `input()` + `print()`. Establishes the REPL contract a future TUI will wrap.
+**Status:** `mythic-vibe shell` is live and tested end-to-end. Reads slash commands from stdin, dispatches via `app.main(argv)` re-entrance, exits cleanly on EOF / `/quit` / `/exit`, recovers from KeyboardInterrupt, surfaces command failures without crashing the loop.
+**Scope:** New `repl.py` module + `cmd_shell` + sub-parser + 13 tests + four doc updates.
+
+### What changed
+
+- Added `mythic_vibe_cli/repl.py` with `run_shell(stdin, stdout, stderr, main, project_root)` — every dependency is injectable so tests can drive the loop with `io.StringIO` and a fake `main` callable. The injected `main` defaults to `app.main`; tests override it to count and assert on dispatched argv lists.
+- Loop contract:
+  - Banner on entry; prompt is `mythic-vibe> `.
+  - Each iteration: read a line; on EOF return `SUCCESS`; on `/quit` / `/exit` return `SUCCESS`; on `/help` print `BUILTIN_SLASH_COMMANDS` and any plugin-contributed entries via `PluginHookDispatcher.discover_slash_commands()`; on empty line continue.
+  - Otherwise: strip a single leading `/`, `shlex.split` the rest, call `main(argv)`. Print `(exit code: N)` if non-zero. Bad shlex quotes emit `Parse error: ...` to stderr and continue.
+  - Catches `SystemExit` (argparse may raise `SystemExit(2)` for bad commands) and surfaces the exit code without exiting the loop.
+  - Catches `KeyboardInterrupt` mid-dispatch (returns to prompt) and any other exception (`Command failed: ...` to stderr, loop continues).
+  - Bare commands without `/` work the same way: `status --json` is dispatched as `["status", "--json"]`.
+- Added `cmd_shell(args)` to `mythic_vibe_cli/commands.py` and registered `"shell": cmd_shell` in `COMMAND_HANDLERS`.
+- Added the `shell` sub-parser in `mythic_vibe_cli/app.py` with `--path` and the standard runtime options (no `--json` because the REPL is interactive by definition).
+- Updated the `test_command_registry_preserves_current_commands_and_aliases` expected set to include `shell`.
+- Added `tests/test_repl.py` with twelve unit cases that drive `run_shell` directly with injected file objects and a fake `main`: EOF exits cleanly, `/quit` and `/exit` aliases both exit, `/help` lists builtin commands, empty lines do not dispatch, real commands dispatch through `main`, bare commands (without `/`) dispatch through `main`, non-zero exit codes are surfaced and the loop continues, `SystemExit` is caught and surfaced, `RuntimeError` from `main` is caught with `Command failed: ...`, quoted arguments are parsed via shlex, bad quote emits a parse error and continues.
+- Added one CLI-kernel integration test: `app.main(["shell", "--path", tmp])` with empty piped stdin enters the REPL, prints the banner + first prompt, then exits cleanly on EOF.
+- Updated `docs/runtime.md` (§6 lists shell as a second consumer; at-a-glance table updated), `docs/plugins.md` (§9 mentions shell as a /help consumer), `docs/COMMAND_CONTRACTS.md` (full shell contract), and `CHANGELOG.md`.
+
+### Why it matters
+
+V2 Phase 3 is described in the roadmap as "Months 5-6, integrate Textual." That's a multi-slice arc. Jumping straight to Textual would commit the project to a TUI library before we know whether a simple REPL is enough. This slice deliberately ships the REPL first using only stdlib `input()`. If a future slice decides to graduate to Textual, the contract is now defined: a REPL takes lines, dispatches them, handles a small set of meta-commands, and survives errors gracefully. Whatever Textual screen we build later will satisfy the same contract.
+
+The slice also pays off the slash-commands + source-info work from yesterday by giving them their second consumer: `mythic-vibe shell`'s `/help` calls the same `discover_slash_commands()` machinery as `mythic-vibe slash list`. If a plugin contributes a slash command, both surfaces show it.
+
+The deliberate non-features are recorded so the deferred work doesn't get lost: no readline/history yet, no tab-completion, no multi-line input, no plugin-contributed slash command dispatch by name (only listing). Each becomes a clean follow-on slice when there's a real reason to add it.
+
+### Verification
+
+- `pytest -q` -> `240 passed, 14 subtests passed` (was 227 + 14)
+- `pytest -q tests/test_repl.py` -> `12 passed in 0.07s`
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!`
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 62 source files` (was 61)
+- Smoke: `printf '/help\n/quit\n' | python -m mythic_vibe_cli shell` printed the banner, the prompt, the 14 builtin entries with descriptions and tab separators, then a second prompt before exiting cleanly.
+
+### Continuity thread
+
+- The REPL is live. The natural follow-on slices, in roughly increasing scope:
+  1. **Add readline / shell history** (`history` directive, `up arrow` recall) — depends on Python's `readline` module which has different behavior on Windows; would benefit from a small abstraction.
+  2. **Dispatch plugin-contributed slash commands by name** — the `/audit` command from a plugin should actually invoke that plugin's handler, not error out. Needs a plugin-side dispatch hook (`run_slash_command(name, args)`) and a small router in the REPL.
+  3. **Add a Textual-based TUI surface** — `mythic-vibe tui` opens a single-screen Textual app showing project state with auto-refresh. Commits to Textual; gets us the rich-rendering payoff. Several slices.
+  4. **Move on to V2 Phase 4 (Local LLM provider layer)** — TODO.md item 17. Larger arc.
+
+_The hall has its first interactive ear. It will not narrate yet — there are no animations, no live regions, no rich rendering — but every guest who walks in can speak a name and the hall answers in kind._
+
 ## 2026-04-29 - Slash-Command Plugin Hook + `slash list` Consumer
 
 **Session:** Wiring two foundation primitives — `slash_commands` (catalog) and `source_info` (provenance) — into a real consumer. Until this slice they were tested but unconsumed; now they have a CLI surface and a plugin-discovery contract.

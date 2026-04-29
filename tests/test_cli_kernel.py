@@ -74,6 +74,7 @@ class CliKernelTests(unittest.TestCase):
             "plunder",
             "verify",
             "slash",
+            "shell",
         }
 
         self.assertEqual(set(COMMAND_HANDLERS), expected)
@@ -1235,6 +1236,24 @@ class CliKernelTests(unittest.TestCase):
 
         self.assertEqual(code, SUCCESS)
         self.assertNotIn("Mythic Timings", stderr_buf.getvalue())
+
+    def test_shell_subcommand_runs_repl_and_exits_on_eof(self) -> None:
+        """End-to-end: `mythic-vibe shell` enters the REPL via app.main and exits
+        cleanly on EOF. The piped input contains only an EOF marker so the loop
+        closes immediately after the banner + first prompt."""
+        with tempfile.TemporaryDirectory() as tmp:
+            saved_stdin = sys.stdin
+            sys.stdin = io.StringIO("")
+            output = io.StringIO()
+            try:
+                with redirect_stdout(output):
+                    code = app.main(["shell", "--path", tmp])
+            finally:
+                sys.stdin = saved_stdin
+
+            self.assertEqual(code, SUCCESS)
+            self.assertIn("mythic-vibe shell", output.getvalue())
+            self.assertIn("mythic-vibe>", output.getvalue())
 
     def test_slash_list_shows_builtin_commands(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

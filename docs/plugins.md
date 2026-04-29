@@ -250,10 +250,11 @@ Don't reach for a plugin when you want to:
 
 ## 9) Contributing slash commands (`slash_commands()`)
 
-A plugin may declare a callable named `slash_commands` that returns an iterable of `SlashCommandInfo` instances. The dispatcher calls this once at load time and aggregates the results across all enabled plugins. The aggregated list surfaces in `mythic-vibe slash list`:
+A plugin may declare a callable named `slash_commands` that returns an iterable of `SlashCommandInfo` instances. The dispatcher calls this once at load time and aggregates the results across all enabled plugins. The aggregated list surfaces in `mythic-vibe slash list` and in `/help` inside `mythic-vibe shell`:
 
 ```bash
 mythic-vibe slash list
+mythic-vibe shell  # then type /help
 ```
 
 The discovery contract:

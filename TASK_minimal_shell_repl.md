@@ -68,19 +68,19 @@ Repeats:
 
 - [x] Task file written
 - [x] Task file committed + pushed
-- [ ] Implement `repl.py:run_shell(stdin, stdout, stderr)` (parameterized for tests)
-- [ ] Add `cmd_shell` + dispatch
-- [ ] Add `shell` sub-parser
-- [ ] Update command-registry test expected set
-- [ ] Unit tests (test_repl.py): EOF exits, /quit, /help, empty line, unknown command, real command dispatch
-- [ ] Integration test (test_cli_kernel.py): `app.main(["shell"])` with piped stdin works end-to-end
-- [ ] `pytest -q` green
-- [ ] `ruff` + `mypy` green
-- [ ] Doc cross-links updated
-- [ ] CHANGELOG entry
-- [ ] DEVLOG entry
-- [ ] Memory snapshot updated
-- [ ] Final commit + push
+- [x] Implement `repl.py:run_shell` with injectable stdin/stdout/stderr/main/project_root
+- [x] Add `cmd_shell` + dispatch via `app.main` re-entrance
+- [x] Add `shell` sub-parser with --path and runtime options
+- [x] Update command-registry test expected set (+`shell`)
+- [x] Unit tests in test_repl.py — 12 cases (EOF, /quit, /exit, /help, empty lines, real cmd, bare cmd, non-zero exit surfaced + loop continues, SystemExit handled, RuntimeError handled, shlex quoted args, bad-quote parse error)
+- [x] Integration test in test_cli_kernel.py — app.main(["shell"]) with empty stdin enters and exits cleanly
+- [x] `pytest -q` green — 240 passed, 14 subtests passed
+- [x] `ruff` + `mypy` green — 62 source files
+- [x] Doc cross-links updated (runtime.md §6 + table; plugins.md §9; COMMAND_CONTRACTS.md)
+- [x] CHANGELOG entry
+- [x] DEVLOG entry with continuity thread
+- [x] Memory snapshot updated
+- [x] Final commit + push
 
 ## Resume Instructions
 
