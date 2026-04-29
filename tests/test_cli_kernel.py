@@ -733,6 +733,119 @@ class CliKernelTests(unittest.TestCase):
             self.assertEqual(code, USER_INPUT_ERROR)
             self.assertIn("--step requires --workflow", output.getvalue())
 
+    def test_packet_list_latest_workflow_filters_to_saved_plan(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with redirect_stdout(io.StringIO()):
+                app.main(
+                    [
+                        "workflow",
+                        "plan",
+                        "--task",
+                        "First saved",
+                        "--path",
+                        str(root),
+                        "--role",
+                        "Skald",
+                        "--packets",
+                    ]
+                )
+                app.main(
+                    [
+                        "workflow",
+                        "plan",
+                        "--task",
+                        "Second saved",
+                        "--path",
+                        str(root),
+                        "--role",
+                        "Auditor",
+                        "--packets",
+                    ]
+                )
+
+            saved_id = json.loads((root / "mythic" / "workflow_plan.json").read_text(encoding="utf-8"))["workflow_id"]
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(
+                    ["packet", "list", "--path", str(root), "--latest-workflow", "--json"]
+                )
+
+            payload = json.loads(output.getvalue())
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(payload["latest_workflow_id"], saved_id)
+            self.assertEqual(payload["filters"]["workflow_id"], saved_id)
+            self.assertEqual(len(payload["packets"]), 1)
+            self.assertEqual(payload["packets"][0]["workflow_id"], saved_id)
+
+    def test_packet_list_latest_workflow_conflicts_with_workflow(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output = io.StringIO()
+            with redirect_stdout(output), redirect_stderr(output):
+                code = app.main(
+                    [
+                        "packet",
+                        "list",
+                        "--path",
+                        tmp,
+                        "--latest-workflow",
+                        "--workflow",
+                        "WF-x",
+                    ]
+                )
+            self.assertEqual(code, USER_INPUT_ERROR)
+            self.assertIn("--latest-workflow cannot be combined with --workflow", output.getvalue())
+
+    def test_packet_list_latest_workflow_errors_when_plan_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output = io.StringIO()
+            with redirect_stdout(output), redirect_stderr(output):
+                code = app.main(["packet", "list", "--path", tmp, "--latest-workflow"])
+            self.assertEqual(code, USER_INPUT_ERROR)
+            self.assertIn("Workflow plan not found", output.getvalue())
+
+    def test_packet_list_latest_workflow_with_step_narrows_further(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with redirect_stdout(io.StringIO()):
+                app.main(
+                    [
+                        "workflow",
+                        "plan",
+                        "--task",
+                        "Latest narrow",
+                        "--path",
+                        str(root),
+                        "--role",
+                        "Skald",
+                        "--role",
+                        "Auditor",
+                        "--packets",
+                    ]
+                )
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(
+                    [
+                        "packet",
+                        "list",
+                        "--path",
+                        str(root),
+                        "--latest-workflow",
+                        "--step",
+                        "step-02",
+                        "--json",
+                    ]
+                )
+
+            payload = json.loads(output.getvalue())
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(payload["filters"]["workflow_step_id"], "step-02")
+            self.assertEqual(len(payload["packets"]), 1)
+            self.assertEqual(payload["packets"][0]["workflow_step_id"], "step-02")
+
     def test_packet_show_resolves_by_workflow_and_step(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

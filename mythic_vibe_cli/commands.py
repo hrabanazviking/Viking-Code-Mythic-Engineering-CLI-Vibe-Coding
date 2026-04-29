@@ -419,9 +419,23 @@ def cmd_packet_list(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
     workflow_filter = (getattr(args, "workflow", "") or "").strip()
     step_filter = (getattr(args, "step", "") or "").strip()
+    latest_workflow = bool(_flag(args, "latest_workflow"))
+    latest_workflow_id: str | None = None
+
+    if latest_workflow and workflow_filter:
+        write_error("--latest-workflow cannot be combined with --workflow.")
+        return USER_INPUT_ERROR
+
+    if latest_workflow:
+        resolved, error = _resolve_latest_workflow_id(root)
+        if error or resolved is None:
+            write_error(error or "Could not resolve latest workflow plan.")
+            return USER_INPUT_ERROR
+        latest_workflow_id = resolved
+        workflow_filter = resolved
 
     if step_filter and not workflow_filter:
-        write_error("--step requires --workflow.")
+        write_error("--step requires --workflow or --latest-workflow.")
         return USER_INPUT_ERROR
 
     bridge = CodexBridge(root)
@@ -436,6 +450,7 @@ def cmd_packet_list(args: argparse.Namespace) -> int:
             {
                 "command": "packet list",
                 "path": str(root),
+                "latest_workflow_id": latest_workflow_id,
                 "filters": {
                     "workflow_id": workflow_filter or None,
                     "workflow_step_id": step_filter or None,
