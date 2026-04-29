@@ -8,6 +8,7 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Added
 
+- Added `mythic-vibe workflow packets` for read-only packet readiness listings, including `--missing-only` filtering.
 - Added `workflow run --dry-run --packets-only` to validate that every workflow step has a matching packet artifact before provider execution is introduced.
 - Added `mythic-vibe workflow run --dry-run` for safe ordered role-execution previews from saved or generated workflow plans.
 - Added `workflow plan --packets`, `--audience`, and `--format` so workflow plans can generate one packet artifact per role step without provider execution.

@@ -343,6 +343,7 @@ def build_parser() -> argparse.ArgumentParser:
             Examples:
               mythic-vibe workflow run --dry-run
               mythic-vibe workflow run --dry-run --packets-only
+              mythic-vibe workflow packets --json
               mythic-vibe workflow run --dry-run --task "Preview a new task" --role Skald --role Auditor
               mythic-vibe workflow run --dry-run --plan mythic/workflow_plan.json --json
 
@@ -365,6 +366,35 @@ def build_parser() -> argparse.ArgumentParser:
         help="Role to include in order when --task is supplied; repeat to customize the sequence",
     )
     add_runtime_options(workflow_run, json_output=True, dry_run=True)
+    workflow_packets = workflow_sub.add_parser(
+        "packets",
+        help="List packet readiness for a workflow plan",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe workflow packets
+              mythic-vibe workflow packets --missing-only
+              mythic-vibe workflow packets --task "Preview a new task" --role Skald --role Auditor --json
+
+            Notes:
+              This command inspects stored packet metadata and does not execute providers.
+            """
+        ),
+    )
+    workflow_packets.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    workflow_packets.add_argument("--plan", default="", help="Plan file to inspect (default: mythic/workflow_plan.json)")
+    workflow_packets.add_argument("--task", default="", help="Optional task to build an in-memory packet-readiness view")
+    workflow_packets.add_argument("--audience", default="advanced", help="Expected packet audience")
+    workflow_packets.add_argument("--format", default="markdown", choices=PACKET_OUTPUT_FORMATS, help="Expected packet output format")
+    workflow_packets.add_argument("--missing-only", action="store_true", help="Only show missing workflow packets")
+    workflow_packets.add_argument(
+        "--role",
+        action="append",
+        default=[],
+        choices=list(DEFAULT_ROLE_SEQUENCE) + ["Debugger", "Refactorer"],
+        help="Role to include in order when --task is supplied; repeat to customize the sequence",
+    )
+    add_runtime_options(workflow_packets, json_output=True)
 
     handoff = sub.add_parser("handoff", help="Create, inspect, or list session handoff records")
     add_runtime_options(handoff, json_output=True, dry_run=True)

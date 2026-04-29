@@ -7,6 +7,37 @@
 
 ---
 
+## 2026-04-29 - Stage 16 Workflow Packet Listing
+
+**Session:** Making workflow packet readiness inspectable without using the runner.
+**Status:** `workflow packets` now lists ready and missing packet artifacts for saved or generated workflow plans.
+**Scope:** Read-only operator visibility for workflow packet readiness.
+
+### What changed
+
+- Added `mythic-vibe workflow packets`.
+- Added `--missing-only` filtering for missing packet steps.
+- Reused the same role/phase/task/audience/format matching as `workflow run --dry-run --packets-only`.
+- Added JSON output with plan source, readiness summary, and packet status records.
+- Added command-kernel tests for saved-plan packet listings and missing-only generated views.
+- Updated command contracts, API docs, changelog, and this devlog entry.
+
+### Why it matters
+
+Operators can now inspect workflow packet readiness directly instead of using the dry-run runner as a listing tool. This keeps visibility separate from execution preview.
+
+### Verification
+
+- `pytest tests\test_cli_kernel.py tests\test_workflow_engine.py` -> `24 passed`
+- `ruff check mythic_vibe_cli\commands.py mythic_vibe_cli\app.py tests\test_cli_kernel.py` -> passed
+- `mypy mythic_vibe_cli` -> passed
+- `python -m mythic_vibe_cli workflow packets --path . --task "Smoke packet listing" --role Skald --missing-only --json` -> reported missing Skald packet status
+- `python -m mythic_vibe_cli workflow packets --help` -> rendered expected options and examples
+
+### Continuity thread
+
+- The next slice can attach workflow identifiers to plan and packet metadata, so packet readiness can be traced by workflow ID instead of exact task text.
+
 ## 2026-04-29 - Stage 16 Workflow Packet Readiness Gate
 
 **Session:** Hardening workflow execution preview with packet readiness validation.
