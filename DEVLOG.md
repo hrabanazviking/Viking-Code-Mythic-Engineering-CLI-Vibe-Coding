@@ -7,6 +7,41 @@
 
 ---
 
+## 2026-04-29 - Wire Timings into `app.main()` Startup
+
+**Session:** Activating yesterday's plumbing. The timings primitive landed as a no-op-when-disabled utility; this slice gives it a real call site so `MYTHIC_TIMING=1` actually does something.
+**Status:** `app.main()` now records `argparse`, `configure_output`, and `handler:<command>` elapsed deltas, then prints them to stderr from a `finally` block so even argparse-driven `SystemExit` (e.g., `--help`) emits the partial profile. With the env var unset, every call is a no-op.
+**Scope:** Single function wiring + tests + a new docs/plugins.md section. No production code changed beyond `app.py`.
+
+### What changed
+
+- Added `from .runtime.timings import print_timings, record, reset_timings` to `mythic_vibe_cli/app.py`.
+- Restructured `main(argv)` into a `try ... finally` so `print_timings()` always runs on the way out. Inside the `try`, four record points: `reset_timings()` baselines the clock, `record("argparse")` after `parse_args()`, `record("configure_output")` after `configure_output(...)`, and `record(f"handler:{args.command}")` after the resolved handler returns. The `--json` guard block stays unchanged inside the try; the dispatcher and config are unaffected.
+- Added a smoke-confirmed integration test pair in `tests/test_cli_kernel.py`: with `MYTHIC_TIMING=1`, a real `mythic-vibe grimoire add ... --json` call lands a profile in stderr containing the `--- Mythic Timings ---` header, the three labels, and a `TOTAL:` footer; with the env var unset, stderr does not contain `Mythic Timings`. Tests preserve the prior env-var value across the test boundary.
+- Added a new `## 9) Profiling slow commands (MYTHIC_TIMING)` section to `docs/plugins.md` showing the env-var pattern, sample output, and a note that plugin code is rolled into `handler:<command>` rather than measured separately. Renumbered the prior "See also" section to §10.
+- Updated `CHANGELOG.md`.
+
+### Why it matters
+
+The timings primitive landed yesterday as ~80 lines of inert plumbing. Operators couldn't actually do anything with it. Today's wiring closes that loop: `MYTHIC_TIMING=1 mythic-vibe scan --path .` now prints a real profile, and the implementation note in `docs/plugins.md` tells readers exactly when to reach for it. The cost when disabled is one no-op function call per recorded boundary — negligible. The benefit when enabled is per-boundary millisecond accounting without any code changes at the call site.
+
+### Verification
+
+- `pytest -q` -> `196 passed, 14 subtests passed` (was 194 + 14)
+- Smoke: `MYTHIC_TIMING=1 python -m mythic_vibe_cli status --path . --json` -> stderr contains `argparse: 27.8ms`, `configure_output: 0.0ms`, `handler:status: 0.5ms`, `TOTAL: 28.3ms`. JSON output on stdout remains clean (the output guard's contract is intact; timings goes to stderr explicitly, never via `sys.stdout`).
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!`
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 58 source files`
+
+### Continuity thread
+
+- The four runtime primitives are now all wired (queue + guard + bus + timings — three at life-cycle paths, the fourth at startup boundaries). Possible next directions:
+  1. **Port a fifth Pi primitive** — `core/keybindings.ts` is the natural pre-TUI choice; small single-file slice.
+  2. **Begin V2 Phase 3 (TUI)** — Volmarr's queued item 16. Foundation is now complete.
+  3. **Begin V2 Phase 4 (Local LLM provider layer)** — Volmarr's queued item 17. Multi-slice arc.
+  4. **Documentation pass** — write a `docs/runtime.md` mirroring `docs/plugins.md` for the four runtime primitives, since the surface is now stable.
+
+_The bell is in the hand of whoever wears the right cloak. Wear MYTHIC_TIMING and you hear the seconds; leave it off and the hall is silent — but no measurement was missed, only un-summoned._
+
 ## 2026-04-29 - Pi Plunder Slice 4: Timings Primitive
 
 **Session:** Fourth Pi-derived primitive in `mythic_vibe_cli/runtime/`. Tiny single-file utility for elapsed-time instrumentation — useful for startup profiling, slow-command diagnosis, and anywhere we want to know where the CLI spent its milliseconds.

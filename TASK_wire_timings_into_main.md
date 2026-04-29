@@ -42,15 +42,15 @@ When the env var is unset, every call is a no-op and the function behaves exactl
 
 - [x] Task file written
 - [x] Task file committed + pushed
-- [ ] Wire timings into `app.main()` with try/finally
-- [ ] Integration tests (env on / env off)
-- [ ] `pytest -q` green
-- [ ] `ruff` + `mypy` green
-- [ ] Doc note about MYTHIC_TIMING
-- [ ] CHANGELOG entry
-- [ ] DEVLOG entry
-- [ ] Memory snapshot updated
-- [ ] Final commit + push
+- [x] Wire timings into `app.main()` with try/finally (reset + 3 record points + print_timings in finally)
+- [x] Integration tests — 2 cases (env=1 prints stderr block with header/labels/total; env unset prints nothing about Mythic Timings)
+- [x] `pytest -q` green — 196 passed, 14 subtests passed
+- [x] `ruff` + `mypy` green
+- [x] Doc note added at `docs/plugins.md` §9 (Profiling slow commands)
+- [x] CHANGELOG entry
+- [x] DEVLOG entry with continuity thread
+- [x] Memory snapshot updated
+- [x] Final commit + push
 
 ## Resume Instructions
 

@@ -12,6 +12,7 @@ from .exit_codes import USER_INPUT_ERROR
 from .output import configure_output
 from .plugins.api import PLUGIN_HOOKS
 from .runtime.output_guard import json_output_guard
+from .runtime.timings import print_timings, record, reset_timings
 from .ux import artifact_names, phase_names
 from .workflow_engine import DEFAULT_ROLE_SEQUENCE
 
@@ -624,20 +625,28 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = build_parser()
-    args = parser.parse_args(argv)
-    configure_output(quiet=getattr(args, "quiet", False), verbose=getattr(args, "verbose", False))
+    reset_timings()
+    try:
+        parser = build_parser()
+        args = parser.parse_args(argv)
+        record("argparse")
+        configure_output(quiet=getattr(args, "quiet", False), verbose=getattr(args, "verbose", False))
+        record("configure_output")
 
-    handler: CommandHandler | None = COMMAND_HANDLERS.get(args.command)
-    if handler:
-        try:
-            with json_output_guard(getattr(args, "json", False)):
-                return handler(args)
-        finally:
-            configure_output()
+        handler: CommandHandler | None = COMMAND_HANDLERS.get(args.command)
+        if handler:
+            try:
+                with json_output_guard(getattr(args, "json", False)):
+                    result = handler(args)
+                record(f"handler:{args.command}")
+                return result
+            finally:
+                configure_output()
 
-    parser.error("Unknown command")
-    return USER_INPUT_ERROR
+        parser.error("Unknown command")
+        return USER_INPUT_ERROR
+    finally:
+        print_timings()
 
 
 if __name__ == "__main__":

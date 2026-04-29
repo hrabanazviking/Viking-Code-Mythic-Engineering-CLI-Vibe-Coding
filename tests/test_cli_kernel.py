@@ -1192,6 +1192,49 @@ class CliKernelTests(unittest.TestCase):
             self.assertEqual(code, SUCCESS)
             self.assertEqual(received, [])
 
+    def test_app_main_emits_timings_when_env_set(self) -> None:
+        import os
+
+        prior = os.environ.get("MYTHIC_TIMING")
+        os.environ["MYTHIC_TIMING"] = "1"
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                stdout_buf = io.StringIO()
+                stderr_buf = io.StringIO()
+                with redirect_stdout(stdout_buf), redirect_stderr(stderr_buf):
+                    code = app.main(["grimoire", "add", "my_pkg.plugin:Plugin", "--path", tmp, "--json"])
+        finally:
+            if prior is None:
+                os.environ.pop("MYTHIC_TIMING", None)
+            else:
+                os.environ["MYTHIC_TIMING"] = prior
+
+        self.assertEqual(code, SUCCESS)
+        stderr_text = stderr_buf.getvalue()
+        self.assertIn("--- Mythic Timings ---", stderr_text)
+        self.assertIn("argparse:", stderr_text)
+        self.assertIn("configure_output:", stderr_text)
+        self.assertIn("handler:grimoire", stderr_text)
+        self.assertIn("TOTAL:", stderr_text)
+
+    def test_app_main_emits_no_timings_when_env_unset(self) -> None:
+        import os
+
+        prior = os.environ.get("MYTHIC_TIMING")
+        os.environ.pop("MYTHIC_TIMING", None)
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                stdout_buf = io.StringIO()
+                stderr_buf = io.StringIO()
+                with redirect_stdout(stdout_buf), redirect_stderr(stderr_buf):
+                    code = app.main(["grimoire", "add", "my_pkg.plugin:Plugin", "--path", tmp, "--json"])
+        finally:
+            if prior is not None:
+                os.environ["MYTHIC_TIMING"] = prior
+
+        self.assertEqual(code, SUCCESS)
+        self.assertNotIn("Mythic Timings", stderr_buf.getvalue())
+
     def test_workflow_run_blocks_real_execution(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             output = io.StringIO()
