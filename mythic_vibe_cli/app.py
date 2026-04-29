@@ -959,6 +959,66 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_runtime_options(forge_run, json_output=True)
 
+    forge_resume = forge_sub.add_parser(
+        "resume",
+        help="Resume a partially-completed forge run from the ledger (PH-03 slice 3.8)",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe forge resume --provider copy-paste
+              mythic-vibe forge resume --provider stub --workflow WF-20260429-deadbeef
+              mythic-vibe forge resume --provider local --interactive --strict
+
+            Notes:
+              - With no --workflow, picks up the most recent ledger entry.
+              - Skips every step already marked `succeeded`; their
+                AgentOutput is fed forward as prior_outputs to the next
+                step exactly as `forge run` does.
+              - Re-executes the first non-succeeded step and every
+                subsequent step. New ledger entries are appended; the
+                latest matching entry per (workflow_id, step_id) wins.
+              - The reflection is rewritten at the end (the prior
+                reflection file is replaced).
+              - Returns SUCCESS if every re-executed step succeeded;
+                OPERATIONAL_FAILURE if any failed; UNSAFE_OPERATION_BLOCKED
+                if the operator aborted; USER_INPUT_ERROR if no resumable
+                workflow is found.
+            """
+        ),
+    )
+    forge_resume.add_argument(
+        "--provider",
+        required=True,
+        help="Provider name (copy-paste / local / openai / anthropic / gemini / openrouter)",
+    )
+    forge_resume.add_argument(
+        "--workflow",
+        default="",
+        help="Workflow id to resume. Defaults to the most recent ledger entry.",
+    )
+    forge_resume.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    forge_resume.add_argument(
+        "--skip-ledger",
+        action="store_true",
+        help="Do not write per-step entries to mythic/forge_ledger.json",
+    )
+    forge_resume.add_argument(
+        "--interactive",
+        action="store_true",
+        help="Prompt y/n/?/s between each pair of re-executed steps (slice 3.4 gates).",
+    )
+    forge_resume.add_argument(
+        "--strict",
+        action="store_true",
+        help="Abort the resume when any Auditor verifier gate fails (slice 3.6).",
+    )
+    forge_resume.add_argument(
+        "--skip-reflection",
+        action="store_true",
+        help="Do not rewrite the reflection at mythic/reflections/<workflow_id>.{md,json}.",
+    )
+    add_runtime_options(forge_resume, json_output=True)
+
     forge_ledger = forge_sub.add_parser(
         "ledger",
         help="Inspect mythic/forge_ledger.json (per-agent step records)",
