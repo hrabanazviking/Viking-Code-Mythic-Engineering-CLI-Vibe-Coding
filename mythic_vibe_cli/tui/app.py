@@ -320,6 +320,170 @@ def _format_artifact_viewer(data: ArtifactViewerData) -> str:
     return "\n".join(lines)
 
 
+# ---- Packet Viewer (PH-04 slice 4.3) -----------------------------------
+
+
+PACKET_PREVIEW_LINES = 12
+
+
+@dataclass
+class PacketViewerData:
+    """Snapshot of the current codex packet for the TUI panel.
+
+    A packet exists in three forms on disk:
+
+    1. ``mythic/codex_prompt.md`` — the operator-facing "current"
+       packet (rewritten by every ``packet create`` /
+       ``codex-pack`` /``forge plan`` invocation).
+    2. ``mythic/packets/PKT-NNNN.md`` — durable historical packets
+       (slice-2.6 of the production roadmap).
+    3. ``mythic/packets/PKT-NNNN.meta.json`` — metadata sidecar.
+
+    The viewer prefers the operator-facing copy first, falling back
+    to the most recently written historical packet so the TUI keeps
+    showing useful context after a transient ``codex_prompt.md``
+    overwrite.
+    """
+
+    packet_id: str = ""
+    relpath: str = ""
+    line_count: int = 0
+    byte_size: int = 0
+    modified_at: str = ""
+    preview_lines: list[str] = field(default_factory=list)
+    truncated: bool = False
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "packet_id": self.packet_id,
+            "relpath": self.relpath,
+            "line_count": self.line_count,
+            "byte_size": self.byte_size,
+            "modified_at": self.modified_at,
+            "preview_lines": list(self.preview_lines),
+            "truncated": self.truncated,
+        }
+
+
+def _select_packet_path(root: Path) -> Path | None:
+    """Pick the packet to display.
+
+    Preference order:
+    1. ``mythic/codex_prompt.md`` (operator-facing current packet).
+    2. Most recently modified ``mythic/packets/*.md`` (historical).
+
+    Returns ``None`` when neither exists. Defensive against ``OSError``
+    while iterating the packets dir.
+    """
+    current = root / "mythic" / "codex_prompt.md"
+    if current.is_file():
+        return current
+
+    packets_dir = root / "mythic" / "packets"
+    if not packets_dir.is_dir():
+        return None
+    try:
+        candidates = [p for p in packets_dir.glob("*.md") if p.is_file()]
+    except OSError:
+        return None
+    if not candidates:
+        return None
+    return max(candidates, key=lambda p: p.stat().st_mtime)
+
+
+def _packet_id_from_filename(path: Path) -> str:
+    """Extract a stable id for the panel header.
+
+    For historical packets at ``mythic/packets/PKT-NNNN.md`` we use
+    the stem. For the operator-facing ``codex_prompt.md`` we use a
+    fixed sentinel ``codex_prompt`` so the operator can tell which
+    packet the panel is rendering.
+    """
+    if path.name == "codex_prompt.md":
+        return "codex_prompt"
+    return path.stem
+
+
+def build_packet_viewer_data(
+    root: Path,
+    *,
+    preview_lines: int = PACKET_PREVIEW_LINES,
+) -> PacketViewerData:
+    """Pure function (no Textual deps) that snapshots the current
+    packet for the panel.
+
+    Returns an empty :class:`PacketViewerData` when no packet exists
+    on disk. Truncates the preview to ``preview_lines`` and records a
+    ``truncated`` flag when the file has more lines than the cap.
+
+    Defensive: I/O errors fall back to an empty result; the TUI
+    must never crash because a packet file disappeared mid-refresh.
+    """
+    target = _select_packet_path(root)
+    if target is None:
+        return PacketViewerData()
+
+    try:
+        text = target.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return PacketViewerData()
+
+    lines = text.splitlines()
+    snippet = lines[:preview_lines]
+    try:
+        stat = target.stat()
+        modified_at = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).strftime(
+            "%Y-%m-%d %H:%M:%S UTC"
+        )
+        byte_size = stat.st_size
+    except OSError:
+        modified_at = ""
+        byte_size = 0
+
+    try:
+        relpath = str(target.relative_to(root))
+    except ValueError:
+        relpath = str(target)
+
+    return PacketViewerData(
+        packet_id=_packet_id_from_filename(target),
+        relpath=relpath,
+        line_count=len(lines),
+        byte_size=byte_size,
+        modified_at=modified_at,
+        preview_lines=snippet,
+        truncated=len(lines) > preview_lines,
+    )
+
+
+def _format_packet_viewer(data: PacketViewerData) -> str:
+    """Render the packet preview as Rich-tagged markup.
+
+    Header lines (relpath / line count / modified) are dim; preview
+    body is the file's literal text. When no packet exists the panel
+    shows a placeholder pointing at ``codex-pack`` / ``forge plan``.
+    """
+    if not data.relpath:
+        return (
+            "[dim](no packet on disk yet — run `mythic-vibe codex-pack` "
+            "or `forge plan` to create one)[/dim]"
+        )
+
+    header_lines = [
+        f"[b]{data.packet_id}[/b]",
+        f"[dim]{data.relpath}  ·  {data.line_count} lines  ·  {data.byte_size}B[/dim]",
+    ]
+    if data.modified_at:
+        header_lines.append(f"[dim]modified {data.modified_at}[/dim]")
+    header_lines.append("")
+
+    body_lines = list(data.preview_lines)
+    if data.truncated:
+        body_lines.append(f"[dim]... ({data.line_count - len(data.preview_lines)} more lines)[/dim]")
+
+    return "\n".join(header_lines + body_lines)
+
+
 @dataclass
 class StatusData:
     path: str
@@ -521,6 +685,13 @@ class StatusScreen(Screen):
         border: round $secondary;
         padding: 1 2;
         width: 1fr;
+        margin: 0 1 0 0;
+    }
+
+    #packet-panel {
+        border: round $secondary;
+        padding: 1 2;
+        width: 1fr;
     }
 
     .panel {
@@ -546,6 +717,7 @@ class StatusScreen(Screen):
         self._plugins_widget = Static(id="panel-plugins", classes="panel")
         self._events_widget = Static(id="events-panel")
         self._artifact_widget = Static(id="artifact-panel")
+        self._packet_widget = Static(id="packet-panel")
         self._footer_widget = Static(id="footer-line")
 
     def compose(self) -> ComposeResult:
@@ -561,6 +733,7 @@ class StatusScreen(Screen):
                 with Horizontal(id="mid-row"):
                     yield self._events_widget
                     yield self._artifact_widget
+                    yield self._packet_widget
         yield self._footer_widget
         yield Footer()
 
@@ -580,6 +753,7 @@ class StatusScreen(Screen):
         data = build_status_data(self.root)
         loop_nav_data = build_loop_navigator_data(self.root)
         artifact_data = build_artifact_viewer_data(self.root, loop_nav_data.current_phase)
+        packet_data = build_packet_viewer_data(self.root)
         events = read_recent(event_log_path_for(self.root), limit=12)
         self._loop_nav_widget.border_title = "Loop"
         self._status_widget.border_title = "Status"
@@ -589,6 +763,9 @@ class StatusScreen(Screen):
         self._events_widget.border_title = "Recent Events"
         artifact_phase = artifact_data.phase or "(none)"
         self._artifact_widget.border_title = f"Artefacts ({artifact_phase})"
+        self._packet_widget.border_title = (
+            f"Packet ({packet_data.packet_id})" if packet_data.packet_id else "Packet"
+        )
         self._loop_nav_widget.update(_format_loop_navigator(loop_nav_data))
         self._status_widget.update(_format_status_panel(data))
         self._verify_widget.update(_format_verify_panel(data))
@@ -596,6 +773,7 @@ class StatusScreen(Screen):
         self._plugins_widget.update(_format_plugins_panel(data))
         self._events_widget.update(_format_events_panel(events))
         self._artifact_widget.update(_format_artifact_viewer(artifact_data))
+        self._packet_widget.update(_format_packet_viewer(packet_data))
         self._footer_widget.update(_format_footer_line(data))
 
 
