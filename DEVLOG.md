@@ -7,6 +7,35 @@
 
 ---
 
+## 2026-04-29 - Stage 16 Workflow Plan Command
+
+**Session:** Exposing the workflow engine through the public CLI.
+**Status:** Users can now generate deterministic role orchestration plans from the command line.
+**Scope:** CLI surface for the role-based workflow engine.
+
+### What changed
+
+- Added `mythic-vibe workflow plan --task "..."`.
+- Added JSON output containing both the durable plan payload and packet-ready requests.
+- Added `--dry-run` preview behavior that avoids writing `mythic/workflow_plan.json`.
+- Added repeated `--role` flags for custom ordered role sequences.
+- Added `--out` for writing the plan to a caller-selected path.
+- Added command-kernel tests for write and dry-run behavior.
+- Updated command contracts, API docs, changelog, and this devlog entry.
+
+### Why it matters
+
+The orchestration engine is now reachable by operators. A user can ask the CLI to turn a task into a concrete role handoff plan before generating packets or invoking providers.
+
+### Verification
+
+- `pytest tests\test_cli_kernel.py tests\test_workflow_engine.py` -> `17 passed`
+- `python -m mythic_vibe_cli workflow plan --task "Preview the next slice" --path . --dry-run --json` -> produced a six-step plan
+
+### Continuity thread
+
+- The next slice can connect `workflow plan` to packet artifact generation, creating one packet per role step without provider execution.
+
 ## 2026-04-29 - Stage 16 Workflow Engine Foundation
 
 **Session:** Continuing the Phase 2 role-based orchestration thread.

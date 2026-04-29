@@ -52,6 +52,7 @@ from .ux import (
     zsh_completion,
 )
 from .workflow import MythicRunConfig, MythicWorkflow
+from .workflow_engine import DEFAULT_ROLE_SEQUENCE, WORKFLOW_PLAN_FILENAME, WorkflowEngine
 from .verify import VerificationArtifact, load_latest_verification, new_verification_id, write_verification_artifact
 from .verify.doc_checker import check_docs
 from .verify.git_diff import review_changed_files
@@ -136,6 +137,8 @@ def _command_name(args: argparse.Namespace, fallback: str) -> str:
         subcommand_attr = getattr(args, "explain_command", "")
     elif command == "method":
         subcommand_attr = getattr(args, "method_command", "")
+    elif command == "workflow":
+        subcommand_attr = getattr(args, "workflow_command", "")
 
     if subcommand_attr:
         return f"{command} {subcommand_attr}"
@@ -473,6 +476,55 @@ def cmd_packet_diff(args: argparse.Namespace) -> int:
         return SUCCESS
 
     write_line(diff)
+    return SUCCESS
+
+
+def cmd_workflow_plan(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    role_sequence = tuple(getattr(args, "role", []) or DEFAULT_ROLE_SEQUENCE)
+    engine = WorkflowEngine(root)
+
+    try:
+        plan = engine.build_plan(args.task, role_sequence=role_sequence)
+    except ValueError as exc:
+        write_error(str(exc))
+        return USER_INPUT_ERROR
+
+    out_file = Path(args.out).resolve() if getattr(args, "out", "") else None
+    output_path = out_file or root / "mythic" / WORKFLOW_PLAN_FILENAME
+    payload = {
+        "command": "workflow plan",
+        "dry_run": _flag(args, "dry_run"),
+        "output_file": str(output_path),
+        "plan": plan.to_dict(),
+        "packet_requests": [request.__dict__ for request in plan.packet_requests()],
+    }
+
+    if _flag(args, "dry_run"):
+        if _flag(args, "json"):
+            write_json(payload)
+        else:
+            write_line("Dry run: no workflow plan will be written.")
+            write_key_value("Project path", root)
+            write_key_value("Output", output_path)
+            write_key_value("Task", plan.task)
+            write_line("Role sequence:")
+            for step in plan.steps:
+                write_bullet(f"{step.step_id}: {step.role} -> {step.phase} ({step.handoff_to or 'done'})")
+        return SUCCESS
+
+    path = engine.write_plan(args.task, role_sequence=role_sequence, out_file=out_file)
+    payload["output_file"] = str(path)
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+
+    write_line("Workflow orchestration plan written.")
+    write_key_value("Output", path)
+    write_key_value("Task", plan.task)
+    write_line("Role sequence:")
+    for step in plan.steps:
+        write_bullet(f"{step.step_id}: {step.role} -> {step.phase} ({step.handoff_to or 'done'})")
     return SUCCESS
 
 
@@ -2340,6 +2392,12 @@ def cmd_packet_dispatch(args: argparse.Namespace) -> int:
     return USER_INPUT_ERROR
 
 
+def cmd_workflow_dispatch(args: argparse.Namespace) -> int:
+    if args.workflow_command == "plan":
+        return cmd_workflow_plan(args)
+    return USER_INPUT_ERROR
+
+
 def cmd_ai_dispatch(args: argparse.Namespace) -> int:
     if args.ai_command == "providers":
         return cmd_ai_providers(args)
@@ -2375,6 +2433,7 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "codex-pack": cmd_codex_pack,
     "evoke": cmd_codex_pack,
     "packet": cmd_packet_dispatch,
+    "workflow": cmd_workflow_dispatch,
     "codex-log": cmd_codex_log,
     "status": cmd_status,
     "sync": cmd_sync,
