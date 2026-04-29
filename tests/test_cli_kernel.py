@@ -648,6 +648,118 @@ class CliKernelTests(unittest.TestCase):
             self.assertEqual(payload["packet_status"][0]["match_strategy"], "text")
             self.assertIsNone(payload["packet_status"][0]["workflow_id"])
 
+    def test_packet_create_embeds_method_excerpts_when_corpus_exists(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            corpus = root / "docs" / "mythic_source"
+            corpus.mkdir(parents=True)
+            (corpus / "verification.md").write_text(
+                "# Verification Method\n\n"
+                "Verify that result matches intent, not just that code ran.\n\n"
+                "# Failure Modes\n\n"
+                "Watch for silent test skips.\n",
+                encoding="utf-8",
+            )
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(
+                    [
+                        "packet",
+                        "create",
+                        "--task",
+                        "Audit the new gate",
+                        "--phase",
+                        "verify",
+                        "--role",
+                        "Auditor",
+                        "--path",
+                        str(root),
+                        "--format",
+                        "json",
+                        "--json",
+                    ]
+                )
+            payload = json.loads(output.getvalue())
+
+            self.assertEqual(code, SUCCESS)
+            packet_path = Path(payload["output_file"])
+            packet_payload = json.loads(packet_path.read_text(encoding="utf-8"))
+            sections = [excerpt["section"] for excerpt in packet_payload["method_excerpts"]]
+            self.assertEqual(sections, ["verification method", "failure modes"])
+            self.assertIn("matches intent", packet_payload["method_excerpts"][0]["text"])
+            self.assertEqual(packet_payload["method_excerpts"][0]["source_path"], "verification.md")
+
+    def test_packet_create_markdown_includes_method_excerpts_section(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            corpus = root / "docs" / "mythic_source"
+            corpus.mkdir(parents=True)
+            (corpus / "principles.md").write_text(
+                "# Principles\n\nHold to the simplest design that solves the intent.\n",
+                encoding="utf-8",
+            )
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(
+                    [
+                        "packet",
+                        "create",
+                        "--task",
+                        "Frame the capability",
+                        "--phase",
+                        "intent",
+                        "--role",
+                        "Skald",
+                        "--path",
+                        str(root),
+                        "--json",
+                    ]
+                )
+            payload = json.loads(output.getvalue())
+            packet_path = Path(payload["output_file"])
+            text = packet_path.read_text(encoding="utf-8")
+
+            self.assertEqual(code, SUCCESS)
+            self.assertIn("## 12. Method Excerpts", text)
+            self.assertIn("### Principles — `principles.md`", text)
+            self.assertIn("simplest design", text)
+            self.assertLess(text.index("## 12. Method Excerpts"), text.index("### SAFETY"))
+
+    def test_packet_create_omits_method_section_when_corpus_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(
+                    [
+                        "packet",
+                        "create",
+                        "--task",
+                        "No corpus available",
+                        "--phase",
+                        "build",
+                        "--role",
+                        "Forge Worker",
+                        "--path",
+                        str(root),
+                        "--format",
+                        "json",
+                        "--json",
+                    ]
+                )
+            payload = json.loads(output.getvalue())
+            packet_path = Path(payload["output_file"])
+            packet_payload = json.loads(packet_path.read_text(encoding="utf-8"))
+
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(packet_payload["method_excerpts"], [])
+            markdown_path = packet_path.with_suffix(".md")
+            if markdown_path.exists():
+                self.assertNotIn("## 12. Method Excerpts", markdown_path.read_text(encoding="utf-8"))
+
     def test_workflow_history_lists_saved_plans_newest_first(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

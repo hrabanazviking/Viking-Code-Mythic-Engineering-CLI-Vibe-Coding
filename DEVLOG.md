@@ -7,6 +7,41 @@
 
 ---
 
+## 2026-04-29 - Stage 15 Method Excerpt Selector
+
+**Session:** Closing out the last unchecked Stage 15 box — the method excerpt selector for packet building.
+**Status:** Packets now embed role-relevant excerpts from the imported method corpus instead of either omitting method context or dumping the whole README.
+**Scope:** New `mythic_vibe_cli.method_excerpt` module + integration into `PacketBuilder._render_packet`. Strictly additive; graceful degradation when the corpus is absent.
+
+### What changed
+
+- Added `mythic_vibe_cli/method_excerpt.py` with `MethodExcerpt`, `select_method_excerpts(corpus_dir, sections, char_limit)`, `sections_for(role, phase)`, and the `ROLE_METHOD_SECTIONS` / `PHASE_METHOD_SECTIONS` maps that bind canonical Mythic sections (principles, workflow, ai roles, required docs, refactor method, debugging method, verification method, failure modes) to roles and phases.
+- Heading-based excerpt scan: walks `docs/mythic_source/`, finds H1–H6 headings whose text matches any keyword (case-insensitive substring), and captures content up to the next heading at the same or higher level. Capped at ~600 chars per excerpt with a `truncated` flag. Skips manifest/pin/index files.
+- `PacketBuilder._render_packet` now computes excerpts via `_method_excerpts(request)` once per packet. Markdown packets get a new `## 12. Method Excerpts` section, inserted between `## 11. Check-in Summary` and the existing `### SAFETY` block. JSON packets get a `method_excerpts` array beside `required_output_format`.
+- When `docs/mythic_source/` is missing or no headings match, the method section is omitted entirely from markdown and `method_excerpts` is `[]` in JSON. No error, no breakage.
+- Selection precedence: role first (`Auditor` → `verification method`, `failure modes`), with phase fallback (`verify` → `verification method`, `failure modes`) and an empty result when neither role nor phase is recognized.
+- Added six unit tests in `tests/test_method.py` covering role priority, phase fallback, the empty case, the heading-finder happy path, missing-corpus graceful return, char-limit truncation, and manifest-file skipping.
+- Added three CLI-kernel tests in `tests/test_cli_kernel.py` covering JSON `method_excerpts` array population for an Auditor packet, the `## 12. Method Excerpts` markdown section ordering for a Skald packet, and graceful omission when the corpus is absent.
+- Ticked the Stage 15 build-task box in `MYTHIC_VIBE_CLI_PRODUCTION_ROADMAP.md`.
+- Updated `docs/COMMAND_CONTRACTS.md`, `docs/api.md`, and `CHANGELOG.md`.
+
+### Why it matters
+
+Stage 15's "done when" criterion was: *Packets include relevant method sections, not random bulk docs.* Until this slice, packets did not embed method content at all — the imported corpus existed but wasn't routed into prompts. Now the canonical Mythic sections that match a packet's role/phase travel with the packet itself, so the AI receiving the prompt sees the *method-of-work* alongside the task. With Stage 15 fully closed, the production roadmap's six-phase work (Stages 0–15) is complete; the remaining unchecked items are part of stage definitions deeper in the roadmap.
+
+### Verification
+
+- `pytest -q` -> `135 passed, 14 subtests passed` (was 124 + 14)
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!`
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 52 source files` (was 51 — `method_excerpt.py` added)
+- Smoke: seeded `docs/mythic_source/guide.md` with `# Workflow` and `# Refactor Method` headings, then `packet create --task ... --phase build --role 'Forge Worker' --json` rendered the markdown packet with both excerpts under `## 12. Method Excerpts` between `## 11. Check-in Summary` and `### SAFETY`.
+
+### Continuity thread
+
+- A natural next slice could move from Stage 15 into Stage 17 territory: provider execution safety gates for the workflow runner so `workflow run` can drop the always-blocked dry-run requirement. Alternatively, the Stage 15 corpus selector could grow a packet-level override (`packet create --method-section <name>`) that lets users pin specific sections regardless of role mapping.
+
+_The method, once written, may now ride alongside the task it teaches; no longer a library to be quoted, but a companion to be heard._
+
 ## 2026-04-29 - Stage 16 Cross-Run Packet References
 
 **Session:** Closing the original Stage 16 arc by lighting up the cross-run regression diff pattern that motivated the workflow history ledger in the first place.
