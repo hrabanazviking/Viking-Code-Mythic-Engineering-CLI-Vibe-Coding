@@ -23,9 +23,10 @@ is a no-op.
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass
 import sys
-from typing import IO, TextIO
+from typing import IO, Iterator, TextIO
 
 
 @dataclass
@@ -117,3 +118,22 @@ def flush_raw_stdout() -> None:
     """Flush the real stdout regardless of guard state."""
     target: IO[str] = _state.original_stdout if _state is not None else sys.stdout
     target.flush()
+
+
+@contextmanager
+def json_output_guard(active: bool) -> Iterator[None]:
+    """Optionally activate the stdout guard for the duration of a ``with`` block.
+
+    Pass ``active=True`` to install the guard before the block runs and restore
+    the original stdout after, even on exceptions. ``active=False`` makes the
+    block a transparent no-op so callers can write ``with json_output_guard(args.json):``
+    without branching on the flag.
+    """
+    if not active:
+        yield
+        return
+    take_over_stdout()
+    try:
+        yield
+    finally:
+        restore_stdout()

@@ -6,6 +6,8 @@ import sys
 from typing import Any
 from typing import TextIO
 
+from .runtime.output_guard import write_raw_stdout
+
 
 _QUIET = False
 _VERBOSE = False
@@ -47,7 +49,7 @@ def write_key_value(key: str, value: object, *, indent: int = 0) -> None:
 
 
 def write_json(payload: dict[str, Any]) -> None:
-    write_line(json.dumps(payload, indent=2, sort_keys=True), force=True)
+    write_raw_stdout(json.dumps(payload, indent=2, sort_keys=True) + "\n")
 
 
 def write_verbose(message: str) -> None:

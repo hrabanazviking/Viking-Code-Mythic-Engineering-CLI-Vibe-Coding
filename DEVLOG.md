@@ -7,6 +7,45 @@
 
 ---
 
+## 2026-04-29 - Wire Pi Safety Primitives into Existing Surfaces
+
+**Session:** Turning the two Pi-derived primitives (`file_mutation_queue` and the stdout `output_guard`) from inert plumbing into real protections that activate on every `--json` command and every packet write.
+**Status:** `--json` runs under the stdout guard, deliberate JSON output bypasses it via `write_raw_stdout`, and packet writers serialize per packet directory + per file path. A pre-existing concurrency hazard in `_next_packet_id` was caught and fixed.
+**Scope:** Two primitives × wiring + tests + a real bug fix surfaced by the new test.
+
+### What changed
+
+#### Half A — Stdout guard on every `--json` command
+
+- Added `json_output_guard(active: bool)` context manager to `mythic_vibe_cli.runtime.output_guard`. When `active`, it calls `take_over_stdout()` on entry and `restore_stdout()` on exit (including on exceptions). When inactive, it is a transparent no-op so callers can write `with json_output_guard(args.json):` unconditionally.
+- Updated `mythic_vibe_cli.app.main` to wrap the handler call with `json_output_guard(getattr(args, "json", False))`.
+- Updated `mythic_vibe_cli.output.write_json` to write through `runtime.output_guard.write_raw_stdout()` so the deliberate JSON payload reaches real stdout while the guard is active. Other writers (`write_line`, `write_error`, `write_bullet`, etc.) are unchanged: under the guard, any accidental call to `write_line` (or anything that calls `print` or `sys.stdout.write` directly) routes to stderr, which is the desired contract.
+- Added three tests for the new context manager (active isolates stdout, inactive is transparent, restore on exception) and two CLI-kernel tests for the integration: an injected noisy handler verifies `--json` stdout stays parseable JSON while noise lands in stderr; the sibling test confirms non-`--json` commands keep human progress on stdout.
+
+#### Half B — File mutation queue on every packet write
+
+- Wrapped `PacketBuilder._write_record`, `_write_ingested_record`, and `_write_context_manifest` with per-path `file_mutation_queue` blocks so concurrent writers to the same packet, metadata, or context-manifest path serialize cleanly.
+- Wrapped `PacketBuilder.create_packet` and `PacketBuilder.ingest_packet` with a packet-directory-level `file_mutation_queue` so the `_next_packet_id` allocation and the subsequent write are atomic against other concurrent calls.
+- Added a concurrency test that fires eight `create_packet` calls in parallel threads and asserts eight distinct PKT-IDs land on disk with valid packet bodies. **The test caught a real bug:** `_next_packet_id` was racy — without the directory-level queue, all eight threads computed `PKT-000001` simultaneously and only one packet ended up on disk. The fix keeps the existing per-file queues for inner safety while adding the outer directory queue for ID-allocation safety.
+
+### Why it matters
+
+Until this slice the Pi-derived primitives were inert. The wiring turns the queue and the guard into structural invariants of the JSON-mode contract and the packet-write path. The JSON contract — *only deliberate output reaches stdout* — is now enforced by code, not by convention. The packet-allocation contract — *each create_packet returns a distinct PKT-ID* — is now safe under concurrent callers, including the future provider-driven `workflow run` that the V2 roadmap will eventually unblock.
+
+### Verification
+
+- `pytest -q` -> `157 passed, 14 subtests passed` (was 151 + 14 going into the slice; +3 guard tests, +2 CLI-kernel tests, +1 concurrency test)
+- `pytest -q tests/test_config_and_bridge.py::PacketWriterConcurrencyTests` -> `1 passed in 3.36s` (8-thread test)
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!`
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 55 source files`
+- Manual smoke during test development: removing the directory-level queue made the concurrency test fail with `1 != 8` written packets, confirming the test catches the race.
+
+### Continuity thread
+
+- The natural next slice ports a third single-file Pi primitive (`core/timings.ts` for elapsed-time instrumentation, or `core/event-bus.ts` for internal event coordination) to keep the runtime subpackage growing toward the eventual provider-driven `workflow run`. Alternatively, the next slice could begin V2 Phase 3 (TUI) using the now-wired guard to keep TUI rendering noise off stdout in non-interactive modes. The Pi guide section 13 already names the third heavy primitive — compaction branch summarization — but that is a multi-slice arc rather than a single-file plunder.
+
+_The two stones are no longer cold in the forge: the queue holds the hammer's path safe, and the guard keeps the bellows-smoke from the saga's parchment._
+
 ## 2026-04-29 - Pi Plunder Slice 2: Output Guard
 
 **Session:** Continuing the lawful pi plunder cadence after the file-mutation-queue slice. Same legal pattern applied: per-file attribution header, plunder-map row, test-port-first.

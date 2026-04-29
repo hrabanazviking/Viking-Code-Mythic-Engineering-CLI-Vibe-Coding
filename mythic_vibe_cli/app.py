@@ -11,6 +11,7 @@ from .core.state import PHASES
 from .exit_codes import USER_INPUT_ERROR
 from .output import configure_output
 from .plugins.api import PLUGIN_HOOKS
+from .runtime.output_guard import json_output_guard
 from .ux import artifact_names, phase_names
 from .workflow_engine import DEFAULT_ROLE_SEQUENCE
 
@@ -630,7 +631,8 @@ def main(argv: list[str] | None = None) -> int:
     handler: CommandHandler | None = COMMAND_HANDLERS.get(args.command)
     if handler:
         try:
-            return handler(args)
+            with json_output_guard(getattr(args, "json", False)):
+                return handler(args)
         finally:
             configure_output()
 
