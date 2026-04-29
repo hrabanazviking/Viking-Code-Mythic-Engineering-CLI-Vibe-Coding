@@ -179,8 +179,10 @@ additive, cross-platform, open-source):
 | 28 | Phase 3 Slice 3.3 — forge command (dry-run) | done — `cbc2b24` — +21 tests, 52 slash entries |
 | 29 | Update memory + project status (after slice 3.3) | done — pushed at e3adc5b |
 | 30 | Phase 3 Slice 3.4 — approval gates | done — `9231073` — +17 tests |
-| 31 | Update memory + project status (after slice 3.4) | in progress |
-| 32 | Phase 3 Slice 3.5 — provider-backed forge | next |
+| 31 | Update memory + project status (after slice 3.4) | done — pushed at 60251bb |
+| 32 | Phase 3 Slice 3.5 — provider-backed forge | done — `fe763e1` — +15 tests |
+| 33 | Update memory + project status (after slice 3.5) | in progress |
+| 34 | Phase 3 Slice 3.6 — verifier integration | next |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
@@ -382,14 +384,31 @@ all stdin parsing paths via mocked input()).
 
 See `PHASE3_SLICE_3_4_CLOSEOUT.md` for the full memo.
 
-## Next slice (PH-03 slice 3.5)
+## PH-03 slice 3.5 results
 
-Provider-backed forge. Lifts the UNSAFE_OPERATION_BLOCKED gate
-that today wraps non-dry-run runs. Routes each agent's packet
-through the configured provider, captures response into
-AgentOutput, transitions ledger entries pending → running →
-succeeded/failed, and reuses the slice 3.4 gate machinery
-between agents.
+Largest Phase 3 slice. New `mythic-vibe forge run --provider <name>
+--task <X>` actually executes the multi-agent workflow against a
+configured provider. Each agent's packet is routed through the
+provider, the response is captured as an AgentOutput, and the
+ledger transitions pending → running → succeeded/failed.
+
+The key mechanism: `prior_outputs_for_step` walks the ledger to
+collect every prior agent's serialised AgentOutput. Architect,
+Cartographer, Forge Worker, Auditor, and Scribe contracts that
+left dry-run blocked because they require `prior_outputs` now pass
+validation as their predecessors complete.
+
+Tests 468 → 483 (+15). End-to-end via stub provider; no live API
+key needed. Ruff/mypy clean.
+
+See `PHASE3_SLICE_3_5_CLOSEOUT.md` for the full memo.
+
+## Next slice (PH-03 slice 3.6)
+
+Verifier integration. Wire the Auditor agent's output through the
+existing `verify/` module so contract gates like
+`diff-reviewed-against-architecture` and `no-invariant-violation`
+become real machine-checks rather than just declarations.
 
 ---
 
