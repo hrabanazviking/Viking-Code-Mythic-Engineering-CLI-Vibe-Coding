@@ -7,6 +7,37 @@
 
 ---
 
+## 2026-04-29 - Stage 16 Workflow Packet Readiness Gate
+
+**Session:** Hardening workflow execution preview with packet readiness validation.
+**Status:** `workflow run --dry-run --packets-only` now validates that each workflow step has a matching stored packet artifact.
+**Scope:** Safety gate before any future provider-backed workflow execution.
+
+### What changed
+
+- Added `workflow run --dry-run --packets-only`.
+- Added packet matching by role, phase, task, audience, and output format.
+- Added JSON `packet_status` output with `found`, packet ID, packet path, and metadata path.
+- Missing packets now return a user-input failure in packets-only mode, while still reporting structured status under `--json`.
+- Added command-kernel tests for ready packet validation and missing packet blocking.
+- Updated command contracts, API docs, changelog, and this devlog entry.
+
+### Why it matters
+
+The runner now has a concrete preflight gate: before future provider execution exists, the CLI can prove whether every planned role step has a real prompt packet ready on disk.
+
+### Verification
+
+- `pytest tests\test_cli_kernel.py tests\test_workflow_engine.py` -> `22 passed`
+- `ruff check mythic_vibe_cli\commands.py mythic_vibe_cli\app.py tests\test_cli_kernel.py` -> passed
+- `mypy mythic_vibe_cli` -> passed
+- Missing-packet smoke: `workflow run --task "Check missing packets" --role Skald --dry-run --packets-only --json` -> returned missing packet status
+- Ready-packet smoke: generated Skald + Auditor packets, then `workflow run --dry-run --packets-only --json` -> returned `packets_ready: true`
+
+### Continuity thread
+
+- The next slice can add workflow-scoped packet listing/showing or attach workflow metadata to packet records so packet readiness can be traced by workflow ID instead of exact task text.
+
 ## 2026-04-29 - Stage 16 Workflow Run Preview
 
 **Session:** Adding a safe execution preview for role orchestration.

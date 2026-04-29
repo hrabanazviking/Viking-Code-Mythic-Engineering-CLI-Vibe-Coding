@@ -52,7 +52,7 @@ from .ux import (
     zsh_completion,
 )
 from .workflow import MythicRunConfig, MythicWorkflow
-from .workflow_engine import DEFAULT_ROLE_SEQUENCE, WORKFLOW_PLAN_FILENAME, WorkflowEngine
+from .workflow_engine import DEFAULT_ROLE_SEQUENCE, WORKFLOW_PLAN_FILENAME, WorkflowEngine, WorkflowPlan
 from .verify import VerificationArtifact, load_latest_verification, new_verification_id, write_verification_artifact
 from .verify.doc_checker import check_docs
 from .verify.git_diff import review_changed_files
@@ -556,6 +556,41 @@ def cmd_workflow_plan(args: argparse.Namespace) -> int:
         for artifact in payload["packet_artifacts"]:
             write_bullet(f"{artifact['packet_id']}: {artifact['packet_path']}")
     return SUCCESS
+
+
+def _workflow_packet_status(root: Path, plan: WorkflowPlan, *, audience: str = "advanced", output_format: str = "markdown") -> list[dict[str, object]]:
+    bridge = CodexBridge(root)
+    records = bridge.list_packets()
+    requests = plan.packet_requests(audience=audience)
+    statuses: list[dict[str, object]] = []
+    for request in requests:
+        request.output_format = output_format
+        match = next(
+            (
+                record
+                for record in records
+                if record.role == request.role
+                and record.phase == request.phase
+                and record.task == request.task
+                and record.audience == request.audience
+                and record.output_format == request.output_format
+            ),
+            None,
+        )
+        statuses.append(
+            {
+                "role": request.role,
+                "phase": request.phase,
+                "task": request.task,
+                "audience": request.audience,
+                "output_format": request.output_format,
+                "found": match is not None,
+                "packet_id": match.packet_id if match else None,
+                "packet_path": match.packet_path if match else None,
+                "metadata_path": match.metadata_path if match else None,
+            }
+        )
+    return statuses
 
 
 def _ai_registry(root: Path | None = None) -> ProviderRegistry:
@@ -2412,6 +2447,17 @@ def cmd_workflow_run(args: argparse.Namespace) -> int:
         write_error(str(exc))
         return USER_INPUT_ERROR
 
+    packet_status = []
+    packets_ready = None
+    if _flag(args, "packets_only"):
+        packet_status = _workflow_packet_status(
+            root,
+            plan,
+            audience=getattr(args, "audience", "advanced"),
+            output_format=getattr(args, "format", "markdown"),
+        )
+        packets_ready = all(item["found"] for item in packet_status)
+
     payload = {
         "command": "workflow run",
         "dry_run": True,
@@ -2420,7 +2466,21 @@ def cmd_workflow_run(args: argparse.Namespace) -> int:
         "plan": plan.to_dict(),
         "steps": steps,
         "provider_execution": "disabled",
+        "packets_only": _flag(args, "packets_only"),
+        "packets_ready": packets_ready,
+        "packet_status": packet_status,
     }
+    if _flag(args, "packets_only") and not packets_ready:
+        if _flag(args, "json"):
+            write_json(payload)
+        else:
+            write_error("Workflow packets are missing. Run `mythic-vibe workflow plan --packets` for this task first.")
+            write_line("Missing packet steps:")
+            for item in packet_status:
+                if not item["found"]:
+                    write_bullet(f"{item['role']} -> {item['phase']}")
+        return USER_INPUT_ERROR
+
     if _flag(args, "json"):
         write_json(payload)
         return SUCCESS
@@ -2432,6 +2492,11 @@ def cmd_workflow_run(args: argparse.Namespace) -> int:
     write_line("Execution preview:")
     for step in steps:
         write_bullet(f"{step['step_id']}: {step['role']} -> {step['phase']} ({step['handoff_to'] or 'done'})")
+    if packet_status:
+        write_line("Packet readiness:")
+        for item in packet_status:
+            status = "ready" if item["found"] else "missing"
+            write_bullet(f"{item['role']} -> {item['phase']}: {status}")
     return SUCCESS
 
 
