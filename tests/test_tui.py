@@ -759,6 +759,232 @@ class TuiArtifactViewerIntegrationTests(unittest.TestCase):
         self.assertIn("SYSTEM_VISION.md", rendered)
 
 
+# ---- PH-04 slice 4.3 — Packet Viewer panel ------------------------------
+
+
+class PacketViewerDataTests(unittest.TestCase):
+    """Pure-data layer: build_packet_viewer_data() finds the current
+    packet and snapshots its preview."""
+
+    def test_empty_project_returns_empty_data(self) -> None:
+        from mythic_vibe_cli.tui.app import build_packet_viewer_data
+
+        with tempfile.TemporaryDirectory() as tmp:
+            data = build_packet_viewer_data(Path(tmp))
+        self.assertEqual(data.packet_id, "")
+        self.assertEqual(data.relpath, "")
+        self.assertEqual(data.preview_lines, [])
+        self.assertEqual(data.line_count, 0)
+        self.assertFalse(data.truncated)
+
+    def test_codex_prompt_md_preferred_when_present(self) -> None:
+        from mythic_vibe_cli.tui.app import build_packet_viewer_data
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            mythic = root / "mythic"
+            mythic.mkdir()
+            (mythic / "codex_prompt.md").write_text(
+                "# Codex Prompt\n\nLine 2\nLine 3\n",
+                encoding="utf-8",
+            )
+            packets = mythic / "packets"
+            packets.mkdir()
+            (packets / "PKT-0001.md").write_text("historical packet content\n", encoding="utf-8")
+            data = build_packet_viewer_data(root)
+
+        self.assertEqual(data.packet_id, "codex_prompt")
+        # Use forward slashes in the comparison so this works on Windows too.
+        self.assertEqual(data.relpath.replace("\\", "/"), "mythic/codex_prompt.md")
+        self.assertEqual(data.preview_lines[0], "# Codex Prompt")
+        self.assertEqual(data.line_count, 4)
+        self.assertGreater(data.byte_size, 0)
+
+    def test_falls_back_to_most_recent_packet_when_codex_prompt_missing(self) -> None:
+        import os
+
+        from mythic_vibe_cli.tui.app import build_packet_viewer_data
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            packets = root / "mythic" / "packets"
+            packets.mkdir(parents=True)
+            old = packets / "PKT-0001.md"
+            old.write_text("old packet\n", encoding="utf-8")
+            new = packets / "PKT-0002.md"
+            new.write_text("# Recent packet\n\nbody line\n", encoding="utf-8")
+            # Force PKT-0002 to be more recent than PKT-0001.
+            old_time = time.time() - 100
+            os.utime(old, (old_time, old_time))
+
+            data = build_packet_viewer_data(root)
+
+        self.assertEqual(data.packet_id, "PKT-0002")
+        self.assertEqual(data.preview_lines[0], "# Recent packet")
+
+    def test_preview_truncated_when_file_exceeds_cap(self) -> None:
+        from mythic_vibe_cli.tui.app import (
+            PACKET_PREVIEW_LINES,
+            build_packet_viewer_data,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            mythic = root / "mythic"
+            mythic.mkdir()
+            many_lines = "\n".join(f"line {i}" for i in range(50))
+            (mythic / "codex_prompt.md").write_text(many_lines, encoding="utf-8")
+            data = build_packet_viewer_data(root, preview_lines=PACKET_PREVIEW_LINES)
+
+        self.assertEqual(len(data.preview_lines), PACKET_PREVIEW_LINES)
+        self.assertEqual(data.line_count, 50)
+        self.assertTrue(data.truncated)
+
+    def test_no_truncation_when_file_fits_within_cap(self) -> None:
+        from mythic_vibe_cli.tui.app import build_packet_viewer_data
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            mythic = root / "mythic"
+            mythic.mkdir()
+            (mythic / "codex_prompt.md").write_text(
+                "one\ntwo\nthree\n",
+                encoding="utf-8",
+            )
+            data = build_packet_viewer_data(root, preview_lines=10)
+
+        self.assertEqual(data.preview_lines, ["one", "two", "three"])
+        self.assertFalse(data.truncated)
+
+    def test_unreadable_file_returns_empty_data(self) -> None:
+        from mythic_vibe_cli.tui.app import build_packet_viewer_data
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            mythic = root / "mythic"
+            mythic.mkdir()
+            # Create as a directory with the same name to force the read to fail.
+            target = mythic / "codex_prompt.md"
+            target.mkdir()  # not a file -> .is_file() is False; selector skips it
+            data = build_packet_viewer_data(root)
+
+        # Selector falls back to packets/ — none exist -> empty result.
+        self.assertEqual(data.relpath, "")
+
+    def test_to_dict_round_trip_shape(self) -> None:
+        from mythic_vibe_cli.tui.app import build_packet_viewer_data
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            mythic = root / "mythic"
+            mythic.mkdir()
+            (mythic / "codex_prompt.md").write_text("hi\n", encoding="utf-8")
+            data = build_packet_viewer_data(root)
+            payload = data.to_dict()
+
+        self.assertEqual(
+            set(payload.keys()),
+            {
+                "packet_id",
+                "relpath",
+                "line_count",
+                "byte_size",
+                "modified_at",
+                "preview_lines",
+                "truncated",
+            },
+        )
+
+
+class PacketViewerFormatTests(unittest.TestCase):
+    def test_empty_data_renders_placeholder(self) -> None:
+        from mythic_vibe_cli.tui.app import PacketViewerData, _format_packet_viewer
+
+        rendered = _format_packet_viewer(PacketViewerData())
+        self.assertIn("no packet on disk", rendered)
+        self.assertIn("codex-pack", rendered)
+        self.assertIn("forge plan", rendered)
+
+    def test_render_includes_packet_id_and_preview(self) -> None:
+        from mythic_vibe_cli.tui.app import (
+            _format_packet_viewer,
+            build_packet_viewer_data,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            mythic = root / "mythic"
+            mythic.mkdir()
+            (mythic / "codex_prompt.md").write_text(
+                "# Mythic Engineering Task Packet\n\n## 1. Role\n",
+                encoding="utf-8",
+            )
+            data = build_packet_viewer_data(root)
+            rendered = _format_packet_viewer(data)
+
+        self.assertIn("codex_prompt", rendered)
+        self.assertIn("# Mythic Engineering Task Packet", rendered)
+        self.assertIn("## 1. Role", rendered)
+
+    def test_truncated_render_shows_remainder_count(self) -> None:
+        from mythic_vibe_cli.tui.app import (
+            _format_packet_viewer,
+            build_packet_viewer_data,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            mythic = root / "mythic"
+            mythic.mkdir()
+            (mythic / "codex_prompt.md").write_text(
+                "\n".join(f"line {i}" for i in range(50)),
+                encoding="utf-8",
+            )
+            data = build_packet_viewer_data(root, preview_lines=5)
+            rendered = _format_packet_viewer(data)
+
+        self.assertIn("(45 more lines)", rendered)
+
+
+@unittest.skipIf(textual_unavailable, "textual not installed")
+class TuiPacketViewerIntegrationTests(unittest.TestCase):
+    def test_packet_panel_renders_placeholder_when_empty(self) -> None:
+        from mythic_vibe_cli.tui.app import MythicTuiApp
+
+        async def run_test() -> str:
+            with tempfile.TemporaryDirectory() as tmp:
+                app = MythicTuiApp(Path(tmp))
+                async with app.run_test() as pilot:
+                    await pilot.pause()
+                    panel = app.screen.query_one("#packet-panel")
+                    return str(panel.render())
+
+        rendered = asyncio.run(run_test())
+        self.assertIn("no packet", rendered)
+
+    def test_packet_panel_renders_codex_prompt_content(self) -> None:
+        from mythic_vibe_cli.tui.app import MythicTuiApp
+
+        async def run_test() -> str:
+            with tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                mythic = root / "mythic"
+                mythic.mkdir()
+                (mythic / "codex_prompt.md").write_text(
+                    "# Mythic Engineering Task Packet\n\n## Role\nForge Worker\n",
+                    encoding="utf-8",
+                )
+                app = MythicTuiApp(root)
+                async with app.run_test() as pilot:
+                    await pilot.pause()
+                    panel = app.screen.query_one("#packet-panel")
+                    return str(panel.render())
+
+        rendered = asyncio.run(run_test())
+        self.assertIn("codex_prompt", rendered)
+        self.assertIn("Mythic Engineering Task Packet", rendered)
+
+
 class CmdTuiFallbackTests(unittest.TestCase):
     def test_missing_textual_returns_operational_failure_with_helpful_error(self) -> None:
         """If textual cannot be imported, cmd_tui surfaces a helpful error and
