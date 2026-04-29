@@ -1121,6 +1121,49 @@ def build_parser() -> argparse.ArgumentParser:
         _capture.add_argument("--path", default=".", help="Project directory (default: current directory)")
         add_runtime_options(_capture, json_output=True, dry_run=True)
 
+    # --- PH-02 slice 2.4: provider alias ---
+    # Top-level alias for `mythic-vibe ai providers` so the slash
+    # picker can surface a friendlier `/provider` entry.
+    provider_cmd = sub.add_parser(
+        "provider",
+        help="List configured AI providers (alias of `ai providers`)",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe provider
+              mythic-vibe provider --json
+              mythic-vibe provider --path ./project
+            """
+        ),
+    )
+    provider_cmd.add_argument(
+        "--path",
+        default=".",
+        help="Project directory used for provider logs (default: current directory)",
+    )
+    add_runtime_options(provider_cmd, json_output=True)
+
+    # --- PH-02 slice 2.5: audit alias ---
+    # Top-level alias for `mythic-vibe doctor --json` so audit-style
+    # consumers don't have to remember the doctor flag combo.
+    audit_cmd = sub.add_parser(
+        "audit",
+        help="Run a doctor pass and emit JSON (alias of `doctor --json`)",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe audit
+              mythic-vibe audit --path ./project
+            """
+        ),
+    )
+    audit_cmd.add_argument(
+        "--path",
+        default=".",
+        help="Project directory (default: current directory)",
+    )
+    add_runtime_options(audit_cmd)
+
     return parser
 
 

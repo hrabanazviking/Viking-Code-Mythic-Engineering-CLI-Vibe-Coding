@@ -3767,6 +3767,27 @@ def cmd_verify_dispatch(args: argparse.Namespace) -> int:
     return cmd_verify(args)
 
 
+def cmd_provider(args: argparse.Namespace) -> int:
+    """PH-02 slice 2.4 alias: ``mythic-vibe provider`` ⇒ ``ai providers``.
+
+    Thin wrapper so the slash picker can offer ``/provider`` without
+    teaching plugin authors and operators a separate dispatch path.
+    Behaviour and exit codes are identical to ``cmd_ai_providers``.
+    """
+    return cmd_ai_providers(args)
+
+
+def cmd_audit(args: argparse.Namespace) -> int:
+    """PH-02 slice 2.5 alias: ``mythic-vibe audit`` ⇒ ``doctor --json``.
+
+    Forces JSON output so an audit run is always machine-readable —
+    that's the distinction from plain ``doctor``, which renders a
+    human report by default.
+    """
+    setattr(args, "json", True)
+    return cmd_doctor(args)
+
+
 COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "init": cmd_init,
     "start": cmd_init,
@@ -3820,4 +3841,6 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "plan": cmd_plan_dispatch,
     "build": cmd_build_dispatch,
     "forge": cmd_forge_dispatch,
+    "provider": cmd_provider,
+    "audit": cmd_audit,
 }
