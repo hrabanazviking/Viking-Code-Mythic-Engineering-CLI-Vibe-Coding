@@ -139,4 +139,7 @@ BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
     BuiltinSlashCommand(name="architecture", description="Capture a Mythic Phase Record for the architecture phase"),
     BuiltinSlashCommand(name="plan", description="Capture a Mythic Phase Record for the plan phase"),
     BuiltinSlashCommand(name="build", description="Capture a Mythic Phase Record for the build phase"),
+
+    # --- Multi-agent forge (PH-03 slice 3.3) ---
+    BuiltinSlashCommand(name="forge", description="Multi-agent forge orchestrator (forge plan --dry-run today; forge ledger list/show/latest)"),
 )

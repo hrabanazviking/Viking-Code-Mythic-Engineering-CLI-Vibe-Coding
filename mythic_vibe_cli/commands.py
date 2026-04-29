@@ -65,6 +65,7 @@ from .verify.doc_checker import check_docs
 from .verify.git_diff import review_changed_files
 from .verify.invariant_checker import check_invariants
 from .verify.test_runner import discover_default_commands, run_command, run_default_commands
+from .forge import cmd_forge_dispatch
 
 
 CommandHandler = Callable[[argparse.Namespace], int]
@@ -3817,4 +3818,5 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "architecture": cmd_architecture_dispatch,
     "plan": cmd_plan_dispatch,
     "build": cmd_build_dispatch,
+    "forge": cmd_forge_dispatch,
 }

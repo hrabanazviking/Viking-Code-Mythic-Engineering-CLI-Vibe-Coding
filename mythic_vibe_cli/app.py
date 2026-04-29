@@ -850,6 +850,64 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_runtime_options(version_cmd, json_output=True)
 
+    # --- PH-03 slice 3.3: forge command (dry-run + ledger inspection) ---
+
+    forge_cmd = sub.add_parser(
+        "forge",
+        help="Multi-agent forge orchestrator (dry-run + ledger inspection today; provider-backed run lands in slice 3.5)",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe forge plan --dry-run --task "Refactor router"
+              mythic-vibe forge plan --dry-run --task "X" --skip-ledger --json
+              mythic-vibe forge ledger list
+              mythic-vibe forge ledger latest --limit 3
+              mythic-vibe forge ledger show --workflow WF-20260429-deadbeef
+              mythic-vibe forge ledger show --workflow WF-... --step step-02 --json
+
+            Notes:
+              `forge plan --dry-run` is the slice 3.3 deliverable. Provider-
+              backed `forge run` waits for slice 3.5; non-dry-run today
+              returns UNSAFE_OPERATION_BLOCKED with a helpful message.
+            """
+        ),
+    )
+    forge_sub = forge_cmd.add_subparsers(dest="forge_command", required=True)
+
+    forge_plan = forge_sub.add_parser(
+        "plan",
+        help="Build a workflow plan and per-agent packets (no provider call)",
+    )
+    forge_plan.add_argument("--task", required=True, help="Plain-language task to forge")
+    forge_plan.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    forge_plan.add_argument(
+        "--skip-ledger",
+        action="store_true",
+        help="Do not write per-step entries to mythic/forge_ledger.json",
+    )
+    add_runtime_options(forge_plan, json_output=True, dry_run=True)
+
+    forge_ledger = forge_sub.add_parser(
+        "ledger",
+        help="Inspect mythic/forge_ledger.json (per-agent step records)",
+    )
+    forge_ledger_sub = forge_ledger.add_subparsers(dest="ledger_command", required=True)
+
+    ledger_list = forge_ledger_sub.add_parser("list", help="List every recorded forge ledger entry")
+    ledger_list.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    add_runtime_options(ledger_list, json_output=True)
+
+    ledger_latest = forge_ledger_sub.add_parser("latest", help="Show the most recent N entries")
+    ledger_latest.add_argument("--limit", type=int, default=5, help="Window size (default 5)")
+    ledger_latest.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    add_runtime_options(ledger_latest, json_output=True)
+
+    ledger_show = forge_ledger_sub.add_parser("show", help="Show every entry for a given workflow")
+    ledger_show.add_argument("--workflow", required=True, help="Workflow id (e.g. WF-20260429-deadbeef)")
+    ledger_show.add_argument("--step", default="", help="Optional step filter (e.g. step-02)")
+    ledger_show.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    add_runtime_options(ledger_show, json_output=True)
+
     # --- PH-02 slice 2.3: workflow-phase capture commands ---
     # Each phase parent has a single `capture` subcommand today; future
     # slices may add `show`, `list`, etc. Subparser dest names use a
