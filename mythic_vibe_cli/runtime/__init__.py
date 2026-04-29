@@ -6,6 +6,7 @@ Currently exposes:
 - ``output_guard`` — stdout cleanliness for protocol-output modes.
 - ``event_bus`` — synchronous publish/subscribe coordination layer.
 - ``timings`` — lightweight elapsed-time instrumentation (env-gated).
+- ``slash_commands`` — typed catalog of slash commands (no dispatcher).
 """
 
 from .event_bus import EventBus, EventBusController, create_event_bus
@@ -17,6 +18,12 @@ from .output_guard import (
     restore_stdout,
     take_over_stdout,
     write_raw_stdout,
+)
+from .slash_commands import (
+    BUILTIN_SLASH_COMMANDS,
+    BuiltinSlashCommand,
+    SlashCommandInfo,
+    SlashCommandSource,
 )
 from .timings import print_timings, record, reset_timings
 
@@ -35,4 +42,8 @@ __all__ = [
     "reset_timings",
     "record",
     "print_timings",
+    "BUILTIN_SLASH_COMMANDS",
+    "BuiltinSlashCommand",
+    "SlashCommandInfo",
+    "SlashCommandSource",
 ]

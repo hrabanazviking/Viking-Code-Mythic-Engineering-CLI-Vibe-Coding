@@ -64,17 +64,17 @@ Mythic-relevant pre-populated builtins:
 
 - [x] Task file written
 - [x] Task file committed + pushed
-- [ ] Port `slash_commands.py`
-- [ ] Update `runtime/__init__.py` re-exports
-- [ ] Write tests (catalog shape, name uniqueness, source enum, info dataclass round-trip)
-- [ ] `pytest -q` green
-- [ ] `ruff` + `mypy` green
-- [ ] Plunder map row added
-- [ ] Per-file Pi attribution header
-- [ ] CHANGELOG entry
-- [ ] DEVLOG entry
-- [ ] Memory snapshot updated
-- [ ] Final commit + push
+- [x] Port `slash_commands.py` (catalog only, no dispatcher; 4-source Literal; 14 Mythic builtins)
+- [x] Update `runtime/__init__.py` re-exports (catalog, both dataclasses, source Literal)
+- [x] Write tests — 8 cases (non-empty, name+description present, names unique, canonical commands present, dataclass round-trip, info carries source/source_info, default description empty, catalog is immutable tuple of frozen dataclasses)
+- [x] `pytest -q` green — 204 passed, 14 subtests passed
+- [x] `ruff` + `mypy` green — 59 source files
+- [x] Plunder map row added (production + tests)
+- [x] Per-file Pi attribution header
+- [x] CHANGELOG entry
+- [x] DEVLOG entry with continuity thread
+- [x] Memory snapshot updated
+- [x] Final commit + push
 
 ## Resume Instructions
 

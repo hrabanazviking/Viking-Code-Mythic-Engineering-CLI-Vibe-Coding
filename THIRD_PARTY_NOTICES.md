@@ -33,6 +33,8 @@ listed in the plunder map below.
 | `tests/test_event_bus.py` | (no upstream unit-test analog; integration via agent-session-runtime-events.test.ts) | 2026-04-29 |
 | `mythic_vibe_cli/runtime/timings.py` | `packages/coding-agent/src/core/timings.ts` | 2026-04-29 |
 | `tests/test_timings.py` | (no upstream unit-test analog) | 2026-04-29 |
+| `mythic_vibe_cli/runtime/slash_commands.py` | `packages/coding-agent/src/core/slash-commands.ts` | 2026-04-29 |
+| `tests/test_slash_commands.py` | (no upstream unit-test analog) | 2026-04-29 |
 
 This project is independent and is not affiliated with, endorsed by, or
 sponsored by Mario Zechner, the pi-mono authors, or pi.dev.
