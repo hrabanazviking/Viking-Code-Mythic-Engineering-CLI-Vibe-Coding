@@ -190,6 +190,21 @@ Contract expectations:
 - explicit remediation hints on failure,
 - no hidden global side effects.
 
+### `mythic_vibe_cli.workflow_engine`
+
+Responsibility:
+
+- deterministic six-role orchestration planning,
+- handoff order between Mythic roles,
+- packet-ready request generation,
+- durable `mythic/workflow_plan.json` artifact writing.
+
+Contract expectations:
+
+- no external provider execution by default,
+- role names come from `mythic_vibe_cli.ai.prompts.roles`,
+- default order remains Skald -> Architect -> Cartographer -> Forge Worker -> Auditor -> Scribe unless a caller supplies an explicit sequence.
+
 ### `mythic_vibe_cli.config`
 
 Responsibility:

@@ -7,6 +7,36 @@
 
 ---
 
+## 2026-04-29 - Stage 16 Workflow Engine Foundation
+
+**Session:** Continuing the Phase 2 role-based orchestration thread.
+**Status:** The CLI now has a deterministic workflow engine for ordering Mythic roles and exporting packet-ready handoffs without calling external providers.
+**Scope:** Additive orchestration layer beside the existing flat `workflow.py` lifecycle module.
+
+### What changed
+
+- Added `mythic_vibe_cli.workflow_engine` with `WorkflowEngine`, `WorkflowPlan`, and `WorkflowStep`.
+- Added the default Skald -> Architect -> Cartographer -> Forge Worker -> Auditor -> Scribe sequence.
+- Added role-to-phase mapping and objective text for each supported role.
+- Added packet request export so every orchestration step can become a `CodexPacketRequest`.
+- Added durable plan writing to `mythic/workflow_plan.json`.
+- Added tests for default role order, handoff links, packet request export, artifact writing, and unknown-role rejection.
+- Updated architecture, domain map, API docs, and changelog to name the new owner.
+
+### Why it matters
+
+The role catalog now has a working executor-side shape. This does not run agents yet; it gives the product a stable planning contract that can drive future CLI commands, provider execution, or plugin hooks without hardwiring orchestration into packet rendering.
+
+### Verification
+
+- `pytest tests\test_workflow_engine.py tests\test_workflow.py tests\test_config_and_bridge.py` -> `15 passed`
+- `ruff check mythic_vibe_cli\workflow_engine.py tests\test_workflow_engine.py` -> passed
+- `mypy mythic_vibe_cli` -> passed
+
+### Continuity thread
+
+- The next slice can expose this engine through a `workflow plan` or `orchestrate plan` CLI command that writes and displays the durable plan for a user task.
+
 ## 2026-04-29 - Stage 16 Role Catalog Foundation
 
 **Session:** Continuing the roadmap after syncing `development`.
