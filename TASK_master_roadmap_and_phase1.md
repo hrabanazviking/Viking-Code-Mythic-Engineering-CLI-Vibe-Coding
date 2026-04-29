@@ -204,8 +204,11 @@ additive, cross-platform, open-source):
 | 53 | Phase 4 Slice 4.7 — Full keymap + `?` help | done — +11 tests, 632 total |
 | 54 | Update memory + project status (after slice 4.7) | done — pushed at d8bdd28 |
 | 55 | Phase 4 Slice 4.8 — Theme support | done — +19 tests, 651 total |
-| 56 | Update memory + project status (after slice 4.8) | in progress |
-| 57 | Phase 4 Slice 4.9 — Accessibility audit (Phase 4 finale) | next |
+| 56 | Update memory + project status (after slice 4.8) | done — pushed at a01e36a |
+| 57 | Phase 4 Slice 4.9 — Accessibility audit (Phase 4 finale) | done — +13 tests, 664 total |
+| 58 | **PHASE 4 FULLY COMPLETE.** PHASE4_FINALE_CLOSEOUT.md written. | done |
+| 59 | Update memory + project status (after slice 4.9 + finale) | in progress |
+| 60 | Choose next active phase (PH-05 / PH-02 finish / PH-13) | pending |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
