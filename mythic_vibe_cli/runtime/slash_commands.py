@@ -142,4 +142,10 @@ BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
 
     # --- Multi-agent forge (PH-03 slice 3.3) ---
     BuiltinSlashCommand(name="forge", description="Multi-agent forge orchestrator (forge plan --dry-run today; forge ledger list/show/latest)"),
+
+    # --- Provider/AI alias (PH-02 slice 2.4) ---
+    BuiltinSlashCommand(name="provider", description="List configured AI providers (alias of `ai providers`)"),
+
+    # --- Diagnostic alias (PH-02 slice 2.5) ---
+    BuiltinSlashCommand(name="audit", description="Run a doctor pass and emit JSON (alias of `doctor --json`)"),
 )
