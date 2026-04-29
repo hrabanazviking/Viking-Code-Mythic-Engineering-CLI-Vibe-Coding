@@ -386,6 +386,187 @@ class RunningCommandScreenTests(unittest.TestCase):
         self.assertTrue(asyncio.run(run_test()))
 
 
+# ---- PH-04 slice 4.1 — Loop Navigator panel ----------------------------
+
+
+class LoopNavigatorDataTests(unittest.TestCase):
+    """Pure-data layer: build_loop_navigator_data() classifies every
+    Mythic phase as current / completed / pending against project state."""
+
+    def test_default_state_marks_intent_as_current_rest_pending(self) -> None:
+        from mythic_vibe_cli.core.state import PHASES
+        from mythic_vibe_cli.tui.app import (
+            PHASE_STATE_CURRENT,
+            PHASE_STATE_PENDING,
+            build_loop_navigator_data,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            data = build_loop_navigator_data(Path(tmp))
+
+        self.assertEqual([entry.phase for entry in data.entries], list(PHASES))
+        self.assertEqual(data.current_phase, "intent")
+        self.assertEqual(data.entries[0].state, PHASE_STATE_CURRENT)
+        for entry in data.entries[1:]:
+            self.assertEqual(
+                entry.state,
+                PHASE_STATE_PENDING,
+                msg=f"{entry.phase} should be pending in default state",
+            )
+
+    def test_completed_phases_marked_completed(self) -> None:
+        import json as _json
+
+        from mythic_vibe_cli.tui.app import (
+            PHASE_STATE_COMPLETED,
+            PHASE_STATE_CURRENT,
+            PHASE_STATE_PENDING,
+            build_loop_navigator_data,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "mythic").mkdir()
+            (root / "mythic" / "status.json").write_text(
+                _json.dumps(
+                    {
+                        "schema_version": 1,
+                        "current_phase": "plan",
+                        "completed_phases": ["intent", "constraints", "architecture"],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            data = build_loop_navigator_data(root)
+
+        states = {entry.phase: entry.state for entry in data.entries}
+        self.assertEqual(states["intent"], PHASE_STATE_COMPLETED)
+        self.assertEqual(states["constraints"], PHASE_STATE_COMPLETED)
+        self.assertEqual(states["architecture"], PHASE_STATE_COMPLETED)
+        self.assertEqual(states["plan"], PHASE_STATE_CURRENT)
+        self.assertEqual(states["build"], PHASE_STATE_PENDING)
+        self.assertEqual(states["verify"], PHASE_STATE_PENDING)
+        self.assertEqual(states["reflect"], PHASE_STATE_PENDING)
+
+    def test_completed_phases_filtered_against_canonical_set(self) -> None:
+        """Unknown phase names in completed_phases are silently dropped
+        (no garbage state from operator-edited status.json)."""
+        import json as _json
+
+        from mythic_vibe_cli.core.state import PHASES
+        from mythic_vibe_cli.tui.app import (
+            PHASE_STATE_COMPLETED,
+            build_loop_navigator_data,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "mythic").mkdir()
+            (root / "mythic" / "status.json").write_text(
+                _json.dumps(
+                    {
+                        "schema_version": 1,
+                        "current_phase": "plan",
+                        "completed_phases": ["intent", "not-a-real-phase"],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            data = build_loop_navigator_data(root)
+
+        # Every entry maps to a known phase.
+        for entry in data.entries:
+            self.assertIn(entry.phase, PHASES)
+        # "intent" is completed; the bogus name doesn't appear anywhere.
+        intent_entry = next(e for e in data.entries if e.phase == "intent")
+        self.assertEqual(intent_entry.state, PHASE_STATE_COMPLETED)
+
+    def test_unknown_current_phase_treated_as_pending_for_every_canonical(self) -> None:
+        import json as _json
+
+        from mythic_vibe_cli.tui.app import (
+            PHASE_STATE_PENDING,
+            build_loop_navigator_data,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "mythic").mkdir()
+            (root / "mythic" / "status.json").write_text(
+                _json.dumps(
+                    {
+                        "schema_version": 1,
+                        "current_phase": "exotic-phase-name",
+                        "completed_phases": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            data = build_loop_navigator_data(root)
+
+        self.assertEqual(data.current_phase, "")
+        for entry in data.entries:
+            self.assertEqual(entry.state, PHASE_STATE_PENDING)
+
+    def test_to_dict_round_trip_shape(self) -> None:
+        from mythic_vibe_cli.tui.app import build_loop_navigator_data
+
+        with tempfile.TemporaryDirectory() as tmp:
+            data = build_loop_navigator_data(Path(tmp))
+            payload = data.to_dict()
+
+        self.assertIn("entries", payload)
+        self.assertIn("current_phase", payload)
+        self.assertEqual(len(payload["entries"]), 7)
+        for entry_payload in payload["entries"]:
+            self.assertEqual(set(entry_payload.keys()), {"phase", "state", "marker"})
+
+
+class LoopNavigatorFormatTests(unittest.TestCase):
+    def test_default_render_marks_current_with_arrow_glyph(self) -> None:
+        from mythic_vibe_cli.tui.app import (
+            _format_loop_navigator,
+            build_loop_navigator_data,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            data = build_loop_navigator_data(Path(tmp))
+            rendered = _format_loop_navigator(data)
+
+        # Default: intent is current; rest are pending.
+        self.assertIn("> intent", rendered)
+        # All seven phase names appear.
+        for phase in ("intent", "constraints", "architecture", "plan", "build", "verify", "reflect"):
+            self.assertIn(phase, rendered)
+
+    def test_empty_entries_yields_placeholder(self) -> None:
+        from mythic_vibe_cli.tui.app import LoopNavigatorData, _format_loop_navigator
+
+        rendered = _format_loop_navigator(LoopNavigatorData(entries=[], current_phase=""))
+        self.assertIn("no phases configured", rendered)
+
+
+@unittest.skipIf(textual_unavailable, "textual not installed")
+class TuiLoopNavigatorIntegrationTests(unittest.TestCase):
+    """Headless tests that exercise the actual widget on the screen."""
+
+    def test_loop_nav_panel_renders_in_status_screen(self) -> None:
+        from mythic_vibe_cli.tui.app import MythicTuiApp
+
+        async def run_test() -> str:
+            with tempfile.TemporaryDirectory() as tmp:
+                app = MythicTuiApp(Path(tmp))
+                async with app.run_test() as pilot:
+                    await pilot.pause()
+                    panel = app.screen.query_one("#loop-nav-panel")
+                    return str(panel.render())
+
+        rendered = asyncio.run(run_test())
+        # Should contain at least the canonical phase names.
+        for phase in ("intent", "constraints", "architecture", "plan", "build", "verify", "reflect"):
+            self.assertIn(phase, rendered)
+
+
 class CmdTuiFallbackTests(unittest.TestCase):
     def test_missing_textual_returns_operational_failure_with_helpful_error(self) -> None:
         """If textual cannot be imported, cmd_tui surfaces a helpful error and
