@@ -7,6 +7,49 @@
 
 ---
 
+## 2026-04-29 - Pi Plunder Slice 7: Exec Subprocess Primitive
+
+**Session:** Seventh Pi-derived primitive in `mythic_vibe_cli/runtime/`. Subprocess execution wrapper with timeout and caller-driven cancellation.
+**Status:** `mythic_vibe_cli.runtime.exec` is live and tested. Foundation for tools, custom verification commands, language-server invocation, and any future provider/agent execution paths.
+**Scope:** Single-file primitive port + unit tests + plunder-map row + runtime guide update.
+
+### What changed
+
+- Added `mythic_vibe_cli/runtime/exec.py` — Python port of pi's `core/exec.ts` (MIT, Copyright (c) 2025 Mario Zechner).
+  - Public surface: `exec_command(command, args, cwd, *, timeout=None, cancel_event=None)` returning a frozen `ExecResult` dataclass (`stdout`, `stderr`, `code`, `killed`, plus `to_dict`).
+  - `shell=False` is hard-coded matching pi — callers split arguments themselves; no shell-injection footguns.
+  - Missing commands return `code=127` with the underlying error message in `stderr` rather than raising. This matches pi's "always resolve, never throw" contract.
+  - Timeout uses `threading.Timer`; `cancel_event` (the Python equivalent of pi's `AbortSignal` since the codebase is sync) uses a small watcher thread; both kill via `SIGTERM` first, then `SIGKILL` after a 5-second grace period.
+  - Per-file Pi attribution header preserved.
+- Pi's companion utility `waitForChildProcess` (a Node-stdio quirk handler for daemonized descendants holding parent stdio handles open on Windows) is **not ported** — Python's `subprocess.Popen.communicate()` already drains stdout/stderr cleanly without the inherited-pipe-handle hang pi works around. The dependency collapses cleanly.
+- `mythic_vibe_cli/runtime/__init__.py` re-exports `ExecResult` and `exec_command` alongside the six other runtime primitives.
+- Added `tests/test_exec.py` with nine unit cases: successful command captures stdout, non-zero exit propagates, stderr is captured separately, timeout kills a long-running command (verified by elapsed time), `cancel_event` set during execution kills the process, already-set `cancel_event` kills immediately on entry, missing command returns `127`, `cwd` is respected (process sees the requested working directory), `to_dict` round-trip on `ExecResult`.
+- Updated `docs/runtime.md`: new §8 covers `exec` with usage + cancellation example; the at-a-glance table promotes from six to seven primitives; Composition Patterns / Constraints / See also sections renumbered to §9–§11; the closing line updated to "seven primitives, seven docstrings, seven test files."
+- Updated `docs/INDEX.md`, `THIRD_PARTY_NOTICES.md` plunder map (production + tests), and `CHANGELOG.md`.
+
+### Why it matters
+
+Tools, verification runners, and any future tool-using-AI surface need a uniform subprocess primitive. Without one, `subprocess.run(...)` calls scatter across the codebase with inconsistent timeout / kill / capture conventions, and "did I remember to handle the missing-command case here?" becomes a per-call worry. The single `exec_command` entry point gives every caller the same contract: timeout + cancel + uniform result shape, with kill semantics matching pi's battle-tested escalation.
+
+The slice also demonstrates a clean dependency-collapse plunder: pi's `waitForChildProcess` exists because Node's child_process EventEmitter has a stdio-handle-inheritance quirk on Windows. Python's subprocess module doesn't share that quirk, so the helper isn't needed. Recording **why** the dependency is omitted (in the docstring and the plunder map) is more valuable than silently dropping it — future maintainers know we considered and explicitly chose not to port.
+
+### Verification
+
+- `pytest -q` -> `219 passed, 14 subtests passed` (was 210 + 14)
+- `pytest -q tests/test_exec.py` -> `9 passed in 1.00s` (timeout test elapsed < 6s as asserted)
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!`
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 61 source files` (was 60)
+
+### Continuity thread
+
+- Seven Pi runtime primitives now sit in `mythic_vibe_cli/runtime/`. The next directions, in roughly increasing scope:
+  1. **Wire `exec_command` into existing subprocess call sites** (`verify/test_runner.py`, any other ad-hoc subprocess.run users) — small follow-on slice that consolidates conventions.
+  2. **Begin V2 Phase 3 (TUI)** — `TODO.md` item 16. Foundation now even stronger with exec.
+  3. **Begin V2 Phase 4 (Local LLM provider layer)** — `TODO.md` item 17. Larger arc.
+  4. **Survey TODO.md backlog** — items #4 (`/`-command expansion), #5/6 (aggregate feature report planning), #7 (bug audit) still open.
+
+_Seven runed stones rest in the forge now: queue, guard, bus, bell, book, sigil, and torch. The torch was the last needed before any traveller could safely leave the hall to fetch tools from outside it; with the torch in hand, even the long road to a tool subprocess returns home with stdout intact._
+
 ## 2026-04-29 - Operator-Facing Runtime Guide
 
 **Session:** Documentation slice. The runtime subpackage is six primitives deep and stable enough to expose as an operator-facing surface. Mirrors the slot left by `docs/plugins.md`.

@@ -26,7 +26,7 @@ This hub orients contributors to the active Mythic Vibe CLI product and the surr
 - `docs/INSTALL.md` - platform install paths for venv, uv, and pipx.
 - `docs/api.md` - command/API contract overview.
 - `docs/plugins.md` - operator guide for writing and registering Mythic plugins (eight life-cycle hooks).
-- `docs/runtime.md` - operator guide for the six runtime primitives in `mythic_vibe_cli/runtime/` (file mutation queue, output guard, event bus, timings, slash commands catalog, source info).
+- `docs/runtime.md` - operator guide for the seven runtime primitives in `mythic_vibe_cli/runtime/` (file mutation queue, output guard, event bus, timings, slash commands catalog, source info, exec).
 - `docs/hardware_profiles.md` - hardware-oriented guidance.
 - `docs/DOCUMENTATION_STANDARDS.md` - documentation maintenance rules.
 - `docs/RELEASE_CHECKLIST.md` - release and packaging verification checklist.

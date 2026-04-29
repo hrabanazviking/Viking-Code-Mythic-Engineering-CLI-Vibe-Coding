@@ -6,7 +6,7 @@ This guide is for developers writing CLI features, plugins, or extensions who wa
 
 ---
 
-## 1) The six primitives at a glance
+## 1) The seven primitives at a glance
 
 | Primitive | One-liner | Wired today |
 |---|---|---|
@@ -16,8 +16,9 @@ This guide is for developers writing CLI features, plugins, or extensions who wa
 | `timings` | Lightweight elapsed-time profiling, env-gated | `app.main()` startup boundaries |
 | `slash_commands` | Typed catalog of slash command names + sources | Foundation (no consumer yet) |
 | `source_info` | Provenance dataclass for extension/plugin/skill/prompt-contributed artifacts | Used by `SlashCommandInfo` |
+| `exec` | Subprocess execution with timeout and cancel-event | Foundation (no consumer yet) |
 
-All six are re-exported from `mythic_vibe_cli.runtime` so callers can `from mythic_vibe_cli.runtime import ...` without thinking about submodule paths.
+All seven are re-exported from `mythic_vibe_cli.runtime` so callers can `from mythic_vibe_cli.runtime import ...` without thinking about submodule paths.
 
 ---
 
@@ -241,7 +242,60 @@ provenance = synthetic_source_info(
 
 ---
 
-## 8) Composition patterns
+## 8) `exec`
+
+**Purpose.** Run a subprocess with a uniform contract — captured stdout/stderr, an integer exit code, a `killed` flag, and optional timeout + caller-driven cancellation. The point is to keep ad-hoc `subprocess.run(...)` calls from scattering across the codebase with inconsistent timeout / kill / capture conventions.
+
+**Public surface.**
+
+- `exec_command(command, args, cwd, *, timeout=None, cancel_event=None)` → `ExecResult`
+- `ExecResult` — frozen dataclass: `stdout`, `stderr`, `code`, `killed`, plus `to_dict`
+- `shell=False` is hard-coded — callers split arguments themselves; no shell-injection footguns
+- Missing commands return `code=127` with the error message in `stderr` rather than raising
+
+**Usage.**
+
+```python
+from mythic_vibe_cli.runtime import exec_command
+
+result = exec_command(
+    "git",
+    ["status", "--porcelain"],
+    cwd=".",
+    timeout=10.0,
+)
+if result.code == 0:
+    process(result.stdout)
+elif result.killed:
+    log.warning("git status timed out")
+```
+
+**With cancellation.**
+
+```python
+import threading
+from mythic_vibe_cli.runtime import exec_command
+
+cancel = threading.Event()
+# ... start a watcher thread that sets `cancel` on Ctrl+C or upstream signal ...
+
+result = exec_command(
+    "long-running-tool",
+    ["--lots", "--of", "--work"],
+    cwd=".",
+    cancel_event=cancel,
+)
+```
+
+When `cancel_event` is set during execution, the process is killed via `SIGTERM` with a 5-second `SIGKILL` fallback (Unix) / `terminate()` then `kill()` escalation (Windows). The kill behavior matches pi's `execCommand`.
+
+**When to reach for it.** Tools that run external programs — git, ripgrep, formatters, linters, build systems, language servers, custom verification commands. Don't reach for it when you want to read a file (use `Path.read_text`) or when you want shell expansion (use Python's own primitives — globbing, env var resolution — rather than spinning up a shell).
+
+**Source:** `mythic_vibe_cli/runtime/exec.py`
+
+---
+
+## 9) Composition patterns
 
 The primitives compose. A few common patterns:
 
@@ -296,7 +350,7 @@ The bus is local to the command — no global state, no leakage across invocatio
 
 ---
 
-## 9) Constraints and contracts
+## 10) Constraints and contracts
 
 These rules apply across all primitives:
 
@@ -309,7 +363,7 @@ These rules apply across all primitives:
 
 ---
 
-## 10) See also
+## 11) See also
 
 - `docs/plugins.md` — operator-facing guide for writing plugins (consumes `event_bus` via the dispatcher)
 - `docs/COMMAND_CONTRACTS.md` — canonical payload shapes per emitter
@@ -323,6 +377,7 @@ These rules apply across all primitives:
   - `mythic_vibe_cli/runtime/timings.py`
   - `mythic_vibe_cli/runtime/slash_commands.py`
   - `mythic_vibe_cli/runtime/source_info.py`
+  - `mythic_vibe_cli/runtime/exec.py`
 - Tests as runnable specification:
   - `tests/test_file_mutation_queue.py`
   - `tests/test_output_guard.py`
@@ -330,5 +385,6 @@ These rules apply across all primitives:
   - `tests/test_timings.py`
   - `tests/test_slash_commands.py`
   - `tests/test_source_info.py`
+  - `tests/test_exec.py`
 
-The runtime layer is intentionally minimal. Six primitives, six docstrings, six test files. Anything more complex than these primitives belongs in a feature module that *uses* the runtime, not in the runtime itself.
+The runtime layer is intentionally minimal. Seven primitives, seven docstrings, seven test files. Anything more complex than these primitives belongs in a feature module that *uses* the runtime, not in the runtime itself.
