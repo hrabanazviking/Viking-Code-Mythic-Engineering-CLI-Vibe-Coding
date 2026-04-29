@@ -7,6 +7,41 @@
 
 ---
 
+## 2026-04-29 - Pi Plunder Slice 2: Output Guard
+
+**Session:** Continuing the lawful pi plunder cadence after the file-mutation-queue slice. Same legal pattern applied: per-file attribution header, plunder-map row, test-port-first.
+**Status:** `mythic_vibe_cli.runtime.output_guard` is live and tested. The runtime subpackage now houses two safety primitives.
+**Scope:** Single-file safety primitive, not yet wired into any user-facing surface — the wiring slice comes next when JSON-mode entry points and an eventual RPC mode actually need to defend their stdout cleanliness.
+
+### What changed
+
+- Added `mythic_vibe_cli/runtime/output_guard.py` — Python port of pi's `src/core/output-guard.ts` (MIT, Copyright (c) 2025 Mario Zechner). Pi reassigns `process.stdout.write`; we install a `_StderrProxy` text-stream into `sys.stdout` and stash the original on a module-level state slot so `restore_stdout()` and `write_raw_stdout()` can both reach the real stdout regardless of guard state. Idempotent takeover, no-op restore, and per-file Pi attribution header preserved.
+- Public surface mirrors pi's TS API in snake_case: `take_over_stdout`, `restore_stdout`, `is_stdout_taken_over`, `write_raw_stdout`, `flush_raw_stdout`. Pi's async `flushRawStdout()` becomes a sync `flush_raw_stdout()` because Python's stdout flush is sync and our codebase has no asyncio.
+- Updated `mythic_vibe_cli/runtime/__init__.py` to re-export the new public surface alongside the file-mutation-queue.
+- Added `tests/test_output_guard.py` with ten unit tests covering: stdout writes route to stderr, idempotent takeover, restore, no-op restore, raw stdout writes during takeover, raw stdout writes when not taken over, flush, `print()` routing, proxy reports `writable()` / `not readable()`, module state cleared after restore. Pi's subprocess integration test (`stdout-cleanliness.test.ts`) is deferred until the guard is wired into a JSON or RPC entry point — the integration test only becomes meaningful after that wiring lands.
+- Added a row to `THIRD_PARTY_NOTICES.md` plunder map naming the upstream source for both the production file and the test file.
+- Updated `CHANGELOG.md` Unreleased.
+
+### Why it matters
+
+Mythic already has `--json` flags on many commands and a documented contract that JSON output must be machine-parseable. Today nothing prevents an accidental `print()` call (or noisy library import) from corrupting that JSON surface. The guard makes pollution structurally impossible: any non-protocol writer routes to stderr automatically. Combined with the file-mutation-queue from the previous slice, the runtime subpackage now holds two of the three safety primitives the Pi guide named as preconditions for any provider-driven `workflow run` (queue + guard; the third — compaction branch summarization — is a meatier slice).
+
+The slice also re-exercises the legal pattern established by slice 1: per-file Pi attribution header, plunder-map row in `THIRD_PARTY_NOTICES.md`, CHANGELOG provenance line. Two consecutive slices following the same pattern means the discipline is mechanical now.
+
+### Verification
+
+- `pytest -q` -> `151 passed, 14 subtests passed` (was 141 + 14)
+- `pytest -q tests/test_output_guard.py` -> `10 passed`
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!`
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 55 source files` (was 54)
+- Smoke-equivalent via the unit tests: `print("via print()")` after `take_over_stdout()` lands in stderr, not stdout; `write_raw_stdout()` always lands in real stdout.
+
+### Continuity thread
+
+- The natural next slice wires both `take_over_stdout()` and `file_mutation_queue` into the existing `--json` and `--dry-run` entry points so JSON output stays clean even when noisy libraries import or print during command execution. Alternatively, port a third single-file Pi primitive (e.g., `core/timings.ts` for elapsed-time instrumentation, or `core/event-bus.ts` for the internal event coordination layer) so the runtime subpackage has a coherent set of foundations before any wiring slice. The wiring slice has a higher value-per-line ratio; the next-primitive slice keeps the safety toolkit growing.
+
+_Two stones rest in the runtime forge now: a queue that holds the file safe, and a guard that holds the channel pure. The third stone — branch summarization — is the heaviest, and waits its turn._
+
 ## 2026-04-29 - Pi Plunder Slice 1: File Mutation Queue
 
 **Session:** First lawful plunder slice from pi (pi-coding-agent), guided by the `Pi_Coding_Agent_Plundering_Guide.md` landed earlier today. TODO #15.
