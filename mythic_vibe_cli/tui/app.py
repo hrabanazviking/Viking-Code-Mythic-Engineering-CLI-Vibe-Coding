@@ -24,7 +24,11 @@ from textual.widgets import Footer, Header, Static
 from ..core.state import PHASES, ProjectState
 from ..persistence.json_store import JsonStateStore
 from ..plugins.registry import PluginRegistry
-from ..runtime.event_log import EventLogEntry, event_log_path_for, read_recent
+from ..runtime.event_log import (
+    EventStreamSnapshot,
+    EventTailReader,
+    event_log_path_for,
+)
 from ..verify import load_latest_verification
 
 
@@ -626,15 +630,55 @@ def _format_status_bar(data: StatusData) -> str:
     )
 
 
-def _format_events_panel(entries: list[EventLogEntry]) -> str:
-    if not entries:
-        return "[dim](no events recorded yet)[/dim]"
-    lines: list[str] = []
-    # Display newest first so the latest event sits at the top of the panel.
-    for entry in reversed(entries):
-        time_token = entry.timestamp[11:19] if len(entry.timestamp) >= 19 else entry.timestamp
+def _classify_channel(channel: str) -> str:
+    """Map an event channel name to a Rich colour tag.
+
+    Heuristics-only — no central registry to keep in sync. ``error`` /
+    ``fail`` words turn the channel red; ``warn`` turns it yellow;
+    Mythic's symmetric ``before_*`` / ``after_*`` channels get cyan /
+    green so the operator sees the lifecycle bracket at a glance. Any
+    other channel keeps the bold-default styling the panel had before
+    slice 4.6.
+    """
+    lowered = channel.lower()
+    if "error" in lowered or "fail" in lowered:
+        return "red"
+    if "warn" in lowered:
+        return "yellow"
+    if lowered.startswith("before_"):
+        return "cyan"
+    if lowered.startswith("after_"):
+        return "green"
+    return "b"
+
+
+def _format_diagnostics_panel(snapshot: EventStreamSnapshot) -> str:
+    """Render a tail-style diagnostics view.
+
+    The first line is a pulse + counter — green ``● live +N new`` when
+    the most recent poll delivered new events, otherwise dim ``○ idle``.
+    Followed by the sliding window of entries, newest first, with
+    channel-class colour coding.
+    """
+    if snapshot.new_in_last_poll > 0:
+        pulse = f"[green]● live[/green]  +{snapshot.new_in_last_poll} new"
+    else:
+        pulse = "[dim]○ idle[/dim]"
+    header = f"{pulse}  ·  [dim]seen: {snapshot.total_seen}[/dim]"
+
+    if not snapshot.entries:
+        return f"{header}\n[dim](no events recorded yet)[/dim]"
+
+    lines: list[str] = [header, ""]
+    for entry in reversed(snapshot.entries):
+        time_token = (
+            entry.timestamp[11:19] if len(entry.timestamp) >= 19 else entry.timestamp
+        )
         summary = entry.summary or "(empty)"
-        lines.append(f"[dim]{time_token}[/dim] [b]{entry.channel}[/b] {summary}")
+        tag = _classify_channel(entry.channel)
+        lines.append(
+            f"[dim]{time_token}[/dim] [{tag}]{entry.channel}[/{tag}] {summary}"
+        )
     return "\n".join(lines)
 
 
@@ -722,6 +766,10 @@ class StatusScreen(Screen):
         self._packet_widget = Static(id="packet-panel")
         self._status_bar_widget = Static(id="status-bar")
         self._footer_widget = Static(id="footer-line")
+        # Tail reader is constructed once per screen lifetime (slice 4.6).
+        # Warm-starts from any existing entries so the panel populates
+        # immediately, but only counts truly-new events as "live".
+        self._event_reader = EventTailReader(event_log_path_for(self.root))
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -753,16 +801,16 @@ class StatusScreen(Screen):
         loop_nav_data = build_loop_navigator_data(self.root)
         artifact_data = build_artifact_viewer_data(self.root, loop_nav_data.current_phase)
         packet_data = build_packet_viewer_data(self.root)
-        events = read_recent(event_log_path_for(self.root), limit=12)
+        diagnostics = self._event_reader.poll()
         self._loop_nav_widget.border_title = "Loop"
-        self._events_widget.border_title = "Recent Events"
+        self._events_widget.border_title = "Diagnostics"
         artifact_phase = artifact_data.phase or "(none)"
         self._artifact_widget.border_title = f"Artefacts ({artifact_phase})"
         self._packet_widget.border_title = (
             f"Packet ({packet_data.packet_id})" if packet_data.packet_id else "Packet"
         )
         self._loop_nav_widget.update(_format_loop_navigator(loop_nav_data))
-        self._events_widget.update(_format_events_panel(events))
+        self._events_widget.update(_format_diagnostics_panel(diagnostics))
         self._artifact_widget.update(_format_artifact_viewer(artifact_data))
         self._packet_widget.update(_format_packet_viewer(packet_data))
         self._status_bar_widget.update(_format_status_bar(data))

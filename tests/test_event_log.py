@@ -13,10 +13,13 @@ from mythic_vibe_cli.runtime.event_log import (
     DEFAULT_MAX_ENTRIES,
     EVENT_LOG_LIMIT_ENV,
     EventLogEntry,
+    EventStreamSnapshot,
+    EventTailReader,
     append_event,
     event_log_path_for,
     read_recent,
     resolve_max_entries,
+    write_entries,
 )
 
 
@@ -135,6 +138,149 @@ class EventLogTests(unittest.TestCase):
                 os.environ.pop(EVENT_LOG_LIMIT_ENV, None)
             else:
                 os.environ[EVENT_LOG_LIMIT_ENV] = previous
+
+
+class EventTailReaderTests(unittest.TestCase):
+    def test_missing_file_yields_empty_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "events.jsonl"
+            reader = EventTailReader(path, window=5)
+            snapshot = reader.poll()
+
+        self.assertIsInstance(snapshot, EventStreamSnapshot)
+        self.assertEqual(snapshot.entries, ())
+        self.assertEqual(snapshot.new_in_last_poll, 0)
+        self.assertEqual(snapshot.total_seen, 0)
+
+    def test_warm_start_seeds_buffer_without_counting_new(self) -> None:
+        """Existing entries on disk populate the buffer immediately,
+        but the first poll reports 0 new (the operator opened the TUI
+        mid-stream — those entries already happened)."""
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "events.jsonl"
+            append_event(path, "before_scan", {"path": "/x"})
+            append_event(path, "after_scan", {"path": "/x"})
+
+            reader = EventTailReader(path, window=5)
+            snapshot = reader.poll()
+
+        self.assertEqual(len(snapshot.entries), 2)
+        self.assertEqual(snapshot.new_in_last_poll, 0)
+        self.assertEqual(snapshot.total_seen, 0)
+
+    def test_no_growth_between_polls_returns_zero_new(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "events.jsonl"
+            append_event(path, "before_scan", {"path": "/x"})
+
+            reader = EventTailReader(path, window=5)
+            reader.poll()
+            second = reader.poll()
+
+        self.assertEqual(second.new_in_last_poll, 0)
+        self.assertEqual(second.total_seen, 0)
+
+    def test_appended_event_appears_in_next_poll_with_pulse(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "events.jsonl"
+            append_event(path, "before_scan", {"path": "/x"})
+
+            reader = EventTailReader(path, window=5)
+            reader.poll()  # consume warm start
+
+            append_event(path, "after_scan", {"path": "/x"})
+            snapshot = reader.poll()
+
+        self.assertEqual(snapshot.new_in_last_poll, 1)
+        self.assertEqual(snapshot.total_seen, 1)
+        self.assertEqual(snapshot.entries[-1].channel, "after_scan")
+
+    def test_multiple_appends_between_polls_collapse_into_one_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "events.jsonl"
+            reader = EventTailReader(path, window=10)
+            reader.poll()  # file doesn't exist yet
+
+            append_event(path, "before_scan", {"path": "/x"})
+            append_event(path, "after_scan", {"path": "/x"})
+            append_event(path, "before_verify", {"verification_id": "v1"})
+            snapshot = reader.poll()
+
+        self.assertEqual(snapshot.new_in_last_poll, 3)
+        self.assertEqual(snapshot.total_seen, 3)
+        self.assertEqual(
+            [e.channel for e in snapshot.entries],
+            ["before_scan", "after_scan", "before_verify"],
+        )
+
+    def test_window_trims_buffer_to_configured_size(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "events.jsonl"
+            reader = EventTailReader(path, window=3)
+            reader.poll()
+            for i in range(5):
+                append_event(path, f"step_{i}", {"path": f"/p{i}"})
+            snapshot = reader.poll()
+
+        self.assertEqual(len(snapshot.entries), 3)
+        self.assertEqual(snapshot.new_in_last_poll, 5)
+        self.assertEqual(snapshot.total_seen, 5)
+        self.assertEqual(
+            [e.channel for e in snapshot.entries],
+            ["step_2", "step_3", "step_4"],
+        )
+
+    def test_file_rotation_resets_without_counting_new(self) -> None:
+        """If the log shrinks (rewritten by the bounded-rotation logic
+        in append_event, or any external truncation), the reader
+        re-seeds without flagging the surviving entries as 'new'."""
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "events.jsonl"
+            for i in range(4):
+                append_event(path, f"step_{i}", {"path": f"/p{i}"})
+
+            reader = EventTailReader(path, window=10)
+            reader.poll()  # consume warm start
+
+            # Rewrite (simulates rotation) — fewer bytes than before.
+            write_entries(
+                path,
+                [EventLogEntry(timestamp="2026-04-29T00:00:00Z", channel="reset", summary="")],
+            )
+            snapshot = reader.poll()
+
+        self.assertEqual(snapshot.new_in_last_poll, 0)
+        self.assertEqual(snapshot.total_seen, 0)
+        self.assertEqual(len(snapshot.entries), 1)
+        self.assertEqual(snapshot.entries[0].channel, "reset")
+
+    def test_malformed_lines_are_skipped(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "events.jsonl"
+            # Hand-craft a file with one valid line, one garbage, one valid.
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open("w", encoding="utf-8") as fh:
+                fh.write(json.dumps({"timestamp": "t1", "channel": "ok", "summary": "a"}) + "\n")
+                fh.write("not-json-at-all\n")
+                fh.write(json.dumps({"timestamp": "t2", "channel": "ok2", "summary": "b"}) + "\n")
+
+            reader = EventTailReader(path, window=10)
+            warm = reader.poll()
+
+        self.assertEqual([e.channel for e in warm.entries], ["ok", "ok2"])
+
+    def test_snapshot_to_dict_round_trip(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "events.jsonl"
+            reader = EventTailReader(path, window=5)
+            reader.poll()
+            append_event(path, "before_scan", {"path": "/x"})
+            payload = reader.poll().to_dict()
+
+        for key in {"entries", "new_in_last_poll", "total_seen"}:
+            self.assertIn(key, payload)
+        self.assertEqual(payload["new_in_last_poll"], 1)
+        self.assertEqual(payload["entries"][0]["channel"], "before_scan")
 
 
 if __name__ == "__main__":
