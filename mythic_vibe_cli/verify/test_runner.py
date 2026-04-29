@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+
+from ..runtime.exec import exec_command
 
 
 @dataclass
@@ -50,12 +51,14 @@ def discover_default_commands(root: Path) -> list[list[str]]:
 
 
 def run_command(command: list[str], *, cwd: Path) -> CommandResult:
-    completed = subprocess.run(command, cwd=cwd, capture_output=True, text=True, check=False)
+    if not command:
+        return CommandResult(command=[], exit_code=127, stdout="", stderr="Empty command")
+    result = exec_command(command[0], command[1:], cwd=cwd)
     return CommandResult(
         command=command,
-        exit_code=completed.returncode,
-        stdout=completed.stdout,
-        stderr=completed.stderr,
+        exit_code=result.code,
+        stdout=result.stdout,
+        stderr=result.stderr,
     )
 
 

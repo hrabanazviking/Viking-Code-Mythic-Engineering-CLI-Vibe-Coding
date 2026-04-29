@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-import subprocess
 from pathlib import Path
 from typing import Any
+
+from ..runtime.exec import ExecResult, exec_command
 
 
 @dataclass
@@ -20,13 +21,13 @@ class GitDiffResult:
         }
 
 
-def _git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True, check=False)
+def _git(root: Path, *args: str) -> ExecResult:
+    return exec_command("git", ["-C", str(root), *args], cwd=root)
 
 
 def collect_changed_files(root: Path) -> list[str]:
     status = _git(root, "status", "--porcelain")
-    if status.returncode != 0:
+    if status.code != 0:
         return []
     files: list[str] = []
     for line in status.stdout.splitlines():
@@ -43,7 +44,7 @@ def review_changed_files(root: Path, *, limit: int = 8) -> GitDiffResult:
     result = GitDiffResult(changed_files=changed_files[:limit])
     for path in result.changed_files:
         diff = _git(root, "diff", "--", path)
-        if diff.returncode == 0:
+        if diff.code == 0:
             result.diffs[path] = diff.stdout.strip()
         else:
             result.warnings.append(f"Could not diff {path}")

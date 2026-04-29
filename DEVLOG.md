@@ -7,6 +7,50 @@
 
 ---
 
+## 2026-04-29 - Wire `exec_command` Across Every Subprocess Call Site
+
+**Session:** Activating yesterday's plumbing. The exec primitive landed yesterday with full tests but no consumers; this slice migrates every existing `subprocess.run` caller in production code to use it.
+**Status:** Direct `subprocess.run` usage is now confined to `mythic_vibe_cli/runtime/exec.py` itself. All four ad-hoc subprocess callers route through `exec_command` with uniform `ExecResult` shape.
+**Scope:** Mechanical migration across four files, behavior preservation contract, graceful missing-binary handling as a side benefit.
+
+### What changed
+
+- `mythic_vibe_cli/verify/test_runner.py` — `run_command(command, cwd)` now invokes `exec_command(command[0], command[1:], cwd=cwd)` and maps `result.code` into the existing `CommandResult.exit_code`. Empty-command guard added (returns `code=127` rather than splitting an empty list).
+- `mythic_vibe_cli/verify/git_diff.py` — `_git(root, *args)` now returns `ExecResult` instead of `subprocess.CompletedProcess`. Two callers in the same file updated to access `.code` / `.stdout` instead of `.returncode` / `.stdout`.
+- `mythic_vibe_cli/handoff.py` — same migration pattern as `git_diff.py`. `_git_metadata`'s two `_git` calls updated.
+- `mythic_vibe_cli/context/scanner.py` — `_run_git` rewritten: instead of `try / except (OSError, CalledProcessError)`, a plain `if result.code != 0: return None`. Externally observable behavior unchanged because pi's exec primitive returns `code=127` for missing commands (the previous `FileNotFoundError → except → return None` path now becomes `code=127 → return None`).
+- Removed `import subprocess` from `verify/test_runner.py`, `verify/git_diff.py`, `handoff.py`, and `context/scanner.py`. Only `mythic_vibe_cli/runtime/exec.py` continues to import `subprocess` directly — exactly the encapsulation goal.
+
+### Why it matters
+
+Before this slice, four files had their own way of invoking subprocesses, with subtle differences: `test_runner.py` used a custom `CommandResult`, `git_diff.py` and `handoff.py` returned raw `CompletedProcess` from a `_git` helper, and `scanner.py` caught exceptions to convert to `None`. Three of the four failed with unhandled `FileNotFoundError` if the binary was missing on the host (a real concern on minimal CI containers or fresh dev machines without git/pytest).
+
+After the slice:
+- One subprocess primitive, one `ExecResult` shape, one error path
+- Future timeout / cancel-event additions become a one-line change at any site
+- Missing-binary cases degrade gracefully (`code=127`) instead of crashing
+- The `subprocess` import surface tightened: imported only in `runtime/exec.py`
+
+Behavior preservation was the contract — all 219 tests stayed green through the migration with zero test changes.
+
+### Verification
+
+- `pytest -q` -> `219 passed, 14 subtests passed` (unchanged)
+- `pytest -q tests/test_workflow.py tests/test_cli_kernel.py` -> `74 passed in 21.56s` (the test runner / verify / handoff path coverage)
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!` (no orphaned imports)
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 61 source files`
+- Manual grep: `subprocess.run|Popen|check_output|call` returns one hit, in `runtime/exec.py` itself — exactly as intended.
+
+### Continuity thread
+
+- The exec primitive is now load-bearing across the codebase. The next directions, in roughly increasing scope:
+  1. **Wire the slash-commands and source-info catalogs into a future REPL surface** — `TODO.md` doesn't currently demand a REPL but the foundation is ready when one is built.
+  2. **Begin V2 Phase 3 (TUI)** — `TODO.md` item 16. Foundation is now even stronger with exec as a load-bearing primitive.
+  3. **Begin V2 Phase 4 (Local LLM provider layer)** — `TODO.md` item 17. The exec primitive's `cancel_event` plumbing is exactly what provider tool calls will need.
+  4. **Survey TODO.md backlog** — items #4 (`/`-command expansion), #5/6 (aggregate feature report planning), #7 (bug audit) still open.
+
+_The torch is no longer kept in the corner of the forge — every smith now lights it from the same flame. When the bell rings or the queue holds a hammer, the flame is already in hand._
+
 ## 2026-04-29 - Pi Plunder Slice 7: Exec Subprocess Primitive
 
 **Session:** Seventh Pi-derived primitive in `mythic_vibe_cli/runtime/`. Subprocess execution wrapper with timeout and caller-driven cancellation.

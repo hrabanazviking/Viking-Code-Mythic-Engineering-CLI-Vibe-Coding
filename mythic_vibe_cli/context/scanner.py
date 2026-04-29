@@ -3,11 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import os
-import subprocess
 from pathlib import Path
 from typing import Any, Iterable
 
 from .file_filters import FileFilterRules
+from ..runtime.exec import exec_command
 
 
 CURRENT_INDEX_SCHEMA_VERSION = 1
@@ -374,14 +374,8 @@ def _utc_now() -> str:
 
 
 def _run_git(root: Path, args: list[str], *, quiet: bool = False) -> str | None:
-    try:
-        result = subprocess.run(
-            ["git", "-C", str(root), *args],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-    except (OSError, subprocess.CalledProcessError):
+    result = exec_command("git", ["-C", str(root), *args], cwd=root)
+    if result.code != 0:
         return None
     text = result.stdout.rstrip("\n")
     if quiet:
