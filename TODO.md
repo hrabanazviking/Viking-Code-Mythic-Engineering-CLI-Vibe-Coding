@@ -13,4 +13,7 @@
 - Check all code for bugs, incomplete code, missing features, not integrated code, orphaned code, imcomplete features, issues, inefficiencies, etc, and make a MD multiple step plan to fix all and improve all, only using additive methods. After consulting with Volmarr the human, begin the first step of the plan.
 - Create a plundering document for https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent based on the other plunder documents. Be sure it explains how to do lawful plundering that keeps the plundering legal, ethical, and in alignment with opensource standards for plundering. 
 - Consult the Pi ( https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent ) plundering documents, and begin lawful code plundering of Pi, while keeping mindful of the plundering documents instructions, and any information at the repos of each plundered project. Be sure to keep it legal, ethical, and in alignment with opensource standards for plundering.
+- Do V2 Roadmap Phase 3+ (TUI)
+- Do V2 Roadmap Phase 4
+- 
 
