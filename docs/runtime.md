@@ -17,6 +17,7 @@ This guide is for developers writing CLI features, plugins, or extensions who wa
 | `slash_commands` | Typed catalog of slash command names + sources | Consumed by `mythic-vibe slash list` and `mythic-vibe shell` (`/help`) |
 | `source_info` | Provenance dataclass for extension/plugin/skill/prompt-contributed artifacts | Used by `SlashCommandInfo`; surfaced via `mythic-vibe slash list` |
 | `exec` | Subprocess execution with timeout and cancel-event | Wired across `verify/test_runner.py`, `verify/git_diff.py`, `handoff.py`, `context/scanner.py` |
+| `event_log` | Bounded JSONL append-and-tail at `mythic/events.jsonl` (last 200 entries) | `PluginHookDispatcher.emit()` writes here; TUI's "Recent Events" panel reads it |
 
 All seven are re-exported from `mythic_vibe_cli.runtime` so callers can `from mythic_vibe_cli.runtime import ...` without thinking about submodule paths.
 

@@ -12,6 +12,14 @@ Currently exposes:
 """
 
 from .event_bus import EventBus, EventBusController, create_event_bus
+from .event_log import (
+    DEFAULT_EVENT_LOG_FILENAME,
+    DEFAULT_MAX_ENTRIES,
+    EventLogEntry,
+    append_event,
+    event_log_path_for,
+    read_recent,
+)
 from .exec import ExecResult, exec_command
 from .file_mutation_queue import file_mutation_queue, with_file_mutation_queue
 from .output_guard import (
@@ -48,6 +56,12 @@ __all__ = [
     "create_event_bus",
     "EventBus",
     "EventBusController",
+    "EventLogEntry",
+    "append_event",
+    "event_log_path_for",
+    "read_recent",
+    "DEFAULT_EVENT_LOG_FILENAME",
+    "DEFAULT_MAX_ENTRIES",
     "reset_timings",
     "record",
     "print_timings",

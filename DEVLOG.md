@@ -7,6 +7,48 @@
 
 ---
 
+## 2026-04-29 - TUI Slice 1: Event Log + Recent Events Panel
+
+**Session:** First of three sequential TUI slices Volmarr requested. Adds a bounded JSONL event log to the runtime layer, wires `PluginHookDispatcher.emit()` to persist each emit, and adds a "Recent Events" panel to the TUI that tails the file.
+**Status:** Live and tested. 258 tests passing (was 246). One pre-existing scan test was relaxed because the new event log writes alongside `mythic/project_index.json`.
+
+### What changed
+
+- New `mythic_vibe_cli/runtime/event_log.py`:
+  - `EventLogEntry` frozen dataclass (timestamp / channel / summary)
+  - `append_event(log_path, channel, payload, max_entries=200)` writes a JSON line, rotates by rewriting with the tail when the cap is exceeded. Cross-platform via `tempfile.mkstemp` + `os.replace` (atomic rename works on every OS Python supports).
+  - `read_recent(log_path, limit=20)` returns the tail oldest-first (newest last) for caller flexibility.
+  - `event_log_path_for(root)` returns `<root>/mythic/events.jsonl`.
+  - `_summarize(payload)` extracts a stable short string from the dict payload — prefers `path`, `task`, `verification_id`, `handoff_id`, `packet_id` keys; falls back to first key or stringification with 120-char cap.
+- Re-exported the public surface from `mythic_vibe_cli/runtime/__init__.py`.
+- `PluginHookDispatcher.emit()` now appends to the project event log after publishing to the bus. Best-effort: any IO error from the log write is swallowed so emit semantics are unchanged. The bus contract continues to govern handler exception isolation.
+- TUI: `StatusScreen` gains a fifth panel "Recent Events" rendered below the 2×2 status grid. The panel uses `Static` with markup, shows up to 12 entries newest-first with `HH:MM:SS` time tokens, and auto-refreshes alongside the existing panels every 2 seconds. CSS adjusted: status grid is now fixed at 14 rows; events panel takes the remaining vertical space.
+- 12 new tests across three files:
+  - `tests/test_event_log.py` (9 cases): append creates file with one entry, summary fallback to first key, non-dict payload handling, `read_recent` returns newest-last, missing file returns empty, invalid JSON lines are skipped, default-cap rotation keeps exactly 200 entries, custom-cap rotation keeps at-most-N, `event_log_path_for` returns expected location.
+  - `tests/test_plugin_dispatcher.py` (1 new case): emit persists two events to the project log with correct channel ordering.
+  - `tests/test_tui.py` (2 new cases): events panel renders logged entries; events panel shows placeholder when log is empty.
+- Pre-existing `tests/test_context_scan.py::test_scan_changed_only_limits_recommended_context` was relaxed: the scan command now writes both `mythic/project_index.json` AND `mythic/events.jsonl` as side-effects, so git status reports the whole `mythic/` directory as untracked. The test now asserts the source file appears among changed files (rather than being the only entry) and appears in `recommended_context`. The behavior change is intentional: every emitting command leaves a trace in `mythic/` for the TUI to display.
+
+### Why it matters
+
+The TUI was a snapshot view — it showed *current state* but not *what just happened*. The event log + Recent Events panel converts the TUI into a glance-able activity feed alongside the status. Running `mythic-vibe verify` in one terminal and `mythic-vibe tui` in another now lets the operator watch verification progress without re-running anything.
+
+The cross-process design choice — write to disk, tail from the TUI — was deliberate. The event bus is per-invocation (created fresh in each command's dispatcher block), so a TUI process running standalone has no in-memory bus to subscribe to. Persisting events to a bounded JSONL file gives the TUI cross-process visibility without coupling the bus to any particular consumer surface.
+
+### Verification
+
+- `pytest -q` -> `258 passed, 14 subtests passed` (was 246 + 14)
+- `pytest -q tests/test_event_log.py` -> `9 passed in 1.55s`
+- Headless TUI tests confirmed the events panel renders both seeded entries and the empty-state placeholder.
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!`
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 65 source files` (was 64)
+
+### Continuity thread
+
+- Slice 2 of the TUI sequence (slash-commands picker screen) is next; slice 3 (command runner with live elapsed time) closes the trio.
+
+_The hall now writes its own chronicle as the work passes. Each event leaves a single line in the saga; the TUI reads the latest twelve lines and shows them aloud while the work continues elsewhere._
+
 ## 2026-04-29 - V2 Phase 3 Second Slice: Textual TUI `mythic-vibe tui`
 
 **Session:** Second slice of the V2 Phase 3 (TUI) arc. Volmarr confirmed Textual as the TUI library and reaffirmed the durable cross-platform / open-source-only requirement (also saved to `feedback_volmarr_preferences.md` as a memory). This slice adds a minimal Textual app with auto-refresh.

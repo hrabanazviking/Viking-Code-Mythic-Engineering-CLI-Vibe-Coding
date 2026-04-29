@@ -23,6 +23,7 @@ from types import TracebackType
 from typing import Callable
 
 from ..runtime.event_bus import EventBusController, create_event_bus
+from ..runtime.event_log import append_event, event_log_path_for
 from ..runtime.slash_commands import SlashCommandInfo
 from .api import PLUGIN_HOOKS, PluginRecord
 from .loader import _split_entrypoint
@@ -75,14 +76,20 @@ class PluginHookDispatcher:
         return loaded_count
 
     def emit(self, hook: str, payload: object) -> None:
-        """Emit ``payload`` on the named hook channel.
+        """Emit ``payload`` on the named hook channel and persist a row in the
+        per-project event log at ``mythic/events.jsonl``.
 
         Validates the hook name against ``PLUGIN_HOOKS`` so a typo at the call
-        site is caught immediately rather than silently ignored.
+        site is caught immediately rather than silently ignored. Log writes are
+        best-effort: IO errors do not propagate.
         """
         if hook not in PLUGIN_HOOKS:
             raise ValueError(f"Unknown plugin hook: {hook}")
         self.bus.emit(hook, payload)
+        try:
+            append_event(event_log_path_for(self.root), hook, payload)
+        except Exception:  # noqa: BLE001 - event-log persistence is best-effort
+            pass
 
     def teardown(self) -> None:
         """Unsubscribe every handler this dispatcher registered."""

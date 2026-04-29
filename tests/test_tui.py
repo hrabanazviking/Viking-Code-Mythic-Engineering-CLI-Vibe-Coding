@@ -69,6 +69,44 @@ class StatusDataTests(unittest.TestCase):
 
 
 @unittest.skipIf(textual_unavailable, "textual not installed")
+class TuiEventsPanelTests(unittest.TestCase):
+    def test_recent_events_panel_renders_logged_entries(self) -> None:
+        from mythic_vibe_cli.runtime.event_log import append_event, event_log_path_for
+        from mythic_vibe_cli.tui.app import MythicTuiApp
+
+        async def run_test() -> str:
+            with tempfile.TemporaryDirectory() as tmp:
+                root_path = Path(tmp)
+                log_path = event_log_path_for(root_path)
+                append_event(log_path, "before_scan", {"path": str(root_path)})
+                append_event(log_path, "after_scan", {"path": str(root_path)})
+
+                app = MythicTuiApp(root_path)
+                async with app.run_test() as pilot:
+                    await pilot.pause()
+                    panel = app.screen.query_one("#events-panel")
+                    return str(panel.render())
+
+        rendered = asyncio.run(run_test())
+        self.assertIn("before_scan", rendered)
+        self.assertIn("after_scan", rendered)
+
+    def test_recent_events_panel_shows_placeholder_when_empty(self) -> None:
+        from mythic_vibe_cli.tui.app import MythicTuiApp
+
+        async def run_test() -> str:
+            with tempfile.TemporaryDirectory() as tmp:
+                app = MythicTuiApp(Path(tmp))
+                async with app.run_test() as pilot:
+                    await pilot.pause()
+                    panel = app.screen.query_one("#events-panel")
+                    return str(panel.render())
+
+        rendered = asyncio.run(run_test())
+        self.assertIn("no events recorded", rendered)
+
+
+@unittest.skipIf(textual_unavailable, "textual not installed")
 class TuiHeadlessTests(unittest.TestCase):
     def test_status_screen_renders_panels_in_headless_mode(self) -> None:
         from mythic_vibe_cli.tui.app import MythicTuiApp
