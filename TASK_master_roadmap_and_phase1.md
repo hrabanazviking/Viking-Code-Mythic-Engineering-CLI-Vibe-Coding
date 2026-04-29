@@ -196,8 +196,10 @@ additive, cross-platform, open-source):
 | 45 | Phase 4 Slice 4.3 — Packet Viewer | done — `5cd80a8` — +12 tests, 570 total |
 | 46 | Update memory + project status (after slice 4.3) | done — pushed at 855e0ae |
 | 47 | Phase 4 Slice 4.4 — Status Bar | done — `e026101` — +9 net tests, 579 total |
-| 48 | Update memory + project status (after slice 4.4) | in progress |
-| 49 | Phase 4 Slice 4.5 — Diff review screen | next |
+| 48 | Update memory + project status (after slice 4.4) | done — pushed at ca4a67b |
+| 49 | Phase 4 Slice 4.5 — Diff review screen | done — +26 tests, 605 total |
+| 50 | Update memory + project status (after slice 4.5) | in progress |
+| 51 | Phase 4 Slice 4.6 — Real-time diagnostics | next |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
