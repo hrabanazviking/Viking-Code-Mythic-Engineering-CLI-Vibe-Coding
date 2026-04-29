@@ -74,18 +74,21 @@ mythic-vibe slash list [--path .] [--json] [--source builtin|extension|prompt|sk
 
 - [x] Task file written
 - [x] Task file committed + pushed
-- [ ] Add `discover_slash_commands` to dispatcher
-- [ ] Add `cmd_slash_list` + dispatch wiring
-- [ ] Add `slash list` argparse
-- [ ] Dispatcher tests (synthetic plugin contributes; missing method skipped; raising method skipped)
-- [ ] CLI-kernel tests (builtin shows; plugin contributes appear; --source filter; --json shape)
-- [ ] Update docs/plugins.md worked example
-- [ ] Update docs/runtime.md §6 and table
-- [ ] Update docs/COMMAND_CONTRACTS.md and docs/api.md
-- [ ] CHANGELOG entry
-- [ ] DEVLOG entry
-- [ ] Memory snapshot updated
-- [ ] Final commit + push
+- [x] Add `discover_slash_commands` to dispatcher (with exception isolation matching bus contract)
+- [x] Add `cmd_slash_list` + `cmd_slash_dispatch` (with `--source builtin` short-circuit to skip plugin loading)
+- [x] Add `slash list` argparse (with constrained `--source` choices)
+- [x] Update `test_command_registry_preserves_current_commands_and_aliases` to include `slash`
+- [x] Dispatcher tests — 4 cases (aggregates, skips missing, isolates exceptions + sibling continues, filters non-SlashCommandInfo items)
+- [x] CLI-kernel tests — 4 cases (builtin listing, --source builtin short-circuit, plugin contribution end-to-end, --source plugin narrows)
+- [x] `pytest -q` green — 227 passed, 14 subtests passed
+- [x] `ruff` + `mypy` green
+- [x] Update docs/plugins.md worked example (added slash_commands() to AuditPlugin) + new §9 + renumber
+- [x] Update docs/runtime.md §6 wiring + table entries (no longer "no consumer yet")
+- [x] Update docs/COMMAND_CONTRACTS.md and docs/api.md
+- [x] CHANGELOG entry
+- [x] DEVLOG entry with continuity thread
+- [x] Memory snapshot updated
+- [x] Final commit + push
 
 ## Resume Instructions
 

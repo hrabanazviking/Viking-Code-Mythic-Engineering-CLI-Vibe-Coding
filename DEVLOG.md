@@ -7,6 +7,49 @@
 
 ---
 
+## 2026-04-29 - Slash-Command Plugin Hook + `slash list` Consumer
+
+**Session:** Wiring two foundation primitives — `slash_commands` (catalog) and `source_info` (provenance) — into a real consumer. Until this slice they were tested but unconsumed; now they have a CLI surface and a plugin-discovery contract.
+**Status:** `mythic-vibe slash list` prints builtin + plugin-contributed slash commands. `PluginHookDispatcher.discover_slash_commands()` aggregates `SlashCommandInfo` entries across enabled plugins. Both foundation primitives are now load-bearing.
+**Scope:** New plugin-discovery method (separate from `PLUGIN_HOOKS`), new CLI command, ten test cases, four doc updates.
+
+### What changed
+
+- Added `PluginHookDispatcher.discover_slash_commands(self) -> list[SlashCommandInfo]` in `mythic_vibe_cli/plugins/dispatcher.py`. The method walks `_loaded` plugins, looks for a callable named `slash_commands` (any of `@staticmethod` / `@classmethod` / instance method work), invokes it with no arguments, and aggregates results that are `SlashCommandInfo` instances. Plugin exceptions follow the bus log-and-continue contract: `Plugin slash_commands error (<entrypoint>):` plus traceback to stderr, with the plugin contributing nothing. Items that aren't `SlashCommandInfo` are silently skipped. Iteration errors (a non-iterable return) are caught and skip the plugin.
+- Added `cmd_slash_list(args)` and `cmd_slash_dispatch(args)` in `mythic_vibe_cli/commands.py`. The list command builds a `BUILTIN_SLASH_COMMANDS` payload, optionally instantiates `PluginHookDispatcher` to discover contributed entries, applies a `--source` filter, and emits human or JSON output. `--source builtin` short-circuits plugin loading entirely so the cheap path doesn't pay for plugin imports.
+- Added the `slash` subparser with the `list` subcommand in `mythic_vibe_cli/app.py`, including `--path`, `--source` (constrained to `""|builtin|extension|prompt|skill|plugin`), `--json`, `--quiet`, `--verbose`. Registered `cmd_slash_dispatch` in `COMMAND_HANDLERS`.
+- Updated `tests/test_cli_kernel.py`'s `test_command_registry_preserves_current_commands_and_aliases` expected set to include `slash`. Added four CLI integration cases: builtin listing, `--source builtin` short-circuit, plugin-contributed entries appear with proper provenance, `--source plugin` filters out other sources.
+- Added four dispatcher unit cases in `tests/test_plugin_dispatcher.py`: synthetic plugin contributes, plugin without `slash_commands` skipped silently, raising plugin's exception is logged + sibling plugin still contributes, non-`SlashCommandInfo` items in the returned list are filtered.
+- Updated `docs/plugins.md`: added a one-line note in §3 mentioning `slash_commands()`, added an `AuditPlugin.slash_commands()` example to the worked code, added a new §9 covering the discovery contract, renumbered §10 → §11.
+- Updated `docs/runtime.md`: changed the at-a-glance table entries for `slash_commands` / `source_info` / `exec` from "Foundation (no consumer yet)" to their actual current consumers; added a "Today's consumer" paragraph in §6.
+- Updated `docs/COMMAND_CONTRACTS.md` plugin-dispatch section to document the `slash list` contract, payload shape, and the `--source builtin` short-circuit.
+- Updated `docs/api.md` to add a paragraph for `slash list` cross-linking the plugin-side contract in `docs/plugins.md` and the catalog/provenance types in `docs/runtime.md`.
+- Updated `CHANGELOG.md` Unreleased.
+
+### Why it matters
+
+The slash-commands catalog and source-info provenance landed earlier as foundation primitives, with the explicit intent that they'd be consumed by a future REPL/TUI/SDK. This slice doesn't build the REPL — but it *does* prove the foundation is real by shipping a working consumer end-to-end. The plugin discovery method exercises both primitives: a plugin returns a `list[SlashCommandInfo]`, each carrying a `SourceInfo`, and the CLI surface presents the aggregate.
+
+The slice also intentionally separates **discovery** (the new `slash_commands()` callable) from **observation** (the existing eight `PLUGIN_HOOKS`). Both belong to the plugin layer but they answer different questions: PLUGIN_HOOKS is "what events should a plugin react to?", `slash_commands()` is "what commands does a plugin contribute?". Conflating them into a single mechanism would have been simpler in the short term and a mess in the long term — slash-command discovery is cheap and one-shot, while event hooks fire many times during a command run.
+
+### Verification
+
+- `pytest -q` -> `227 passed, 14 subtests passed` (was 219 + 14)
+- `pytest -q tests/test_plugin_dispatcher.py` -> `10 passed in 0.20s`
+- `pytest -q tests/test_cli_kernel.py -k "slash_list"` -> `4 passed in 0.30s`
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!` (after pruning two unused test imports)
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 61 source files`
+- Smoke: `python -m mythic_vibe_cli slash list` printed the 14 builtin entries plus a "none registered" line for contributed; `slash list --json` returned the expected payload shape.
+
+### Continuity thread
+
+- The runtime layer is now seven primitives deep, all but one wired into a real consumer (the lone foundation-only primitive is `output_guard`'s `flush_raw_stdout` which is implementation-internal). Plugin layer is fully load-bearing. Possible next directions:
+  1. **Begin V2 Phase 3 (TUI)** — `TODO.md` item 16. Foundation is now genuinely complete: stdout cleanliness, event coordination, slash-command catalog (with plugin contribution path), keybinding-free interactive surface possible via `python -m mythic_vibe_cli`. Multi-slice arc.
+  2. **Begin V2 Phase 4 (Local LLM provider layer)** — `TODO.md` item 17. The exec primitive's `cancel_event` is exactly what provider tool-call cancellation needs. Multi-slice arc.
+  3. **Survey TODO.md backlog** — items #4 (`/`-command expansion — adjacent to today's slash-list slice), #5/6 (aggregate report planning), #7 (bug audit) still open.
+
+_The catalog is no longer a list waiting for a tongue. The `slash list` command speaks every name aloud — its own and any names plugins contribute. The hall has its first interactive ear, even before its first interactive mouth._
+
 ## 2026-04-29 - Wire `exec_command` Across Every Subprocess Call Site
 
 **Session:** Activating yesterday's plumbing. The exec primitive landed yesterday with full tests but no consumers; this slice migrates every existing `subprocess.run` caller in production code to use it.

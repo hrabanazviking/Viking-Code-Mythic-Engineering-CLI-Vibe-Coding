@@ -39,6 +39,7 @@ from .plugins.api import PLUGIN_HOOKS
 from .plugins.dispatcher import PluginHookDispatcher
 from .plugins.loader import inspect_plugin
 from .plugins.registry import PluginRegistry
+from .runtime.slash_commands import BUILTIN_SLASH_COMMANDS, SlashCommandInfo
 from .core.state import PHASES, VerificationRecord, coerce_project_state, utc_now, validate_state_payload
 from .persistence.json_store import JsonStateStore, StateStoreError
 from .persistence.migrations import migrate_project_state
@@ -2975,6 +2976,68 @@ def cmd_workflow_dispatch(args: argparse.Namespace) -> int:
     return USER_INPUT_ERROR
 
 
+def cmd_slash_list(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    source_filter = (getattr(args, "source", "") or "").strip().lower()
+
+    builtin_payload = [entry.to_dict() for entry in BUILTIN_SLASH_COMMANDS]
+
+    contributed: list[SlashCommandInfo] = []
+    if source_filter != "builtin":
+        with PluginHookDispatcher(root) as dispatcher:
+            dispatcher.load_and_subscribe()
+            contributed = dispatcher.discover_slash_commands()
+
+    if source_filter and source_filter != "builtin":
+        contributed = [item for item in contributed if item.source == source_filter]
+
+    contributed_payload = [item.to_dict() for item in contributed]
+
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "slash list",
+                "path": str(root),
+                "source_filter": source_filter or None,
+                "builtin": [] if source_filter and source_filter != "builtin" else builtin_payload,
+                "contributed": contributed_payload,
+            }
+        )
+        return SUCCESS
+
+    if not source_filter or source_filter == "builtin":
+        write_line("Builtin slash commands:")
+        for entry in BUILTIN_SLASH_COMMANDS:
+            write_bullet(f"/{entry.name} — {entry.description}", indent=2)
+
+    if source_filter == "builtin":
+        return SUCCESS
+
+    if not contributed:
+        if not source_filter:
+            write_line("Contributed slash commands: none registered.")
+        else:
+            write_line(f"No contributed slash commands match source '{source_filter}'.")
+        return SUCCESS
+
+    by_source: dict[str, list[SlashCommandInfo]] = {}
+    for item in contributed:
+        by_source.setdefault(item.source, []).append(item)
+    write_line("Contributed slash commands:")
+    for source_name in sorted(by_source):
+        write_line(f"- {source_name}:")
+        for item in by_source[source_name]:
+            description = item.description or "(no description)"
+            write_bullet(f"/{item.name} — {description} [{item.source_info.path}]", indent=4)
+    return SUCCESS
+
+
+def cmd_slash_dispatch(args: argparse.Namespace) -> int:
+    if args.slash_command == "list":
+        return cmd_slash_list(args)
+    return USER_INPUT_ERROR
+
+
 def cmd_ai_dispatch(args: argparse.Namespace) -> int:
     if args.ai_command == "providers":
         return cmd_ai_providers(args)
@@ -3029,4 +3092,5 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "plunder": cmd_plunder,
     "ai": cmd_ai_dispatch,
     "verify": cmd_verify_dispatch,
+    "slash": cmd_slash_dispatch,
 }
