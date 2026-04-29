@@ -593,6 +593,16 @@ def _workflow_packet_status(root: Path, plan: WorkflowPlan, *, audience: str = "
     return statuses
 
 
+def _workflow_plan_from_args(args: argparse.Namespace, engine: WorkflowEngine) -> tuple[WorkflowPlan, str]:
+    role_sequence = tuple(getattr(args, "role", []) or DEFAULT_ROLE_SEQUENCE)
+    if getattr(args, "task", ""):
+        return engine.build_plan(args.task, role_sequence=role_sequence), "generated"
+
+    plan_file = Path(args.plan).resolve() if getattr(args, "plan", "") else None
+    plan = engine.load_plan(plan_file=plan_file)
+    return plan, str(plan_file or engine.root / "mythic" / WORKFLOW_PLAN_FILENAME)
+
+
 def _ai_registry(root: Path | None = None) -> ProviderRegistry:
     return ProviderRegistry(root=root)
 
@@ -2427,7 +2437,6 @@ def cmd_heal(args: argparse.Namespace) -> int:
 
 def cmd_workflow_run(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
-    role_sequence = tuple(getattr(args, "role", []) or DEFAULT_ROLE_SEQUENCE)
     engine = WorkflowEngine(root)
 
     if not _flag(args, "dry_run"):
@@ -2435,13 +2444,7 @@ def cmd_workflow_run(args: argparse.Namespace) -> int:
         return UNSAFE_OPERATION_BLOCKED
 
     try:
-        if getattr(args, "task", ""):
-            plan = engine.build_plan(args.task, role_sequence=role_sequence)
-            plan_source = "generated"
-        else:
-            plan_file = Path(args.plan).resolve() if getattr(args, "plan", "") else None
-            plan = engine.load_plan(plan_file=plan_file)
-            plan_source = str(plan_file or root / "mythic" / WORKFLOW_PLAN_FILENAME)
+        plan, plan_source = _workflow_plan_from_args(args, engine)
         steps = engine.dry_run_steps(plan)
     except ValueError as exc:
         write_error(str(exc))
@@ -2500,6 +2503,49 @@ def cmd_workflow_run(args: argparse.Namespace) -> int:
     return SUCCESS
 
 
+def cmd_workflow_packets(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    engine = WorkflowEngine(root)
+
+    try:
+        plan, plan_source = _workflow_plan_from_args(args, engine)
+    except ValueError as exc:
+        write_error(str(exc))
+        return USER_INPUT_ERROR
+
+    packet_status = _workflow_packet_status(
+        root,
+        plan,
+        audience=getattr(args, "audience", "advanced"),
+        output_format=getattr(args, "format", "markdown"),
+    )
+    if _flag(args, "missing_only"):
+        packet_status = [item for item in packet_status if not item["found"]]
+
+    payload = {
+        "command": "workflow packets",
+        "path": str(root),
+        "plan_source": plan_source,
+        "packets_ready": all(item["found"] for item in packet_status) if not _flag(args, "missing_only") else not packet_status,
+        "packet_status": packet_status,
+    }
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+
+    write_line("Workflow packet readiness")
+    write_key_value("Project path", root)
+    write_key_value("Plan source", plan_source)
+    if not packet_status:
+        write_line("No matching workflow packet steps to show.")
+        return SUCCESS
+    for item in packet_status:
+        status = "ready" if item["found"] else "missing"
+        packet_id = f" ({item['packet_id']})" if item["packet_id"] else ""
+        write_bullet(f"{item['role']} -> {item['phase']}: {status}{packet_id}")
+    return SUCCESS
+
+
 def cmd_config_dispatch(args: argparse.Namespace) -> int:
     if args.config_command == "set":
         return cmd_config_set(args)
@@ -2537,6 +2583,8 @@ def cmd_workflow_dispatch(args: argparse.Namespace) -> int:
         return cmd_workflow_plan(args)
     if args.workflow_command == "run":
         return cmd_workflow_run(args)
+    if args.workflow_command == "packets":
+        return cmd_workflow_packets(args)
     return USER_INPUT_ERROR
 
 

@@ -459,6 +459,75 @@ class CliKernelTests(unittest.TestCase):
             self.assertEqual(payload["packet_status"][0]["role"], "Skald")
             self.assertFalse(payload["packet_status"][0]["found"])
 
+    def test_workflow_packets_lists_readiness_for_saved_plan(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "docs").mkdir(parents=True, exist_ok=True)
+            (root / "tasks").mkdir(parents=True, exist_ok=True)
+            (root / "mythic").mkdir(parents=True, exist_ok=True)
+            (root / "tasks" / "current_GOALS.md").write_text("List workflow packets\n", encoding="utf-8")
+            (root / "docs" / "ARCHITECTURE.md").write_text("# Architecture\n", encoding="utf-8")
+            (root / "mythic" / "plan.md").write_text("# Plan\n", encoding="utf-8")
+            (root / "mythic" / "loop.md").write_text("# Loop\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                app.main(
+                    [
+                        "workflow",
+                        "plan",
+                        "--task",
+                        "List packets",
+                        "--path",
+                        str(root),
+                        "--role",
+                        "Skald",
+                        "--role",
+                        "Auditor",
+                        "--packets",
+                    ]
+                )
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(["workflow", "packets", "--path", str(root), "--json"])
+
+            payload = json.loads(output.getvalue())
+
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(payload["command"], "workflow packets")
+            self.assertTrue(payload["packets_ready"])
+            self.assertEqual([item["role"] for item in payload["packet_status"]], ["Skald", "Auditor"])
+            self.assertTrue(all(item["packet_id"] for item in payload["packet_status"]))
+
+    def test_workflow_packets_missing_only_filters_ready_steps(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(
+                    [
+                        "workflow",
+                        "packets",
+                        "--path",
+                        str(root),
+                        "--task",
+                        "Missing only",
+                        "--role",
+                        "Skald",
+                        "--missing-only",
+                        "--json",
+                    ]
+                )
+
+            payload = json.loads(output.getvalue())
+
+            self.assertEqual(code, SUCCESS)
+            self.assertFalse(payload["packets_ready"])
+            self.assertEqual(len(payload["packet_status"]), 1)
+            self.assertEqual(payload["packet_status"][0]["role"], "Skald")
+            self.assertFalse(payload["packet_status"][0]["found"])
+
     def test_workflow_run_blocks_real_execution(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             output = io.StringIO()

@@ -53,6 +53,8 @@ Argument parsing and top-level dispatch live in `mythic_vibe_cli.app`. Command i
   - Writes a deterministic six-role orchestration artifact and exposes packet-ready requests. With `--packets`, creates one packet artifact per role step without provider execution.
 - `workflow run`
   - Previews ordered role execution with `--dry-run`; `--packets-only` validates required packet artifacts; real provider execution is intentionally blocked until safety gates are added.
+- `workflow packets`
+  - Lists packet readiness for saved or generated workflow plans without executing providers.
 - `state show`
   - Displays schema-versioned project state from `mythic/status.json`.
 - `state validate`
@@ -88,6 +90,7 @@ Depending on implementation state, additional commands may be exposed:
 - `heal`
 - `workflow plan`
 - `workflow run`
+- `workflow packets`
 - `oath`
 - `grimoire add|list`
 - `plugin list|inspect|disable`

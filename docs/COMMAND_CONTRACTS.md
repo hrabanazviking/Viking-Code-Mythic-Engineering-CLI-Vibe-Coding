@@ -62,6 +62,8 @@ Current workflow orchestration contract:
 - `workflow plan --packets` creates one packet artifact per workflow step under `mythic/packets/`.
 - `workflow plan --audience` and `--format` control the generated packet requests and packet artifacts.
 - `workflow plan --dry-run --packets` previews packet generation without writing plan or packet files.
+- `workflow packets` lists packet readiness for a saved workflow plan or generated `--task`.
+- `workflow packets --missing-only` shows only missing workflow packet steps.
 - `workflow run --dry-run` previews ordered role execution from `mythic/workflow_plan.json` or an in-memory `--task`.
 - `workflow run --dry-run --packets-only` validates that every workflow step has a matching stored packet artifact before any future provider execution is considered.
 - `workflow run` without `--dry-run` is intentionally blocked until provider orchestration safety gates exist.
