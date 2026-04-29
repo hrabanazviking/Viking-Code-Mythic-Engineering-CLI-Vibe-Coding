@@ -89,6 +89,8 @@ class CliKernelTests(unittest.TestCase):
             "architecture",
             "plan",
             "build",
+            # PH-03 slice 3.3 — multi-agent forge
+            "forge",
         }
 
         self.assertEqual(set(COMMAND_HANDLERS), expected)
