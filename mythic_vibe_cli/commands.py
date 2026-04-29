@@ -13,7 +13,7 @@ from .ai.registry import ProviderRegistry
 from .context.indexer import ProjectIndexer
 from .config import ConfigStore
 from .errors import CliError, format_error
-from .exit_codes import OPERATIONAL_FAILURE, SUCCESS, USER_INPUT_ERROR, VERIFICATION_FAILURE
+from .exit_codes import OPERATIONAL_FAILURE, SUCCESS, UNSAFE_OPERATION_BLOCKED, USER_INPUT_ERROR, VERIFICATION_FAILURE
 from .handoff import (
     HandoffRecord,
     build_handoff_record,
@@ -2390,6 +2390,51 @@ def cmd_heal(args: argparse.Namespace) -> int:
     return SUCCESS
 
 
+def cmd_workflow_run(args: argparse.Namespace) -> int:
+    root = Path(args.path).resolve()
+    role_sequence = tuple(getattr(args, "role", []) or DEFAULT_ROLE_SEQUENCE)
+    engine = WorkflowEngine(root)
+
+    if not _flag(args, "dry_run"):
+        write_error("Real workflow execution is not enabled yet. Re-run with `--dry-run` to preview the role sequence.")
+        return UNSAFE_OPERATION_BLOCKED
+
+    try:
+        if getattr(args, "task", ""):
+            plan = engine.build_plan(args.task, role_sequence=role_sequence)
+            plan_source = "generated"
+        else:
+            plan_file = Path(args.plan).resolve() if getattr(args, "plan", "") else None
+            plan = engine.load_plan(plan_file=plan_file)
+            plan_source = str(plan_file or root / "mythic" / WORKFLOW_PLAN_FILENAME)
+        steps = engine.dry_run_steps(plan)
+    except ValueError as exc:
+        write_error(str(exc))
+        return USER_INPUT_ERROR
+
+    payload = {
+        "command": "workflow run",
+        "dry_run": True,
+        "path": str(root),
+        "plan_source": plan_source,
+        "plan": plan.to_dict(),
+        "steps": steps,
+        "provider_execution": "disabled",
+    }
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+
+    write_line("Dry run: workflow provider execution is disabled.")
+    write_key_value("Project path", root)
+    write_key_value("Plan source", plan_source)
+    write_key_value("Task", plan.task)
+    write_line("Execution preview:")
+    for step in steps:
+        write_bullet(f"{step['step_id']}: {step['role']} -> {step['phase']} ({step['handoff_to'] or 'done'})")
+    return SUCCESS
+
+
 def cmd_config_dispatch(args: argparse.Namespace) -> int:
     if args.config_command == "set":
         return cmd_config_set(args)
@@ -2425,6 +2470,8 @@ def cmd_packet_dispatch(args: argparse.Namespace) -> int:
 def cmd_workflow_dispatch(args: argparse.Namespace) -> int:
     if args.workflow_command == "plan":
         return cmd_workflow_plan(args)
+    if args.workflow_command == "run":
+        return cmd_workflow_run(args)
     return USER_INPUT_ERROR
 
 

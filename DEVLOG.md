@@ -7,6 +7,36 @@
 
 ---
 
+## 2026-04-29 - Stage 16 Workflow Run Preview
+
+**Session:** Adding a safe execution preview for role orchestration.
+**Status:** `workflow run --dry-run` can preview ordered role execution without invoking providers.
+**Scope:** Safety-first runner surface for existing workflow plans.
+
+### What changed
+
+- Added `mythic-vibe workflow run --dry-run`.
+- Added support for loading `mythic/workflow_plan.json` or a caller-supplied `--plan`.
+- Added support for `workflow run --dry-run --task "..."` to build an in-memory preview plan.
+- Added explicit blocking for real `workflow run` provider execution until safety gates are implemented.
+- Added `WorkflowPlan.from_dict()`, plan validation, `WorkflowEngine.load_plan()`, and dry-run step rendering.
+- Added command-kernel tests for saved-plan previews and blocked real execution.
+- Updated command contracts, API docs, changelog, and this devlog entry.
+
+### Why it matters
+
+The workflow engine now has a safe runner shape. Users can see exactly what would happen, in what role order, and where provider execution remains disabled before the project grows into live orchestration.
+
+### Verification
+
+- `pytest tests\test_cli_kernel.py tests\test_workflow_engine.py` -> `20 passed`
+- `python -m mythic_vibe_cli workflow run --path . --task "Preview dry run execution" --role Skald --role Auditor --dry-run --json` -> produced a no-provider execution preview
+- `ruff check mythic_vibe_cli\workflow_engine.py mythic_vibe_cli\commands.py mythic_vibe_cli\app.py tests\test_cli_kernel.py` -> passed
+
+### Continuity thread
+
+- The next slice can add workflow-scoped packet listing/showing or a safety-gated `workflow run --packets-only` mode that validates required packets before any provider execution is considered.
+
 ## 2026-04-29 - Stage 16 Workflow Step Packets
 
 **Session:** Connecting workflow orchestration to packet artifacts.
