@@ -7,6 +7,38 @@
 
 ---
 
+## 2026-04-29 - Stage 16 Cross-Run Packet References
+
+**Session:** Closing the original Stage 16 arc by lighting up the cross-run regression diff pattern that motivated the workflow history ledger in the first place.
+**Status:** `packet show --previous-workflow --step <step_id>` and `packet diff --left LATEST:<step_id> --right PREVIOUS:<step_id>` both work end-to-end.
+**Scope:** Strictly additive addressing layer that consumes the ledger added in the previous slice.
+
+### What changed
+
+- Added `_resolve_previous_workflow_id(root)` helper in `mythic_vibe_cli.commands` that loads `mythic/workflow_history.json` and returns the workflow id of the second-most-recent entry, or a structured error when the ledger has fewer than two entries.
+- Added `--previous-workflow` flag to `packet show`, with the same exclusivity rules as `--latest-workflow`. Cannot be combined with `--latest-workflow`, `--workflow`, or `--packet-id`. Requires `--step`.
+- Extended `_resolve_packet_ref` to recognize two new self-describing sentinels: `LATEST:<step_id>` (resolves via the saved plan) and `PREVIOUS:<step_id>` (resolves via the history ledger). Both work without flag toggles.
+- Threaded `root` into `cmd_packet_diff`'s calls to `_resolve_packet_ref` so the new sentinels can resolve. The existing `WF-<id>:<step_id>` shorthand and the `--latest-workflow` bare-step form continue to work and compose with the sentinels in the same call.
+- Added five CLI-kernel tests: previous-workflow show happy path, missing-history-depth guard, mutual-exclusion with latest-workflow, the cross-run sentinel diff happy path, and previous-sentinel error when only one workflow exists.
+- Updated `docs/COMMAND_CONTRACTS.md`, `docs/api.md`, and `CHANGELOG.md`.
+
+### Why it matters
+
+The motivating pattern from the start of this arc was the cross-run regression diff: "show me how this Skald packet changed between the previous workflow run and the current one." Until this slice, that required two separate command invocations and manual id juggling. Now a single command — `packet diff --left LATEST:step-01 --right PREVIOUS:step-01` — produces the regression diff using only self-describing references.
+
+### Verification
+
+- `pytest -q` -> `124 passed, 14 subtests passed` (was 119 + 14)
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!`
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 51 source files`
+- Smoke: ran two `workflow plan --packets` saves, then `packet show --previous-workflow --step step-01 --json` returned the older packet, and `packet diff --left LATEST:step-01 --right PREVIOUS:step-01 --json` resolved to two distinct PKT-... ids across runs.
+
+### Continuity thread
+
+- The original Stage 16 arc is complete: workflow identity exists, packet addressing is workflow-aware, `--latest-workflow` is symmetric across the packet family, the history ledger persists past runs, and cross-run regression diffs work via self-describing sentinels. The next natural slice could begin Stage 17 (provider execution safety gates for the workflow runner) or close out Stage 15's last open box (method excerpt selector for packet building) — both are now unblocked.
+
+_Two sagas, named together: the hall remembers what was sung yesterday, and the diff between yesterday and today is itself a kind of saga._
+
 ## 2026-04-29 - Stage 16 Workflow History Ledger
 
 **Session:** Continuing the Stage 16 cadence — giving the workflow runner a memory of past plan saves so future commands can reference *previous* workflows by name, not just the most recent one.

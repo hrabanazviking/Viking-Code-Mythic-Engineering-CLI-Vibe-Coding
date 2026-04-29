@@ -1056,6 +1056,189 @@ class CliKernelTests(unittest.TestCase):
             self.assertTrue(payload["right"].startswith("PKT-"))
             self.assertNotEqual(payload["left"], payload["right"])
 
+    def test_packet_show_previous_workflow_resolves_from_history(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with redirect_stdout(io.StringIO()):
+                app.main(
+                    [
+                        "workflow",
+                        "plan",
+                        "--task",
+                        "Older saved",
+                        "--path",
+                        str(root),
+                        "--role",
+                        "Skald",
+                        "--packets",
+                    ]
+                )
+                older_id = json.loads((root / "mythic" / "workflow_plan.json").read_text(encoding="utf-8"))["workflow_id"]
+                app.main(
+                    [
+                        "workflow",
+                        "plan",
+                        "--task",
+                        "Newer saved",
+                        "--path",
+                        str(root),
+                        "--role",
+                        "Auditor",
+                        "--packets",
+                    ]
+                )
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(
+                    [
+                        "packet",
+                        "show",
+                        "--path",
+                        str(root),
+                        "--previous-workflow",
+                        "--step",
+                        "step-01",
+                        "--json",
+                    ]
+                )
+            payload = json.loads(output.getvalue())
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(payload["packet"]["workflow_id"], older_id)
+            self.assertEqual(payload["packet"]["workflow_step_id"], "step-01")
+
+    def test_packet_show_previous_workflow_requires_history_depth(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with redirect_stdout(io.StringIO()):
+                app.main(
+                    ["workflow", "plan", "--task", "Only one", "--path", str(root), "--role", "Skald"]
+                )
+
+            output = io.StringIO()
+            with redirect_stdout(output), redirect_stderr(output):
+                code = app.main(
+                    ["packet", "show", "--path", str(root), "--previous-workflow", "--step", "step-01"]
+                )
+            self.assertEqual(code, USER_INPUT_ERROR)
+            self.assertIn("No previous workflow recorded", output.getvalue())
+
+    def test_packet_show_previous_workflow_conflicts_with_latest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output = io.StringIO()
+            with redirect_stdout(output), redirect_stderr(output):
+                code = app.main(
+                    [
+                        "packet",
+                        "show",
+                        "--path",
+                        tmp,
+                        "--latest-workflow",
+                        "--previous-workflow",
+                        "--step",
+                        "step-01",
+                    ]
+                )
+            self.assertEqual(code, USER_INPUT_ERROR)
+            self.assertIn("--latest-workflow cannot be combined with --previous-workflow", output.getvalue())
+
+    def test_packet_diff_supports_latest_and_previous_sentinels(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with redirect_stdout(io.StringIO()):
+                app.main(
+                    [
+                        "workflow",
+                        "plan",
+                        "--task",
+                        "Older saved",
+                        "--path",
+                        str(root),
+                        "--role",
+                        "Skald",
+                        "--packets",
+                    ]
+                )
+                older_id = json.loads((root / "mythic" / "workflow_plan.json").read_text(encoding="utf-8"))["workflow_id"]
+                app.main(
+                    [
+                        "workflow",
+                        "plan",
+                        "--task",
+                        "Newer saved",
+                        "--path",
+                        str(root),
+                        "--role",
+                        "Skald",
+                        "--packets",
+                    ]
+                )
+                newer_id = json.loads((root / "mythic" / "workflow_plan.json").read_text(encoding="utf-8"))["workflow_id"]
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(
+                    [
+                        "packet",
+                        "diff",
+                        "--path",
+                        str(root),
+                        "--left",
+                        "LATEST:step-01",
+                        "--right",
+                        "PREVIOUS:step-01",
+                        "--json",
+                    ]
+                )
+            payload = json.loads(output.getvalue())
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(payload["left_ref"], "LATEST:step-01")
+            self.assertEqual(payload["right_ref"], "PREVIOUS:step-01")
+            self.assertNotEqual(payload["left"], payload["right"])
+            list_output = io.StringIO()
+            with redirect_stdout(list_output):
+                app.main(["packet", "list", "--path", str(root), "--json"])
+            packets = json.loads(list_output.getvalue())["packets"]
+            left_packet = next(p for p in packets if p["packet_id"] == payload["left"])
+            right_packet = next(p for p in packets if p["packet_id"] == payload["right"])
+            self.assertEqual(left_packet["workflow_id"], newer_id)
+            self.assertEqual(right_packet["workflow_id"], older_id)
+
+    def test_packet_diff_previous_sentinel_errors_without_history_depth(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with redirect_stdout(io.StringIO()):
+                app.main(
+                    [
+                        "workflow",
+                        "plan",
+                        "--task",
+                        "Only one saved",
+                        "--path",
+                        str(root),
+                        "--role",
+                        "Skald",
+                        "--packets",
+                    ]
+                )
+
+            output = io.StringIO()
+            with redirect_stdout(output), redirect_stderr(output):
+                code = app.main(
+                    [
+                        "packet",
+                        "diff",
+                        "--path",
+                        str(root),
+                        "--left",
+                        "LATEST:step-01",
+                        "--right",
+                        "PREVIOUS:step-01",
+                    ]
+                )
+            self.assertEqual(code, USER_INPUT_ERROR)
+            self.assertIn("No previous workflow recorded", output.getvalue())
+
     def test_packet_show_latest_workflow_resolves_from_saved_plan(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

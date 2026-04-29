@@ -65,8 +65,10 @@ Argument parsing and top-level dispatch live in `mythic_vibe_cli.app`. Command i
   - Resolves to the packet stamped with that workflow id and step. Both flags are required together and cannot be combined with `--packet-id`. Missing matches return `USER_INPUT_ERROR`.
 - `packet show --latest-workflow --step <step_id>`
   - Resolves the workflow id from `mythic/workflow_plan.json` and looks up the matching packet. Requires `--step`; cannot be combined with `--workflow` or `--packet-id`; errors when the saved plan is missing or has no `workflow_id`.
-- `packet diff` workflow shorthand
-  - `--left` and `--right` accept either a bare `PKT-...` packet ID or a `WF-<id>:<step_id>` shorthand that resolves to the matching packet. With `--latest-workflow`, both refs may also use the bare `step-NN` form, which resolves against `mythic/workflow_plan.json`. JSON output reports the original references (`left_ref`, `right_ref`), the resolved packet IDs, and the resolved `latest_workflow_id` when supplied.
+- `packet show --previous-workflow --step <step_id>`
+  - Resolves the workflow id from the second-most-recent entry in `mythic/workflow_history.json`. Same exclusivity rules as `--latest-workflow`; cannot be combined with it; errors when the ledger has fewer than two entries.
+- `packet diff` workflow refs
+  - `--left` and `--right` accept five forms: a bare `PKT-...` packet ID, a `WF-<id>:<step_id>` shorthand, a `LATEST:<step_id>` sentinel (resolves via the saved plan), a `PREVIOUS:<step_id>` sentinel (resolves via the history ledger), or — under `--latest-workflow` — a bare `step-NN` form. Mixing `LATEST:<step>` and `PREVIOUS:<step>` in one call is the canonical cross-run regression diff pattern. JSON output reports the original references (`left_ref`, `right_ref`), the resolved packet IDs, and the resolved `latest_workflow_id` when supplied.
 - `state show`
   - Displays schema-versioned project state from `mythic/status.json`.
 - `state validate`
