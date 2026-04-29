@@ -85,17 +85,17 @@ Payload is a small dict with stable keys. Plugins may inspect but not mutate.
 
 - [x] Task file written
 - [x] Task file committed + pushed
-- [ ] Implement `PluginHookDispatcher`
-- [ ] Re-export from `plugins/__init__.py`
-- [ ] Wire into `cmd_scan`
-- [ ] Unit tests (load/subscribe, missing entrypoint, disabled plugin, hook name guard, emit, teardown, context manager)
-- [ ] Integration test (synthetic plugin receives before_scan + after_scan during cmd_scan)
-- [ ] `pytest -q` green
-- [ ] `ruff` + `mypy` green
-- [ ] CHANGELOG entry
-- [ ] DEVLOG entry
-- [ ] Memory snapshot updated
-- [ ] Final commit + push
+- [x] Implement `PluginHookDispatcher` (per-invocation, context manager, unknown-hook guard, plugin import isolation)
+- [x] Re-export from `plugins/__init__.py`
+- [x] Wire into `cmd_scan` (real-work path only; dry-run skips emission)
+- [x] Unit tests — 6 cases (subscribe, disabled-skip, broken-entrypoint-skip, unknown-hook ValueError, introspection, exception isolation)
+- [x] Integration tests — 2 cases (cmd_scan emits both hooks; cmd_scan --dry-run does NOT emit)
+- [x] `pytest -q` green — 176 passed, 14 subtests passed
+- [x] `ruff` + `mypy` green — 57 source files
+- [x] CHANGELOG entry
+- [x] DEVLOG entry with continuity thread
+- [x] Memory snapshot updated
+- [x] Final commit + push
 
 ## Resume Instructions
 

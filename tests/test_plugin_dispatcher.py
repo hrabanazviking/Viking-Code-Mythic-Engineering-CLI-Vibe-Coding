@@ -1,0 +1,201 @@
+"""Tests for ``mythic_vibe_cli.plugins.dispatcher.PluginHookDispatcher``."""
+
+from __future__ import annotations
+
+import importlib
+import io
+import sys
+import tempfile
+import textwrap
+import unittest
+from contextlib import redirect_stderr
+from pathlib import Path
+
+from mythic_vibe_cli.plugins import PluginHookDispatcher, PluginRegistry
+
+
+class _SyntheticPluginHarness:
+    """Helper that materializes a synthetic plugin module in a temp dir."""
+
+    def __init__(self, name: str, body: str) -> None:
+        self.name = name
+        self.body = textwrap.dedent(body)
+        self._tempdir: tempfile.TemporaryDirectory | None = None
+        self.module_path: Path | None = None
+
+    def __enter__(self) -> "_SyntheticPluginHarness":
+        self._tempdir = tempfile.TemporaryDirectory()
+        plugin_dir = Path(self._tempdir.name)
+        plugin_file = plugin_dir / f"{self.name}.py"
+        plugin_file.write_text(self.body, encoding="utf-8")
+        self.module_path = plugin_file
+        sys.path.insert(0, str(plugin_dir))
+        return self
+
+    def __exit__(self, *_exc: object) -> None:
+        if self._tempdir is None:
+            return
+        try:
+            sys.path.remove(str(self._tempdir.name))
+        except ValueError:
+            pass
+        sys.modules.pop(self.name, None)
+        self._tempdir.cleanup()
+        self._tempdir = None
+
+
+class PluginHookDispatcherTests(unittest.TestCase):
+    def test_dispatcher_emits_to_subscribed_plugin(self) -> None:
+        with tempfile.TemporaryDirectory() as project_root:
+            with _SyntheticPluginHarness(
+                "synth_plugin_a",
+                """
+                class Plugin:
+                    received = []
+
+                    @classmethod
+                    def before_scan(cls, payload):
+                        cls.received.append(("before", payload))
+
+                    @classmethod
+                    def after_scan(cls, payload):
+                        cls.received.append(("after", payload))
+                """,
+            ):
+                registry = PluginRegistry(Path(project_root))
+                registry.add("synth_plugin_a:Plugin", hooks=["before_scan", "after_scan"])
+
+                with PluginHookDispatcher(Path(project_root)) as dispatcher:
+                    loaded = dispatcher.load_and_subscribe()
+                    dispatcher.emit("before_scan", {"path": project_root})
+                    dispatcher.emit("after_scan", {"path": project_root, "ok": True})
+
+                module = importlib.import_module("synth_plugin_a")
+                received = module.Plugin.received
+                self.assertEqual(loaded, 1)
+                self.assertEqual(len(received), 2)
+                self.assertEqual(received[0][0], "before")
+                self.assertEqual(received[1][0], "after")
+                self.assertEqual(received[1][1]["ok"], True)
+                module.Plugin.received.clear()
+
+    def test_disabled_plugin_is_not_subscribed(self) -> None:
+        with tempfile.TemporaryDirectory() as project_root:
+            with _SyntheticPluginHarness(
+                "synth_plugin_b",
+                """
+                class Plugin:
+                    received = []
+
+                    @classmethod
+                    def before_scan(cls, payload):
+                        cls.received.append(payload)
+                """,
+            ):
+                registry = PluginRegistry(Path(project_root))
+                registry.add("synth_plugin_b:Plugin", hooks=["before_scan"])
+                registry.disable("synth_plugin_b:Plugin")
+
+                with PluginHookDispatcher(Path(project_root)) as dispatcher:
+                    loaded = dispatcher.load_and_subscribe()
+                    dispatcher.emit("before_scan", {"path": project_root})
+
+                module = importlib.import_module("synth_plugin_b")
+                self.assertEqual(loaded, 0)
+                self.assertEqual(module.Plugin.received, [])
+                module.Plugin.received.clear()
+
+    def test_broken_plugin_entrypoint_is_skipped_silently(self) -> None:
+        with tempfile.TemporaryDirectory() as project_root:
+            registry = PluginRegistry(Path(project_root))
+            registry.add("nonexistent_module:Whatever", hooks=["before_scan"])
+
+            with PluginHookDispatcher(Path(project_root)) as dispatcher:
+                loaded = dispatcher.load_and_subscribe()
+                dispatcher.emit("before_scan", {"path": project_root})  # must not raise
+
+            self.assertEqual(loaded, 0)
+
+    def test_emit_unknown_hook_raises_value_error(self) -> None:
+        with tempfile.TemporaryDirectory() as project_root:
+            with PluginHookDispatcher(Path(project_root)) as dispatcher:
+                dispatcher.load_and_subscribe()
+                with self.assertRaises(ValueError):
+                    dispatcher.emit("not_a_hook", None)
+
+    def test_subscribed_hooks_introspection(self) -> None:
+        with tempfile.TemporaryDirectory() as project_root:
+            with _SyntheticPluginHarness(
+                "synth_plugin_c",
+                """
+                class Plugin:
+                    @staticmethod
+                    def before_scan(payload):
+                        return None
+
+                    @staticmethod
+                    def after_packet(payload):
+                        return None
+                """,
+            ):
+                registry = PluginRegistry(Path(project_root))
+                registry.add(
+                    "synth_plugin_c:Plugin",
+                    hooks=["before_scan", "after_packet"],
+                )
+
+                dispatcher = PluginHookDispatcher(Path(project_root))
+                try:
+                    dispatcher.load_and_subscribe()
+                    self.assertCountEqual(
+                        dispatcher.subscribed_hooks,
+                        ["before_scan", "after_packet"],
+                    )
+                    self.assertEqual(len(dispatcher.loaded_plugins), 1)
+                    self.assertEqual(
+                        dispatcher.loaded_plugins[0].entrypoint,
+                        "synth_plugin_c:Plugin",
+                    )
+                finally:
+                    dispatcher.teardown()
+
+                self.assertEqual(dispatcher.subscribed_hooks, [])
+                self.assertEqual(dispatcher.loaded_plugins, [])
+
+    def test_handler_exception_does_not_break_dispatcher(self) -> None:
+        with tempfile.TemporaryDirectory() as project_root:
+            with _SyntheticPluginHarness(
+                "synth_plugin_d",
+                """
+                class BoomPlugin:
+                    @staticmethod
+                    def before_scan(payload):
+                        raise RuntimeError("plugin-explodes")
+
+                class TameplePlugin:
+                    received = []
+
+                    @classmethod
+                    def before_scan(cls, payload):
+                        cls.received.append(payload)
+                """,
+            ):
+                registry = PluginRegistry(Path(project_root))
+                registry.add("synth_plugin_d:BoomPlugin", hooks=["before_scan"])
+                registry.add("synth_plugin_d:TameplePlugin", hooks=["before_scan"])
+
+                buffer = io.StringIO()
+                with PluginHookDispatcher(Path(project_root)) as dispatcher:
+                    dispatcher.load_and_subscribe()
+                    with redirect_stderr(buffer):
+                        dispatcher.emit("before_scan", {"path": project_root})
+
+                module = importlib.import_module("synth_plugin_d")
+                self.assertEqual(len(module.TameplePlugin.received), 1)
+                self.assertIn("plugin-explodes", buffer.getvalue())
+                self.assertIn("Event handler error (before_scan)", buffer.getvalue())
+                module.TameplePlugin.received.clear()
+
+
+if __name__ == "__main__":
+    unittest.main()
