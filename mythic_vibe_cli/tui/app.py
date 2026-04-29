@@ -17,7 +17,7 @@ import time
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Grid, Horizontal, Vertical
+from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Footer, Header, Static
 
@@ -581,35 +581,49 @@ def build_status_data(root: Path) -> StatusData:
     )
 
 
-def _format_status_panel(data: StatusData) -> str:
+def _format_status_bar(data: StatusData) -> str:
+    """Render the consolidated status bar (PH-04 slice 4.4).
+
+    A single dense line replacing the previous 2x2 grid of Status /
+    Verify / Handoff / Plugins panels. Sections are separated by
+    middle-dot bullets; the warnings tail is colour-coded so the
+    operator sees red / yellow / green at a glance.
+
+    Sections in order:
+      project basename · phase · verify · handoff · plugins · warnings
+    """
+    project_name = Path(data.path).name or "(no project)"
+    phase = data.phase or "(none)"
+
+    if not data.last_verification_id or data.last_verification_id == "(none)":
+        verify = "verify: -"
+    else:
+        verify = f"verify: {data.last_verification_result} ({data.last_verification_id})"
+
+    if data.latest_handoff_id == "(none)" or not data.latest_handoff_id:
+        handoff = "handoff: -"
+    else:
+        handoff = f"handoff: {data.latest_handoff_id}"
+
+    plugins = f"plugins: {data.plugins_enabled}+{data.plugins_disabled}"
+
+    warnings_parts: list[str] = []
+    if data.last_verification_result == "fail":
+        warnings_parts.append("[red]verify-failed[/red]")
+    if data.plugins_disabled > 0:
+        warnings_parts.append(
+            f"[yellow]{data.plugins_disabled} plugin(s) disabled[/yellow]"
+        )
+    warnings = " · ".join(warnings_parts) if warnings_parts else "[green]ok[/green]"
+
     return (
-        f"[b]Path:[/b]        {data.path}\n"
-        f"[b]Phase:[/b]       {data.phase}\n"
-        f"[b]Active task:[/b] {data.active_task_id}"
+        f"[b]{project_name}[/b]  ·  "
+        f"[dim]phase:[/dim] {phase}  ·  "
+        f"[dim]{verify}[/dim]  ·  "
+        f"[dim]{handoff}[/dim]  ·  "
+        f"[dim]{plugins}[/dim]  ·  "
+        f"{warnings}"
     )
-
-
-def _format_verify_panel(data: StatusData) -> str:
-    return (
-        f"[b]Result:[/b] {data.last_verification_result}\n"
-        f"[b]ID:[/b]     {data.last_verification_id}\n"
-        f"[b]Level:[/b]  {data.last_verification_level}"
-    )
-
-
-def _format_handoff_panel(data: StatusData) -> str:
-    next_step = data.latest_handoff_next_step
-    if len(next_step) > 60:
-        next_step = next_step[:57] + "..."
-    return (
-        f"[b]ID:[/b]        {data.latest_handoff_id}\n"
-        f"[b]Created:[/b]   {data.latest_handoff_created_at or '(n/a)'}\n"
-        f"[b]Next step:[/b] {next_step}"
-    )
-
-
-def _format_plugins_panel(data: StatusData) -> str:
-    return f"[b]{data.plugins_enabled} enabled[/b], {data.plugins_disabled} disabled"
 
 
 def _format_events_panel(entries: list[EventLogEntry]) -> str:
@@ -660,18 +674,10 @@ class StatusScreen(Screen):
         width: 1fr;
     }
 
-    #grid {
-        layout: grid;
-        grid-size: 2 2;
-        grid-gutter: 1;
-        padding: 1;
-        height: 14;
-    }
-
     #mid-row {
         layout: horizontal;
         height: 1fr;
-        margin: 0 1 1 1;
+        margin: 1 1 1 1;
     }
 
     #events-panel {
@@ -694,10 +700,10 @@ class StatusScreen(Screen):
         width: 1fr;
     }
 
-    .panel {
-        border: round $secondary;
-        padding: 1 2;
-        height: 100%;
+    #status-bar {
+        padding: 0 2;
+        height: 1;
+        background: $panel;
     }
 
     #footer-line {
@@ -711,13 +717,10 @@ class StatusScreen(Screen):
         super().__init__()
         self.root = root
         self._loop_nav_widget = Static(id="loop-nav-panel")
-        self._status_widget = Static(id="panel-status", classes="panel")
-        self._verify_widget = Static(id="panel-verify", classes="panel")
-        self._handoff_widget = Static(id="panel-handoff", classes="panel")
-        self._plugins_widget = Static(id="panel-plugins", classes="panel")
         self._events_widget = Static(id="events-panel")
         self._artifact_widget = Static(id="artifact-panel")
         self._packet_widget = Static(id="packet-panel")
+        self._status_bar_widget = Static(id="status-bar")
         self._footer_widget = Static(id="footer-line")
 
     def compose(self) -> ComposeResult:
@@ -725,15 +728,11 @@ class StatusScreen(Screen):
         with Horizontal(id="main-row"):
             yield self._loop_nav_widget
             with Vertical(id="right-column"):
-                with Grid(id="grid"):
-                    yield self._status_widget
-                    yield self._verify_widget
-                    yield self._handoff_widget
-                    yield self._plugins_widget
                 with Horizontal(id="mid-row"):
                     yield self._events_widget
                     yield self._artifact_widget
                     yield self._packet_widget
+        yield self._status_bar_widget
         yield self._footer_widget
         yield Footer()
 
@@ -756,10 +755,6 @@ class StatusScreen(Screen):
         packet_data = build_packet_viewer_data(self.root)
         events = read_recent(event_log_path_for(self.root), limit=12)
         self._loop_nav_widget.border_title = "Loop"
-        self._status_widget.border_title = "Status"
-        self._verify_widget.border_title = "Verification"
-        self._handoff_widget.border_title = "Latest Handoff"
-        self._plugins_widget.border_title = "Plugins"
         self._events_widget.border_title = "Recent Events"
         artifact_phase = artifact_data.phase or "(none)"
         self._artifact_widget.border_title = f"Artefacts ({artifact_phase})"
@@ -767,13 +762,10 @@ class StatusScreen(Screen):
             f"Packet ({packet_data.packet_id})" if packet_data.packet_id else "Packet"
         )
         self._loop_nav_widget.update(_format_loop_navigator(loop_nav_data))
-        self._status_widget.update(_format_status_panel(data))
-        self._verify_widget.update(_format_verify_panel(data))
-        self._handoff_widget.update(_format_handoff_panel(data))
-        self._plugins_widget.update(_format_plugins_panel(data))
         self._events_widget.update(_format_events_panel(events))
         self._artifact_widget.update(_format_artifact_viewer(artifact_data))
         self._packet_widget.update(_format_packet_viewer(packet_data))
+        self._status_bar_widget.update(_format_status_bar(data))
         self._footer_widget.update(_format_footer_line(data))
 
 
