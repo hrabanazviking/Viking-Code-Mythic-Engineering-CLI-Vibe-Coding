@@ -187,8 +187,11 @@ additive, cross-platform, open-source):
 | 36 | Phase 3 Slice 3.7 — reflection capture | done — `17e1d57` — +27 tests, 528 total |
 | 37 | Update memory + project status (after slice 3.7) | done — pushed at e313862 |
 | 38 | Phase 3 Slice 3.8 — forge resume (Phase 3 finale) | done — `9093846` — +10 tests, 538 total |
-| 39 | Update memory + project status (after slice 3.8) | in progress |
-| 40 | **PHASE 3 FULLY COMPLETE.** Choose next phase (4 / 5 / 11) | awaiting Volmarr |
+| 39 | Update memory + project status (after slice 3.8) | done — pushed at 997f255 |
+| 40 | **PHASE 3 FULLY COMPLETE.** Choose next phase (4 / 5 / 11) | done — Phase 4 chosen |
+| 41 | Phase 4 Slice 4.1 — Loop Navigator sidebar | done — `1f73b3e` — +8 tests, 546 total |
+| 42 | Update memory + project status (after slice 4.1) | in progress |
+| 43 | Phase 4 Slice 4.2 — Artifact Viewer panel | next |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
