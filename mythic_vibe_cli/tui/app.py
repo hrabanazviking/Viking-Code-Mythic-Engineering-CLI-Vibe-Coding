@@ -22,6 +22,7 @@ from textual.widgets import Footer, Header, Static
 from ..core.state import ProjectState
 from ..persistence.json_store import JsonStateStore
 from ..plugins.registry import PluginRegistry
+from ..runtime.event_log import EventLogEntry, event_log_path_for, read_recent
 from ..verify import load_latest_verification
 
 
@@ -156,6 +157,18 @@ def _format_plugins_panel(data: StatusData) -> str:
     return f"[b]{data.plugins_enabled} enabled[/b], {data.plugins_disabled} disabled"
 
 
+def _format_events_panel(entries: list[EventLogEntry]) -> str:
+    if not entries:
+        return "[dim](no events recorded yet)[/dim]"
+    lines: list[str] = []
+    # Display newest first so the latest event sits at the top of the panel.
+    for entry in reversed(entries):
+        time_token = entry.timestamp[11:19] if len(entry.timestamp) >= 19 else entry.timestamp
+        summary = entry.summary or "(empty)"
+        lines.append(f"[dim]{time_token}[/dim] [b]{entry.channel}[/b] {summary}")
+    return "\n".join(lines)
+
+
 def _format_footer_line(data: StatusData) -> str:
     return f"Last refresh: {data.refreshed_at}"
 
@@ -179,6 +192,13 @@ class StatusScreen(Screen):
         grid-size: 2 2;
         grid-gutter: 1;
         padding: 1;
+        height: 14;
+    }
+
+    #events-panel {
+        border: round $secondary;
+        padding: 1 2;
+        margin: 0 1 1 1;
         height: 1fr;
     }
 
@@ -202,6 +222,7 @@ class StatusScreen(Screen):
         self._verify_widget = Static(id="panel-verify", classes="panel")
         self._handoff_widget = Static(id="panel-handoff", classes="panel")
         self._plugins_widget = Static(id="panel-plugins", classes="panel")
+        self._events_widget = Static(id="events-panel")
         self._footer_widget = Static(id="footer-line")
 
     def compose(self) -> ComposeResult:
@@ -211,6 +232,7 @@ class StatusScreen(Screen):
             yield self._verify_widget
             yield self._handoff_widget
             yield self._plugins_widget
+        yield self._events_widget
         yield self._footer_widget
         yield Footer()
 
@@ -223,14 +245,17 @@ class StatusScreen(Screen):
 
     def _refresh_panels(self) -> None:
         data = build_status_data(self.root)
+        events = read_recent(event_log_path_for(self.root), limit=12)
         self._status_widget.border_title = "Status"
         self._verify_widget.border_title = "Verification"
         self._handoff_widget.border_title = "Latest Handoff"
         self._plugins_widget.border_title = "Plugins"
+        self._events_widget.border_title = "Recent Events"
         self._status_widget.update(_format_status_panel(data))
         self._verify_widget.update(_format_verify_panel(data))
         self._handoff_widget.update(_format_handoff_panel(data))
         self._plugins_widget.update(_format_plugins_panel(data))
+        self._events_widget.update(_format_events_panel(events))
         self._footer_widget.update(_format_footer_line(data))
 
 

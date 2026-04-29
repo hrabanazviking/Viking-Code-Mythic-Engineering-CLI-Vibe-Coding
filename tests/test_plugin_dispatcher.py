@@ -295,6 +295,25 @@ class PluginHookDispatcherTests(unittest.TestCase):
                 self.assertIn("slash-explodes", buffer.getvalue())
                 self.assertIn("Plugin slash_commands error", buffer.getvalue())
 
+    def test_emit_persists_event_to_project_event_log(self) -> None:
+        import json as json_module
+        from mythic_vibe_cli.runtime.event_log import event_log_path_for
+
+        with tempfile.TemporaryDirectory() as project_root:
+            with PluginHookDispatcher(Path(project_root)) as dispatcher:
+                dispatcher.load_and_subscribe()
+                dispatcher.emit("before_scan", {"path": project_root})
+                dispatcher.emit("after_scan", {"path": project_root, "languages": 0})
+
+            log_path = event_log_path_for(Path(project_root))
+            self.assertTrue(log_path.exists())
+            with log_path.open("r", encoding="utf-8") as fh:
+                lines = [json_module.loads(line) for line in fh if line.strip()]
+
+            self.assertEqual(len(lines), 2)
+            self.assertEqual(lines[0]["channel"], "before_scan")
+            self.assertEqual(lines[1]["channel"], "after_scan")
+
     def test_discover_slash_commands_filters_non_slashcommand_items(self) -> None:
         with tempfile.TemporaryDirectory() as project_root:
             with _SyntheticPluginHarness(

@@ -54,10 +54,11 @@ Bounded to 200 entries / ~100KB. When exceeded, rewrite with the last 200 entrie
 
 - [x] Task file written
 - [x] Task file committed + pushed
-- [ ] Implement `event_log.py` (append, tail, rotate)
-- [ ] Wire dispatcher emit
-- [ ] Add Recent Events panel
-- [ ] Tests
-- [ ] Gates green
-- [ ] Docs + CHANGELOG + DEVLOG
-- [ ] Memory + push
+- [x] Implement `event_log.py` (append, tail, atomic rotate via tempfile.mkstemp + os.replace)
+- [x] Wire dispatcher emit (best-effort; IO errors swallowed)
+- [x] Add Recent Events panel (12 entries newest-first, HH:MM:SS time tokens)
+- [x] Tests — 12 new (9 event_log + 1 dispatcher + 2 TUI panel)
+- [x] Existing test relaxed (test_scan_changed_only_limits_recommended_context — now allows mythic/ in changed files)
+- [x] Gates green — 258 passed, 14 subtests passed; ruff/mypy clean; 65 source files
+- [x] Docs (runtime.md table) + CHANGELOG + DEVLOG
+- [x] Memory + push
