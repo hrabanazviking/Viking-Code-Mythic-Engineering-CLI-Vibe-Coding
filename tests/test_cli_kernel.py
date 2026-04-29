@@ -528,6 +528,49 @@ class CliKernelTests(unittest.TestCase):
             self.assertEqual(payload["packet_status"][0]["role"], "Skald")
             self.assertFalse(payload["packet_status"][0]["found"])
 
+    def test_json_command_stdout_stays_clean_under_incidental_writes(self) -> None:
+        """Wired contract: when a handler does noisy writes during a --json command,
+        the captured stdout is still parseable JSON because the guard routes the
+        noise to stderr and write_json bypasses the guard via write_raw_stdout."""
+        from mythic_vibe_cli import commands as commands_module
+
+        original = commands_module.cmd_grimoire
+
+        def noisy_handler(args):
+            sys.stdout.write("incidental noise via sys.stdout\n")
+            print("incidental noise via print()")
+            return original(args)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            stdout_buf = io.StringIO()
+            stderr_buf = io.StringIO()
+            commands_module.COMMAND_HANDLERS["grimoire"] = noisy_handler
+            try:
+                with redirect_stdout(stdout_buf), redirect_stderr(stderr_buf):
+                    code = app.main(
+                        ["grimoire", "add", "my_pkg.plugin:Plugin", "--path", tmp, "--json"]
+                    )
+            finally:
+                commands_module.COMMAND_HANDLERS["grimoire"] = original
+
+            self.assertEqual(code, SUCCESS)
+            payload = json.loads(stdout_buf.getvalue())
+            self.assertEqual(payload["command"], "grimoire add")
+            stderr_text = stderr_buf.getvalue()
+            self.assertIn("incidental noise via sys.stdout", stderr_text)
+            self.assertIn("incidental noise via print()", stderr_text)
+
+    def test_non_json_command_keeps_progress_on_stdout(self) -> None:
+        """Sibling-contract: without --json, the guard does not activate and
+        human-readable text continues to flow to stdout as before."""
+        with tempfile.TemporaryDirectory() as tmp:
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(["grimoire", "add", "my_pkg.plugin:Plugin", "--path", tmp])
+
+            self.assertEqual(code, SUCCESS)
+            self.assertIn("plugin", output.getvalue().lower())
+
     def test_workflow_run_blocks_real_execution(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             output = io.StringIO()

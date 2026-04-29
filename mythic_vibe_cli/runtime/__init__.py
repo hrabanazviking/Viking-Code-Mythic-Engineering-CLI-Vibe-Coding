@@ -10,6 +10,7 @@ from .file_mutation_queue import file_mutation_queue, with_file_mutation_queue
 from .output_guard import (
     flush_raw_stdout,
     is_stdout_taken_over,
+    json_output_guard,
     restore_stdout,
     take_over_stdout,
     write_raw_stdout,
@@ -23,4 +24,5 @@ __all__ = [
     "is_stdout_taken_over",
     "write_raw_stdout",
     "flush_raw_stdout",
+    "json_output_guard",
 ]

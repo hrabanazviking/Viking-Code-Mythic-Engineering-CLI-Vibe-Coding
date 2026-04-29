@@ -17,6 +17,7 @@ import unittest
 from mythic_vibe_cli.runtime.output_guard import (
     flush_raw_stdout,
     is_stdout_taken_over,
+    json_output_guard,
     restore_stdout,
     take_over_stdout,
     write_raw_stdout,
@@ -121,6 +122,34 @@ class OutputGuardTests(unittest.TestCase):
         restore_stdout()
 
         self.assertIsNone(og_module._state)
+
+    def test_json_output_guard_active_isolates_stdout(self) -> None:
+        with json_output_guard(active=True):
+            self.assertTrue(is_stdout_taken_over())
+            print("noise")
+            write_raw_stdout("payload\n")
+
+        self.assertFalse(is_stdout_taken_over())
+        self.assertEqual(self.fake_stdout.getvalue(), "payload\n")
+        self.assertIn("noise", self.fake_stderr.getvalue())
+
+    def test_json_output_guard_inactive_is_transparent(self) -> None:
+        with json_output_guard(active=False):
+            self.assertFalse(is_stdout_taken_over())
+            print("hello")
+
+        self.assertFalse(is_stdout_taken_over())
+        self.assertIn("hello", self.fake_stdout.getvalue())
+        self.assertEqual(self.fake_stderr.getvalue(), "")
+
+    def test_json_output_guard_restores_on_exception(self) -> None:
+        with self.assertRaises(RuntimeError):
+            with json_output_guard(active=True):
+                self.assertTrue(is_stdout_taken_over())
+                raise RuntimeError("kaboom")
+
+        self.assertFalse(is_stdout_taken_over())
+        self.assertIs(sys.stdout, self.fake_stdout)
 
 
 if __name__ == "__main__":

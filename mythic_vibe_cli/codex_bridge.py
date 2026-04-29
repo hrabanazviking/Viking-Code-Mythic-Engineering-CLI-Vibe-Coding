@@ -15,6 +15,7 @@ from .method_excerpt import (
     select_method_excerpts,
     sections_for,
 )
+from .runtime.file_mutation_queue import file_mutation_queue
 
 PACKET_OUTPUT_FORMATS = [
     "markdown",
@@ -90,8 +91,10 @@ class PacketBuilder:
 
     def create_packet(self, request: CodexPacketRequest, out_file: Path | None = None) -> Path:
         self._validate_request(request)
-        record = self._create_record(request, out_file=out_file)
-        self._write_record(record, request)
+        self.packet_dir.mkdir(parents=True, exist_ok=True)
+        with file_mutation_queue(self.packet_dir):
+            record = self._create_record(request, out_file=out_file)
+            self._write_record(record, request)
         return Path(record.packet_path if out_file is None else out_file)
 
     def ingest_packet(self, source: Path) -> PacketRecord:
@@ -100,23 +103,25 @@ class PacketBuilder:
             raise FileNotFoundError(source_path)
 
         packet_text, source_metadata = self._read_ingest_source(source_path)
-        packet_id = self._next_packet_id()
-        record = PacketRecord(
-            packet_id=packet_id,
-            created_at=self._now(),
-            phase=str(source_metadata.get("phase") or "build"),
-            role=str(source_metadata.get("role") or "Forge Worker"),
-            task=str(source_metadata.get("task") or source_path.name),
-            audience=str(source_metadata.get("audience") or "beginner"),
-            packet_path=str(self.packet_dir / f"{packet_id}.md"),
-            metadata_path=str(self.packet_dir / f"{packet_id}.json"),
-            source_path=str(source_path),
-            source_packet_id=str(source_metadata.get("packet_id")) if source_metadata.get("packet_id") else None,
-            output_format=str(source_metadata.get("output_format") or "markdown"),
-            workflow_id=str(source_metadata.get("workflow_id")) if source_metadata.get("workflow_id") else None,
-            workflow_step_id=str(source_metadata.get("workflow_step_id")) if source_metadata.get("workflow_step_id") else None,
-        )
-        self._write_ingested_record(record, packet_text, source_metadata)
+        self.packet_dir.mkdir(parents=True, exist_ok=True)
+        with file_mutation_queue(self.packet_dir):
+            packet_id = self._next_packet_id()
+            record = PacketRecord(
+                packet_id=packet_id,
+                created_at=self._now(),
+                phase=str(source_metadata.get("phase") or "build"),
+                role=str(source_metadata.get("role") or "Forge Worker"),
+                task=str(source_metadata.get("task") or source_path.name),
+                audience=str(source_metadata.get("audience") or "beginner"),
+                packet_path=str(self.packet_dir / f"{packet_id}.md"),
+                metadata_path=str(self.packet_dir / f"{packet_id}.json"),
+                source_path=str(source_path),
+                source_packet_id=str(source_metadata.get("packet_id")) if source_metadata.get("packet_id") else None,
+                output_format=str(source_metadata.get("output_format") or "markdown"),
+                workflow_id=str(source_metadata.get("workflow_id")) if source_metadata.get("workflow_id") else None,
+                workflow_step_id=str(source_metadata.get("workflow_step_id")) if source_metadata.get("workflow_step_id") else None,
+            )
+            self._write_ingested_record(record, packet_text, source_metadata)
         return record
 
     def list_packets(self) -> list[PacketRecord]:
@@ -234,23 +239,28 @@ class PacketBuilder:
         canonical_meta = self.packet_dir / f"{record.packet_id}.meta.json"
         canonical_packet.parent.mkdir(parents=True, exist_ok=True)
         rendered = self._render_packet(request, record.packet_id, record.created_at)
-        canonical_packet.write_text(rendered, encoding="utf-8")
-        canonical_meta.write_text(json.dumps(record.to_dict(), indent=2) + "\n", encoding="utf-8")
+        with file_mutation_queue(canonical_packet):
+            canonical_packet.write_text(rendered, encoding="utf-8")
+        with file_mutation_queue(canonical_meta):
+            canonical_meta.write_text(json.dumps(record.to_dict(), indent=2) + "\n", encoding="utf-8")
         self._write_context_manifest(record, rendered)
 
         out_path = Path(record.packet_path)
         if out_path != canonical_packet:
             out_path.parent.mkdir(parents=True, exist_ok=True)
-            out_path.write_text(rendered, encoding="utf-8")
+            with file_mutation_queue(out_path):
+                out_path.write_text(rendered, encoding="utf-8")
 
     def _write_ingested_record(self, record: PacketRecord, packet_text: str, source_metadata: dict[str, object]) -> None:
         canonical_packet = self.packet_dir / f"{record.packet_id}{Path(record.packet_path).suffix or '.md'}"
         canonical_meta = self.packet_dir / f"{record.packet_id}.meta.json"
         canonical_packet.parent.mkdir(parents=True, exist_ok=True)
-        canonical_packet.write_text(packet_text, encoding="utf-8")
+        with file_mutation_queue(canonical_packet):
+            canonical_packet.write_text(packet_text, encoding="utf-8")
         payload = record.to_dict()
         payload["source_metadata"] = source_metadata if isinstance(source_metadata, dict) else {}
-        canonical_meta.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        with file_mutation_queue(canonical_meta):
+            canonical_meta.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
         self._write_context_manifest(record, packet_text)
 
     def _read_ingest_source(self, source_path: Path) -> tuple[str, dict[str, object]]:
@@ -294,7 +304,8 @@ class PacketBuilder:
             "selected_sources": self._selected_sources_snapshot(packet_text),
         }
         manifest_path.parent.mkdir(parents=True, exist_ok=True)
-        manifest_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        with file_mutation_queue(manifest_path):
+            manifest_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
     def _selected_sources_snapshot(self, packet_text: str) -> list[dict[str, str]]:
         index = self.indexer.build(write=True)

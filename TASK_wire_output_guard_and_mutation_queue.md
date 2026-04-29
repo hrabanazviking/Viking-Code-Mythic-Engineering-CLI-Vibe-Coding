@@ -64,19 +64,19 @@ Half B is bounded — we only wire the queue into surfaces that already exist. N
 
 - [x] Task file written
 - [x] Task file committed + pushed
-- [ ] Add `json_output_guard` context manager to `output_guard.py`
-- [ ] Re-export from `runtime/__init__.py`
-- [ ] Wire into `app.main()`
-- [ ] Update `output.py:write_json`
-- [ ] Wrap packet writer sites with `file_mutation_queue`
-- [ ] New JSON-cleanliness test passes
-- [ ] New packet writer concurrency test passes
-- [ ] All existing tests still pass
-- [ ] `ruff` + `mypy` green
-- [ ] CHANGELOG entry
-- [ ] DEVLOG entry
-- [ ] Memory snapshot updated
-- [ ] Final commit + push
+- [x] Add `json_output_guard` context manager to `output_guard.py`
+- [x] Re-export from `runtime/__init__.py`
+- [x] Wire into `app.main()`
+- [x] Update `output.py:write_json` (now uses `write_raw_stdout`)
+- [x] Wrap packet writer sites with `file_mutation_queue` (per-path inner + directory-level outer)
+- [x] New JSON-cleanliness test passes (`tests/test_cli_kernel.py`)
+- [x] New packet writer concurrency test passes — caught and fixed a real `_next_packet_id` race
+- [x] All existing tests still pass — 157 total
+- [x] `ruff` + `mypy` green
+- [x] CHANGELOG entry
+- [x] DEVLOG entry with continuity thread
+- [x] Memory snapshot updated
+- [x] Final commit + push
 
 ## Resume Instructions
 

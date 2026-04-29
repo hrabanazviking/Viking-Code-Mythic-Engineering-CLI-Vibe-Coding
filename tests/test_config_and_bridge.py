@@ -220,5 +220,56 @@ class ConfigAndBridgeTests(unittest.TestCase):
             self.assertGreater(len(compacted["verification"]), len(compacted["loop"]))
 
 
+class PacketWriterConcurrencyTests(unittest.TestCase):
+    def test_concurrent_packet_creates_serialize_via_mutation_queue(self) -> None:
+        import threading
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "tasks").mkdir(parents=True, exist_ok=True)
+            (root / "docs").mkdir(parents=True, exist_ok=True)
+            (root / "mythic").mkdir(parents=True, exist_ok=True)
+            (root / "tasks" / "current_GOALS.md").write_text("Concurrent goal\n", encoding="utf-8")
+
+            bridge = CodexBridge(root)
+
+            errors: list[BaseException] = []
+            results: list[Path] = []
+            results_lock = threading.Lock()
+
+            def worker(task: str) -> None:
+                try:
+                    request = CodexPacketRequest(
+                        task=task,
+                        phase="build",
+                        audience="advanced",
+                        role="Forge Worker",
+                        output_format="markdown",
+                    )
+                    out = bridge.create_packet(request)
+                    with results_lock:
+                        results.append(out)
+                except BaseException as exc:  # noqa: BLE001 - capture for assertion
+                    errors.append(exc)
+
+            threads = [threading.Thread(target=worker, args=(f"task-{index}",)) for index in range(8)]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join(timeout=10.0)
+
+            self.assertEqual(errors, [])
+            self.assertEqual(len(results), 8)
+            packet_dir = root / "mythic" / "packets"
+            written = sorted(packet_dir.glob("PKT-*.md"))
+            self.assertEqual(len(written), 8)
+            packet_ids = {path.stem for path in written}
+            self.assertEqual(len(packet_ids), 8)
+            for path in written:
+                content = path.read_text(encoding="utf-8")
+                self.assertIn("# Mythic Engineering Task Packet", content)
+                self.assertIn("## 1. Role", content)
+
+
 if __name__ == "__main__":
     unittest.main()
