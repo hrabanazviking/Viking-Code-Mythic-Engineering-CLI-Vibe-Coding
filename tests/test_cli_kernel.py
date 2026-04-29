@@ -91,6 +91,9 @@ class CliKernelTests(unittest.TestCase):
             "build",
             # PH-03 slice 3.3 — multi-agent forge
             "forge",
+            # PH-02 slices 2.4 / 2.5 — provider + audit aliases
+            "provider",
+            "audit",
         }
 
         self.assertEqual(set(COMMAND_HANDLERS), expected)
