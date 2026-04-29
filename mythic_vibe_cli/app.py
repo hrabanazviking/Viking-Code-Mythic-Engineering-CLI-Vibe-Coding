@@ -342,6 +342,7 @@ def build_parser() -> argparse.ArgumentParser:
             """
             Examples:
               mythic-vibe workflow run --dry-run
+              mythic-vibe workflow run --dry-run --packets-only
               mythic-vibe workflow run --dry-run --task "Preview a new task" --role Skald --role Auditor
               mythic-vibe workflow run --dry-run --plan mythic/workflow_plan.json --json
 
@@ -353,6 +354,9 @@ def build_parser() -> argparse.ArgumentParser:
     workflow_run.add_argument("--path", default=".", help="Project directory (default: current directory)")
     workflow_run.add_argument("--plan", default="", help="Plan file to preview (default: mythic/workflow_plan.json)")
     workflow_run.add_argument("--task", default="", help="Optional task to build an in-memory preview plan")
+    workflow_run.add_argument("--audience", default="advanced", help="Expected packet audience when validating workflow packets")
+    workflow_run.add_argument("--format", default="markdown", choices=PACKET_OUTPUT_FORMATS, help="Expected packet format when validating workflow packets")
+    workflow_run.add_argument("--packets-only", action="store_true", help="Validate required packets without executing providers")
     workflow_run.add_argument(
         "--role",
         action="append",

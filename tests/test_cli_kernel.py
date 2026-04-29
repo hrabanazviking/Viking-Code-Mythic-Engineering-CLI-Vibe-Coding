@@ -402,6 +402,63 @@ class CliKernelTests(unittest.TestCase):
             self.assertEqual([step["role"] for step in payload["steps"]], ["Skald", "Auditor"])
             self.assertFalse(payload["steps"][0]["would_execute_provider"])
 
+    def test_workflow_run_packets_only_validates_existing_packets(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "docs").mkdir(parents=True, exist_ok=True)
+            (root / "tasks").mkdir(parents=True, exist_ok=True)
+            (root / "mythic").mkdir(parents=True, exist_ok=True)
+            (root / "tasks" / "current_GOALS.md").write_text("Ship ready packets\n", encoding="utf-8")
+            (root / "docs" / "ARCHITECTURE.md").write_text("# Architecture\n", encoding="utf-8")
+            (root / "mythic" / "plan.md").write_text("# Plan\n", encoding="utf-8")
+            (root / "mythic" / "loop.md").write_text("# Loop\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                app.main(
+                    [
+                        "workflow",
+                        "plan",
+                        "--task",
+                        "Validate packets",
+                        "--path",
+                        str(root),
+                        "--role",
+                        "Skald",
+                        "--role",
+                        "Auditor",
+                        "--packets",
+                    ]
+                )
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(["workflow", "run", "--path", str(root), "--dry-run", "--packets-only", "--json"])
+
+            payload = json.loads(output.getvalue())
+
+            self.assertEqual(code, SUCCESS)
+            self.assertTrue(payload["packets_only"])
+            self.assertTrue(payload["packets_ready"])
+            self.assertEqual([item["role"] for item in payload["packet_status"]], ["Skald", "Auditor"])
+            self.assertTrue(all(item["found"] for item in payload["packet_status"]))
+
+    def test_workflow_run_packets_only_blocks_missing_packets(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with redirect_stdout(io.StringIO()):
+                app.main(["workflow", "plan", "--task", "Missing packets", "--path", str(root), "--role", "Skald"])
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(["workflow", "run", "--path", str(root), "--dry-run", "--packets-only", "--json"])
+
+            payload = json.loads(output.getvalue())
+
+            self.assertEqual(code, USER_INPUT_ERROR)
+            self.assertFalse(payload["packets_ready"])
+            self.assertEqual(payload["packet_status"][0]["role"], "Skald")
+            self.assertFalse(payload["packet_status"][0]["found"])
+
     def test_workflow_run_blocks_real_execution(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             output = io.StringIO()
