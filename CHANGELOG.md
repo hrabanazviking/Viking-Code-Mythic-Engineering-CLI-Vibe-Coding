@@ -8,6 +8,7 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Added
 
+- Added `mythic_vibe_cli.ai.prompts.roles` as the first real packet-role catalog, including first-class `Skald` support.
 - Added Stage 15 method profile visibility with `mythic-vibe method status`, `method show`, and `method sync`.
 - Added `method_manifest.json` generation for `import-md`, including source ref, file count, relative paths, byte sizes, and SHA-256 hashes.
 - Added `mythic-vibe method diff` to compare an imported method corpus against its manifest.
@@ -80,6 +81,7 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Changed
 
+- Packet role presets now live outside `codex_bridge.py`, keeping packet building separate from role identity and prompt definitions.
 - `next` human output now shows failed verification commands, verification errors, and blocked reasons as separate sections when the latest verification is not passing.
 - `next` now prioritizes failed or blocked verification records before normal phase guidance, and uses the latest handoff next step when verification is already passing.
 - Expanded operator docs with Stage 14 guidance, shell completion setup, and optional rich-output notes.

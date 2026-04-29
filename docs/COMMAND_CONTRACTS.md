@@ -45,6 +45,13 @@ Current Stage 12 plugin commands:
 - Plugin hooks are versioned and limited to `before_scan`, `after_scan`, `before_packet`, `after_packet`, `before_verify`, `after_verify`, `before_reflect`, and `after_reflect`.
 - Plugins are local Python extension points; inspect and trust them before enabling.
 
+Current packet role contract:
+
+- Packet roles are defined in `mythic_vibe_cli.ai.prompts.roles`.
+- First-class Mythic roles are `Skald`, `Architect`, `Forge Worker`, `Auditor`, `Cartographer`, and `Scribe`.
+- Utility roles `Debugger` and `Refactorer` remain supported for focused repair and cleanup packets.
+- `codex-pack`, `evoke`, and `packet create` must use the same role catalog.
+
 Current Stage 14 UX commands:
 
 - High-traffic command help for `init`, `next`, `verify`, `packet create`, `reflect`, `resume`, and `doctor` includes concrete copy-paste examples.

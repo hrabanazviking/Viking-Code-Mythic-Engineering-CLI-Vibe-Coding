@@ -1,11 +1,40 @@
 # DEVLOG — The Living Chronicle
 
-**Last updated:** 2026-04-27
+**Last updated:** 2026-04-29
 **Branch:** development
 **Scope:** An ongoing, dated chronicle of meaningful work performed in this repository. Each entry preserves *what happened* and *why it mattered*, so that later sessions can resume with understanding rather than guesswork.
 **Purpose:** Continuity of record. The project's memory, kept outside anyone's head.
 
 ---
+
+## 2026-04-29 - Stage 16 Role Catalog Foundation
+
+**Session:** Continuing the roadmap after syncing `development`.
+**Status:** Packet roles now have a dedicated prompt-role catalog and Skald is available as a first-class packet role.
+**Scope:** First additive slice of the Phase 2 role-based orchestration roadmap.
+
+### What changed
+
+- Added `mythic_vibe_cli.ai.prompts.roles` with `RolePrompt`, `ROLE_PROMPTS`, `ROLE_PRESETS`, and `PACKET_ROLES`.
+- Added first-class `Skald` support for `codex-pack`, `evoke`, and `packet create`.
+- Kept `Architect`, `Forge Worker`, `Auditor`, `Cartographer`, `Scribe`, `Debugger`, and `Refactorer` compatible.
+- Updated `codex_bridge.py` so packet building consumes the role catalog instead of owning role definitions directly.
+- Added tests proving Skald packet rendering and the shared role catalog.
+- Updated command contracts and changelog so the new role boundary is visible.
+
+### Why it matters
+
+The roadmap calls for `ai/prompts/roles.py` as the beginning of the 6-agent engine. This change gives the CLI a real ownership point for role identity and prompt constraints without disturbing the existing packet workflow.
+
+### Verification
+
+- `pytest tests\test_config_and_bridge.py tests\test_cli_kernel.py` -> `18 passed`
+- `python -m mythic_vibe_cli packet create --task "Frame a capability name" --phase intent --role Skald --path . --dry-run` -> accepted `Skald`
+- `pytest` -> `74 passed`
+
+### Continuity thread
+
+- The next Phase 2 slice is a small `workflow/engine.py` orchestration layer that can order Skald -> Architect -> Forge Worker -> Auditor handoffs without invoking external providers by default.
 
 ## 2026-04-27 - Stage 15 Method Source Configuration
 
