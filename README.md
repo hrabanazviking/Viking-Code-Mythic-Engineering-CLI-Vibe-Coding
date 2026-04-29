@@ -158,33 +158,121 @@ Plugins register via a manifest under `~/.mythic-vibe/grimoire/` (or per-project
 
 ## Install
 
-Step through the door:
+The package name is **`mythic-vibe-cli`**. Once installed, two console entrypoints land on your `PATH`:
+
+- `mythic-vibe` — the canonical command
+- `mythic` — short alias
+
+> **PyPI status (2026-04):** the project is in active alpha development on the `development` branch and is **not yet published to PyPI**. Until the first PyPI release, install from GitHub or from a local clone using one of the patterns below. Once published, `pip install mythic-vibe-cli` will become the canonical form.
+
+### Recommended — isolated install via `pipx` (for end users)
+
+`pipx` puts the CLI in its own isolated environment so it never collides with your project's Python packages. This is the cleanest install for someone who just wants to *use* Mythic Vibe CLI.
 
 ```bash
-pip install -e .
+pipx install "git+https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding.git@development"
+mythic-vibe --version
 ```
 
-For the optional surfaces:
+To upgrade later:
 
 ```bash
-pip install -e ".[tui]"   # Textual TUI
-pip install -e ".[ai]"    # AI provider adapters (anthropic, openai, gemini)
-pip install -e ".[ux]"    # Optional rich UI polish
-pip install -e ".[dev]"   # Full development stack (tests, lint, type, build, all of the above)
+pipx upgrade mythic-vibe-cli
+```
+
+To pull in optional extras at install time (Textual TUI, AI providers, rich UI), use the PEP 508 direct-URL form so `pipx` resolves the extras correctly:
+
+```bash
+pipx install "mythic-vibe-cli[tui,ai,ux] @ git+https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding.git@development"
+```
+
+### Plain `pip` from GitHub (into the active environment)
+
+```bash
+python -m pip install "git+https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding.git@development"
+mythic-vibe --version
+```
+
+With extras:
+
+```bash
+python -m pip install "mythic-vibe-cli[tui] @ git+https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding.git@development"
+```
+
+### Editable install from a local clone (for contributors)
+
+This is the install for anyone who plans to modify, debug, or run tests against the CLI. The `-e` flag means "editable": `pip` records a link to your working tree instead of copying it, so source changes take effect immediately without re-installing.
+
+Linux / macOS:
+
+```bash
+git clone https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding.git
+cd Viking-Code-Mythic-Engineering-CLI-Vibe-Coding
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev]"
+mythic-vibe --version
+```
+
+Windows PowerShell:
+
+```powershell
+git clone https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding.git
+cd Viking-Code-Mythic-Engineering-CLI-Vibe-Coding
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev]"
+mythic-vibe --version
+```
+
+### Optional extras
+
+The CLI ships with a small core and several opt-in extras. Add them after the package spec in square brackets — works with all install styles above:
+
+| Extra | Adds | Wheels installed |
+|---|---|---|
+| `tui` | Textual TUI (`mythic-vibe tui`) | `textual>=0.80` |
+| `ai` | AI provider adapters | `anthropic>=0.34`, `google-genai>=1.0`, `openai>=1.40` |
+| `ux` | Optional rich-text UI polish (set `MYTHIC_RICH=1` to enable) | `rich>=13.0` |
+| `dev` | Full development stack (tests, lint, type, build, plus all of the above) | adds `pytest`, `pytest-cov`, `ruff`, `mypy`, `build`, `twine`, `mkdocs` |
+
+Examples (note the **PEP 508 direct-URL form** — `package[extras] @ git+URL@branch` — which is what `pip` and `pipx` both expect for VCS installs with extras):
+
+```bash
+# pipx with extras
+pipx install "mythic-vibe-cli[tui] @ git+https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding.git@development"
+
+# pip with extras
+python -m pip install "mythic-vibe-cli[tui,ai] @ git+https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding.git@development"
+
+# Editable from a local clone with everything (contributors)
+python -m pip install -e ".[dev]"
 ```
 
 ### Prerequisites
 
-- Python 3.10+
+- Python 3.10+ (also tested on 3.11 / 3.12 / 3.13)
 - Git
-- A shell environment (bash, zsh, PowerShell, etc.)
+- A shell environment — bash, zsh, fish, PowerShell, or similar
 
 Recommended:
 
 - A virtual environment (`venv`, `uv`, `conda`)
-- Linting/formatting tools in your editor
+- Linting/formatting tools in your editor (the project uses `ruff` and `mypy`)
 
-For platform-specific setup, release-quality development installs, `uv`, and `pipx`, see `docs/INSTALL.md`.
+For deeper platform-specific setup (`uv`, release-quality dev installs, shell completion, optional rich rendering), see `docs/INSTALL.md`.
+
+### Verify the install
+
+```bash
+mythic-vibe --version
+mythic-vibe --help
+mythic-vibe doctor
+```
+
+`mythic-vibe doctor` reports the active project's structural health and is a good first sanity check.
 
 ---
 
