@@ -160,8 +160,10 @@ additive, cross-platform, open-source):
 | 9 | Phase 1 Slice 1.3 — quick-fix sweep | done — 7 findings closed, +6 tests, see PHASE1_SLICE_1_3_CLOSEOUT.md |
 | 10 | Update memory + project status (after slice 1.3) | done — pushed at bc65c80 |
 | 11 | Phase 1 Slice 1.4 — coverage hygiene | done — +32 tests, 74→76% overall, 2 new bugs (F-021/F-022) |
-| 12 | Update memory + project status (after slice 1.4) | in progress |
-| 13 | Phase 1 effectively complete; next decision is hot-fix F-022, slice 1.5, or begin PH-02 | awaiting Volmarr |
+| 12 | Update memory + project status (after slice 1.4) | done — pushed at d9d8e1b |
+| 13 | F-022 hot-fix | done — `5ed5980` — 1-line return tuple fix + regression test |
+| 14 | Phase 1 Slice 1.5 — boundary re-audit | done — clean, 0 ADRs filed |
+| 15 | Begin Phase 2 — Slash Command Surface Expansion | in progress |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
