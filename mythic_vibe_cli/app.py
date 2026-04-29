@@ -897,6 +897,51 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_runtime_options(forge_plan, json_output=True, dry_run=True)
 
+    forge_run = forge_sub.add_parser(
+        "run",
+        help="Run the forge end-to-end through a configured provider (PH-03 slice 3.5)",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe forge run --provider copy-paste --task "Refactor router"
+              mythic-vibe forge run --provider openai --task "X" --interactive
+              mythic-vibe forge run --provider local --task "X" --json --skip-ledger
+
+            Notes:
+              - Each agent's packet is routed through the named provider.
+                Successful responses become AgentOutput records on the ledger
+                (status: pending -> running -> succeeded). Provider errors
+                land as `failed` with the exception text in notes.
+              - prior_outputs are populated from the ledger as agents
+                complete, unblocking the downstream contract gates that
+                slice 3.3 dry-run leaves blocked by design.
+              - --interactive reuses the slice 3.4 gate machinery: y/n/?/s
+                between each step.
+              - Exit code: SUCCESS if every step succeeded;
+                OPERATIONAL_FAILURE if at least one failed;
+                UNSAFE_OPERATION_BLOCKED if the operator aborted.
+            """
+        ),
+    )
+    forge_run.add_argument("--task", required=True, help="Plain-language task to forge")
+    forge_run.add_argument(
+        "--provider",
+        required=True,
+        help="Provider name (copy-paste / local / openai / anthropic / gemini / openrouter)",
+    )
+    forge_run.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    forge_run.add_argument(
+        "--skip-ledger",
+        action="store_true",
+        help="Do not write per-step entries to mythic/forge_ledger.json",
+    )
+    forge_run.add_argument(
+        "--interactive",
+        action="store_true",
+        help="Prompt y/n/?/s between each pair of steps (slice 3.4 gates).",
+    )
+    add_runtime_options(forge_run, json_output=True)
+
     forge_ledger = forge_sub.add_parser(
         "ledger",
         help="Inspect mythic/forge_ledger.json (per-agent step records)",
