@@ -27,9 +27,11 @@ Slice 3.4 adds approval gates between steps; slice 3.5 makes
 from __future__ import annotations
 
 import argparse
+from dataclasses import dataclass
 import json
 from pathlib import Path
-from typing import Any
+import sys
+from typing import Any, Callable, Literal
 
 from .core.state import utc_now
 from .errors import CliError, format_error
@@ -48,6 +50,115 @@ from .workflow_engine import (
     WorkflowPlan,
     WorkflowStep,
 )
+
+
+# ---- Gate machinery (PH-03 slice 3.4) -----------------------------------
+
+GateDecision = Literal["advance", "abort", "skip"]
+
+
+@dataclass(frozen=True)
+class ForgeGateContext:
+    """Snapshot passed to a gate handler after each forge step.
+
+    The handler decides whether the orchestrator advances to the
+    next step, aborts the run, or skips the next step. Frozen so a
+    handler cannot mutate it; round-trippable to dict for tests
+    that record gate calls.
+    """
+
+    workflow_id: str
+    completed_step_index: int
+    completed_step_id: str
+    completed_role: str
+    completed_status: str
+    completed_validation_errors: tuple[str, ...]
+    next_step_id: str | None
+    next_role: str | None
+    total_steps: int
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "workflow_id": self.workflow_id,
+            "completed_step_index": self.completed_step_index,
+            "completed_step_id": self.completed_step_id,
+            "completed_role": self.completed_role,
+            "completed_status": self.completed_status,
+            "completed_validation_errors": list(self.completed_validation_errors),
+            "next_step_id": self.next_step_id,
+            "next_role": self.next_role,
+            "total_steps": self.total_steps,
+        }
+
+
+GateHandler = Callable[[ForgeGateContext], GateDecision]
+
+
+def _describe_gate_context(context: ForgeGateContext) -> str:
+    """Detail string shown when the operator types ``?`` at a gate."""
+    lines = [
+        "",
+        "  --- Gate detail ---",
+        f"  Workflow:        {context.workflow_id}",
+        f"  Completed step:  {context.completed_step_id} ({context.completed_role})",
+        f"  Status:          {context.completed_status}",
+    ]
+    if context.completed_validation_errors:
+        lines.append("  Validation:")
+        for err in context.completed_validation_errors:
+            lines.append(f"    - {err}")
+    if context.next_step_id:
+        lines.append(f"  Next step:       {context.next_step_id} ({context.next_role})")
+    else:
+        lines.append("  Next step:       (end of cycle)")
+    lines.append(f"  Position:        {context.completed_step_index + 1} / {context.total_steps}")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def default_gate_handler(context: ForgeGateContext) -> GateDecision:
+    """Stdin-driven gate handler.
+
+    Prompts ``[y/n/?/s]`` after each step; returns one of
+    :data:`GateDecision`. ``?`` prints detail and re-prompts; empty
+    input defaults to ``y`` (advance) so a Ctrl+D-driven approval
+    flow works without typing.
+
+    Tests inject their own handler via ``cmd_forge_plan(args,
+    gate_handler=...)`` and never go through this path.
+    """
+    while True:
+        next_label = (
+            f"step {context.completed_step_index + 2}/{context.total_steps} "
+            f"({context.next_role})"
+            if context.next_step_id
+            else "(end of cycle)"
+        )
+        prompt = (
+            f"\n[gate] step {context.completed_step_index + 1}/{context.total_steps} "
+            f"{context.completed_role} -> {next_label}\n"
+            f"  status: {context.completed_status}\n"
+            "  Advance? [y/n/?/s] "
+        )
+        try:
+            response = input(prompt)
+        except EOFError:
+            # No more input — treat EOF as advance (the safe default
+            # for piped/non-interactive runs).
+            return "advance"
+        normalised = response.strip().lower()
+        if normalised in {"y", "yes", ""}:
+            return "advance"
+        if normalised in {"n", "no", "abort"}:
+            return "abort"
+        if normalised in {"s", "skip"}:
+            return "skip"
+        if normalised == "?":
+            sys.stdout.write(_describe_gate_context(context))
+            sys.stdout.flush()
+            continue
+        sys.stdout.write(f"Unknown response {response.rstrip()!r}. Try y/n/?/s.\n")
+        sys.stdout.flush()
 
 
 # ---- Helpers -------------------------------------------------------------
@@ -167,12 +278,66 @@ def render_forge_packet(
 # ---- forge plan ----------------------------------------------------------
 
 
-def cmd_forge_plan(args: argparse.Namespace) -> int:
+def _record_aborted_step(
+    *,
+    plan: WorkflowPlan,
+    step: WorkflowStep,
+    started_at: str,
+    note: str,
+    skip_ledger: bool,
+    ledger: ForgeLedger,
+) -> dict[str, Any]:
+    """Materialise + write a ``blocked`` entry for an unprocessed step
+    when the operator aborts at a gate or skips the next step.
+
+    Returns the step payload dict so the caller's report can include
+    the aborted/skipped step alongside the processed ones.
+    """
+    agent_input = materialize_agent_input(plan, step)
+    if not skip_ledger:
+        entry = ForgeLedgerEntry(
+            workflow_id=plan.workflow_id or "",
+            step_id=step.step_id,
+            role=step.role,
+            status="blocked",
+            started_at=started_at,
+            agent_input=agent_input,
+            notes=(note,),
+        )
+        ledger.append(entry)
+    return {
+        "step_id": step.step_id,
+        "role": step.role,
+        "phase": step.phase,
+        "objective": step.objective,
+        "handoff_to": step.handoff_to,
+        "agent_input": agent_input.to_dict(),
+        "validation_errors": [],
+        "status": "blocked",
+        "blocked_reason": note,
+    }
+
+
+def cmd_forge_plan(
+    args: argparse.Namespace,
+    *,
+    gate_handler: GateHandler | None = None,
+) -> int:
     """``mythic-vibe forge plan`` — dry-run forge orchestration.
 
     Builds the plan, materialises every per-agent input, writes one
     pending ledger entry per step (unless ``--skip-ledger``), renders
     every per-agent packet, and prints the result. No provider runs.
+
+    With ``--interactive``, calls ``gate_handler`` (default:
+    :func:`default_gate_handler`) between each pair of steps. The
+    handler returns a :data:`GateDecision`:
+
+    - ``advance`` — proceed to the next step
+    - ``abort`` — stop the run; remaining steps are written as
+      ``blocked`` ledger entries with note ``"operator aborted at gate"``
+    - ``skip`` — write the next step as ``blocked`` with note
+      ``"operator skipped"`` then continue to the step after that
 
     Returns ``USER_INPUT_ERROR`` if ``--task`` is missing or blank,
     ``UNSAFE_OPERATION_BLOCKED`` if non-dry-run mode is requested
@@ -199,12 +364,30 @@ def cmd_forge_plan(args: argparse.Namespace) -> int:
         return USER_INPUT_ERROR
 
     skip_ledger = _flag(args, "skip_ledger")
+    interactive = _flag(args, "interactive")
+    handler: GateHandler = gate_handler or default_gate_handler
     ledger = ForgeLedger(root=root)
 
     step_payloads: list[dict[str, Any]] = []
     started_at = utc_now()
+    aborted = False
+    skip_next_step = False
 
-    for step in plan.steps:
+    total = len(plan.steps)
+    for index, step in enumerate(plan.steps):
+        if skip_next_step:
+            skip_next_step = False
+            payload = _record_aborted_step(
+                plan=plan,
+                step=step,
+                started_at=started_at,
+                note="operator skipped at preceding gate",
+                skip_ledger=skip_ledger,
+                ledger=ledger,
+            )
+            step_payloads.append(payload)
+            continue
+
         agent_input = materialize_agent_input(plan, step)
         contract = contract_for(step.role)
         validation_errors = validate_input(agent_input, contract)
@@ -238,12 +421,48 @@ def cmd_forge_plan(args: argparse.Namespace) -> int:
             }
         )
 
+        # Gate after this step before advancing — but never after the
+        # final step (no next step to gate).
+        if interactive and index + 1 < total:
+            next_step = plan.steps[index + 1]
+            context = ForgeGateContext(
+                workflow_id=plan.workflow_id or "",
+                completed_step_index=index,
+                completed_step_id=step.step_id,
+                completed_role=step.role,
+                completed_status=status,
+                completed_validation_errors=tuple(validation_errors),
+                next_step_id=next_step.step_id,
+                next_role=next_step.role,
+                total_steps=total,
+            )
+            decision = handler(context)
+            if decision == "abort":
+                aborted = True
+                # Mark every remaining step as blocked.
+                for remaining in plan.steps[index + 1 :]:
+                    payload = _record_aborted_step(
+                        plan=plan,
+                        step=remaining,
+                        started_at=started_at,
+                        note="operator aborted at gate",
+                        skip_ledger=skip_ledger,
+                        ledger=ledger,
+                    )
+                    step_payloads.append(payload)
+                break
+            if decision == "skip":
+                skip_next_step = True
+            # decision == "advance" → fall through
+
     if _flag(args, "json"):
         write_json(
             {
                 "command": "forge plan",
                 "dry_run": True,
                 "skip_ledger": skip_ledger,
+                "interactive": interactive,
+                "aborted": aborted,
                 "workflow_id": plan.workflow_id,
                 "task": plan.task,
                 "created_at": plan.created_at,
@@ -259,6 +478,10 @@ def cmd_forge_plan(args: argparse.Namespace) -> int:
     write_key_value("Task", plan.task)
     write_key_value("Created at", plan.created_at)
     write_key_value("Steps", len(plan.steps))
+    if interactive:
+        write_key_value("Interactive", "yes")
+    if aborted:
+        write_key_value("Aborted", "yes (operator declined a gate)")
     if not skip_ledger:
         write_key_value("Ledger", ledger.path)
     write_line("")
@@ -271,14 +494,18 @@ def cmd_forge_plan(args: argparse.Namespace) -> int:
             write_bullet("validation errors:", indent=2)
             for err in payload["validation_errors"]:
                 write_bullet(err, indent=4)
+        if payload.get("blocked_reason"):
+            write_bullet(f"blocked: {payload['blocked_reason']}", indent=2)
     write_line("")
 
-    write_line("--- Per-agent packets ---")
-    write_line("")
-    for payload in step_payloads:
-        write_line(f"### {payload['step_id']} :: {payload['role']}")
+    rendered = [p for p in step_payloads if "packet" in p]
+    if rendered:
+        write_line("--- Per-agent packets ---")
         write_line("")
-        write_line(payload["packet"], force=True)
+        for payload in rendered:
+            write_line(f"### {payload['step_id']} :: {payload['role']}")
+            write_line("")
+            write_line(payload["packet"], force=True)
 
     return SUCCESS
 
@@ -464,12 +691,16 @@ def cmd_forge_dispatch(args: argparse.Namespace) -> int:
 
 
 __all__ = [
+    "ForgeGateContext",
+    "GateDecision",
+    "GateHandler",
     "cmd_forge_dispatch",
     "cmd_forge_ledger_dispatch",
     "cmd_forge_ledger_latest",
     "cmd_forge_ledger_list",
     "cmd_forge_ledger_show",
     "cmd_forge_plan",
+    "default_gate_handler",
     "materialize_agent_input",
     "render_forge_packet",
 ]
