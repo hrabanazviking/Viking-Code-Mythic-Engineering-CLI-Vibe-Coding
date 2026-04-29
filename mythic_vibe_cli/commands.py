@@ -358,13 +358,27 @@ def cmd_packet_show(args: argparse.Namespace) -> int:
     packet_id = getattr(args, "packet_id", "") or ""
     workflow_id = (getattr(args, "workflow", "") or "").strip()
     step_id = (getattr(args, "step", "") or "").strip()
+    latest_workflow = bool(_flag(args, "latest_workflow"))
 
-    if packet_id and (workflow_id or step_id):
-        write_error("--packet-id cannot be combined with --workflow or --step.")
+    if packet_id and (workflow_id or step_id or latest_workflow):
+        write_error("--packet-id cannot be combined with --workflow, --step, or --latest-workflow.")
         return USER_INPUT_ERROR
-    if (workflow_id and not step_id) or (step_id and not workflow_id):
-        write_error("Workflow addressing requires both --workflow and --step.")
+    if latest_workflow and workflow_id:
+        write_error("--latest-workflow cannot be combined with --workflow.")
         return USER_INPUT_ERROR
+    if latest_workflow and not step_id:
+        write_error("--latest-workflow requires --step.")
+        return USER_INPUT_ERROR
+    if (workflow_id and not step_id) or (step_id and not workflow_id and not latest_workflow):
+        write_error("Workflow addressing requires both --workflow and --step (or --latest-workflow with --step).")
+        return USER_INPUT_ERROR
+
+    if latest_workflow:
+        resolved, error = _resolve_latest_workflow_id(root)
+        if error or resolved is None:
+            write_error(error or "Could not resolve latest workflow plan.")
+            return USER_INPUT_ERROR
+        workflow_id = resolved
 
     if workflow_id and step_id:
         record = bridge.find_packet_by_workflow_step(workflow_id, step_id)
@@ -492,7 +506,23 @@ def cmd_packet_ingest(args: argparse.Namespace) -> int:
     return SUCCESS
 
 
-def _resolve_packet_ref(bridge: CodexBridge, ref: str) -> tuple[str | None, str | None]:
+def _resolve_latest_workflow_id(root: Path) -> tuple[str | None, str | None]:
+    engine = WorkflowEngine(root)
+    try:
+        plan = engine.load_plan()
+    except ValueError as exc:
+        return None, str(exc)
+    if not plan.workflow_id:
+        return None, "Latest saved workflow plan has no workflow_id; re-run `mythic-vibe workflow plan` to refresh."
+    return plan.workflow_id, None
+
+
+def _resolve_packet_ref(
+    bridge: CodexBridge,
+    ref: str,
+    *,
+    latest_workflow_id: str | None = None,
+) -> tuple[str | None, str | None]:
     if not ref:
         return None, "Packet reference is empty."
     if ref.startswith("WF-") and ":" in ref:
@@ -501,6 +531,11 @@ def _resolve_packet_ref(bridge: CodexBridge, ref: str) -> tuple[str | None, str 
         if record is None:
             return None, f"No packet stamped with workflow {workflow_id} step {step_id}."
         return record.packet_id, None
+    if latest_workflow_id and ref.startswith("step-"):
+        record = bridge.find_packet_by_workflow_step(latest_workflow_id, ref)
+        if record is None:
+            return None, f"No packet stamped with workflow {latest_workflow_id} step {ref}."
+        return record.packet_id, None
     return ref, None
 
 
@@ -508,11 +543,19 @@ def cmd_packet_diff(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
     bridge = CodexBridge(root)
 
-    left_id, left_error = _resolve_packet_ref(bridge, args.left)
+    latest_workflow_id: str | None = None
+    if _flag(args, "latest_workflow"):
+        resolved, error = _resolve_latest_workflow_id(root)
+        if error or resolved is None:
+            write_error(error or "Could not resolve latest workflow plan.")
+            return USER_INPUT_ERROR
+        latest_workflow_id = resolved
+
+    left_id, left_error = _resolve_packet_ref(bridge, args.left, latest_workflow_id=latest_workflow_id)
     if left_error or left_id is None:
         write_error(left_error or "Could not resolve --left packet reference.")
         return USER_INPUT_ERROR
-    right_id, right_error = _resolve_packet_ref(bridge, args.right)
+    right_id, right_error = _resolve_packet_ref(bridge, args.right, latest_workflow_id=latest_workflow_id)
     if right_error or right_id is None:
         write_error(right_error or "Could not resolve --right packet reference.")
         return USER_INPUT_ERROR
@@ -532,6 +575,7 @@ def cmd_packet_diff(args: argparse.Namespace) -> int:
                 "right": right_id,
                 "left_ref": args.left,
                 "right_ref": args.right,
+                "latest_workflow_id": latest_workflow_id,
                 "diff": diff,
             }
         )

@@ -59,8 +59,10 @@ Argument parsing and top-level dispatch live in `mythic_vibe_cli.app`. Command i
   - Filters stored packets to those stamped with the supplied `workflow_id`. Adding `--step <step_id>` further narrows to a single workflow step (requires `--workflow`). Legacy packets without IDs are excluded when a workflow filter is set. JSON output includes a `filters` object reporting the applied scope.
 - `packet show --workflow <id> --step <step_id>`
   - Resolves to the packet stamped with that workflow id and step. Both flags are required together and cannot be combined with `--packet-id`. Missing matches return `USER_INPUT_ERROR`.
+- `packet show --latest-workflow --step <step_id>`
+  - Resolves the workflow id from `mythic/workflow_plan.json` and looks up the matching packet. Requires `--step`; cannot be combined with `--workflow` or `--packet-id`; errors when the saved plan is missing or has no `workflow_id`.
 - `packet diff` workflow shorthand
-  - `--left` and `--right` accept either a bare `PKT-...` packet ID or a `WF-<id>:<step_id>` shorthand that resolves to the matching packet. JSON output reports both the original references (`left_ref`, `right_ref`) and the resolved packet IDs.
+  - `--left` and `--right` accept either a bare `PKT-...` packet ID or a `WF-<id>:<step_id>` shorthand that resolves to the matching packet. With `--latest-workflow`, both refs may also use the bare `step-NN` form, which resolves against `mythic/workflow_plan.json`. JSON output reports the original references (`left_ref`, `right_ref`), the resolved packet IDs, and the resolved `latest_workflow_id` when supplied.
 - `state show`
   - Displays schema-versioned project state from `mythic/status.json`.
 - `state validate`

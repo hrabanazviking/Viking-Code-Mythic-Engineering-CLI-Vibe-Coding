@@ -7,6 +7,38 @@
 
 ---
 
+## 2026-04-29 - Stage 16 Latest Workflow Convenience on Show and Diff
+
+**Session:** Closing out the Stage 16 cadence on packet addressing — letting `packet show` and `packet diff` resolve the workflow id from the saved `mythic/workflow_plan.json` instead of requiring it on every call.
+**Status:** `packet show --latest-workflow --step <step_id>` and `packet diff --latest-workflow` (with bare `step-NN` refs) now work end-to-end, with clean errors when the plan is missing or the saved plan lacks a `workflow_id`.
+**Scope:** Strictly additive convenience layer on top of the addressing surface added in the previous Stage 16 slice.
+
+### What changed
+
+- Added `_resolve_latest_workflow_id(root)` helper in `mythic_vibe_cli.commands` that loads `mythic/workflow_plan.json` and returns its `workflow_id`, or a structured error when the plan is missing or unstamped.
+- Extended `_resolve_packet_ref` with a `latest_workflow_id` parameter so bare `step-NN` refs resolve against the saved plan when supplied. Bare `step-` refs without a latest workflow context still fall through unchanged.
+- `packet show --latest-workflow` requires `--step` and cannot be combined with `--workflow` or `--packet-id`. Constraint violations and missing plans return `USER_INPUT_ERROR`.
+- `packet diff --latest-workflow` lets `--left` and `--right` additionally accept a bare `step-NN` form. `PKT-...` IDs and `WF-<id>:<step_id>` shorthand continue to work in the same call. JSON output now reports the resolved `latest_workflow_id`.
+- Added six CLI-kernel tests: latest-workflow show happy path, missing-step guard, missing-plan path, missing-workflow_id path, latest-workflow diff with bare step refs, and latest-workflow diff fall-through for `PKT-...` refs.
+- Updated `docs/COMMAND_CONTRACTS.md`, `docs/api.md`, and `CHANGELOG.md`.
+
+### Why it matters
+
+Once a workflow is in flight, its `workflow_id` is the same on every call and re-typing it grows tedious. The saved `mythic/workflow_plan.json` already records it; the new flag just makes the CLI use it. Operators iterating on the active workflow can now type `packet show --latest-workflow --step step-02` or `packet diff --latest-workflow --left step-01 --right step-02` instead of looking up the bare workflow id and typing it twice.
+
+### Verification
+
+- `pytest -q` -> `108 passed, 14 subtests passed` (was 102 + 14)
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!`
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 51 source files`
+- Smoke: built a two-step workflow, then `packet show --latest-workflow --step step-02 --json` returned the expected packet; `packet diff --latest-workflow --left step-01 --right step-02 --json` reported the resolved `latest_workflow_id` and produced a real diff between two distinct `PKT-` IDs.
+
+### Continuity thread
+
+- The next slice can extend `--latest-workflow` to `packet list` (so `packet list --latest-workflow` is equivalent to `packet list --workflow <id-from-saved-plan>`), unifying the workflow shortcut across the `packet` family.
+
+_When the saga is in flight, its name need not be spoken twice; the hall already remembers it._
+
 ## 2026-04-29 - Stage 16 Workflow Addressing on Packet Show and Diff
 
 **Session:** Continuing the Stage 16 cadence — letting operators address packets by `(workflow_id, step_id)` instead of having to look up the bare `PKT-` ID first.

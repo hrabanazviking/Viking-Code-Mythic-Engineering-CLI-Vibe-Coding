@@ -879,6 +879,185 @@ class CliKernelTests(unittest.TestCase):
             self.assertTrue(payload["right"].startswith("PKT-"))
             self.assertNotEqual(payload["left"], payload["right"])
 
+    def test_packet_show_latest_workflow_resolves_from_saved_plan(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with redirect_stdout(io.StringIO()):
+                app.main(
+                    [
+                        "workflow",
+                        "plan",
+                        "--task",
+                        "Latest workflow show",
+                        "--path",
+                        str(root),
+                        "--role",
+                        "Skald",
+                        "--role",
+                        "Auditor",
+                        "--packets",
+                    ]
+                )
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(
+                    [
+                        "packet",
+                        "show",
+                        "--path",
+                        str(root),
+                        "--latest-workflow",
+                        "--step",
+                        "step-02",
+                        "--json",
+                    ]
+                )
+
+            payload = json.loads(output.getvalue())
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(payload["packet"]["workflow_step_id"], "step-02")
+            saved_plan = json.loads((root / "mythic" / "workflow_plan.json").read_text(encoding="utf-8"))
+            self.assertEqual(payload["packet"]["workflow_id"], saved_plan["workflow_id"])
+
+    def test_packet_show_latest_workflow_requires_step(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output = io.StringIO()
+            with redirect_stdout(output), redirect_stderr(output):
+                code = app.main(["packet", "show", "--path", tmp, "--latest-workflow"])
+            self.assertEqual(code, USER_INPUT_ERROR)
+            self.assertIn("--latest-workflow requires --step", output.getvalue())
+
+    def test_packet_show_latest_workflow_errors_when_plan_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output = io.StringIO()
+            with redirect_stdout(output), redirect_stderr(output):
+                code = app.main(
+                    ["packet", "show", "--path", tmp, "--latest-workflow", "--step", "step-01"]
+                )
+            self.assertEqual(code, USER_INPUT_ERROR)
+            self.assertIn("Workflow plan not found", output.getvalue())
+
+    def test_packet_show_latest_workflow_errors_when_plan_lacks_id(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with redirect_stdout(io.StringIO()):
+                app.main(
+                    [
+                        "workflow",
+                        "plan",
+                        "--task",
+                        "Strip id",
+                        "--path",
+                        str(root),
+                        "--role",
+                        "Skald",
+                    ]
+                )
+            plan_path = root / "mythic" / "workflow_plan.json"
+            payload = json.loads(plan_path.read_text(encoding="utf-8"))
+            payload.pop("workflow_id", None)
+            plan_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+            output = io.StringIO()
+            with redirect_stdout(output), redirect_stderr(output):
+                code = app.main(
+                    ["packet", "show", "--path", str(root), "--latest-workflow", "--step", "step-01"]
+                )
+            self.assertEqual(code, USER_INPUT_ERROR)
+            self.assertIn("no workflow_id", output.getvalue())
+
+    def test_packet_diff_latest_workflow_accepts_bare_step_refs(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with redirect_stdout(io.StringIO()):
+                app.main(
+                    [
+                        "workflow",
+                        "plan",
+                        "--task",
+                        "Latest workflow diff",
+                        "--path",
+                        str(root),
+                        "--role",
+                        "Skald",
+                        "--role",
+                        "Auditor",
+                        "--packets",
+                    ]
+                )
+
+            saved_id = json.loads((root / "mythic" / "workflow_plan.json").read_text(encoding="utf-8"))["workflow_id"]
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(
+                    [
+                        "packet",
+                        "diff",
+                        "--path",
+                        str(root),
+                        "--latest-workflow",
+                        "--left",
+                        "step-01",
+                        "--right",
+                        "step-02",
+                        "--json",
+                    ]
+                )
+
+            payload = json.loads(output.getvalue())
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(payload["latest_workflow_id"], saved_id)
+            self.assertEqual(payload["left_ref"], "step-01")
+            self.assertEqual(payload["right_ref"], "step-02")
+            self.assertTrue(payload["left"].startswith("PKT-"))
+            self.assertTrue(payload["right"].startswith("PKT-"))
+            self.assertNotEqual(payload["left"], payload["right"])
+
+    def test_packet_diff_latest_workflow_falls_through_for_pkt_ids(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with redirect_stdout(io.StringIO()):
+                app.main(
+                    [
+                        "workflow",
+                        "plan",
+                        "--task",
+                        "Mixed refs",
+                        "--path",
+                        str(root),
+                        "--role",
+                        "Skald",
+                        "--role",
+                        "Auditor",
+                        "--packets",
+                    ]
+                )
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(
+                    [
+                        "packet",
+                        "diff",
+                        "--path",
+                        str(root),
+                        "--latest-workflow",
+                        "--left",
+                        "PKT-000001",
+                        "--right",
+                        "step-02",
+                        "--json",
+                    ]
+                )
+
+            payload = json.loads(output.getvalue())
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(payload["left"], "PKT-000001")
+            self.assertEqual(payload["left_ref"], "PKT-000001")
+            self.assertEqual(payload["right_ref"], "step-02")
+
     def test_packet_diff_unknown_workflow_step_errors(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
