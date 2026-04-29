@@ -49,6 +49,8 @@ Argument parsing and top-level dispatch live in `mythic_vibe_cli.app`. Command i
   - Persists structured phase updates.
 - `status`
   - Reports current progress and phase state.
+- `workflow plan`
+  - Writes a deterministic six-role orchestration artifact and exposes packet-ready requests.
 - `state show`
   - Displays schema-versioned project state from `mythic/status.json`.
 - `state validate`
@@ -82,6 +84,7 @@ Depending on implementation state, additional commands may be exposed:
 - `weave`
 - `prune`
 - `heal`
+- `workflow plan`
 - `oath`
 - `grimoire add|list`
 - `plugin list|inspect|disable`

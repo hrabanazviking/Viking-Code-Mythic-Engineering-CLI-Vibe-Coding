@@ -52,6 +52,14 @@ Current packet role contract:
 - Utility roles `Debugger` and `Refactorer` remain supported for focused repair and cleanup packets.
 - `codex-pack`, `evoke`, and `packet create` must use the same role catalog.
 
+Current workflow orchestration contract:
+
+- `workflow plan` writes a deterministic role orchestration plan to `mythic/workflow_plan.json` unless `--out` is supplied.
+- `workflow plan --dry-run` builds and displays the plan without writing files.
+- `workflow plan --json` emits the full plan plus packet-ready requests for each step.
+- Repeated `--role` flags customize the role sequence while preserving the supplied order.
+- The default sequence is `Skald -> Architect -> Cartographer -> Forge Worker -> Auditor -> Scribe`.
+
 Current Stage 14 UX commands:
 
 - High-traffic command help for `init`, `next`, `verify`, `packet create`, `reflect`, `resume`, and `doctor` includes concrete copy-paste examples.

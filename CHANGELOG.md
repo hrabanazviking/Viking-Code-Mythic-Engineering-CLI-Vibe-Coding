@@ -8,6 +8,7 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Added
 
+- Added `mythic-vibe workflow plan` for writing and previewing role orchestration plans from the CLI.
 - Added `mythic_vibe_cli.workflow_engine` for deterministic six-role orchestration plans, handoff order, packet request export, and durable `mythic/workflow_plan.json` writing.
 - Added `mythic_vibe_cli.ai.prompts.roles` as the first real packet-role catalog, including first-class `Skald` support.
 - Added Stage 15 method profile visibility with `mythic-vibe method status`, `method show`, and `method sync`.

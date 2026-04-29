@@ -55,6 +55,7 @@ class CliKernelTests(unittest.TestCase):
             "codex-pack",
             "evoke",
             "packet",
+            "workflow",
             "codex-log",
             "ai",
             "sync",
@@ -276,6 +277,68 @@ class CliKernelTests(unittest.TestCase):
             self.assertIn("files_in_scope", packet_payload)
             self.assertIn("selected_sources", manifest_payload)
             self.assertIn("mythic/project_index.json", {item["path"] for item in manifest_payload["selected_sources"]})
+
+    def test_workflow_plan_writes_orchestration_artifact(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(
+                    [
+                        "workflow",
+                        "plan",
+                        "--task",
+                        "Coordinate the next implementation slice",
+                        "--path",
+                        str(root),
+                        "--json",
+                    ]
+                )
+
+            payload = json.loads(output.getvalue())
+            plan_path = root / "mythic" / "workflow_plan.json"
+            stored = json.loads(plan_path.read_text(encoding="utf-8"))
+
+            self.assertEqual(code, SUCCESS)
+            self.assertTrue(plan_path.exists())
+            self.assertEqual(payload["command"], "workflow plan")
+            self.assertFalse(payload["dry_run"])
+            self.assertEqual(payload["output_file"], str(plan_path))
+            self.assertEqual(stored["steps"][0]["role"], "Skald")
+            self.assertEqual(stored["steps"][-1]["role"], "Scribe")
+            self.assertEqual(payload["packet_requests"][0]["role"], "Skald")
+
+    def test_workflow_plan_dry_run_does_not_write(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(
+                    [
+                        "workflow",
+                        "plan",
+                        "--task",
+                        "Preview orchestration",
+                        "--path",
+                        str(root),
+                        "--role",
+                        "Skald",
+                        "--role",
+                        "Auditor",
+                        "--dry-run",
+                        "--json",
+                    ]
+                )
+
+            payload = json.loads(output.getvalue())
+
+            self.assertEqual(code, SUCCESS)
+            self.assertFalse((root / "mythic" / "workflow_plan.json").exists())
+            self.assertTrue(payload["dry_run"])
+            self.assertEqual([step["role"] for step in payload["plan"]["steps"]], ["Skald", "Auditor"])
+            self.assertEqual(payload["plan"]["steps"][0]["handoff_to"], "Auditor")
 
     def test_grimoire_json_has_no_human_prefix(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -12,6 +12,7 @@ from .exit_codes import USER_INPUT_ERROR
 from .output import configure_output
 from .plugins.api import PLUGIN_HOOKS
 from .ux import artifact_names, phase_names
+from .workflow_engine import DEFAULT_ROLE_SEQUENCE
 
 
 def _epilog(text: str) -> str:
@@ -296,6 +297,39 @@ def build_parser() -> argparse.ArgumentParser:
     packet_diff.add_argument("--left", required=True, help="Left packet ID")
     packet_diff.add_argument("--right", required=True, help="Right packet ID")
     add_runtime_options(packet_diff, json_output=True)
+
+    workflow = sub.add_parser(
+        "workflow",
+        help="Plan role-based Mythic workflow orchestration",
+    )
+    add_runtime_options(workflow, json_output=True, dry_run=True)
+    workflow_sub = workflow.add_subparsers(dest="workflow_command", required=True)
+    workflow_plan = workflow_sub.add_parser(
+        "plan",
+        help="Write a deterministic role orchestration plan",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe workflow plan --task "Implement the next feature"
+              mythic-vibe workflow plan --task "Review architecture drift" --role Skald --role Architect --role Auditor
+              mythic-vibe workflow plan --task "Preview only" --dry-run --json
+
+            Notes:
+              Defaults to Skald -> Architect -> Cartographer -> Forge Worker -> Auditor -> Scribe.
+            """
+        ),
+    )
+    workflow_plan.add_argument("--task", required=True, help="Task or outcome to orchestrate")
+    workflow_plan.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    workflow_plan.add_argument("--out", default="", help="Optional output file path (default: mythic/workflow_plan.json)")
+    workflow_plan.add_argument(
+        "--role",
+        action="append",
+        default=[],
+        choices=list(DEFAULT_ROLE_SEQUENCE) + ["Debugger", "Refactorer"],
+        help="Role to include in order; repeat to customize the sequence",
+    )
+    add_runtime_options(workflow_plan, json_output=True, dry_run=True)
 
     handoff = sub.add_parser("handoff", help="Create, inspect, or list session handoff records")
     add_runtime_options(handoff, json_output=True, dry_run=True)

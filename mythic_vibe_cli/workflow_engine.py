@@ -19,6 +19,8 @@ DEFAULT_ROLE_SEQUENCE = (
     "Scribe",
 )
 
+WORKFLOW_PLAN_FILENAME = "workflow_plan.json"
+
 ROLE_PHASES = {
     "Skald": "intent",
     "Architect": "architecture",
