@@ -175,8 +175,10 @@ additive, cross-platform, open-source):
 | 24 | Phase 3 Slice 3.1 — agent contract spec | done — `2920aa4` — +38 tests |
 | 25 | Update memory + project status (after slice 3.1) | done — pushed at a27ba0b |
 | 26 | Phase 3 Slice 3.2 — handoff ledger | done — `adc6ae1` — +28 tests |
-| 27 | Update memory + project status (after slice 3.2) | in progress |
-| 28 | Phase 3 Slice 3.3 — forge command (dry-run) | next |
+| 27 | Update memory + project status (after slice 3.2) | done — pushed at 888e710 |
+| 28 | Phase 3 Slice 3.3 — forge command (dry-run) | done — `cbc2b24` — +21 tests, 52 slash entries |
+| 29 | Update memory + project status (after slice 3.3) | in progress |
+| 30 | Phase 3 Slice 3.4 — approval gates | next |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
@@ -334,13 +336,35 @@ existing module modified.
 
 See `PHASE3_SLICE_3_2_CLOSEOUT.md` for the full memo.
 
-## Next slice (PH-03 slice 3.3)
+## PH-03 slice 3.3 results
 
-Forge command (dry-run). First user-facing Phase 3 slice:
-`mythic-vibe forge --dry-run --task "X"` builds a workflow plan,
-materialises an `AgentInput` per step, writes a pending
-`ForgeLedgerEntry` per step, and prints the per-agent packets
-without invoking any provider.
+New module `mythic_vibe_cli/forge.py` (~370 lines) ships
+`mythic-vibe forge` — first user-facing Phase 3 surface.
+
+Two subcommands:
+- `forge plan --dry-run --task "X"` — builds plan, materialises one
+  AgentInput per step, validates against contracts, writes pending
+  (or blocked) ForgeLedgerEntry per step, renders 7-section copy-
+  paste-ready packets.
+- `forge ledger list / latest / show` — inspects mythic/forge_ledger.json.
+
+Designed slice-3.5 hand-off: Skald lands as `pending` in dry-run
+(only needs task+phase); other five roles land as `blocked` because
+their contracts require `prior_outputs` (which slice 3.5 will
+populate from the ledger as previous agents complete). Pinned by
+test so the transition is observable.
+
+Catalog 51 → 52 (added /forge). Tests 430 → 451 (+21). Ruff/mypy
+clean. Strictly additive.
+
+See `PHASE3_SLICE_3_3_CLOSEOUT.md` for the full memo.
+
+## Next slice (PH-03 slice 3.4)
+
+Approval gates. Between each forge step, the operator gets a
+short summary and is prompted `y/n/?` to advance. CLI inline
+prompt + future TUI modal. Once gate logic exists, slice 3.5
+wires real provider calls behind it.
 
 ---
 
