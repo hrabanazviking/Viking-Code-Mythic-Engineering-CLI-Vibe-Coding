@@ -58,20 +58,20 @@ Land:
 
 - [x] Task file written
 - [x] Task file committed + pushed
-- [ ] Read pi `src/core/tools/file-mutation-queue.ts`
-- [ ] Read pi `test/file-mutation-queue.test.ts`
-- [ ] Port queue to Python
-- [ ] Port tests to pytest
-- [ ] `pytest -q` green
-- [ ] `ruff check mythic_vibe_cli tests` green
-- [ ] `mypy mythic_vibe_cli` green
-- [ ] Create `THIRD_PARTY_NOTICES.md`
-- [ ] Per-file Pi attribution header on the Python module
-- [ ] CHANGELOG entry
-- [ ] DEVLOG entry
-- [ ] Pi guide checklist boxes ticked
-- [ ] Memory snapshot updated
-- [ ] Final commit + push
+- [x] Read pi `src/core/tools/file-mutation-queue.ts`
+- [x] Read pi `test/file-mutation-queue.test.ts`
+- [x] Port queue to Python (sync threading translation, refcounted cleanup)
+- [x] Port tests to pytest (3 spec cases + 3 Mythic-flavored; symlink test gracefully skips)
+- [x] `pytest -q` green — 141 passed, 14 subtests passed
+- [x] `ruff check mythic_vibe_cli tests` green
+- [x] `mypy mythic_vibe_cli` green — 54 source files
+- [x] Create `THIRD_PARTY_NOTICES.md` with plunder map and full upstream MIT text
+- [x] Per-file Pi attribution header on the Python module
+- [x] CHANGELOG entry
+- [x] DEVLOG entry with continuity thread
+- [x] Pi guide checklist boxes ticked (16 of 17; README credit deferred until queue is wired)
+- [x] Memory snapshot updated
+- [x] Final commit + push
 
 ## Resume Instructions
 

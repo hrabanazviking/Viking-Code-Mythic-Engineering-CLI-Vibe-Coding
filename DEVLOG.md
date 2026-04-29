@@ -7,6 +7,41 @@
 
 ---
 
+## 2026-04-29 - Pi Plunder Slice 1: File Mutation Queue
+
+**Session:** First lawful plunder slice from pi (pi-coding-agent), guided by the `Pi_Coding_Agent_Plundering_Guide.md` landed earlier today. TODO #15.
+**Status:** `mythic_vibe_cli.runtime.file_mutation_queue` is live and tested. `THIRD_PARTY_NOTICES.md` exists with the Pi MIT stanza and full upstream permission text.
+**Scope:** Smallest, lowest-risk Pi primitive ported with full attribution discipline. No existing surfaces wired to use it yet — that is a follow-on slice.
+
+### What changed
+
+- Added `mythic_vibe_cli/runtime/__init__.py` (new subpackage) re-exporting `file_mutation_queue` and `with_file_mutation_queue`.
+- Added `mythic_vibe_cli/runtime/file_mutation_queue.py` — Python port of pi's `src/core/tools/file-mutation-queue.ts` (MIT, Copyright (c) 2025 Mario Zechner). Synchronous translation using `threading.Lock` instances keyed by `os.path.realpath`, with reference-counted entries so the lock map drops keys when the last waiter exits — matching pi's "delete on empty queue" semantics. Per-file Pi attribution header preserved.
+- Added `tests/test_file_mutation_queue.py` covering the three pi-spec cases (same-file serialization, parallel different-file execution, symlink aliasing) plus three Mythic-flavored cases (functional form returns the callable's result, lock entry drops on last waiter, lock entry persists while another waiter holds it). The symlink test gracefully skips on platforms without symlink permission.
+- Added `THIRD_PARTY_NOTICES.md` with the Pi attribution stanza, an explicit plunder map naming each Mythic file and its pi upstream source, and the full upstream MIT permission text. First file in the project's plunder hygiene infrastructure.
+- Updated `Pi_Coding_Agent_Plundering_Guide.md` final checklist to reflect what is now done.
+- Updated `CHANGELOG.md` Unreleased.
+
+### Why it matters
+
+Pi's "Clean Rule" calls out the trio that addresses the three biggest gaps blocking provider-driven `workflow run`: turn-loop discipline, context-window survival, and write-conflict safety. The file mutation queue is the smallest member of that trio and the only one that can land without disturbing existing architecture. With this slice the project can now serialize concurrent file edits whenever real provider execution arrives, instead of inventing the safety primitive at the last moment.
+
+The slice also establishes the legal pattern for every subsequent Pi plunder: per-file attribution header, `THIRD_PARTY_NOTICES.md` entry, `CHANGELOG.md` provenance line, and a plunder-map row. Future Pi slices follow this template instead of redoing the discipline.
+
+### Verification
+
+- `pytest -q` -> `141 passed, 14 subtests passed` (was 135 + 14)
+- `pytest -q tests/test_file_mutation_queue.py` -> `6 passed`
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!`
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 54 source files` (was 52 — `runtime/__init__.py` and `runtime/file_mutation_queue.py` added)
+- Smoke (functional form): two threads operating on the same path produce strict serial order; two threads on different paths interleave; symlink + target serialize through the same queue.
+
+### Continuity thread
+
+- The natural next slice wires the queue into the existing edit/write surfaces (the `verify/` doc checker, the packet writer in `codex_bridge.py`, and the planned future provider-driven tool calls). Until that wiring lands, the queue is plumbing nobody calls — useful as a foundation, not yet protective. Alternatively, the next pi slice could port the `core/output-guard.ts` primitive (also single-file, also a safety primitive) so the legal/test-port pattern repeats once before tackling the meatier subsystems (compaction, agent-session trio, RPC).
+
+_The first plundered steel rests in the forge: not yet swung in battle, but quenched, marked, and ready when the war drums sound._
+
 ## 2026-04-29 - Stage 15 Method Excerpt Selector
 
 **Session:** Closing out the last unchecked Stage 15 box — the method excerpt selector for packet building.
