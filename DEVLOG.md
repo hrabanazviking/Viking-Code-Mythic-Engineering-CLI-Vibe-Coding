@@ -7,6 +7,42 @@
 
 ---
 
+## 2026-04-29 - Operator-Facing Runtime Guide
+
+**Session:** Documentation slice. The runtime subpackage is six primitives deep and stable enough to expose as an operator-facing surface. Mirrors the slot left by `docs/plugins.md`.
+**Status:** `docs/runtime.md` lands. INDEX.md and `docs/plugins.md` cross-link to it. The runtime layer is now both load-bearing in code and documented as a developer surface.
+**Scope:** Docs-only. No production code changes.
+
+### What changed
+
+- Added `docs/runtime.md` (~330 lines) covering ten sections: overview, primitives-at-a-glance summary table, one section per primitive (`file_mutation_queue`, `output_guard`, `event_bus`, `timings`, `slash_commands`, `source_info`) with public surface + usage example + when-to-reach-for-it, three composition patterns showing primitives combined, the constraint contract (sync only, exception isolation contracts, module vs per-instance state, env-gating, per-invocation lifecycle), and cross-links to canonical sources.
+- Updated `docs/INDEX.md` to list `docs/runtime.md` under Operator Docs.
+- Updated `docs/plugins.md` "See also" section to cross-link to `docs/runtime.md` so readers landing on plugins first can follow the chain into the underlying primitives.
+- Updated `CHANGELOG.md`.
+
+### Why it matters
+
+The runtime layer accreted in 11 plunder/wire slices over the past day. Each slice landed with its own docstring and tests, but until now there was no single page explaining the *shape of the layer* — what's there, when to use what, how the pieces compose. A developer adding a feature would have had to read 6 source files plus 6 test files plus the plundering guide to understand the inventory. This guide replaces that with one page.
+
+The doc also intentionally records the *boundary of the runtime layer*: anything more complex than these six primitives belongs in a feature module that uses the runtime, not in the runtime itself. As the CLI grows, this is the section most likely to need defense — the temptation to keep adding "small utilities" to `runtime/` will be real, and naming the boundary now makes future "should this go in runtime?" decisions easier.
+
+### Verification
+
+- `pytest -q` -> `210 passed, 14 subtests passed` (unchanged; docs-only)
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!`
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 60 source files`
+- Visual inspection of code snippets — all imports resolve, all dataclass constructions are valid, the `MYTHIC_TIMING=1` example matches actual CLI behavior.
+
+### Continuity thread
+
+- The runtime layer is now both load-bearing and documented. Two operator-facing docs (`docs/plugins.md` and `docs/runtime.md`) cover the two extensibility surfaces. The natural next directions, in roughly increasing scope:
+  1. **Begin V2 Phase 3 (TUI)** — `TODO.md` item 16. Six runtime primitives + plugin dispatcher form a real foundation. Multi-slice arc.
+  2. **Begin V2 Phase 4 (Local LLM provider layer)** — `TODO.md` item 17. Larger arc.
+  3. **Port `core/exec.ts`** (2.4KB) — next clean single-file primitive; subprocess execution helper.
+  4. **Survey TODO.md backlog** — items #4 (massive `/`-command expansion), #5/6 (aggregate feature report planning), and #7 (bug audit) are still open.
+
+_The hall has its index now: six runed stones, six descriptions, three composition tales, one boundary stated plainly. Whoever comes after can read the page and know the inventory before reaching for the chisel._
+
 ## 2026-04-29 - Pi Plunder Slice 6: Source-Info Companion (closes slash-commands deferred detail)
 
 **Session:** Sixth Pi plunder slice. Closes a deferred detail from the slash-commands catalog slice (`faac5e5`), where I noted "pi's `SourceInfo` is richer than we need; we use `source_info: str` for now." The companion file is 852 bytes upstream and ports cleanly minus one factory.
