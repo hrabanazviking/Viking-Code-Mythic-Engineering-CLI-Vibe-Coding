@@ -3035,6 +3035,9 @@ def cmd_slash_list(args: argparse.Namespace) -> int:
 def cmd_slash_dispatch(args: argparse.Namespace) -> int:
     if args.slash_command == "list":
         return cmd_slash_list(args)
+    write_error(
+        f"Unknown slash subcommand: {args.slash_command!r}. Try `mythic-vibe slash list`."
+    )
     return USER_INPUT_ERROR
 
 
@@ -3068,6 +3071,9 @@ def cmd_ai_dispatch(args: argparse.Namespace) -> int:
         return cmd_ai_run(args)
     if args.ai_command == "ingest-response":
         return cmd_ai_ingest_response(args)
+    write_error(
+        f"Unknown ai subcommand: {args.ai_command!r}. Valid: providers | test | run | ingest-response."
+    )
     return USER_INPUT_ERROR
 
 

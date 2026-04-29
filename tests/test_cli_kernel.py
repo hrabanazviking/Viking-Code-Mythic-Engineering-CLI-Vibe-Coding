@@ -2600,6 +2600,30 @@ class CliKernelTests(unittest.TestCase):
             self.assertEqual(reflect_code, SUCCESS)
             self.assertIn("Mythic check-in recorded.", reflect_output.getvalue())
 
+    def test_slash_dispatch_unknown_subcommand_emits_error(self) -> None:
+        import argparse as argparse_module
+
+        ns = argparse_module.Namespace(slash_command="bogus")
+        stderr = io.StringIO()
+        with redirect_stderr(stderr):
+            code = commands.cmd_slash_dispatch(ns)
+
+        self.assertEqual(code, USER_INPUT_ERROR)
+        self.assertIn("Unknown slash subcommand", stderr.getvalue())
+        self.assertIn("bogus", stderr.getvalue())
+
+    def test_ai_dispatch_unknown_subcommand_emits_error(self) -> None:
+        import argparse as argparse_module
+
+        ns = argparse_module.Namespace(ai_command="bogus")
+        stderr = io.StringIO()
+        with redirect_stderr(stderr):
+            code = commands.cmd_ai_dispatch(ns)
+
+        self.assertEqual(code, USER_INPUT_ERROR)
+        self.assertIn("Unknown ai subcommand", stderr.getvalue())
+        self.assertIn("bogus", stderr.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()
