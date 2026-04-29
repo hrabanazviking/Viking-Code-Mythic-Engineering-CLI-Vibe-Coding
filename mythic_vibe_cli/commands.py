@@ -3038,6 +3038,13 @@ def cmd_slash_dispatch(args: argparse.Namespace) -> int:
     return USER_INPUT_ERROR
 
 
+def cmd_shell(args: argparse.Namespace) -> int:
+    from .repl import run_shell
+
+    project_root = Path(getattr(args, "path", ".")).resolve()
+    return run_shell(project_root=project_root)
+
+
 def cmd_ai_dispatch(args: argparse.Namespace) -> int:
     if args.ai_command == "providers":
         return cmd_ai_providers(args)
@@ -3093,4 +3100,5 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "ai": cmd_ai_dispatch,
     "verify": cmd_verify_dispatch,
     "slash": cmd_slash_dispatch,
+    "shell": cmd_shell,
 }

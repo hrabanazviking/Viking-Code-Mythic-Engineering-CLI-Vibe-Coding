@@ -648,6 +648,21 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_runtime_options(slash_list, json_output=True)
 
+    shell = sub.add_parser(
+        "shell",
+        help="Open an interactive prompt that dispatches to existing CLI commands",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe shell
+              mythic-vibe shell --path ./project
+              echo "/help" | mythic-vibe shell
+            """
+        ),
+    )
+    shell.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    add_runtime_options(shell)
+
     return parser
 
 
