@@ -7,6 +7,62 @@
 
 ---
 
+## 2026-04-29 - TUI Slice 3: Command Runner with Live Elapsed Time
+
+**Session:** Third (and final) of three sequential TUI slices Volmarr asked for. Closes the picker → preview → runner trio so an operator can pick, preview, and *actually run* a builtin slash command without leaving the TUI.
+**Status:** Live and tested. 270 tests + 14 subtests passing (was 263). Plugin / extension / skill / prompt entries are still routed to the picker but display "(plugin dispatch not yet implemented)" — that contract belongs to a future slice once a `run_slash_command(name, args)` plugin hook is designed.
+
+### What changed
+
+- New `mythic_vibe_cli/tui/runner.py`:
+  - `RunSpec` — frozen dataclass holding the concrete `subprocess.Popen` argv plus a display `label`.
+  - `command_for_builtin(name, *, project_root=None)` — pure helper returning a `RunSpec`. Always uses `sys.executable -m mythic_vibe_cli <name>` so the runner re-enters the *same* Python interpreter the TUI is running in (avoids PATH / venv mismatches across platforms). For path-aware commands (`status`, `scan`, `verify`, `reflect`, `resume`, `method`, `handoff`, `workflow`, `plugin`, `grimoire`), `--path <project_root>` is appended automatically when a `project_root` is supplied.
+  - `RunningCommandScreen(Screen)` — Textual screen that:
+    - Spawns the subprocess in `on_mount` via `subprocess.Popen(shell=False, stdout=PIPE, stderr=PIPE, stdin=DEVNULL, text=True)`. Cross-platform stdlib only.
+    - Polls process completion every 0.2 seconds via `set_interval`. Each tick refreshes the live elapsed-time line.
+    - On exit, drains stdout/stderr (`communicate(timeout=1.0)` with kill+drain fallback), records the exit code, and renders a 4 KB tail of each stream plus an "Esc to return" prompt.
+    - Catches `FileNotFoundError` from `Popen` and surfaces it as `code=127` with the system error in the stderr panel — graceful missing-binary path.
+    - Registers `on_unmount` cleanup that `terminate()`-then-`kill()` the live child if any. This was the load-bearing fix for Windows headless tests: without it, the subprocess held the temp dir as cwd, blocking `tempfile.TemporaryDirectory.__exit__` and producing a `RecursionError` deep inside `shutil.rmtree`'s onerror loop.
+- `mythic_vibe_cli/tui/picker.py` `CommandPreviewScreen`:
+  - `__init__` now accepts an optional `project_root` so the runner can resolve a project path.
+  - New `r` (and Enter) binding labeled "Run" via `action_run_command`. For *builtin* entries, late-imports `runner` and pushes `RunningCommandScreen(spec, cwd=project_root or Path.cwd())`. Non-builtin sources display "(plugin dispatch not yet implemented; press Esc to return.)" instead — the binding is a no-op.
+- `mythic_vibe_cli/tui/__init__.py` lazy `__getattr__` adds `RunningCommandScreen`, `RunSpec`, and `command_for_builtin` to the runner re-exports. Picker re-exports unchanged. The missing-textual fallback test still passes — runner imports textual at module top level and is only loaded on first attribute access.
+- 7 new tests in `tests/test_tui.py` (new class `RunningCommandScreenTests`):
+  - `command_for_builtin` always uses `sys.executable -m mythic_vibe_cli <name>` and the label is `/<name>`.
+  - `command_for_builtin` appends `--path` for path-aware commands when `project_root` is given.
+  - `command_for_builtin` skips `--path` for non-path-aware commands like `help`.
+  - `RunningCommandScreen` runs a fast `python -c "import sys; sys.exit(0)"` to completion and surfaces "Exit code: 0" in the rendered card.
+  - Same screen captures a non-zero exit code (`sys.exit(3)`).
+  - Pressing `r` on a builtin preview pushes a `RunningCommandScreen`.
+  - Pressing `r` on a plugin-source preview is a no-op (the preview screen stays).
+
+### Why it matters
+
+The picker showed commands but couldn't run them. With this slice the TUI is now a fully self-contained loop: pick → preview → run → see exit code → pop back. No external shell required for builtin commands. The deferred plugin-dispatch path is documented in the preview text so operators know exactly what's not yet supported.
+
+### Bug surfaced and fixed
+
+The first version had a fatal name collision: my method was called `_render(self) -> None`, which silently overrode Textual's internal `Widget._render() -> Visual` method on the `Screen` base class. Textual's compositor then tried to call `self._render()` on the screen, got `None`, and crashed with `'NoneType' object has no attribute 'render_strips'`. Renamed to `_refresh_card`. Lesson: never name a method `_render` on a Textual widget unless you're returning a `Visual`. (StatusScreen avoided this by accident — it uses `_refresh_panels`.)
+
+The second bug was the `RecursionError` in temp-dir cleanup described above; fixed by `on_unmount` reaping the subprocess.
+
+### Cross-platform compliance
+
+- `subprocess.Popen` works uniformly on Windows / macOS / Linux with `shell=False`.
+- No `os.name` branches; no Unix-specific signal handlers; no proprietary deps.
+- Textual handles all terminal-rendering quirks across the three OSes.
+- The `on_unmount` cleanup uses `terminate` + `kill` + `wait(timeout=...)` — all cross-platform stdlib.
+
+### Trio recap
+
+- Slice 1 (`2bbcf00`): event log + Recent Events panel (auto-refresh, JSONL bounded log).
+- Slice 2 (`3af5eed`): slash-commands picker screen with substring filter.
+- Slice 3 (this commit): command runner with live elapsed time + on_unmount cleanup.
+
+The TUI now fully covers V2 Phase 3's "Textual TUI" objective in the project status doc. Future TUI work (a follow-on slice) would tackle plugin dispatch, line-by-line streaming via `asyncio.create_subprocess_exec`, a kill-running-command keybinding, and argument prompting.
+
+---
+
 ## 2026-04-29 - TUI Slice 2: Slash-Commands Picker Screen
 
 **Session:** Second of three sequential TUI slices. Adds a `/`-triggered picker screen so the operator can browse and filter the slash-command catalog from inside the TUI without leaving for the CLI.
