@@ -163,7 +163,9 @@ additive, cross-platform, open-source):
 | 12 | Update memory + project status (after slice 1.4) | done — pushed at d9d8e1b |
 | 13 | F-022 hot-fix | done — `5ed5980` — 1-line return tuple fix + regression test |
 | 14 | Phase 1 Slice 1.5 — boundary re-audit | done — clean, 0 ADRs filed |
-| 15 | Begin Phase 2 — Slash Command Surface Expansion | in progress |
+| 15 | Phase 2 Slice 2.1 — slash inventory + catalog mirror | done — 14→40 entries, +1 parity test |
+| 16 | Update memory + project status (after slice 2.1) | in progress |
+| 17 | Phase 2 Slice 2.2+ (workflow-phase + verify-shorthand aliases) | next |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
@@ -258,18 +260,31 @@ hygiene) delivered:
 - +32 tests; coverage lifted 74→76% (79% excl TUI)
 - All ruff/mypy clean throughout
 
-## Next decision point
+## All three items complete (2026-04-29)
 
-Three viable next moves, in order of expected user value:
+| Item | Result | Commit |
+|---|---|---|
+| 1. F-022 hot-fix | 1-line return-tuple fix on `workflow.py:269` + regression test | `5ed5980` |
+| 2. Slice 1.5 boundary re-audit | clean — 0 errors, 0 warnings, 0 ADRs needed | `8905a54` |
+| 3. Phase 2 slice 2.1 slash inventory | 14 → 40 builtin slash entries; +1 parity test | `c49c1ae` |
 
-1. **Hot-fix F-022** (one-line `return` tuple fix) so
-   `verify --invariants` works on user projects.
-2. **Slice 1.5 (boundary re-audit)** — full `doctor --repo-boundary`
-   sweep + ADRs for any missing-but-justified imports.
-3. **Begin Phase 2** — start the slash-command surface expansion
-   (39+ commands from the aggregate report).
+**Phase 1 fully closed; Phase 2 underway.** Test count 308 → 310;
+coverage holds at 76%; ruff/mypy clean throughout. All commits
+pushed to `origin/development`.
 
-Awaiting Volmarr's decision.
+## Next slice (PH-02 slice 2.2)
+
+Implement workflow-phase aliases and verify-shorthand commands as
+NEW handlers (not just slash entries — these need argparse subparsers
+and command implementations). Targets:
+
+- `/test`, `/lint`, `/typecheck` → thin wrappers over `verify --commands`
+- `/scaffold` → calls into existing template helpers (PH-10 will
+  expand)
+- `/changelog`, `/version` → new metadata commands
+
+The workflow-phase commands (`/intent`, `/constraints`,
+`/architecture`, `/plan`, `/build`) are a slice 2.3 concern.
 
 ---
 
