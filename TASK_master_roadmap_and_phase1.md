@@ -198,8 +198,10 @@ additive, cross-platform, open-source):
 | 47 | Phase 4 Slice 4.4 — Status Bar | done — `e026101` — +9 net tests, 579 total |
 | 48 | Update memory + project status (after slice 4.4) | done — pushed at ca4a67b |
 | 49 | Phase 4 Slice 4.5 — Diff review screen | done — +26 tests, 605 total |
-| 50 | Update memory + project status (after slice 4.5) | in progress |
-| 51 | Phase 4 Slice 4.6 — Real-time diagnostics | next |
+| 50 | Update memory + project status (after slice 4.5) | done — pushed at 3d59c1d |
+| 51 | Phase 4 Slice 4.6 — Real-time diagnostics | done — +16 tests, 621 total |
+| 52 | Update memory + project status (after slice 4.6) | in progress |
+| 53 | Phase 4 Slice 4.7 — Full keymap + `?` help | next |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
