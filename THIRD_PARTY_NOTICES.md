@@ -37,6 +37,8 @@ listed in the plunder map below.
 | `tests/test_slash_commands.py` | (no upstream unit-test analog) | 2026-04-29 |
 | `mythic_vibe_cli/runtime/source_info.py` | `packages/coding-agent/src/core/source-info.ts` (synthetic factory only; PathMetadata-dependent factory not ported) | 2026-04-29 |
 | `tests/test_source_info.py` | (no upstream unit-test analog) | 2026-04-29 |
+| `mythic_vibe_cli/runtime/exec.py` | `packages/coding-agent/src/core/exec.ts` (waitForChildProcess Node-stdio quirk handler not needed in Python) | 2026-04-29 |
+| `tests/test_exec.py` | (no upstream unit-test analog; pi exercises exec via agent-session integration) | 2026-04-29 |
 
 This project is independent and is not affiliated with, endorsed by, or
 sponsored by Mario Zechner, the pi-mono authors, or pi.dev.

@@ -56,18 +56,18 @@ Land:
 
 - [x] Task file written
 - [x] Task file committed + pushed
-- [ ] Port `exec.py` (Popen + Timer for timeout + threading.Event watcher for cancel)
-- [ ] Re-export from `runtime/__init__.py`
-- [ ] Write tests (happy path, non-zero exit, stderr capture, timeout kill, cancel event, missing command)
-- [ ] `pytest -q` green
-- [ ] `ruff` + `mypy` green
-- [ ] Add §11 to `docs/runtime.md`
-- [ ] Plunder map rows added
-- [ ] Per-file Pi attribution header
-- [ ] CHANGELOG entry
-- [ ] DEVLOG entry
-- [ ] Memory snapshot updated
-- [ ] Final commit + push
+- [x] Port `exec.py` (Popen + Timer for timeout + threading.Event watcher for cancel; SIGTERM→SIGKILL escalation; FileNotFoundError → code 127)
+- [x] Re-export from `runtime/__init__.py` (`exec_command`, `ExecResult`)
+- [x] Write tests — 9 cases (happy path, non-zero exit, stderr capture, timeout kill, cancel event triggered mid-execution, already-set cancel event, missing command, cwd respected, ExecResult.to_dict round-trip)
+- [x] `pytest -q` green — 219 passed, 14 subtests passed
+- [x] `ruff` + `mypy` green — 61 source files
+- [x] Updated `docs/runtime.md`: new §8 covers exec; sections renumbered §9–§11; at-a-glance table promotes six → seven primitives
+- [x] Plunder map rows added (production + tests)
+- [x] Per-file Pi attribution header
+- [x] CHANGELOG entry
+- [x] DEVLOG entry with continuity thread
+- [x] Memory snapshot updated
+- [x] Final commit + push
 
 ## Resume Instructions
 

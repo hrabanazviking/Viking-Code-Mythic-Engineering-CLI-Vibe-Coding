@@ -8,9 +8,11 @@ Currently exposes:
 - ``timings`` — lightweight elapsed-time instrumentation (env-gated).
 - ``slash_commands`` — typed catalog of slash commands (no dispatcher).
 - ``source_info`` — provenance type for contributed artifacts.
+- ``exec`` — subprocess execution primitive with timeout and cancel-event.
 """
 
 from .event_bus import EventBus, EventBusController, create_event_bus
+from .exec import ExecResult, exec_command
 from .file_mutation_queue import file_mutation_queue, with_file_mutation_queue
 from .output_guard import (
     flush_raw_stdout,
@@ -57,4 +59,6 @@ __all__ = [
     "SourceOrigin",
     "SourceScope",
     "synthetic_source_info",
+    "exec_command",
+    "ExecResult",
 ]
