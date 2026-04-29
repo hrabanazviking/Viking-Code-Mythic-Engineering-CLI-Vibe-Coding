@@ -7,6 +7,35 @@
 
 ---
 
+## 2026-04-29 - Stage 16 Workflow Step Packets
+
+**Session:** Connecting workflow orchestration to packet artifacts.
+**Status:** `workflow plan` can now create one packet per role step without invoking any AI provider.
+**Scope:** Packet generation bridge from role plans to existing packet storage.
+
+### What changed
+
+- Added `workflow plan --packets` to generate packet artifacts for each workflow step.
+- Added `--audience` and `--format` to control exported/generated packet requests.
+- Preserved `--dry-run` safety: `--dry-run --packets` previews packet requests without writing plan or packet files.
+- Added JSON output for `packet_artifacts` with packet IDs, roles, phases, paths, and metadata paths.
+- Reused `CodexBridge`/`PacketBuilder` so workflow packets use the same metadata and context-manifest machinery as normal packets.
+- Added command-kernel coverage for packet generation and audience propagation.
+- Updated command contracts, API docs, changelog, and this devlog entry.
+
+### Why it matters
+
+The six-role plan is no longer just a map. It can now produce the actual role-specific packet artifacts a human or provider runner can use in order.
+
+### Verification
+
+- `pytest tests\test_cli_kernel.py tests\test_workflow_engine.py tests\test_config_and_bridge.py` -> `25 passed`
+- `python -m mythic_vibe_cli workflow plan --task "Generate smoke packets" --path "$env:TEMP\mythic-workflow-packets-smoke" --role Skald --role Auditor --packets --json` -> wrote two packet artifacts
+
+### Continuity thread
+
+- The next slice can add `workflow run --dry-run` or a packet listing/show command scoped to workflow-generated packets.
+
 ## 2026-04-29 - Stage 16 Workflow Plan Command
 
 **Session:** Exposing the workflow engine through the public CLI.

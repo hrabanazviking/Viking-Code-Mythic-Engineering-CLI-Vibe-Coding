@@ -311,6 +311,7 @@ def build_parser() -> argparse.ArgumentParser:
             """
             Examples:
               mythic-vibe workflow plan --task "Implement the next feature"
+              mythic-vibe workflow plan --task "Implement the next feature" --packets
               mythic-vibe workflow plan --task "Review architecture drift" --role Skald --role Architect --role Auditor
               mythic-vibe workflow plan --task "Preview only" --dry-run --json
 
@@ -322,6 +323,9 @@ def build_parser() -> argparse.ArgumentParser:
     workflow_plan.add_argument("--task", required=True, help="Task or outcome to orchestrate")
     workflow_plan.add_argument("--path", default=".", help="Project directory (default: current directory)")
     workflow_plan.add_argument("--out", default="", help="Optional output file path (default: mythic/workflow_plan.json)")
+    workflow_plan.add_argument("--audience", default="advanced", help="Packet audience level when exporting packet requests")
+    workflow_plan.add_argument("--format", default="markdown", choices=PACKET_OUTPUT_FORMATS, help="Packet output format for exported/generated packet requests")
+    workflow_plan.add_argument("--packets", action="store_true", help="Create one packet artifact per workflow step")
     workflow_plan.add_argument(
         "--role",
         action="append",
