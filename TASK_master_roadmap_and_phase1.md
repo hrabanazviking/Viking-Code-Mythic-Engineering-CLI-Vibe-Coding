@@ -154,8 +154,11 @@ additive, cross-platform, open-source):
 | 3 | Write `MYTHIC_VIBE_CLI_MASTER_ROADMAP.md` | done — pushed at d36a4ae |
 | 4 | Commit + push task file and master roadmap | done — pushed at d36a4ae |
 | 5 | Begin Phase 1 Slice 1.1 — `PHASE1_RUNTIME_AUDIT.md` | done — 20 findings catalogued |
-| 6 | Update memory + project status | in progress |
-| 7 | Hand off / await further instruction | end of slice |
+| 6 | Update memory + project status (after slice 1.1) | done — pushed at 00daa67 |
+| 7 | Phase 1 Slice 1.2 — `PHASE1_ISSUE_TRIAGE.md` | done — 21 issues mapped, 5 duplicate clusters identified |
+| 8 | Update memory + project status (after slice 1.2) | in progress |
+| 9 | Phase 1 Slice 1.3 — quick-fix sweep | next |
+| 10 | Hand off / await further instruction | end of slice |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
@@ -174,12 +177,39 @@ in the master roadmap. Most-visible gaps:
 
 See `PHASE1_RUNTIME_AUDIT.md` for the full table + remediation plan.
 
-## Next slice (1.2)
+## Phase 1 Slice 1.2 — issue triage results
 
-Repo issue triage. `gh issue list` for the GitHub repo, match each
-issue to a finding/slice/phase, and produce `PHASE1_ISSUE_TRIAGE.md`.
-This is gated on Volmarr's go-ahead so we don't bombard GitHub with
-automated comments.
+21 open issues (#27–#47), all opened by Volmarr 2026-04-25. Triage:
+
+- **5 duplicate clusters** identified — recommended consolidation
+  would close 5 of 21 (cloud-deploy / MCP / mobile-multi-platform /
+  vuln-scan / policy-gen).
+- **3 issues with already-shipped fragments** (#29 context anchoring,
+  #41 secret management, #44 changelog) — recommend updating the
+  issue bodies to reflect remaining scope.
+- All 21 issues route cleanly to master-roadmap phases PH-03, PH-05,
+  PH-10, PH-11, PH-12, PH-13, PH-14, PH-15, PH-16, PH-17. None
+  orphaned.
+- No GitHub interaction performed — Volmarr owns close/comment.
+
+See `PHASE1_ISSUE_TRIAGE.md` for the full per-issue table, duplicate
+clusters, and disposition codes.
+
+## Next slice (1.3)
+
+Quick-fix sweep — first code-changing slice. Scoped to the seven
+info-severity additive findings from the audit:
+
+- F-006 — error message for unknown `slash` subcommand
+- F-007 — error message for unknown `ai` subcommand
+- F-010 — verbose-log JSON sidecar parse failure
+- F-014 — `# noqa: BLE001` comments on three best-effort `pass` sites
+- F-017 — ownership header docstrings on `cli.py` and `app.py`
+- F-018 — decision flag for the untracked `vibe_research_part1_tier1a.md`
+- F-019 — `MYTHIC_EVENT_LOG_LIMIT` env var
+
+All trivial, additive, no risk to the 270-test baseline. Each fix is
+its own commit. Tests must stay green throughout.
 
 ---
 
