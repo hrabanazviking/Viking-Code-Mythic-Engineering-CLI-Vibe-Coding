@@ -674,6 +674,30 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_runtime_options(slash_list, json_output=True)
 
+    slash_inspect = slash_sub.add_parser(
+        "inspect",
+        help="Show provenance + argparse help for one slash command",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe slash inspect status
+              mythic-vibe slash inspect /verify
+              mythic-vibe slash inspect intent --json
+              mythic-vibe slash inspect quit
+
+            Notes:
+              Looks up the name in BUILTIN_SLASH_COMMANDS first, then in
+              plugin-contributed entries. For builtin entries that map onto
+              a top-level argparse subcommand, the parser's --help text is
+              rendered. The three interactive-local entries (help / reload
+              / quit) have no argparse subcommand and are flagged as such.
+            """
+        ),
+    )
+    slash_inspect.add_argument("name", help="Slash command name (with or without leading /)")
+    slash_inspect.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    add_runtime_options(slash_inspect, json_output=True)
+
     shell = sub.add_parser(
         "shell",
         help="Open an interactive prompt that dispatches to existing CLI commands",

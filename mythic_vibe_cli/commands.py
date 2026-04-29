@@ -39,7 +39,7 @@ from .plugins.api import PLUGIN_HOOKS
 from .plugins.dispatcher import PluginHookDispatcher
 from .plugins.loader import inspect_plugin
 from .plugins.registry import PluginRegistry
-from .runtime.slash_commands import BUILTIN_SLASH_COMMANDS, SlashCommandInfo
+from .runtime.slash_commands import BUILTIN_SLASH_COMMANDS, BuiltinSlashCommand, SlashCommandInfo
 from .core.state import PHASES, VerificationRecord, coerce_project_state, utc_now, validate_state_payload
 from .persistence.json_store import JsonStateStore, StateStoreError
 from .persistence.migrations import migrate_project_state
@@ -3606,11 +3606,121 @@ def cmd_slash_list(args: argparse.Namespace) -> int:
     return SUCCESS
 
 
+def _resolve_argparse_subparser(name: str) -> argparse.ArgumentParser | None:
+    """Return the subparser for ``name`` from the live ``build_parser`` tree.
+
+    Walks ``parser._actions`` to find the ``_SubParsersAction`` and looks
+    up ``name`` in its ``choices`` mapping. Returns ``None`` if the name is
+    not a registered top-level subcommand. Uses a documented argparse
+    private API surface; there is no public alternative.
+    """
+    from .app import build_parser
+
+    parser = build_parser()
+    for action in parser._actions:
+        if isinstance(action, argparse._SubParsersAction):
+            return action.choices.get(name)
+    return None
+
+
+SLASH_LOCALS_WITHOUT_ARGPARSE = {"help", "reload", "quit"}
+
+
+def cmd_slash_inspect(args: argparse.Namespace) -> int:
+    """Show provenance + argparse help for one slash entry.
+
+    Resolution order: builtin catalog → plugin-contributed entries.
+    For builtin entries that map onto a top-level argparse subcommand
+    (i.e. everything except the three interactive locals
+    ``help``/``reload``/``quit``), the underlying parser's
+    ``--help`` text is rendered so the operator sees exactly what
+    ``mythic-vibe <name> --help`` would print.
+    """
+    root = Path(getattr(args, "path", ".")).resolve()
+    name = (getattr(args, "name", "") or "").strip()
+    if not name:
+        write_error("slash inspect requires a command name.")
+        return USER_INPUT_ERROR
+    if name.startswith("/"):
+        name = name[1:]
+
+    builtin_match: BuiltinSlashCommand | None = None
+    for entry in BUILTIN_SLASH_COMMANDS:
+        if entry.name == name:
+            builtin_match = entry
+            break
+
+    contributed_match: SlashCommandInfo | None = None
+    if builtin_match is None:
+        with PluginHookDispatcher(root) as dispatcher:
+            dispatcher.load_and_subscribe()
+            for item in dispatcher.discover_slash_commands():
+                if item.name == name:
+                    contributed_match = item
+                    break
+
+    if builtin_match is None and contributed_match is None:
+        message = (
+            f"No slash command named '{name}' is registered. "
+            "Run `mythic-vibe slash list` to see available commands."
+        )
+        if _flag(args, "json"):
+            write_json({"command": "slash inspect", "ok": False, "errors": [message]})
+        else:
+            write_error(message)
+        return USER_INPUT_ERROR
+
+    argparse_help: str | None = None
+    if builtin_match is not None and name not in SLASH_LOCALS_WITHOUT_ARGPARSE:
+        subparser = _resolve_argparse_subparser(name)
+        if subparser is not None:
+            argparse_help = subparser.format_help().rstrip() + "\n"
+
+    if _flag(args, "json"):
+        payload: dict[str, object] = {
+            "command": "slash inspect",
+            "name": name,
+            "ok": True,
+            "argparse_help": argparse_help,
+        }
+        if builtin_match is not None:
+            payload["source"] = "builtin"
+            payload["entry"] = builtin_match.to_dict()
+            payload["interactive_local"] = name in SLASH_LOCALS_WITHOUT_ARGPARSE
+        else:
+            assert contributed_match is not None
+            payload["source"] = contributed_match.source
+            payload["entry"] = contributed_match.to_dict()
+            payload["interactive_local"] = False
+        write_json(payload)
+        return SUCCESS
+
+    write_line(f"/{name}")
+    if builtin_match is not None:
+        write_key_value("Source", "builtin")
+        write_key_value("Description", builtin_match.description or "(none)")
+        if name in SLASH_LOCALS_WITHOUT_ARGPARSE:
+            write_line("(interactive-local — handled by the REPL/TUI directly; no argparse subcommand)")
+        elif argparse_help:
+            write_line("")
+            write_line("Argparse help:")
+            write_line(argparse_help, force=True)
+    else:
+        assert contributed_match is not None
+        write_key_value("Source", contributed_match.source)
+        write_key_value("Description", contributed_match.description or "(none)")
+        write_key_value("Origin path", contributed_match.source_info.path)
+        write_key_value("Scope", contributed_match.source_info.scope)
+    return SUCCESS
+
+
 def cmd_slash_dispatch(args: argparse.Namespace) -> int:
     if args.slash_command == "list":
         return cmd_slash_list(args)
+    if args.slash_command == "inspect":
+        return cmd_slash_inspect(args)
     write_error(
-        f"Unknown slash subcommand: {args.slash_command!r}. Try `mythic-vibe slash list`."
+        f"Unknown slash subcommand: {args.slash_command!r}. Try `mythic-vibe slash list` or `mythic-vibe slash inspect <name>`."
     )
     return USER_INPUT_ERROR
 

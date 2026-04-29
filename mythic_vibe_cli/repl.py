@@ -67,6 +67,21 @@ def _print_help(stdout: IO[str], project_root: Path) -> None:
         print(f"  /{item.name}\t{description}\t[{item.source}]", file=stdout)
 
 
+def _print_help_for_name(
+    name: str,
+    *,
+    stdout: IO[str],
+    stderr: IO[str],
+    project_root: Path,
+    main: Callable[[list[str]], int],
+) -> None:
+    """Route ``/help <name>`` to ``slash inspect <name>`` so help text
+    comes from the same source as the CLI's introspection surface."""
+    code = main(["slash", "inspect", "--path", str(project_root), name])
+    if code != SUCCESS:
+        print(f"(slash inspect exit code: {code})", file=stderr)
+
+
 def run_shell(
     *,
     stdin: IO[str] | None = None,
@@ -113,6 +128,21 @@ def run_shell(
 
         if stripped in HELP_TOKENS:
             _print_help(out_stream, project_path)
+            continue
+
+        # /help <name> routes to `slash inspect <name>` so the operator
+        # sees the canonical introspection output (description, source,
+        # argparse --help) rather than just the catalog.
+        first_token, _, rest = stripped.partition(" ")
+        if first_token in HELP_TOKENS and rest.strip():
+            target = rest.strip().lstrip("/")
+            _print_help_for_name(
+                target,
+                stdout=out_stream,
+                stderr=err_stream,
+                project_root=project_path,
+                main=main,
+            )
             continue
 
         # Strip a single leading slash if present so /scan and scan are equivalent.
