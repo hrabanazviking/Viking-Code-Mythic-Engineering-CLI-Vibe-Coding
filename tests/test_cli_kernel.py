@@ -384,6 +384,33 @@ class CliKernelTests(unittest.TestCase):
             self.assertEqual([step["role"] for step in payload["plan"]["steps"]], ["Skald", "Auditor"])
             self.assertEqual(payload["plan"]["steps"][0]["handoff_to"], "Auditor")
 
+    def test_workflow_run_dry_run_loads_existing_plan(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with redirect_stdout(io.StringIO()):
+                app.main(["workflow", "plan", "--task", "Preview from disk", "--path", str(root), "--role", "Skald", "--role", "Auditor"])
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(["workflow", "run", "--path", str(root), "--dry-run", "--json"])
+
+            payload = json.loads(output.getvalue())
+
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(payload["command"], "workflow run")
+            self.assertEqual(payload["provider_execution"], "disabled")
+            self.assertEqual([step["role"] for step in payload["steps"]], ["Skald", "Auditor"])
+            self.assertFalse(payload["steps"][0]["would_execute_provider"])
+
+    def test_workflow_run_blocks_real_execution(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output = io.StringIO()
+            with redirect_stdout(output), redirect_stderr(output):
+                code = app.main(["workflow", "run", "--path", tmp, "--task", "No live execution"])
+
+            self.assertEqual(code, UNSAFE_OPERATION_BLOCKED)
+            self.assertIn("dry-run", output.getvalue())
+
     def test_grimoire_json_has_no_human_prefix(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             output = io.StringIO()

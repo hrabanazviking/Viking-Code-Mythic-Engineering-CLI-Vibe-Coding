@@ -314,6 +314,7 @@ def build_parser() -> argparse.ArgumentParser:
               mythic-vibe workflow plan --task "Implement the next feature" --packets
               mythic-vibe workflow plan --task "Review architecture drift" --role Skald --role Architect --role Auditor
               mythic-vibe workflow plan --task "Preview only" --dry-run --json
+              mythic-vibe workflow run --dry-run --json
 
             Notes:
               Defaults to Skald -> Architect -> Cartographer -> Forge Worker -> Auditor -> Scribe.
@@ -334,6 +335,32 @@ def build_parser() -> argparse.ArgumentParser:
         help="Role to include in order; repeat to customize the sequence",
     )
     add_runtime_options(workflow_plan, json_output=True, dry_run=True)
+    workflow_run = workflow_sub.add_parser(
+        "run",
+        help="Preview ordered workflow execution without invoking providers",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe workflow run --dry-run
+              mythic-vibe workflow run --dry-run --task "Preview a new task" --role Skald --role Auditor
+              mythic-vibe workflow run --dry-run --plan mythic/workflow_plan.json --json
+
+            Notes:
+              Real provider execution is intentionally blocked until orchestration safety gates are added.
+            """
+        ),
+    )
+    workflow_run.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    workflow_run.add_argument("--plan", default="", help="Plan file to preview (default: mythic/workflow_plan.json)")
+    workflow_run.add_argument("--task", default="", help="Optional task to build an in-memory preview plan")
+    workflow_run.add_argument(
+        "--role",
+        action="append",
+        default=[],
+        choices=list(DEFAULT_ROLE_SEQUENCE) + ["Debugger", "Refactorer"],
+        help="Role to include in order when --task is supplied; repeat to customize the sequence",
+    )
+    add_runtime_options(workflow_run, json_output=True, dry_run=True)
 
     handoff = sub.add_parser("handoff", help="Create, inspect, or list session handoff records")
     add_runtime_options(handoff, json_output=True, dry_run=True)

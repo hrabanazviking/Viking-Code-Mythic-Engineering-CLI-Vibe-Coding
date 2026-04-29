@@ -8,6 +8,7 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Added
 
+- Added `mythic-vibe workflow run --dry-run` for safe ordered role-execution previews from saved or generated workflow plans.
 - Added `workflow plan --packets`, `--audience`, and `--format` so workflow plans can generate one packet artifact per role step without provider execution.
 - Added `mythic-vibe workflow plan` for writing and previewing role orchestration plans from the CLI.
 - Added `mythic_vibe_cli.workflow_engine` for deterministic six-role orchestration plans, handoff order, packet request export, and durable `mythic/workflow_plan.json` writing.
