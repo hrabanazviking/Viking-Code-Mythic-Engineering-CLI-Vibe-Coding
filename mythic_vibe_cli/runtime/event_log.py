@@ -26,6 +26,29 @@ from typing import Any, Iterable
 DEFAULT_EVENT_LOG_FILENAME = "events.jsonl"
 DEFAULT_MAX_ENTRIES = 200
 
+EVENT_LOG_LIMIT_ENV = "MYTHIC_EVENT_LOG_LIMIT"
+
+
+def resolve_max_entries(default: int = DEFAULT_MAX_ENTRIES) -> int:
+    """Resolve the bounded-event-log cap from ``MYTHIC_EVENT_LOG_LIMIT``.
+
+    The env var, when set to a positive integer, overrides the built-in
+    200-entry default. Any non-positive or non-integer value is ignored
+    silently (the function is best-effort, matching the rest of the
+    event-log surface). Larger projects with high-frequency plugin emits
+    can raise the cap; tests can lower it.
+    """
+    raw = os.environ.get(EVENT_LOG_LIMIT_ENV)
+    if raw is None or not raw.strip():
+        return default
+    try:
+        value = int(raw.strip())
+    except ValueError:
+        return default
+    if value <= 0:
+        return default
+    return value
+
 
 @dataclass(frozen=True)
 class EventLogEntry:
