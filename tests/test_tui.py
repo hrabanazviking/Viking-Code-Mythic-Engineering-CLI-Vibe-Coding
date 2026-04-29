@@ -251,6 +251,134 @@ class SlashPickerTests(unittest.TestCase):
         self.assertIn("Append audit log", rendered)
 
 
+@unittest.skipIf(textual_unavailable, "textual not installed")
+class RunningCommandScreenTests(unittest.TestCase):
+    def test_command_for_builtin_uses_current_python(self) -> None:
+        import sys as _sys
+        from mythic_vibe_cli.tui.runner import command_for_builtin
+
+        spec = command_for_builtin("status")
+        self.assertEqual(spec.argv[0], _sys.executable)
+        self.assertEqual(spec.argv[1:4], ["-m", "mythic_vibe_cli", "status"])
+        self.assertEqual(spec.label, "/status")
+
+    def test_command_for_builtin_appends_path_for_path_aware_commands(self) -> None:
+        from mythic_vibe_cli.tui.runner import command_for_builtin
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = command_for_builtin("status", project_root=Path(tmp))
+            self.assertIn("--path", spec.argv)
+            self.assertIn(str(Path(tmp)), spec.argv)
+
+    def test_command_for_builtin_skips_path_for_help(self) -> None:
+        from mythic_vibe_cli.tui.runner import command_for_builtin
+
+        with tempfile.TemporaryDirectory() as tmp:
+            spec = command_for_builtin("help", project_root=Path(tmp))
+            self.assertNotIn("--path", spec.argv)
+
+    def test_runner_screen_runs_to_completion_and_shows_exit_code(self) -> None:
+        """Run a guaranteed-fast subprocess via RunSpec and assert the exit code
+        eventually appears in the rendered card."""
+        import sys as _sys
+        from mythic_vibe_cli.tui.app import MythicTuiApp
+        from mythic_vibe_cli.tui.runner import RunningCommandScreen, RunSpec
+
+        async def run_test() -> str:
+            with tempfile.TemporaryDirectory() as tmp:
+                app = MythicTuiApp(Path(tmp))
+                async with app.run_test() as pilot:
+                    await pilot.pause()
+                    spec = RunSpec(
+                        label="/echo-test",
+                        argv=[_sys.executable, "-c", "import sys; sys.exit(0)"],
+                    )
+                    app.push_screen(RunningCommandScreen(spec, cwd=Path(tmp)))
+                    # Allow the subprocess to start and finish + at least one tick.
+                    for _ in range(20):
+                        await pilot.pause()
+                    card = app.screen.query_one("#runner-card")
+                    return str(card.render())
+
+        rendered = asyncio.run(run_test())
+        self.assertIn("Exit code:", rendered)
+        self.assertIn("0", rendered)
+
+    def test_runner_screen_captures_non_zero_exit(self) -> None:
+        import sys as _sys
+        from mythic_vibe_cli.tui.app import MythicTuiApp
+        from mythic_vibe_cli.tui.runner import RunningCommandScreen, RunSpec
+
+        async def run_test() -> str:
+            with tempfile.TemporaryDirectory() as tmp:
+                app = MythicTuiApp(Path(tmp))
+                async with app.run_test() as pilot:
+                    await pilot.pause()
+                    spec = RunSpec(
+                        label="/fail-test",
+                        argv=[_sys.executable, "-c", "import sys; sys.exit(3)"],
+                    )
+                    app.push_screen(RunningCommandScreen(spec, cwd=Path(tmp)))
+                    for _ in range(20):
+                        await pilot.pause()
+                    return str(app.screen.query_one("#runner-card").render())
+
+        rendered = asyncio.run(run_test())
+        self.assertIn("Exit code:", rendered)
+        self.assertIn("3", rendered)
+
+    def test_preview_screen_runs_builtin_via_r_binding(self) -> None:
+        """Press r on the preview screen for a builtin → RunningCommandScreen
+        is pushed and runs to completion."""
+        from mythic_vibe_cli.tui.app import MythicTuiApp
+        from mythic_vibe_cli.tui.picker import CommandPreviewScreen, PickerEntry
+        from mythic_vibe_cli.tui.runner import RunningCommandScreen
+
+        async def run_test() -> bool:
+            with tempfile.TemporaryDirectory() as tmp:
+                app = MythicTuiApp(Path(tmp))
+                async with app.run_test() as pilot:
+                    await pilot.pause()
+                    entry = PickerEntry(name="status", description="Show project state", source="builtin")
+                    app.push_screen(CommandPreviewScreen(entry, project_root=Path(tmp)))
+                    await pilot.pause()
+                    # Override sys.executable in argv? Just press r and verify
+                    # screen transition. We don't care about the specific exit
+                    # code here — only that the runner screen is reached.
+                    await pilot.press("r")
+                    await pilot.pause()
+                    return isinstance(app.screen, RunningCommandScreen)
+
+        # Cannot redirect sys.executable for the subprocess invocation, so we
+        # depend on `mythic-vibe status` being importable from the running
+        # interpreter (it is — we're testing in this very project).
+        self.assertTrue(asyncio.run(run_test()))
+
+    def test_preview_screen_does_not_run_non_builtin_entry(self) -> None:
+        """Press r on a plugin-source entry → no transition; preview stays."""
+        from mythic_vibe_cli.tui.app import MythicTuiApp
+        from mythic_vibe_cli.tui.picker import CommandPreviewScreen, PickerEntry
+
+        async def run_test() -> bool:
+            with tempfile.TemporaryDirectory() as tmp:
+                app = MythicTuiApp(Path(tmp))
+                async with app.run_test() as pilot:
+                    await pilot.pause()
+                    entry = PickerEntry(
+                        name="audit",
+                        description="Plugin audit cmd",
+                        source="plugin",
+                        source_info_path="audit_plugin:Plugin",
+                    )
+                    app.push_screen(CommandPreviewScreen(entry, project_root=Path(tmp)))
+                    await pilot.pause()
+                    await pilot.press("r")
+                    await pilot.pause()
+                    return isinstance(app.screen, CommandPreviewScreen)
+
+        self.assertTrue(asyncio.run(run_test()))
+
+
 class CmdTuiFallbackTests(unittest.TestCase):
     def test_missing_textual_returns_operational_failure_with_helpful_error(self) -> None:
         """If textual cannot be imported, cmd_tui surfaces a helpful error and

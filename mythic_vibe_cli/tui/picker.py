@@ -98,11 +98,16 @@ def filter_entries(entries: list[PickerEntry], query: str) -> list[PickerEntry]:
 
 
 class CommandPreviewScreen(Screen):
-    """Read-only preview of a single picker entry."""
+    """Read-only preview of a single picker entry. Builtins can be dispatched
+    via the ``r`` / Enter binding, which pushes a ``RunningCommandScreen``.
+    Non-builtin (plugin / extension / skill / prompt) entries display a notice
+    that this slice does not yet dispatch them."""
 
     BINDINGS = [
         Binding("escape", "app.pop_screen", "Back"),
         Binding("q", "app.pop_screen", "Back", show=False),
+        Binding("r", "run_command", "Run"),
+        Binding("enter", "run_command", "Run", show=False),
     ]
 
     DEFAULT_CSS = """
@@ -119,9 +124,10 @@ class CommandPreviewScreen(Screen):
     }
     """
 
-    def __init__(self, entry: PickerEntry) -> None:
+    def __init__(self, entry: PickerEntry, *, project_root: Path | None = None) -> None:
         super().__init__()
         self.entry = entry
+        self.project_root = project_root
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=False)
@@ -134,12 +140,26 @@ class CommandPreviewScreen(Screen):
     def _format_body(self) -> str:
         description = self.entry.description or "(no description)"
         path = self.entry.source_info_path or "(builtin)"
+        run_hint = (
+            "[b]Press r[/b] to run this command."
+            if self.entry.source == "builtin"
+            else "[dim](plugin dispatch not yet implemented; press Esc to return.)[/dim]"
+        )
         return (
             f"[b]Source:[/b]      {self.entry.source}\n"
             f"[b]Source info:[/b] {path}\n\n"
             f"[b]Description[/b]\n{description}\n\n"
-            f"[dim]Press Esc to return.[/dim]"
+            f"{run_hint}\n[dim]Press Esc to return.[/dim]"
         )
+
+    def action_run_command(self) -> None:
+        if self.entry.source != "builtin":
+            return
+        from .runner import RunningCommandScreen, command_for_builtin
+
+        cwd = self.project_root if self.project_root is not None else Path.cwd()
+        spec = command_for_builtin(self.entry.name, project_root=cwd)
+        self.app.push_screen(RunningCommandScreen(spec, cwd=cwd))
 
 
 class SlashPickerScreen(Screen):
@@ -219,4 +239,4 @@ class SlashPickerScreen(Screen):
             self._option_list.add_option(Option(entry.render_label(), id=f"slash:{entry.name}"))
 
     def _select_entry(self, entry: PickerEntry) -> None:
-        self.app.push_screen(CommandPreviewScreen(entry))
+        self.app.push_screen(CommandPreviewScreen(entry, project_root=self.root))

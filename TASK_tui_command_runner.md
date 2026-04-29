@@ -69,13 +69,22 @@ For non-builtin entries (plugin/extension/skill/prompt), the preview screen show
 
 - [x] Task file written
 - [x] Task file committed + pushed
-- [ ] Implement `RunningCommandScreen` + `command_for_builtin`
-- [ ] Wire preview → runner via `r`/Enter binding
-- [ ] Plugin-entry "not yet" notice on preview
-- [ ] Tests
-- [ ] Gates green
-- [ ] Docs + CHANGELOG + DEVLOG
+- [x] Implement `RunningCommandScreen` + `command_for_builtin`
+- [x] Wire preview → runner via `r`/Enter binding
+- [x] Plugin-entry "not yet" notice on preview
+- [x] Tests (7 new tests in `RunningCommandScreenTests`)
+- [x] Gates green (270 tests + 14 subtests, ruff clean, mypy clean)
+- [x] Docs + CHANGELOG + DEVLOG
 - [ ] Memory + push
+
+## Resolution notes
+
+Two real bugs hit during the slice:
+
+1. **Method-name collision with Textual.** First version named the redraw method `_render(self) -> None`. That silently overrode `Widget._render() -> Visual`, which Textual's compositor calls on every `Screen` to obtain its renderable. Returning `None` produced `'NoneType' object has no attribute 'render_strips'` deep inside `_styles_cache.render_widget`. Renamed to `_refresh_card`.
+2. **Subprocess holding cwd on Windows.** Headless tests using `tempfile.TemporaryDirectory()` triggered a `RecursionError` inside `shutil.rmtree`'s onerror loop because the spawned subprocess still held the temp dir as `cwd`. Fixed by adding `on_unmount` to `RunningCommandScreen` that `terminate()`-then-`kill()` the live child.
+
+Both fixes are captured in the DEVLOG entry for the slice.
 
 ## Resume Instructions
 
