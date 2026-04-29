@@ -202,8 +202,10 @@ additive, cross-platform, open-source):
 | 51 | Phase 4 Slice 4.6 — Real-time diagnostics | done — +16 tests, 621 total |
 | 52 | Update memory + project status (after slice 4.6) | done — pushed at e7895ba |
 | 53 | Phase 4 Slice 4.7 — Full keymap + `?` help | done — +11 tests, 632 total |
-| 54 | Update memory + project status (after slice 4.7) | in progress |
-| 55 | Phase 4 Slice 4.8 — Theme support | next |
+| 54 | Update memory + project status (after slice 4.7) | done — pushed at d8bdd28 |
+| 55 | Phase 4 Slice 4.8 — Theme support | done — +19 tests, 651 total |
+| 56 | Update memory + project status (after slice 4.8) | in progress |
+| 57 | Phase 4 Slice 4.9 — Accessibility audit (Phase 4 finale) | next |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
