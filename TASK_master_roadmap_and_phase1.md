@@ -185,8 +185,10 @@ additive, cross-platform, open-source):
 | 34 | Phase 3 Slice 3.6 — verifier integration | done — `c0da15b` — +18 tests, 501 total |
 | 35 | Update memory + project status (after slice 3.6) | done — pushed at 45e1af0 |
 | 36 | Phase 3 Slice 3.7 — reflection capture | done — `17e1d57` — +27 tests, 528 total |
-| 37 | Update memory + project status (after slice 3.7) | in progress |
-| 38 | Phase 3 Slice 3.8 — forge resume | next |
+| 37 | Update memory + project status (after slice 3.7) | done — pushed at e313862 |
+| 38 | Phase 3 Slice 3.8 — forge resume (Phase 3 finale) | done — `9093846` — +10 tests, 538 total |
+| 39 | Update memory + project status (after slice 3.8) | in progress |
+| 40 | **PHASE 3 FULLY COMPLETE.** Choose next phase (4 / 5 / 11) | awaiting Volmarr |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
