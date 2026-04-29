@@ -885,6 +885,16 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Do not write per-step entries to mythic/forge_ledger.json",
     )
+    forge_plan.add_argument(
+        "--interactive",
+        action="store_true",
+        help=(
+            "Prompt y/n/?/s between each pair of steps (slice 3.4 approval gates). "
+            "y=advance / n=abort and mark remaining steps blocked / "
+            "s=skip the next step / ?=show gate detail. "
+            "Default off; non-interactive runs proceed straight through."
+        ),
+    )
     add_runtime_options(forge_plan, json_output=True, dry_run=True)
 
     forge_ledger = forge_sub.add_parser(
