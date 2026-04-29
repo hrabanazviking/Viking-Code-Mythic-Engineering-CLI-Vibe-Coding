@@ -9,6 +9,12 @@ import textwrap
 from .context.indexer import ProjectIndexer
 from .config import AppConfig, ConfigStore
 from .ai.prompts.roles import PACKET_ROLES, ROLE_PRESETS
+from .method_excerpt import (
+    DEFAULT_METHOD_CORPUS_DIR,
+    MethodExcerpt,
+    select_method_excerpts,
+    sections_for,
+)
 
 PACKET_OUTPUT_FORMATS = [
     "markdown",
@@ -530,6 +536,22 @@ class PacketBuilder:
 
         return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
+    def _method_excerpts(self, request: CodexPacketRequest) -> list[MethodExcerpt]:
+        keywords = sections_for(request.role, request.phase)
+        if not keywords:
+            return []
+        return select_method_excerpts(self.root / DEFAULT_METHOD_CORPUS_DIR, keywords)
+
+    def _render_method_excerpts_markdown(self, excerpts: list[MethodExcerpt]) -> str:
+        if not excerpts:
+            return ""
+        lines: list[str] = []
+        for excerpt in excerpts:
+            lines.append(f"### {excerpt.heading} — `{excerpt.source_path}`")
+            lines.append(excerpt.text)
+            lines.append("")
+        return "\n".join(lines).rstrip()
+
     def _render_packet(
         self,
         request: CodexPacketRequest,
@@ -539,6 +561,7 @@ class PacketBuilder:
         packet_id = packet_id or "PKT-000000"
         created_at = created_at or self._now()
         role_profile = self._role_profile(request.role)
+        method_excerpts = self._method_excerpts(request)
         sections = {
             "goals": self._safe_excerpt(self._read_optional(self.tasks_dir / "current_GOALS.md")),
             "architecture": self._safe_excerpt(self._read_optional(self.docs_dir / "ARCHITECTURE.md")),
@@ -586,6 +609,7 @@ class PacketBuilder:
                 "invariants": role_profile["invariants"],
                 "verification_commands": role_profile["verification"],
                 "required_output_format": required_output,
+                "method_excerpts": [excerpt.to_dict() for excerpt in method_excerpts],
                 "checkin_summary_format": [
                     "Phase: <phase>",
                     "Update: <one sentence>",
@@ -593,6 +617,9 @@ class PacketBuilder:
                 ],
             }
             return json.dumps(payload, indent=2) + "\n"
+
+        method_block = self._render_method_excerpts_markdown(method_excerpts)
+        method_section = f"\n\n## 12. Method Excerpts\n{method_block}" if method_block else ""
 
         return textwrap.dedent(
             f"""
@@ -641,6 +668,9 @@ class PacketBuilder:
             - Phase: {request.phase}
             - Update: one sentence
             - Files changed: list only what changed
+            """
+        ).strip() + method_section + textwrap.dedent(
+            f"""
 
             ### SAFETY
             - Invariants:
@@ -652,7 +682,7 @@ class PacketBuilder:
             - Verification commands:
             {verification}
             """
-        ).strip() + "\n"
+        ).rstrip() + "\n"
 
 
 CodexBridge = PacketBuilder

@@ -12,6 +12,13 @@ from unittest.mock import patch
 
 from mythic_vibe_cli import app
 from mythic_vibe_cli.exit_codes import SUCCESS, USER_INPUT_ERROR, VERIFICATION_FAILURE
+from mythic_vibe_cli.method_excerpt import (
+    DEFAULT_EXCERPT_CHAR_LIMIT,
+    PHASE_METHOD_SECTIONS,
+    ROLE_METHOD_SECTIONS,
+    select_method_excerpts,
+    sections_for,
+)
 from mythic_vibe_cli.mythic_data import DEFAULT_METHOD_NOTES, MethodStore, resolve_method_source
 
 
@@ -285,6 +292,98 @@ class MethodCommandTests(unittest.TestCase):
             self.assertFalse(payload["pinned"])
             self.assertEqual(payload["diff"]["changed"], ["README.md"])
             self.assertFalse(target.joinpath("method_pin.json").exists())
+
+
+class MethodExcerptSelectorTests(unittest.TestCase):
+    def _seed_corpus(self, root: Path) -> Path:
+        corpus = root / "docs" / "mythic_source"
+        corpus.mkdir(parents=True)
+        (corpus / "principles.md").write_text(
+            "# Principles\n\n"
+            "Hold to the simplest design that solves the intent.\n\n"
+            "## Sub note\n\nNested.\n\n"
+            "# Workflow\n\n"
+            "Intent -> Constraints -> Architecture.\n",
+            encoding="utf-8",
+        )
+        (corpus / "verification.md").write_text(
+            "# Verification Method\n\n"
+            "Verify that result matches intent, not just that code ran.\n\n"
+            "# Failure Modes\n\n"
+            "Watch for silent test skips and stale snapshots.\n",
+            encoding="utf-8",
+        )
+        return corpus
+
+    def test_sections_for_role_takes_priority_over_phase(self) -> None:
+        self.assertEqual(sections_for("Auditor", "intent"), ROLE_METHOD_SECTIONS["Auditor"])
+
+    def test_sections_for_falls_back_to_phase_when_role_unknown(self) -> None:
+        self.assertEqual(sections_for(None, "verify"), PHASE_METHOD_SECTIONS["verify"])
+
+    def test_sections_for_returns_empty_when_neither_known(self) -> None:
+        self.assertEqual(sections_for("Bystander", "loiter"), ())
+
+    def test_select_method_excerpts_picks_matching_headings(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            corpus = self._seed_corpus(Path(tmp))
+
+            excerpts = select_method_excerpts(corpus, ("principles", "verification method"))
+
+            self.assertEqual([e.section for e in excerpts], ["principles", "verification method"])
+            principles = excerpts[0]
+            self.assertEqual(principles.heading, "Principles")
+            self.assertIn("simplest design", principles.text)
+            self.assertIn("Nested.", principles.text)
+            self.assertEqual(principles.source_path, "principles.md")
+            self.assertFalse(principles.truncated)
+            verification = excerpts[1]
+            self.assertEqual(verification.heading, "Verification Method")
+            self.assertIn("matches intent", verification.text)
+            self.assertEqual(verification.source_path, "verification.md")
+
+    def test_select_method_excerpts_returns_empty_when_corpus_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(
+                select_method_excerpts(Path(tmp) / "missing", ("principles",)),
+                [],
+            )
+
+    def test_select_method_excerpts_truncates_long_bodies(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            corpus = Path(tmp) / "corpus"
+            corpus.mkdir()
+            big_body = "lorem ipsum " * 200
+            (corpus / "big.md").write_text(f"# Workflow\n\n{big_body}\n", encoding="utf-8")
+
+            excerpts = select_method_excerpts(corpus, ("workflow",), char_limit=80)
+
+            self.assertEqual(len(excerpts), 1)
+            self.assertTrue(excerpts[0].truncated)
+            self.assertLessEqual(len(excerpts[0].text), 81)
+            self.assertTrue(excerpts[0].text.endswith("…"))
+
+    def test_select_method_excerpts_skips_manifest_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            corpus = Path(tmp) / "corpus"
+            corpus.mkdir()
+            (corpus / "method_manifest.json").write_text(
+                "# Workflow\n\nMethod content stored in manifest.\n",
+                encoding="utf-8",
+            )
+            (corpus / "real.md").write_text(
+                "# Workflow\n\nReal content here.\n",
+                encoding="utf-8",
+            )
+
+            excerpts = select_method_excerpts(corpus, ("workflow",))
+
+            self.assertEqual(len(excerpts), 1)
+            self.assertEqual(excerpts[0].source_path, "real.md")
+            self.assertIn("Real content", excerpts[0].text)
+
+    def test_select_method_excerpts_default_char_limit_constant(self) -> None:
+        self.assertGreater(DEFAULT_EXCERPT_CHAR_LIMIT, 0)
 
 
 if __name__ == "__main__":

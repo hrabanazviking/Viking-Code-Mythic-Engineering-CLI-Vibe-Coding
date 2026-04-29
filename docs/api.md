@@ -69,6 +69,8 @@ Argument parsing and top-level dispatch live in `mythic_vibe_cli.app`. Command i
   - Resolves the workflow id from the second-most-recent entry in `mythic/workflow_history.json`. Same exclusivity rules as `--latest-workflow`; cannot be combined with it; errors when the ledger has fewer than two entries.
 - `packet diff` workflow refs
   - `--left` and `--right` accept five forms: a bare `PKT-...` packet ID, a `WF-<id>:<step_id>` shorthand, a `LATEST:<step_id>` sentinel (resolves via the saved plan), a `PREVIOUS:<step_id>` sentinel (resolves via the history ledger), or — under `--latest-workflow` — a bare `step-NN` form. Mixing `LATEST:<step>` and `PREVIOUS:<step>` in one call is the canonical cross-run regression diff pattern. JSON output reports the original references (`left_ref`, `right_ref`), the resolved packet IDs, and the resolved `latest_workflow_id` when supplied.
+- `packet create` method excerpts
+  - When `docs/mythic_source/` is populated (via `mythic-vibe import-md`), `packet create` embeds role-relevant method excerpts into the rendered packet. Sections are selected by role first (via `ROLE_METHOD_SECTIONS`) and fall back to phase (`PHASE_METHOD_SECTIONS`). Markdown packets gain a `## 12. Method Excerpts` section, and JSON packets gain a `method_excerpts` array with `section`, `heading`, `source_path`, `text`, and `truncated`. Missing or empty corpus → section omitted; no error.
 - `state show`
   - Displays schema-versioned project state from `mythic/status.json`.
 - `state validate`
