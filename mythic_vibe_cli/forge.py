@@ -1218,6 +1218,469 @@ def cmd_forge_ledger_dispatch(args: argparse.Namespace) -> int:
     return USER_INPUT_ERROR
 
 
+def _latest_workflow_id_from_ledger(ledger: ForgeLedger) -> str | None:
+    """Return the workflow_id of the most recently appended ledger
+    entry, or None when the ledger is empty."""
+    entries = ledger.load()
+    if not entries:
+        return None
+    return entries[-1].workflow_id or None
+
+
+def _resolve_resume_target(
+    workflow_id: str | None,
+    ledger: ForgeLedger,
+) -> tuple[str | None, str | None, list[ForgeLedgerEntry]]:
+    """Pick the workflow + load its entries.
+
+    Returns ``(workflow_id, error_message, entries)``. If workflow_id is
+    None on entry, this falls back to the most recent ledger row. The
+    error_message is non-None when no resumable workflow can be found;
+    in that case workflow_id may still be set so the caller can echo
+    it in the error.
+    """
+    target = (workflow_id or "").strip() or None
+    if target is None:
+        target = _latest_workflow_id_from_ledger(ledger)
+        if target is None:
+            return None, "No forge ledger entries on disk; nothing to resume.", []
+    entries = ledger.find_by_workflow(target)
+    if not entries:
+        return target, f"No ledger entries for workflow {target!r}.", []
+    return target, None, entries
+
+
+def cmd_forge_resume(
+    args: argparse.Namespace,
+    *,
+    gate_handler: GateHandler | None = None,
+    provider_factory: ProviderFactory | None = None,
+    auditor_gates: dict[str, GateRunner] | None = None,
+) -> int:
+    """``mythic-vibe forge resume`` — restart a partially-completed forge run.
+
+    Picks up the most recent workflow (or ``--workflow <id>``), walks
+    the existing ledger to find the first step that is not already
+    ``succeeded``, and re-executes from there. Successful prior steps
+    are skipped; their recorded ``AgentOutput`` is fed forward as
+    ``prior_outputs`` exactly as slice 3.5's run loop does.
+
+    Status transitions and gate semantics are identical to
+    ``cmd_forge_run``: each re-executed step appends a new ``running``
+    ledger entry and transitions to ``succeeded`` / ``failed`` /
+    ``blocked``. The Auditor's slice-3.6 verifier gates run again.
+    The slice-3.4 approval-gate handler runs between each pair of
+    re-executed steps.
+
+    A new reflection is written at the end (unless ``--skip-reflection``
+    or ``--skip-ledger``) — overwriting the prior reflection for the
+    same workflow id, since the resume's outcome supersedes the original.
+
+    Returns ``USER_INPUT_ERROR`` for missing provider / no resumable
+    workflow; ``SUCCESS`` if every re-executed step succeeded;
+    ``OPERATIONAL_FAILURE`` if any step failed; ``UNSAFE_OPERATION_BLOCKED``
+    if the operator aborted at a gate or ``--strict`` triggered.
+    """
+    root = Path(getattr(args, "path", ".")).resolve()
+    provider_name = (getattr(args, "provider", "") or "").strip()
+    if not provider_name:
+        write_error("forge resume requires --provider <name>.")
+        return USER_INPUT_ERROR
+
+    provider, provider_err = _resolve_provider(
+        provider_name, root, provider_factory=provider_factory
+    )
+    if provider is None:
+        write_error(provider_err or f"Could not resolve provider {provider_name!r}.")
+        return USER_INPUT_ERROR
+
+    ledger = ForgeLedger(root=root)
+    requested_workflow = getattr(args, "workflow", None)
+    workflow_id, resolve_err, _ = _resolve_resume_target(requested_workflow, ledger)
+    if resolve_err is not None:
+        write_error(resolve_err)
+        return USER_INPUT_ERROR
+    assert workflow_id is not None  # mypy: resolve_err is None means workflow_id is set
+
+    # Reconstruct the plan from the original task. The first ledger
+    # entry's agent_input.task is the source of truth — every entry
+    # in a workflow shares the same task string.
+    sample_entries = ledger.find_by_workflow(workflow_id)
+    original_task = sample_entries[0].agent_input.task if sample_entries else ""
+    if not original_task.strip():
+        write_error(
+            f"Workflow {workflow_id!r} has no recoverable task on its ledger entries."
+        )
+        return USER_INPUT_ERROR
+
+    engine = WorkflowEngine(root)
+    try:
+        rebuilt = engine.build_plan(original_task, role_sequence=DEFAULT_ROLE_SEQUENCE)
+    except ValueError as exc:
+        write_error(format_error(CliError(f"Workflow plan rebuild failed: {exc}")))
+        return USER_INPUT_ERROR
+
+    # Pin the existing workflow_id so prior_outputs_for_step finds the
+    # original ledger entries and the new ones share the same key.
+    plan = dataclasses.replace(rebuilt, workflow_id=workflow_id)
+
+    skip_ledger = _flag(args, "skip_ledger")
+    interactive = _flag(args, "interactive")
+    strict = _flag(args, "strict")
+    handler: GateHandler = gate_handler or default_gate_handler
+    auditor_gates_map = (
+        DEFAULT_AUDITOR_GATES if auditor_gates is None else auditor_gates
+    )
+
+    # Determine the first step that needs re-running (status != succeeded
+    # in the most recent matching ledger entry).
+    resume_index: int | None = None
+    for index, step in enumerate(plan.steps):
+        latest = ledger.find_step(workflow_id, step.step_id)
+        if latest is None or latest.status != "succeeded":
+            resume_index = index
+            break
+
+    step_payloads: list[dict[str, Any]] = []
+    started_at = utc_now()
+    aborted = False
+    skip_next_step = False
+    failure_count = 0
+    success_count = 0
+    skipped_already_succeeded: list[str] = []
+
+    if resume_index is None:
+        # Every step already succeeded — nothing to resume.
+        if _flag(args, "json"):
+            write_json(
+                {
+                    "command": "forge resume",
+                    "provider": provider_name,
+                    "workflow_id": workflow_id,
+                    "task": original_task,
+                    "ok": True,
+                    "noop": True,
+                    "message": "Every step already succeeded; nothing to resume.",
+                    "skipped_already_succeeded": [s.step_id for s in plan.steps],
+                }
+            )
+        else:
+            write_line("Forge resume: nothing to do.")
+            write_key_value("Workflow", workflow_id)
+            write_key_value("Task", original_task)
+            write_line("Every step in this workflow already succeeded.")
+        return SUCCESS
+
+    # Surface the steps we're skipping so the operator sees the
+    # resume boundary in the report.
+    for skipped_step in plan.steps[:resume_index]:
+        skipped_already_succeeded.append(skipped_step.step_id)
+        latest = ledger.find_step(workflow_id, skipped_step.step_id)
+        prior_summary = (
+            latest.agent_output.summary
+            if latest is not None and latest.agent_output is not None
+            else ""
+        )
+        step_payloads.append(
+            {
+                "step_id": skipped_step.step_id,
+                "role": skipped_step.role,
+                "phase": skipped_step.phase,
+                "objective": skipped_step.objective,
+                "handoff_to": skipped_step.handoff_to,
+                "agent_input": None,  # not re-materialized
+                "validation_errors": [],
+                "status": "succeeded",
+                "agent_output": (
+                    latest.agent_output.to_dict()
+                    if latest is not None and latest.agent_output is not None
+                    else None
+                ),
+                "resumed_skipped": True,
+                "summary": prior_summary,
+            }
+        )
+
+    total = len(plan.steps)
+    for index in range(resume_index, total):
+        step = plan.steps[index]
+        if skip_next_step:
+            skip_next_step = False
+            payload = _record_aborted_step(
+                plan=plan,
+                step=step,
+                started_at=started_at,
+                note="operator skipped at preceding gate",
+                skip_ledger=skip_ledger,
+                ledger=ledger,
+            )
+            step_payloads.append(payload)
+            continue
+
+        prior_outputs = prior_outputs_for_step(plan, step, ledger)
+        agent_input = materialize_agent_input(plan, step, prior_outputs=prior_outputs)
+        contract = contract_for(step.role)
+        validation_errors = validate_input(agent_input, contract)
+
+        if validation_errors:
+            if not skip_ledger:
+                entry = ForgeLedgerEntry(
+                    workflow_id=plan.workflow_id or "",
+                    step_id=step.step_id,
+                    role=step.role,
+                    status="blocked",
+                    started_at=started_at,
+                    agent_input=agent_input,
+                    notes=tuple(validation_errors),
+                )
+                ledger.append(entry)
+            step_payloads.append(
+                {
+                    "step_id": step.step_id,
+                    "role": step.role,
+                    "phase": step.phase,
+                    "objective": step.objective,
+                    "handoff_to": step.handoff_to,
+                    "agent_input": agent_input.to_dict(),
+                    "validation_errors": list(validation_errors),
+                    "status": "blocked",
+                    "agent_output": None,
+                }
+            )
+        else:
+            running_entry = ForgeLedgerEntry(
+                workflow_id=plan.workflow_id or "",
+                step_id=step.step_id,
+                role=step.role,
+                status="running",
+                started_at=utc_now(),
+                agent_input=agent_input,
+            )
+            if not skip_ledger:
+                ledger.append(running_entry)
+
+            packet_text = render_forge_packet(plan, step, agent_input)
+            packet_view = {
+                "text": packet_text,
+                "packet_id": f"{plan.workflow_id or 'WF'}:{step.step_id}:resume",
+                "source": "forge-resume",
+            }
+
+            try:
+                response = provider.run(packet_view)
+            except Exception as exc:  # noqa: BLE001
+                failure_count += 1
+                failed_at = utc_now()
+                if not skip_ledger:
+                    duration = _duration_ms(running_entry.started_at, failed_at)
+                    ledger.update_step(
+                        running_entry.workflow_id,
+                        running_entry.step_id,
+                        status="failed",
+                        completed_at=failed_at,
+                        duration_ms=duration,
+                        notes=(f"provider raised: {exc}",),
+                    )
+                step_payloads.append(
+                    {
+                        "step_id": step.step_id,
+                        "role": step.role,
+                        "phase": step.phase,
+                        "objective": step.objective,
+                        "handoff_to": step.handoff_to,
+                        "agent_input": agent_input.to_dict(),
+                        "validation_errors": [],
+                        "status": "failed",
+                        "agent_output": None,
+                        "error": str(exc),
+                    }
+                )
+            else:
+                agent_output = build_agent_output_from_response(response, agent_input)
+                gate_results: tuple[VerificationResult, ...] = ()
+                contract_for_step = AGENT_CONTRACTS.get(step.role)
+                if (
+                    step.role == "Auditor"
+                    and contract_for_step is not None
+                    and auditor_gates_map
+                ):
+                    gate_results = run_auditor_gates(
+                        plan,
+                        agent_input,
+                        agent_output,
+                        root,
+                        gate_names=contract_for_step.verification_gate,
+                        gates=auditor_gates_map,
+                    )
+                    if gate_results:
+                        agent_output = dataclasses.replace(
+                            agent_output, verification_results=gate_results
+                        )
+                completed_at = agent_output.timestamp
+                gates_ok = agent_output.all_gates_passed
+                if gates_ok:
+                    final_status = "succeeded"
+                    success_count += 1
+                    failed_gate_names: list[str] = []
+                    notes: tuple[str, ...] = ()
+                else:
+                    final_status = "failed"
+                    failure_count += 1
+                    failed_gate_names = [r.name for r in gate_results if not r.passed]
+                    notes = (
+                        "verification gates failed: " + ", ".join(failed_gate_names),
+                    )
+                if not skip_ledger:
+                    duration = _duration_ms(running_entry.started_at, completed_at)
+                    ledger.update_step(
+                        running_entry.workflow_id,
+                        running_entry.step_id,
+                        status=final_status,
+                        completed_at=completed_at,
+                        duration_ms=duration,
+                        agent_output=agent_output,
+                        notes=notes if notes else None,
+                    )
+                step_payloads.append(
+                    {
+                        "step_id": step.step_id,
+                        "role": step.role,
+                        "phase": step.phase,
+                        "objective": step.objective,
+                        "handoff_to": step.handoff_to,
+                        "agent_input": agent_input.to_dict(),
+                        "validation_errors": [],
+                        "status": final_status,
+                        "agent_output": agent_output.to_dict(),
+                        "failed_gates": failed_gate_names,
+                    }
+                )
+                if not gates_ok and strict and step.role == "Auditor":
+                    aborted = True
+                    for remaining in plan.steps[index + 1 :]:
+                        payload = _record_aborted_step(
+                            plan=plan,
+                            step=remaining,
+                            started_at=started_at,
+                            note="verifier strict-mode abort",
+                            skip_ledger=skip_ledger,
+                            ledger=ledger,
+                        )
+                        step_payloads.append(payload)
+                    break
+
+        if interactive and index + 1 < total and not aborted:
+            next_step = plan.steps[index + 1]
+            context = ForgeGateContext(
+                workflow_id=plan.workflow_id or "",
+                completed_step_index=index,
+                completed_step_id=step.step_id,
+                completed_role=step.role,
+                completed_status=step_payloads[-1]["status"],
+                completed_validation_errors=tuple(step_payloads[-1]["validation_errors"]),
+                next_step_id=next_step.step_id,
+                next_role=next_step.role,
+                total_steps=total,
+            )
+            decision = handler(context)
+            if decision == "abort":
+                aborted = True
+                for remaining in plan.steps[index + 1 :]:
+                    payload = _record_aborted_step(
+                        plan=plan,
+                        step=remaining,
+                        started_at=started_at,
+                        note="operator aborted at gate",
+                        skip_ledger=skip_ledger,
+                        ledger=ledger,
+                    )
+                    step_payloads.append(payload)
+                break
+            if decision == "skip":
+                skip_next_step = True
+
+    # Final exit code.
+    if aborted:
+        final_code: int = UNSAFE_OPERATION_BLOCKED
+    elif failure_count > 0:
+        final_code = OPERATIONAL_FAILURE
+    else:
+        final_code = SUCCESS
+
+    # Slice 3.7: rewrite the reflection for this workflow.
+    reflection_paths_written: tuple[Path, Path] | None = None
+    if not skip_ledger and not _flag(args, "skip_reflection"):
+        reflection = build_forge_reflection(plan, ledger, aborted=aborted)
+        reflection_paths_written = write_forge_reflection(root, reflection)
+
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "forge resume",
+                "provider": provider_name,
+                "skip_ledger": skip_ledger,
+                "interactive": interactive,
+                "aborted": aborted,
+                "noop": False,
+                "workflow_id": plan.workflow_id,
+                "task": plan.task,
+                "resume_step_id": plan.steps[resume_index].step_id,
+                "skipped_already_succeeded": skipped_already_succeeded,
+                "ledger_path": str(ledger.path) if not skip_ledger else None,
+                "reflection_json_path": (
+                    str(reflection_paths_written[0]) if reflection_paths_written else None
+                ),
+                "reflection_markdown_path": (
+                    str(reflection_paths_written[1]) if reflection_paths_written else None
+                ),
+                "role_sequence": list(DEFAULT_ROLE_SEQUENCE),
+                "success_count": success_count,
+                "failure_count": failure_count,
+                "steps": step_payloads,
+            }
+        )
+        return final_code
+
+    write_line("Mythic forge resume")
+    write_key_value("Workflow", plan.workflow_id or "(no id)")
+    write_key_value("Task", plan.task)
+    write_key_value("Provider", provider_name)
+    write_key_value("Resume from", plan.steps[resume_index].step_id)
+    write_key_value("Skipped (already succeeded)", len(skipped_already_succeeded))
+    write_key_value("Re-executed succeeded", success_count)
+    write_key_value("Re-executed failed", failure_count)
+    if interactive:
+        write_key_value("Interactive", "yes")
+    if aborted:
+        write_key_value("Aborted", "yes (operator declined a gate)")
+    if not skip_ledger:
+        write_key_value("Ledger", ledger.path)
+    if reflection_paths_written is not None:
+        write_key_value("Reflection (md)", reflection_paths_written[1])
+        write_key_value("Reflection (json)", reflection_paths_written[0])
+    write_line("")
+
+    for payload in step_payloads:
+        marker = " [resumed-skip]" if payload.get("resumed_skipped") else ""
+        write_line(
+            f"- {payload['step_id']} :: {payload['role']} ({payload['phase']}) -> {payload['handoff_to'] or 'end'}{marker}"
+        )
+        write_bullet(f"status: {payload['status']}", indent=2)
+        if payload.get("validation_errors"):
+            write_bullet("validation errors:", indent=2)
+            for err in payload["validation_errors"]:
+                write_bullet(err, indent=4)
+        if payload.get("error"):
+            write_bullet(f"error: {payload['error']}", indent=2)
+        if payload.get("blocked_reason"):
+            write_bullet(f"blocked: {payload['blocked_reason']}", indent=2)
+        agent_output_payload = payload.get("agent_output")
+        if isinstance(agent_output_payload, dict) and agent_output_payload.get("summary"):
+            write_bullet(f"summary: {agent_output_payload['summary']}", indent=2)
+
+    return final_code
+
+
 def cmd_forge_reflection_list(args: argparse.Namespace) -> int:
     """``mythic-vibe forge reflection list`` — every reflection on disk."""
     root = Path(getattr(args, "path", ".")).resolve()
@@ -1330,6 +1793,8 @@ def cmd_forge_dispatch(args: argparse.Namespace) -> int:
         return cmd_forge_plan(args)
     if sub == "run":
         return cmd_forge_run(args)
+    if sub == "resume":
+        return cmd_forge_resume(args)
     if sub == "ledger":
         return cmd_forge_ledger_dispatch(args)
     if sub == "reflection":
@@ -1338,6 +1803,7 @@ def cmd_forge_dispatch(args: argparse.Namespace) -> int:
         f"Unknown forge subcommand: {sub!r}. "
         "Try `mythic-vibe forge plan --dry-run --task <X>`, "
         "`mythic-vibe forge run --provider <name> --task <X>`, "
+        "`mythic-vibe forge resume --provider <name>`, "
         "`mythic-vibe forge ledger list`, "
         "or `mythic-vibe forge reflection list`."
     )
@@ -1360,6 +1826,7 @@ __all__ = [
     "cmd_forge_reflection_latest",
     "cmd_forge_reflection_list",
     "cmd_forge_reflection_show",
+    "cmd_forge_resume",
     "cmd_forge_run",
     "default_gate_handler",
     "materialize_agent_input",
