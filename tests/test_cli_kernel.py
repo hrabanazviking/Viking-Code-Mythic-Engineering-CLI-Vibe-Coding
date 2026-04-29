@@ -733,6 +733,187 @@ class CliKernelTests(unittest.TestCase):
             self.assertEqual(code, USER_INPUT_ERROR)
             self.assertIn("--step requires --workflow", output.getvalue())
 
+    def test_packet_show_resolves_by_workflow_and_step(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with redirect_stdout(io.StringIO()):
+                app.main(
+                    [
+                        "workflow",
+                        "plan",
+                        "--task",
+                        "Show by workflow",
+                        "--path",
+                        str(root),
+                        "--role",
+                        "Skald",
+                        "--role",
+                        "Auditor",
+                        "--packets",
+                    ]
+                )
+
+            list_output = io.StringIO()
+            with redirect_stdout(list_output):
+                app.main(["packet", "list", "--path", str(root), "--json"])
+            listing = json.loads(list_output.getvalue())
+            target = next(p for p in listing["packets"] if p["workflow_step_id"] == "step-02")
+
+            show_output = io.StringIO()
+            with redirect_stdout(show_output):
+                code = app.main(
+                    [
+                        "packet",
+                        "show",
+                        "--path",
+                        str(root),
+                        "--workflow",
+                        target["workflow_id"],
+                        "--step",
+                        "step-02",
+                        "--json",
+                    ]
+                )
+
+            payload = json.loads(show_output.getvalue())
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(payload["packet_id"], target["packet_id"])
+            self.assertEqual(payload["packet"]["workflow_step_id"], "step-02")
+
+    def test_packet_show_workflow_addressing_requires_both_flags(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output = io.StringIO()
+            with redirect_stdout(output), redirect_stderr(output):
+                code = app.main(["packet", "show", "--path", tmp, "--workflow", "WF-x", "--json"])
+            self.assertEqual(code, USER_INPUT_ERROR)
+            self.assertIn("requires both --workflow and --step", output.getvalue())
+
+    def test_packet_show_rejects_packet_id_with_workflow_addressing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output = io.StringIO()
+            with redirect_stdout(output), redirect_stderr(output):
+                code = app.main(
+                    [
+                        "packet",
+                        "show",
+                        "--path",
+                        tmp,
+                        "--packet-id",
+                        "PKT-000001",
+                        "--workflow",
+                        "WF-x",
+                        "--step",
+                        "step-01",
+                    ]
+                )
+            self.assertEqual(code, USER_INPUT_ERROR)
+            self.assertIn("--packet-id cannot be combined", output.getvalue())
+
+    def test_packet_show_unknown_workflow_step_errors(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output = io.StringIO()
+            with redirect_stdout(output), redirect_stderr(output):
+                code = app.main(
+                    [
+                        "packet",
+                        "show",
+                        "--path",
+                        tmp,
+                        "--workflow",
+                        "WF-nope",
+                        "--step",
+                        "step-99",
+                    ]
+                )
+            self.assertEqual(code, USER_INPUT_ERROR)
+            self.assertIn("No packet stamped with workflow", output.getvalue())
+
+    def test_packet_diff_accepts_workflow_step_shorthand(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with redirect_stdout(io.StringIO()):
+                app.main(
+                    [
+                        "workflow",
+                        "plan",
+                        "--task",
+                        "Diff by workflow",
+                        "--path",
+                        str(root),
+                        "--role",
+                        "Skald",
+                        "--role",
+                        "Auditor",
+                        "--packets",
+                    ]
+                )
+
+            list_output = io.StringIO()
+            with redirect_stdout(list_output):
+                app.main(["packet", "list", "--path", str(root), "--json"])
+            listing = json.loads(list_output.getvalue())
+            workflow_id = listing["packets"][0]["workflow_id"]
+
+            diff_output = io.StringIO()
+            with redirect_stdout(diff_output):
+                code = app.main(
+                    [
+                        "packet",
+                        "diff",
+                        "--path",
+                        str(root),
+                        "--left",
+                        f"{workflow_id}:step-01",
+                        "--right",
+                        f"{workflow_id}:step-02",
+                        "--json",
+                    ]
+                )
+
+            payload = json.loads(diff_output.getvalue())
+            self.assertEqual(code, SUCCESS)
+            self.assertEqual(payload["command"], "packet diff")
+            self.assertEqual(payload["left_ref"], f"{workflow_id}:step-01")
+            self.assertEqual(payload["right_ref"], f"{workflow_id}:step-02")
+            self.assertTrue(payload["left"].startswith("PKT-"))
+            self.assertTrue(payload["right"].startswith("PKT-"))
+            self.assertNotEqual(payload["left"], payload["right"])
+
+    def test_packet_diff_unknown_workflow_step_errors(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with redirect_stdout(io.StringIO()):
+                app.main(
+                    [
+                        "workflow",
+                        "plan",
+                        "--task",
+                        "Diff bad ref",
+                        "--path",
+                        str(root),
+                        "--role",
+                        "Skald",
+                        "--packets",
+                    ]
+                )
+
+            output = io.StringIO()
+            with redirect_stdout(output), redirect_stderr(output):
+                code = app.main(
+                    [
+                        "packet",
+                        "diff",
+                        "--path",
+                        str(root),
+                        "--left",
+                        "WF-nope:step-01",
+                        "--right",
+                        "WF-nope:step-02",
+                    ]
+                )
+            self.assertEqual(code, USER_INPUT_ERROR)
+            self.assertIn("No packet stamped with workflow WF-nope", output.getvalue())
+
     def test_packet_list_workflow_filter_excludes_legacy_packets(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

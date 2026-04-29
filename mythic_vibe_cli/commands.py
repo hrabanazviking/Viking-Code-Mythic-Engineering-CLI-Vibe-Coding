@@ -356,6 +356,23 @@ def cmd_packet_show(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
     bridge = CodexBridge(root)
     packet_id = getattr(args, "packet_id", "") or ""
+    workflow_id = (getattr(args, "workflow", "") or "").strip()
+    step_id = (getattr(args, "step", "") or "").strip()
+
+    if packet_id and (workflow_id or step_id):
+        write_error("--packet-id cannot be combined with --workflow or --step.")
+        return USER_INPUT_ERROR
+    if (workflow_id and not step_id) or (step_id and not workflow_id):
+        write_error("Workflow addressing requires both --workflow and --step.")
+        return USER_INPUT_ERROR
+
+    if workflow_id and step_id:
+        record = bridge.find_packet_by_workflow_step(workflow_id, step_id)
+        if record is None:
+            write_error(f"No packet stamped with workflow {workflow_id} step {step_id}.")
+            return USER_INPUT_ERROR
+        packet_id = record.packet_id
+
     if not packet_id:
         records = bridge.list_packets()
         if not records:
@@ -475,11 +492,30 @@ def cmd_packet_ingest(args: argparse.Namespace) -> int:
     return SUCCESS
 
 
+def _resolve_packet_ref(bridge: CodexBridge, ref: str) -> tuple[str | None, str | None]:
+    if not ref:
+        return None, "Packet reference is empty."
+    if ref.startswith("WF-") and ":" in ref:
+        workflow_id, _, step_id = ref.partition(":")
+        record = bridge.find_packet_by_workflow_step(workflow_id, step_id)
+        if record is None:
+            return None, f"No packet stamped with workflow {workflow_id} step {step_id}."
+        return record.packet_id, None
+    return ref, None
+
+
 def cmd_packet_diff(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
     bridge = CodexBridge(root)
-    left_id = args.left
-    right_id = args.right
+
+    left_id, left_error = _resolve_packet_ref(bridge, args.left)
+    if left_error or left_id is None:
+        write_error(left_error or "Could not resolve --left packet reference.")
+        return USER_INPUT_ERROR
+    right_id, right_error = _resolve_packet_ref(bridge, args.right)
+    if right_error or right_id is None:
+        write_error(right_error or "Could not resolve --right packet reference.")
+        return USER_INPUT_ERROR
 
     try:
         diff = bridge.diff_packets(left_id, right_id)
@@ -494,6 +530,8 @@ def cmd_packet_diff(args: argparse.Namespace) -> int:
                 "path": str(root),
                 "left": left_id,
                 "right": right_id,
+                "left_ref": args.left,
+                "right_ref": args.right,
                 "diff": diff,
             }
         )
