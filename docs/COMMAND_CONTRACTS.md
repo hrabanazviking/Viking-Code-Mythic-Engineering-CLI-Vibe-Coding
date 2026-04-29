@@ -70,6 +70,7 @@ Current workflow orchestration contract:
 - `workflow plan` assigns a deterministic `workflow_id` of the form `WF-<UTC compact>-<sha8(task+created_at)>` to every freshly built plan; the id is persisted in `mythic/workflow_plan.json` and surfaced in `workflow plan`, `workflow packets`, and `workflow run` JSON output.
 - `workflow plan --packets` stamps `workflow_id` and `workflow_step_id` on every generated packet's `.meta.json` payload so packet readiness can be traced by ID instead of exact task text.
 - `workflow packets` and `workflow run --packets-only` prefer ID-based matching when both plan and packet carry the IDs; legacy plans or packets without IDs fall back to the existing `(role, phase, task, audience, output_format)` text match. Each `packet_status` entry reports the chosen `match_strategy` (`"id"`, `"text"`, or `null` when no match).
+- `packet list --workflow <id>` filters stored packets to those stamped with the supplied `workflow_id`. Adding `--step <step_id>` further narrows to a single workflow step; `--step` requires `--workflow` and returns `USER_INPUT_ERROR` otherwise. Legacy packets without an ID are excluded when a workflow filter is set. JSON output includes a `filters` object reporting the applied `workflow_id` and `workflow_step_id`.
 
 Current Stage 14 UX commands:
 

@@ -386,26 +386,50 @@ def cmd_packet_show(args: argparse.Namespace) -> int:
 
 def cmd_packet_list(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
+    workflow_filter = (getattr(args, "workflow", "") or "").strip()
+    step_filter = (getattr(args, "step", "") or "").strip()
+
+    if step_filter and not workflow_filter:
+        write_error("--step requires --workflow.")
+        return USER_INPUT_ERROR
+
     bridge = CodexBridge(root)
     records = bridge.list_packets()
+    if workflow_filter:
+        records = [record for record in records if record.workflow_id == workflow_filter]
+        if step_filter:
+            records = [record for record in records if record.workflow_step_id == step_filter]
+
     if _flag(args, "json"):
         write_json(
             {
                 "command": "packet list",
                 "path": str(root),
+                "filters": {
+                    "workflow_id": workflow_filter or None,
+                    "workflow_step_id": step_filter or None,
+                },
                 "packets": [record.to_dict() for record in records],
             }
         )
         return SUCCESS
 
     if not records:
-        write_line("No packet records found.")
+        if workflow_filter:
+            write_line(f"No packet records match workflow {workflow_filter}.")
+        else:
+            write_line("No packet records found.")
         return SUCCESS
 
-    write_line("Packet records")
+    if workflow_filter:
+        write_line(f"Packet records for workflow {workflow_filter}")
+    else:
+        write_line("Packet records")
     for record in records:
         write_key_value(record.packet_id, f"{record.phase} | {record.role} | {record.created_at}", indent=2)
         write_bullet(record.task, indent=4)
+        if record.workflow_step_id:
+            write_bullet(f"step: {record.workflow_step_id}", indent=4)
     return SUCCESS
 
 

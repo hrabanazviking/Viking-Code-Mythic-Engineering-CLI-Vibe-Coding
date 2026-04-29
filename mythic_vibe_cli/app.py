@@ -287,6 +287,8 @@ def build_parser() -> argparse.ArgumentParser:
     add_runtime_options(packet_show, json_output=True)
     packet_list = packet_sub.add_parser("list", help="List stored packet records")
     packet_list.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    packet_list.add_argument("--workflow", default="", help="Filter to packets stamped with this workflow ID")
+    packet_list.add_argument("--step", default="", help="Filter to packets stamped with this workflow step ID (requires --workflow)")
     add_runtime_options(packet_list, json_output=True)
     packet_ingest = packet_sub.add_parser("ingest", help="Ingest a packet artifact into the local packet store")
     packet_ingest.add_argument("--path", default=".", help="Project directory (default: current directory)")
