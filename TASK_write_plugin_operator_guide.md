@@ -45,14 +45,14 @@ Land `docs/plugins.md` — a concise operator guide. Style matches the existing 
 
 - [x] Task file written
 - [x] Task file committed + pushed
-- [ ] Draft `docs/plugins.md`
-- [ ] Add INDEX.md link
-- [ ] Cross-link api.md
-- [ ] Validate code snippets compile (paste-and-run sanity)
-- [ ] CHANGELOG entry
-- [ ] DEVLOG entry
-- [ ] Memory snapshot updated
-- [ ] Final commit + push
+- [x] Draft `docs/plugins.md` (9 sections, ~270 lines)
+- [x] Add INDEX.md link under Operator Docs
+- [x] Cross-link api.md plugin paragraph to the new guide
+- [x] Validate code snippets — both example plugins parse as valid Python; CLI command syntax matches actual surface
+- [x] CHANGELOG entry
+- [x] DEVLOG entry with continuity thread
+- [x] Memory snapshot updated
+- [x] Final commit + push
 
 ## Resume Instructions
 

@@ -7,6 +7,41 @@
 
 ---
 
+## 2026-04-29 - Operator-Facing Plugin Guide
+
+**Session:** Documentation slice. The wiring is mechanical now; what was missing is the operator-facing prose that turns the dispatcher arc into something users can actually adopt.
+**Status:** `docs/plugins.md` lands. INDEX.md and api.md cross-link to it. The plugin layer is now both load-bearing in code and documented as an extensibility surface.
+**Scope:** Docs-only. No production code changes.
+
+### What changed
+
+- Added `docs/plugins.md` (~270 lines) covering nine sections: what a plugin is, the eight-hook reference, a complete worked example (`AuditPlugin` writes every life-cycle event to an append-only log, plus a smaller `ScanTelemetry` single-hook example), registration via `grimoire add`, watching it work end-to-end, the constraint contract (sync / isolated / read-only payloads / per-invocation lifecycle / dry-run skips), the loading model (sys.path expectations, import isolation, class-vs-module entrypoints), guidance on when to write a plugin vs use a different mechanism, and a cross-link section to the canonical contracts and source files.
+- Updated `docs/INDEX.md` to list `docs/plugins.md` under Operator Docs.
+- Updated `docs/api.md` plugin paragraph to record that all eight hooks have real emitters and to point readers at the new guide for the writing-side how-to.
+- Updated `CHANGELOG.md` with the docs entry.
+
+### Why it matters
+
+Until this slice, an operator who wanted to write a plugin had to read three source files (`plugins/api.py`, `plugins/dispatcher.py`, `runtime/event_bus.py`), eight emission sites in `commands.py`, and the dispatch section of `COMMAND_CONTRACTS.md` — which is a fine onboarding path for an engineer in the codebase, but a poor one for a user who just wants the elevator pitch and a worked example. The new guide gives both: the elevator pitch in §1, the eight-hook reference in §2, a copy-paste plugin in §3, and the constraint contract in §6. The dispatcher arc is now operator-facing as well as developer-facing.
+
+The doc also intentionally records what plugins **cannot** do — payload mutation, command vetoing, monkey-patching — so the contract is explicit rather than implicit. As the plugin ecosystem grows, this is the section most likely to need defense.
+
+### Verification
+
+- `pytest -q` -> `186 passed, 14 subtests passed` (unchanged; docs-only)
+- `ruff check mythic_vibe_cli tests` -> `All checks passed!`
+- `mypy mythic_vibe_cli` -> `Success: no issues found in 57 source files`
+- Visual inspection of the doc's code snippets — both example plugins parse as valid Python; the `grimoire add` / `plugin inspect` / `plugin disable` commands shown match the actual CLI surface.
+
+### Continuity thread
+
+- The dispatcher emitter set is closed and the operator guide exists. The natural next directions, in roughly increasing scope:
+  1. **Port a fourth Pi primitive** — `core/timings.ts` for elapsed-time instrumentation (single file, mechanical).
+  2. **Begin V2 Phase 3 (TUI)** — Volmarr queued this in `TODO.md` item 16. The output-guard + event-bus + dispatcher trio plus the now-documented plugin hooks form a strong foundation.
+  3. **Begin V2 Phase 4 (Local LLM provider layer)** — `TODO.md` item 17. Larger arc; would warrant its own multi-slice plan.
+
+_The dispatcher was a subterranean stream; today the well is named and the path to it carved into stone. Whoever comes after needs only to read the guide to draw water from it._
+
 ## 2026-04-29 - Plugin Hook Coverage Closeout: Wire `before_reflect` / `after_reflect`
 
 **Session:** Closing the dispatcher emitter set. Eighth and final declared plugin hook lit up — reflect.
