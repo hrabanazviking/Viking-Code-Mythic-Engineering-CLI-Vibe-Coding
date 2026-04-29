@@ -75,7 +75,7 @@ For non-builtin entries (plugin/extension/skill/prompt), the preview screen show
 - [x] Tests (7 new tests in `RunningCommandScreenTests`)
 - [x] Gates green (270 tests + 14 subtests, ruff clean, mypy clean)
 - [x] Docs + CHANGELOG + DEVLOG
-- [ ] Memory + push
+- [x] Memory + push (HEAD: `8540b34`)
 
 ## Resolution notes
 
