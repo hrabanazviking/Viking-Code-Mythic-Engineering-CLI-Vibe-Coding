@@ -120,6 +120,7 @@ class RunningCommandScreen(Screen):
                 proc.kill()
                 proc.wait(timeout=1.0)
         except OSError:
+            # See on_unmount docstring: a dead/already-reaped process must not raise during teardown.
             pass
 
     def _launch(self) -> None:
