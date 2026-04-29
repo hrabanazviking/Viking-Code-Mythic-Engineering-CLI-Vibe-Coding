@@ -62,6 +62,7 @@ class RunningCommandScreen(Screen):
         Binding("escape", "app.pop_screen", "Back"),
         Binding("q", "app.pop_screen", "Back", show=False),
         Binding("question_mark", "show_help", "Help"),
+        Binding("t", "app.cycle_theme", "Theme"),
     ]
 
     DEFAULT_CSS = """

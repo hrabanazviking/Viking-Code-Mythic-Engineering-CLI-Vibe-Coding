@@ -3735,6 +3735,7 @@ def cmd_shell(args: argparse.Namespace) -> int:
 
 def cmd_tui(args: argparse.Namespace) -> int:
     project_root = Path(getattr(args, "path", ".")).resolve()
+    theme = getattr(args, "theme", None)
     try:
         from .tui.app import run_tui
     except ImportError as exc:
@@ -3744,7 +3745,7 @@ def cmd_tui(args: argparse.Namespace) -> int:
         )
         write_error(f"Underlying import error: {exc}")
         return OPERATIONAL_FAILURE
-    return run_tui(project_root)
+    return run_tui(project_root, theme=theme)
 
 
 def cmd_ai_dispatch(args: argparse.Namespace) -> int:

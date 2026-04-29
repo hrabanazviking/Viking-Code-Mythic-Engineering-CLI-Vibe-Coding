@@ -109,6 +109,7 @@ class CommandPreviewScreen(Screen):
         Binding("r", "run_command", "Run"),
         Binding("enter", "run_command", "Run", show=False),
         Binding("question_mark", "show_help", "Help"),
+        Binding("t", "app.cycle_theme", "Theme"),
     ]
 
     DEFAULT_CSS = """
@@ -179,6 +180,7 @@ class SlashPickerScreen(Screen):
     BINDINGS = [
         Binding("escape", "app.pop_screen", "Cancel"),
         Binding("question_mark", "show_help", "Help"),
+        Binding("t", "app.cycle_theme", "Theme"),
     ]
 
     DEFAULT_CSS = """
