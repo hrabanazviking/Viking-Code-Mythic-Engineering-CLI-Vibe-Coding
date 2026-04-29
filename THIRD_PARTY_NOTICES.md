@@ -1,0 +1,61 @@
+# Third-Party Notices
+
+This project includes or adapts material from third-party open-source projects.
+Each entry below names the upstream project, links to its source, records its
+license, and reproduces the upstream license/permission text where the license
+requires it.
+
+This project's own license is **Apache License, Version 2.0**. See `LICENSE`
+and `NOTICE` at the repository root.
+
+---
+
+## Pi (pi-coding-agent)
+
+- **Project:** pi (pi-coding-agent)
+- **Repository:** [badlogic/pi-mono](https://github.com/badlogic/pi-mono) — package `packages/coding-agent`
+- **License:** MIT License
+- **Copyright:** Copyright (c) 2025 Mario Zechner
+
+This project includes or adapts selected portions of pi-coding-agent. Adapted
+material is marked with a per-file header naming the upstream source and is
+listed in the plunder map below.
+
+### Plunder Map
+
+| Mythic file | Pi upstream file | Slice landed |
+|---|---|---|
+| `mythic_vibe_cli/runtime/file_mutation_queue.py` | `packages/coding-agent/src/core/tools/file-mutation-queue.ts` | 2026-04-29 |
+| `tests/test_file_mutation_queue.py` | `packages/coding-agent/test/file-mutation-queue.test.ts` | 2026-04-29 |
+
+This project is independent and is not affiliated with, endorsed by, or
+sponsored by Mario Zechner, the pi-mono authors, or pi.dev.
+
+### Upstream MIT Permission Text
+
+Reproduced verbatim from the upstream `LICENSE` at
+`https://github.com/badlogic/pi-mono/blob/main/LICENSE`:
+
+```
+MIT License
+
+Copyright (c) 2025 Mario Zechner
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```

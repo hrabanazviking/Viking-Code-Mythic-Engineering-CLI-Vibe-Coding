@@ -707,23 +707,23 @@ mythic: mythic_vibe_cli/exporters/
 
 Before pushing your adapted CLI publicly:
 
-* [ ] Your repo has `LICENSE`.
-* [ ] Your repo's own license is recorded (Apache-2.0 in this project).
-* [ ] Your repo has `NOTICE`.
-* [ ] Your repo has `THIRD_PARTY_NOTICES.md` with the full upstream MIT text.
-* [ ] Your README credits Pi where relevant ("adapted from badlogic/pi-mono").
-* [ ] Modified files have a per-file header citing pi-mono and noting modification.
-* [ ] Original `Copyright (c) 2025 Mario Zechner` line is preserved in adapted files.
-* [ ] You removed Pi branding from your own product identity.
-* [ ] You documented copied/adapted areas in a plunder map.
-* [ ] You ported the corresponding Pi tests as the spec for each plundered subsystem.
-* [ ] You replaced the user-agent string and any `pi-` named identifiers in your runtime.
-* [ ] You did not copy the upstream `package.json`, npm publishing config, or distribution metadata.
-* [ ] If you ship an extension/skill loader, you redocumented it as your own format — do not claim Pi Package compatibility unless you actually implement it correctly.
-* [ ] You did not vendor the React-style TUI components into a non-React stack.
-* [ ] Auth storage UX is rewritten for *your* providers, not Pi's subscription matrix.
-* [ ] RPC JSONL message types are defined in your own schema file, not lifted as `rpc-types.ts`.
-* [ ] You acknowledged the cross-language translation gap in any README that lists "ported from Pi" subsystems.
+* [x] Your repo has `LICENSE`.
+* [x] Your repo's own license is recorded (Apache-2.0 in this project).
+* [x] Your repo has `NOTICE`.
+* [x] Your repo has `THIRD_PARTY_NOTICES.md` with the full upstream MIT text.
+* [ ] Your README credits Pi where relevant ("adapted from badlogic/pi-mono"). _(deferred until the queue is wired into a user-facing surface)_
+* [x] Modified files have a per-file header citing pi-mono and noting modification.
+* [x] Original `Copyright (c) 2025 Mario Zechner` line is preserved in adapted files.
+* [x] You removed Pi branding from your own product identity.
+* [x] You documented copied/adapted areas in a plunder map. _(see `THIRD_PARTY_NOTICES.md` § "Plunder Map")_
+* [x] You ported the corresponding Pi tests as the spec for each plundered subsystem.
+* [x] You replaced the user-agent string and any `pi-` named identifiers in your runtime. _(N/A for the file-mutation-queue slice; will re-verify each future slice.)_
+* [x] You did not copy the upstream `package.json`, npm publishing config, or distribution metadata.
+* [x] If you ship an extension/skill loader, you redocumented it as your own format — do not claim Pi Package compatibility unless you actually implement it correctly. _(N/A — no extension loader in this slice.)_
+* [x] You did not vendor the React-style TUI components into a non-React stack.
+* [x] Auth storage UX is rewritten for *your* providers, not Pi's subscription matrix. _(N/A — no auth code in this slice.)_
+* [x] RPC JSONL message types are defined in your own schema file, not lifted as `rpc-types.ts`. _(N/A — no RPC code in this slice.)_
+* [x] You acknowledged the cross-language translation gap in any README that lists "ported from Pi" subsystems. _(Recorded in DEVLOG and the per-file header; README update deferred with the user-facing wiring.)_
 
 ---
 

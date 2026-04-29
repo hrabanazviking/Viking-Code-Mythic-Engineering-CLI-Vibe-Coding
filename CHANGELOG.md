@@ -8,6 +8,8 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Added
 
+- Added `mythic_vibe_cli.runtime.file_mutation_queue` — per-resolved-path serialization primitive ported from pi (pi-coding-agent), MIT-licensed by Mario Zechner. Symlink aliases share the same queue via `os.path.realpath`; entries are reference-counted so the lock map cleans up after the last waiter. Public surface: `file_mutation_queue` context manager and `with_file_mutation_queue` functional form. Companion test ported from pi's Vitest suite under `tests/test_file_mutation_queue.py`.
+- Added `THIRD_PARTY_NOTICES.md` recording the Pi attribution stanza, the plunder map, and the full upstream MIT permission text. First entry in the file; future plundered material lands here.
 - Added `mythic_vibe_cli.method_excerpt` (Stage 15 final box) — `select_method_excerpts(corpus_dir, sections, char_limit)`, `sections_for(role, phase)`, and `ROLE_METHOD_SECTIONS` / `PHASE_METHOD_SECTIONS` maps. Scans the imported method corpus for headings matching role-relevant section keywords and returns capped excerpts.
 - Added method excerpt embedding to `packet create`. Markdown packets gain a `## 12. Method Excerpts` section between Check-in Summary and SAFETY; JSON packets gain a `method_excerpts` array. Sections are chosen by packet role with phase fall-back. When the corpus is missing or no headings match, the method section is omitted (graceful degradation, no error).
 - Added `packet show --previous-workflow --step <step_id>` for resolving the workflow id from the second-most-recent entry in `mythic/workflow_history.json`. Same exclusivity rules as `--latest-workflow`; cannot be combined with it; errors when the ledger has fewer than two entries.
