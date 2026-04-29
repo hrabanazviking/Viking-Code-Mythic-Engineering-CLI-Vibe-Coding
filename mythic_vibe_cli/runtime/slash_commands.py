@@ -132,4 +132,11 @@ BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
     BuiltinSlashCommand(name="scaffold", description="Add an artefact to an existing project (today: adr)"),
     BuiltinSlashCommand(name="changelog", description="Print or validate the [Unreleased] section of CHANGELOG.md"),
     BuiltinSlashCommand(name="version", description="Print the CLI version (subcommand form of --version)"),
+
+    # --- Workflow-phase capture commands (PH-02 slice 2.3) ---
+    BuiltinSlashCommand(name="intent", description="Capture a Mythic Phase Record for the intent phase"),
+    BuiltinSlashCommand(name="constraints", description="Capture a Mythic Phase Record for the constraints phase"),
+    BuiltinSlashCommand(name="architecture", description="Capture a Mythic Phase Record for the architecture phase"),
+    BuiltinSlashCommand(name="plan", description="Capture a Mythic Phase Record for the plan phase"),
+    BuiltinSlashCommand(name="build", description="Capture a Mythic Phase Record for the build phase"),
 )

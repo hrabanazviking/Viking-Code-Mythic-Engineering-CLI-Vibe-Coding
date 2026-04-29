@@ -83,6 +83,12 @@ class CliKernelTests(unittest.TestCase):
             "scaffold",
             "changelog",
             "version",
+            # PH-02 slice 2.3 — workflow-phase capture commands
+            "intent",
+            "constraints",
+            "architecture",
+            "plan",
+            "build",
         }
 
         self.assertEqual(set(COMMAND_HANDLERS), expected)
