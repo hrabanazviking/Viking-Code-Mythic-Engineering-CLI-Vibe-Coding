@@ -107,6 +107,121 @@ class TuiEventsPanelTests(unittest.TestCase):
         self.assertIn("no events recorded", rendered)
 
 
+class DiagnosticsFormatTests(unittest.TestCase):
+    """Pure formatter tests for the slice 4.6 diagnostics panel —
+    pulse on/off, channel-class colour coding, empty placeholder."""
+
+    def _snapshot(
+        self,
+        entries: list[tuple[str, str]],
+        *,
+        new: int = 0,
+        total: int = 0,
+    ) -> "object":
+        from mythic_vibe_cli.runtime.event_log import EventLogEntry, EventStreamSnapshot
+
+        log_entries = tuple(
+            EventLogEntry(timestamp="2026-04-29T12:34:56Z", channel=ch, summary=summary)
+            for ch, summary in entries
+        )
+        return EventStreamSnapshot(entries=log_entries, new_in_last_poll=new, total_seen=total)
+
+    def test_idle_pulse_when_no_new_events(self) -> None:
+        from mythic_vibe_cli.tui.app import _format_diagnostics_panel
+
+        rendered = _format_diagnostics_panel(self._snapshot([("before_scan", "x")]))
+        self.assertIn("○ idle", rendered)
+        self.assertNotIn("● live", rendered)
+
+    def test_live_pulse_and_counter_when_new_events_arrived(self) -> None:
+        from mythic_vibe_cli.tui.app import _format_diagnostics_panel
+
+        rendered = _format_diagnostics_panel(
+            self._snapshot([("after_scan", "x")], new=2, total=5)
+        )
+        self.assertIn("● live", rendered)
+        self.assertIn("+2 new", rendered)
+        self.assertIn("seen: 5", rendered)
+
+    def test_empty_snapshot_still_shows_pulse_and_placeholder(self) -> None:
+        from mythic_vibe_cli.tui.app import _format_diagnostics_panel
+
+        rendered = _format_diagnostics_panel(self._snapshot([]))
+        self.assertIn("○ idle", rendered)
+        self.assertIn("no events recorded", rendered)
+
+    def test_channel_classification_assigns_colour_tags(self) -> None:
+        from mythic_vibe_cli.tui.app import _classify_channel
+
+        self.assertEqual(_classify_channel("before_scan"), "cyan")
+        self.assertEqual(_classify_channel("after_verify"), "green")
+        self.assertEqual(_classify_channel("plugin_error"), "red")
+        self.assertEqual(_classify_channel("verify_failed"), "red")
+        self.assertEqual(_classify_channel("config_warning"), "yellow")
+        self.assertEqual(_classify_channel("custom_channel"), "b")
+
+    def test_render_includes_channel_specific_tag(self) -> None:
+        from mythic_vibe_cli.tui.app import _format_diagnostics_panel
+
+        rendered = _format_diagnostics_panel(
+            self._snapshot([("before_scan", "alpha"), ("after_verify", "beta")])
+        )
+        self.assertIn("[cyan]before_scan[/cyan]", rendered)
+        self.assertIn("[green]after_verify[/green]", rendered)
+
+
+@unittest.skipIf(textual_unavailable, "textual not installed")
+class TuiDiagnosticsLiveStreamTests(unittest.TestCase):
+    """Headless integration: append an event mid-flight and confirm the
+    panel's pulse + counter reflect it on the next refresh tick."""
+
+    def test_diagnostics_panel_pulses_when_event_appended_mid_session(self) -> None:
+        from mythic_vibe_cli.runtime.event_log import append_event, event_log_path_for
+        from mythic_vibe_cli.tui.app import MythicTuiApp
+
+        async def run_test() -> tuple[str, str]:
+            with tempfile.TemporaryDirectory() as tmp:
+                root_path = Path(tmp)
+                log_path = event_log_path_for(root_path)
+                # Warm-start with one entry on disk.
+                append_event(log_path, "before_scan", {"path": str(root_path)})
+
+                app = MythicTuiApp(root_path)
+                async with app.run_test() as pilot:
+                    await pilot.pause()
+                    initial = str(app.screen.query_one("#events-panel").render())
+                    # Append a fresh event then trigger a refresh via 'r'.
+                    append_event(log_path, "after_scan", {"path": str(root_path)})
+                    await pilot.press("r")
+                    for _ in range(3):
+                        await pilot.pause()
+                    after = str(app.screen.query_one("#events-panel").render())
+                    return initial, after
+
+        initial, after = asyncio.run(run_test())
+        # First render is warm-start: one entry but no pulse.
+        self.assertIn("idle", initial)
+        self.assertIn("before_scan", initial)
+        # After appending mid-session and refreshing, the pulse fires.
+        self.assertIn("live", after)
+        self.assertIn("+1 new", after)
+        self.assertIn("after_scan", after)
+
+    def test_diagnostics_panel_border_title_is_diagnostics(self) -> None:
+        from mythic_vibe_cli.tui.app import MythicTuiApp
+
+        async def run_test() -> str:
+            with tempfile.TemporaryDirectory() as tmp:
+                app = MythicTuiApp(Path(tmp))
+                async with app.run_test() as pilot:
+                    await pilot.pause()
+                    panel = app.screen.query_one("#events-panel")
+                    return str(panel.border_title)
+
+        title = asyncio.run(run_test())
+        self.assertEqual(title, "Diagnostics")
+
+
 @unittest.skipIf(textual_unavailable, "textual not installed")
 class TuiHeadlessTests(unittest.TestCase):
     def test_status_screen_renders_status_bar_in_headless_mode(self) -> None:
