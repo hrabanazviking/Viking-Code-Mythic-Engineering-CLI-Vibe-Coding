@@ -168,8 +168,11 @@ additive, cross-platform, open-source):
 | 17 | Phase 2 Slice 2.2 — dev-tool shortcuts (test/lint/typecheck/scaffold/changelog/version) | done — 40→46 slash entries, +17 tests, F-023 logged |
 | 18 | Update memory + project status (after slice 2.2) | done — pushed at 26ee284 |
 | 19 | Phase 2 Slice 2.3 — workflow-phase capture commands | done — 46→51 slash entries, +13 tests |
-| 20 | Update memory + project status (after slice 2.3) | in progress |
-| 21 | Phase 2 Slice 2.7 (slash help/introspect) OR 2.8 (parity tests) OR PH-03 slice 3.1 | awaiting Volmarr |
+| 20 | Update memory + project status (after slice 2.3) | done — pushed at fee9a02 |
+| 21 | Phase 2 Slice 2.7 — slash inspect + REPL /help <name> | done — `d0365a0` — +13 tests |
+| 22 | Phase 2 Slice 2.8 — REPL/TUI/plugin parity tests | done — `69be161` — +11 tests |
+| 23 | Update memory + project status (after slices 2.7+2.8) | in progress |
+| 24 | Phase 3 / Phase 5 / Phase 11 — next major phase | awaiting Volmarr |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
@@ -286,25 +289,36 @@ clean. New finding F-023 documents the argparse `--command` /
 
 See `PHASE2_SLICE_2_2_CLOSEOUT.md` for the full memo.
 
-## PH-02 slice 2.3 results
+## PH-02 slices 2.7 + 2.8 results
 
-Five new argparse parents (`intent`/`constraints`/`architecture`/
-`plan`/`build`), each with a single `capture` subcommand, write
-Mythic Phase Records under `mythic/checkins/<iso-ts>-<phase>.md`.
-The shape follows the production-roadmap stage 4 template. Catalog
-46 → 51, tests 327 → 340, ruff/mypy clean.
+**Slice 2.7** — `slash inspect <name>` introspection surface + REPL
+`/help <name>` routing. Builtin entries with argparse handlers get
+the parser's `--help` text rendered; interactive locals are flagged;
+plugin-contributed entries show source provenance. Tests 340 → 353
+(+13).
 
-See `PHASE2_SLICE_2_3_CLOSEOUT.md` for the full memo.
+**Slice 2.8** — eleven parity tests across CLI / REPL / TUI / plugin
+surfaces. Locks the invariant that every slash entry surfaces
+identically everywhere, including description text (not just names).
+Tests 353 → 364 (+11). Test-only — no production code change.
 
-## Next slice — three viable options
+See `PHASE2_SLICES_2_7_2_8_CLOSEOUT.md` for the full memo.
 
-1. **PH-02 slice 2.7** — slash help & introspection (`/help <cmd>`,
-   `slash inspect`).
-2. **PH-02 slice 2.8** — REPL/TUI/plugin parity tests (test-only).
-3. **PH-03 slice 3.1** — multi-agent forge agent contract spec
-   (foundation for 2.4 and 2.5).
+**Five of eight Phase 2 slices closed** (2.1 / 2.2 / 2.3 / 2.7 / 2.8).
+The three remaining (2.4 / 2.5 / 2.6) all have legitimate
+later-phase dependencies.
 
-Slices 2.4, 2.5, 2.6 are all blocked on later-phase work.
+## Next decision point — three viable major-phase moves
+
+1. **Begin Phase 3 (Multi-Agent Forge) slice 3.1** — agent contract
+   spec. Largest remaining feature; foundation for slices 2.4 /
+   2.5 / 2.6.
+2. **Begin Phase 5 (Knowledge Graph) slice 5.1** — schema design.
+   Provides retrieval foundation for forge.
+3. **Begin Phase 11 (Security/Sandbox) slice 11.1** — approval
+   modes. Operator-safety upgrade.
+
+The natural progression by master-roadmap dependency is Phase 3.
 
 ---
 
