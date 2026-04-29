@@ -171,8 +171,10 @@ additive, cross-platform, open-source):
 | 20 | Update memory + project status (after slice 2.3) | done — pushed at fee9a02 |
 | 21 | Phase 2 Slice 2.7 — slash inspect + REPL /help <name> | done — `d0365a0` — +13 tests |
 | 22 | Phase 2 Slice 2.8 — REPL/TUI/plugin parity tests | done — `69be161` — +11 tests |
-| 23 | Update memory + project status (after slices 2.7+2.8) | in progress |
-| 24 | Phase 3 / Phase 5 / Phase 11 — next major phase | awaiting Volmarr |
+| 23 | Update memory + project status (after slices 2.7+2.8) | done — pushed at 50887a6 |
+| 24 | Phase 3 Slice 3.1 — agent contract spec | done — `2920aa4` — +38 tests |
+| 25 | Update memory + project status (after slice 3.1) | in progress |
+| 26 | Phase 3 Slice 3.2 — handoff ledger | next |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
@@ -289,36 +291,36 @@ clean. New finding F-023 documents the argparse `--command` /
 
 See `PHASE2_SLICE_2_2_CLOSEOUT.md` for the full memo.
 
-## PH-02 slices 2.7 + 2.8 results
+## PH-03 slice 3.1 results
 
-**Slice 2.7** — `slash inspect <name>` introspection surface + REPL
-`/help <name>` routing. Builtin entries with argparse handlers get
-the parser's `--help` text rendered; interactive locals are flagged;
-plugin-contributed entries show source provenance. Tests 340 → 353
-(+13).
+Foundation for the multi-agent forge. New module
+`mythic_vibe_cli/workflow_agents.py` defines the typed agent contract
+spec — pure declarative layer, no provider calls, no filesystem.
 
-**Slice 2.8** — eleven parity tests across CLI / REPL / TUI / plugin
-surfaces. Locks the invariant that every slash entry surfaces
-identically everywhere, including description text (not just names).
-Tests 353 → 364 (+11). Test-only — no production code change.
+Four frozen dataclasses (`VerificationResult`, `AgentInput`,
+`AgentOutput`, `AgentContract`), one canonical sequence
+(`DEFAULT_AGENT_SEQUENCE` — equal to
+`workflow_engine.DEFAULT_ROLE_SEQUENCE`, locked by test), one
+registry (`AGENT_CONTRACTS` — six canonical roles with required
+fields, artefact kinds, gates, and handoff direction), six helpers
+(`contract_for`, `validate_input`, `validate_output`,
+`expected_handoff_chain`, `role_prose`).
 
-See `PHASE2_SLICES_2_7_2_8_CLOSEOUT.md` for the full memo.
+Tests 364 → 402 (+38). Ruff/mypy clean.
 
-**Five of eight Phase 2 slices closed** (2.1 / 2.2 / 2.3 / 2.7 / 2.8).
-The three remaining (2.4 / 2.5 / 2.6) all have legitimate
-later-phase dependencies.
+Naming variance recorded: master roadmap suggested
+`workflow/agents.py` but `workflow.py` already exists as a top-level
+module — converting it to a directory would be non-additive.
+`workflow_agents.py` as a sibling preserves the additive contract.
 
-## Next decision point — three viable major-phase moves
+See `PHASE3_SLICE_3_1_CLOSEOUT.md` for the full memo.
 
-1. **Begin Phase 3 (Multi-Agent Forge) slice 3.1** — agent contract
-   spec. Largest remaining feature; foundation for slices 2.4 /
-   2.5 / 2.6.
-2. **Begin Phase 5 (Knowledge Graph) slice 5.1** — schema design.
-   Provides retrieval foundation for forge.
-3. **Begin Phase 11 (Security/Sandbox) slice 11.1** — approval
-   modes. Operator-safety upgrade.
+## Next slice (PH-03 slice 3.2)
 
-The natural progression by master-roadmap dependency is Phase 3.
+Handoff ledger — extend or add `mythic/forge_ledger.json` to record
+per-agent handoff steps with `AgentInput` / `AgentOutput` payloads.
+Pure persistence layer, no orchestrator yet. Underpins everything
+3.3+ needs to persist.
 
 ---
 
