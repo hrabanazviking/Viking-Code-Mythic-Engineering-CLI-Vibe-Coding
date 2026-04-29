@@ -1,7 +1,7 @@
 # Architecture
 
 **Status:** Active architecture record  
-**Last updated:** 2026-04-24
+**Last updated:** 2026-04-29
 **Owner:** Architecture + Documentation maintainers  
 **Scope:** Active product runtime (`mythic_vibe_cli/`) and its governance boundaries in this monorepo.
 
@@ -43,7 +43,8 @@ User
     -> Terminal/Error Helpers (mythic_vibe_cli/output.py, mythic_vibe_cli/errors.py)
     -> Core State Model (mythic_vibe_cli/core/state.py)
     -> Persistence Layer (mythic_vibe_cli/persistence/*.py)
-    -> Workflow Orchestrator (workflow.py)
+    -> Workflow Lifecycle (workflow.py)
+    -> Role Orchestration Planner (workflow_engine.py)
     -> Prompt Bridge (codex_bridge.py)
     -> Config Resolver (config.py)
     -> Method Data Sync/Cache (mythic_data.py)
@@ -123,6 +124,13 @@ User
 - Creates/updates artifacts and state files.
 - Enforces sequence coherence for method execution.
 
+### `mythic_vibe_cli/workflow_engine.py`
+
+- Owns deterministic role orchestration plans for the six-agent workflow.
+- Builds Skald -> Architect -> Cartographer -> Forge Worker -> Auditor -> Scribe handoff order.
+- Exports packet-ready step requests without invoking external AI providers by default.
+- Writes durable orchestration artifacts such as `mythic/workflow_plan.json`.
+
 ### `mythic_vibe_cli/codex_bridge.py`
 
 - Composes context packets for AI-assisted workflows.
@@ -149,10 +157,11 @@ Allowed primary direction:
 2. `app.py` -> `commands` + `core.state` argument constants
 3. `commands.py` -> `workflow`, `persistence`, `codex_bridge`, `config`, `mythic_data`, `output`, `errors`, `exit_codes`
 4. `workflow.py` -> `core.state`, `persistence`, `config` + local artifact IO
-5. `persistence/*.py` -> `core.state` + filesystem primitives
-6. `codex_bridge.py` -> `config` + prepared context
-7. `config.py` -> minimal dependencies only
-8. `mythic_data.py` -> provider/sync/cache concerns
+5. `workflow_engine.py` -> `ai.prompts.roles`, `codex_bridge.CodexPacketRequest`, `core.state`
+6. `persistence/*.py` -> `core.state` + filesystem primitives
+7. `codex_bridge.py` -> `config` + prepared context
+8. `config.py` -> minimal dependencies only
+9. `mythic_data.py` -> provider/sync/cache concerns
 
 Forbidden by default:
 

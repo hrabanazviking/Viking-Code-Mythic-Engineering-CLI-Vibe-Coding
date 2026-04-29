@@ -1,6 +1,6 @@
 # Domain Map
 
-**Last updated:** 2026-04-24
+**Last updated:** 2026-04-29
 **Owner:** Architecture + Documentation maintainers  
 **Scope:** Entire repository
 
@@ -75,6 +75,7 @@ Forbidden:
 | Project state contract and validation | `mythic_vibe_cli/core/state.py`, `mythic_vibe_cli/resources/schemas/` |
 | JSON persistence, backups, and migrations | `mythic_vibe_cli/persistence/json_store.py`, `mythic_vibe_cli/persistence/migrations.py` |
 | Workflow lifecycle and phase transitions | `mythic_vibe_cli/workflow.py` |
+| Role orchestration planning | `mythic_vibe_cli/workflow_engine.py`, `mythic_vibe_cli/ai/prompts/roles.py` |
 | Configuration precedence and coercion | `mythic_vibe_cli/config.py` |
 | Prompt packet synthesis and budget logic | `mythic_vibe_cli/codex_bridge.py` |
 | Method sync/import/cache | `mythic_vibe_cli/mythic_data.py` |
@@ -87,6 +88,7 @@ Forbidden:
 - New CLI entrypoint or exit-code policy -> `mythic_vibe_cli/__main__.py`, `mythic_vibe_cli/exit_codes.py`, and `docs/COMMAND_CONTRACTS.md`
 - New terminal rendering or command error format -> `mythic_vibe_cli/output.py`, `mythic_vibe_cli/errors.py`, and command tests where behavior is user-visible
 - New phase lifecycle logic -> `mythic_vibe_cli/workflow.py`
+- New role orchestration logic -> `mythic_vibe_cli/workflow_engine.py` plus role definitions in `mythic_vibe_cli/ai/prompts/roles.py`
 - New project state fields/schema/validation -> `mythic_vibe_cli/core/state.py`, `mythic_vibe_cli/resources/schemas/`, and migration tests
 - New state read/write/migration behavior -> `mythic_vibe_cli/persistence/`
 - New config option or precedence behavior -> `mythic_vibe_cli/config.py`
