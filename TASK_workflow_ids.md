@@ -81,8 +81,8 @@ Per Mythic Engineering law: no subtraction. New fields are optional. Legacy plan
 - [x] Docs (COMMAND_CONTRACTS, api.md) updated
 - [x] CHANGELOG Unreleased entries added
 - [x] DEVLOG entry written
-- [ ] Memory `project_mythic_engineering_cli_status.md` updated with new HEAD
-- [ ] Final commit + push
+- [x] Memory `project_mythic_engineering_cli_status.md` updated with new HEAD (02ce107)
+- [x] Final commit + push (commit 02ce107 pushed to origin/development)
 
 ## Resume Instructions for Fresh Session
 
