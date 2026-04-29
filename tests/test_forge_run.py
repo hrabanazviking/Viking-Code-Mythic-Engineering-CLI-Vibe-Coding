@@ -112,6 +112,16 @@ def _factory_for(provider: StubProvider):
     return factory
 
 
+# Slice 3.6: by default cmd_forge_run runs DEFAULT_AUDITOR_GATES, which
+# fail on bare temp projects (no boundary docs / no recorded
+# verification). The slice 3.5 orchestration tests aren't about gate
+# logic — they verify the run loop, the ledger transitions, and
+# prior_outputs population. They opt out of gates by passing
+# ``auditor_gates={}``. Slice 3.6's own tests in
+# tests/test_forge_verifier.py exercise the gate runners directly.
+_NO_GATES: dict = {}
+
+
 # ---- Happy path: every step succeeds ------------------------------------
 
 
@@ -121,7 +131,11 @@ class ForgeRunHappyPathTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             stdout = io.StringIO()
             with redirect_stdout(stdout):
-                code = cmd_forge_run(_ns(tmp), provider_factory=_factory_for(stub))
+                code = cmd_forge_run(
+                    _ns(tmp),
+                    provider_factory=_factory_for(stub),
+                    auditor_gates=_NO_GATES,
+                )
             payload = json.loads(stdout.getvalue())
 
             self.assertEqual(code, SUCCESS)
@@ -140,7 +154,11 @@ class ForgeRunHappyPathTests(unittest.TestCase):
         stub = StubProvider()
         with tempfile.TemporaryDirectory() as tmp:
             with redirect_stdout(io.StringIO()):
-                cmd_forge_run(_ns(tmp), provider_factory=_factory_for(stub))
+                cmd_forge_run(
+                    _ns(tmp),
+                    provider_factory=_factory_for(stub),
+                    auditor_gates=_NO_GATES,
+                )
 
             ledger = ForgeLedger(root=Path(tmp))
             entries = ledger.load()
@@ -178,7 +196,11 @@ class PriorOutputsTests(unittest.TestCase):
         stub = StubProvider()
         with tempfile.TemporaryDirectory() as tmp:
             with redirect_stdout(io.StringIO()):
-                cmd_forge_run(_ns(tmp), provider_factory=_factory_for(stub))
+                cmd_forge_run(
+                    _ns(tmp),
+                    provider_factory=_factory_for(stub),
+                    auditor_gates=_NO_GATES,
+                )
 
             ledger = ForgeLedger(root=Path(tmp))
             entries_by_role = {e.role: e for e in ledger.load() if e.status == "succeeded"}
@@ -205,7 +227,11 @@ class PriorOutputsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             stdout = io.StringIO()
             with redirect_stdout(stdout):
-                cmd_forge_run(_ns(tmp), provider_factory=_factory_for(stub))
+                cmd_forge_run(
+                    _ns(tmp),
+                    provider_factory=_factory_for(stub),
+                    auditor_gates=_NO_GATES,
+                )
             payload = json.loads(stdout.getvalue())
 
             blocked_roles = [s["role"] for s in payload["steps"] if s["status"] == "blocked"]
@@ -355,6 +381,7 @@ class InteractiveAbortTests(unittest.TestCase):
                     _ns(tmp, interactive=True),
                     provider_factory=_factory_for(stub),
                     gate_handler=handler,
+                    auditor_gates=_NO_GATES,
                 )
             payload = json.loads(stdout.getvalue())
 
@@ -414,6 +441,7 @@ class SkipLedgerFlagTests(unittest.TestCase):
                 code = cmd_forge_run(
                     _ns(tmp, skip_ledger=True),
                     provider_factory=_factory_for(stub),
+                    auditor_gates=_NO_GATES,
                 )
             self.assertEqual(code, SUCCESS)
             ledger = ForgeLedger(root=Path(tmp))
