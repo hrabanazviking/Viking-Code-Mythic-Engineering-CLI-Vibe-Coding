@@ -7,3 +7,8 @@ __pycache__/
 build/
 dist/
 *.egg-info/
+
+# Obsolete Phase 1 research partial — kept on disk as reference but
+# never tracked. Flagged in PHASE1_RUNTIME_AUDIT.md (F-018). Remove
+# this line if you want to bring the file back into version control.
+research_data/vibe_research_part1_tier1a.md
