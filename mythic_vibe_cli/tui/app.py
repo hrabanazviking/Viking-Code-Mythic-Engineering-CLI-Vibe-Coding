@@ -15,11 +15,11 @@ from typing import Any
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Grid
+from textual.containers import Grid, Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Footer, Header, Static
 
-from ..core.state import ProjectState
+from ..core.state import PHASES, ProjectState
 from ..persistence.json_store import JsonStateStore
 from ..plugins.registry import PluginRegistry
 from ..runtime.event_log import EventLogEntry, event_log_path_for, read_recent
@@ -27,6 +27,97 @@ from ..verify import load_latest_verification
 
 
 REFRESH_INTERVAL_SECONDS = 2.0
+
+
+# ---- Loop Navigator (PH-04 slice 4.1) -----------------------------------
+
+
+PHASE_STATE_CURRENT = "current"
+PHASE_STATE_COMPLETED = "completed"
+PHASE_STATE_PENDING = "pending"
+
+# Map state markers to single-character glyphs that render in any
+# terminal (no emoji, no fancy unicode that confuses Windows
+# consoles with the legacy code page). Cross-platform safe.
+_PHASE_GLYPHS: dict[str, str] = {
+    PHASE_STATE_CURRENT: ">",
+    PHASE_STATE_COMPLETED: "x",
+    PHASE_STATE_PENDING: ".",
+}
+
+
+@dataclass
+class LoopNavigatorEntry:
+    """One row in the Loop Navigator panel."""
+
+    phase: str
+    state: str  # one of PHASE_STATE_*
+    marker: str  # rendered glyph
+
+    def to_dict(self) -> dict[str, str]:
+        return {"phase": self.phase, "state": self.state, "marker": self.marker}
+
+
+@dataclass
+class LoopNavigatorData:
+    """The full set of phase rows the panel renders."""
+
+    entries: list[LoopNavigatorEntry] = field(default_factory=list)
+    current_phase: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "entries": [entry.to_dict() for entry in self.entries],
+            "current_phase": self.current_phase,
+        }
+
+
+def build_loop_navigator_data(root: Path) -> LoopNavigatorData:
+    """Pure function (no Textual deps) that classifies every Mythic
+    phase as current / completed / pending given the project state.
+
+    Falls back to a default ProjectState (every phase pending) when
+    the on-disk state cannot be loaded — never raises.
+    """
+    state = _safe_load_state(root)
+    completed_set = {phase for phase in state.completed_phases if phase in PHASES}
+    current_phase = state.current_phase if state.current_phase in PHASES else ""
+
+    entries: list[LoopNavigatorEntry] = []
+    for phase in PHASES:
+        if phase == current_phase:
+            phase_state = PHASE_STATE_CURRENT
+        elif phase in completed_set:
+            phase_state = PHASE_STATE_COMPLETED
+        else:
+            phase_state = PHASE_STATE_PENDING
+        entries.append(
+            LoopNavigatorEntry(
+                phase=phase,
+                state=phase_state,
+                marker=_PHASE_GLYPHS[phase_state],
+            )
+        )
+    return LoopNavigatorData(entries=entries, current_phase=current_phase)
+
+
+def _format_loop_navigator(data: LoopNavigatorData) -> str:
+    """Render the Loop Navigator panel as Rich-tagged markup.
+
+    The current phase is bolded and tagged ``$accent``; completed
+    phases are dimmed; pending phases keep default colour.
+    """
+    if not data.entries:
+        return "[dim](no phases configured)[/dim]"
+    lines: list[str] = []
+    for entry in data.entries:
+        if entry.state == PHASE_STATE_CURRENT:
+            lines.append(f"[b]{entry.marker} {entry.phase}[/b]")
+        elif entry.state == PHASE_STATE_COMPLETED:
+            lines.append(f"[dim]{entry.marker} {entry.phase}[/dim]")
+        else:
+            lines.append(f"{entry.marker} {entry.phase}")
+    return "\n".join(lines)
 
 
 @dataclass
@@ -188,6 +279,23 @@ class StatusScreen(Screen):
         layout: vertical;
     }
 
+    #main-row {
+        layout: horizontal;
+        height: 1fr;
+    }
+
+    #loop-nav-panel {
+        border: round $secondary;
+        padding: 1 2;
+        margin: 1 0 1 1;
+        width: 26;
+    }
+
+    #right-column {
+        layout: vertical;
+        width: 1fr;
+    }
+
     #grid {
         layout: grid;
         grid-size: 2 2;
@@ -219,6 +327,7 @@ class StatusScreen(Screen):
     def __init__(self, root: Path) -> None:
         super().__init__()
         self.root = root
+        self._loop_nav_widget = Static(id="loop-nav-panel")
         self._status_widget = Static(id="panel-status", classes="panel")
         self._verify_widget = Static(id="panel-verify", classes="panel")
         self._handoff_widget = Static(id="panel-handoff", classes="panel")
@@ -228,12 +337,15 @@ class StatusScreen(Screen):
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
-        with Grid(id="grid"):
-            yield self._status_widget
-            yield self._verify_widget
-            yield self._handoff_widget
-            yield self._plugins_widget
-        yield self._events_widget
+        with Horizontal(id="main-row"):
+            yield self._loop_nav_widget
+            with Vertical(id="right-column"):
+                with Grid(id="grid"):
+                    yield self._status_widget
+                    yield self._verify_widget
+                    yield self._handoff_widget
+                    yield self._plugins_widget
+                yield self._events_widget
         yield self._footer_widget
         yield Footer()
 
@@ -251,12 +363,15 @@ class StatusScreen(Screen):
 
     def _refresh_panels(self) -> None:
         data = build_status_data(self.root)
+        loop_nav_data = build_loop_navigator_data(self.root)
         events = read_recent(event_log_path_for(self.root), limit=12)
+        self._loop_nav_widget.border_title = "Loop"
         self._status_widget.border_title = "Status"
         self._verify_widget.border_title = "Verification"
         self._handoff_widget.border_title = "Latest Handoff"
         self._plugins_widget.border_title = "Plugins"
         self._events_widget.border_title = "Recent Events"
+        self._loop_nav_widget.update(_format_loop_navigator(loop_nav_data))
         self._status_widget.update(_format_status_panel(data))
         self._verify_widget.update(_format_verify_panel(data))
         self._handoff_widget.update(_format_handoff_panel(data))
