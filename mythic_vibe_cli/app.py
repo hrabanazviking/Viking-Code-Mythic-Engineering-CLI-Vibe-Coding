@@ -634,6 +634,27 @@ def build_parser() -> argparse.ArgumentParser:
         help="Skip recording this call into the conversation log.",
     )
     add_runtime_options(ai_run, json_output=True, dry_run=True)
+    ai_telemetry = ai_sub.add_parser(
+        "telemetry",
+        help="Read recent provider calls from mythic/ai/provider_calls.jsonl",
+    )
+    ai_telemetry.add_argument(
+        "--path",
+        default=".",
+        help="Project directory (default: current directory)",
+    )
+    ai_telemetry.add_argument(
+        "--provider",
+        default="",
+        help="Filter to a single provider name (default: all)",
+    )
+    ai_telemetry.add_argument(
+        "--limit",
+        type=int,
+        default=20,
+        help="Maximum entries to return, newest first (default: 20)",
+    )
+    add_runtime_options(ai_telemetry, json_output=True)
     ai_models = ai_sub.add_parser(
         "models",
         help="List installed models for a provider (Ollama supported today)",

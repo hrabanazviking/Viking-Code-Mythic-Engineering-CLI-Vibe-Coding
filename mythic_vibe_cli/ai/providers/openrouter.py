@@ -12,7 +12,7 @@ from .base import (
     extract_request_id,
     extract_usage,
     normalize_packet,
-    post_json,
+    timed_post_json,
     utc_now,
     write_provider_log,
 )
@@ -73,7 +73,7 @@ class OpenRouterProvider:
             "model": self.model,
             "messages": [{"role": "user", "content": view.text}],
         }
-        response_payload = post_json(
+        response_payload, latency_ms = timed_post_json(
             "https://openrouter.ai/api/v1/chat/completions",
             payload,
             {
@@ -110,5 +110,6 @@ class OpenRouterProvider:
             },
         )
         log_payload["response"] = response_payload
+        log_payload["latency_ms"] = latency_ms
         write_provider_log(self.root, log_payload)
         return response

@@ -12,7 +12,7 @@ from .base import (
     extract_request_id,
     extract_usage,
     normalize_packet,
-    post_json,
+    timed_post_json,
     utc_now,
     write_provider_log,
 )
@@ -72,7 +72,7 @@ class GeminiProvider:
         payload = {
             "contents": [{"role": "user", "parts": [{"text": view.text}]}],
         }
-        response_payload = post_json(
+        response_payload, latency_ms = timed_post_json(
             f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent?key={key}",
             payload,
             {
@@ -112,5 +112,6 @@ class GeminiProvider:
             },
         )
         log_payload["response"] = response_payload
+        log_payload["latency_ms"] = latency_ms
         write_provider_log(self.root, log_payload)
         return response

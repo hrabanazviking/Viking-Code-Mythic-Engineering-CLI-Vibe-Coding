@@ -4031,11 +4031,110 @@ def cmd_ai_dispatch(args: argparse.Namespace) -> int:
         return cmd_ai_ingest_response(args)
     if args.ai_command == "models":
         return cmd_ai_models(args)
+    if args.ai_command == "telemetry":
+        return cmd_ai_telemetry(args)
     write_error(
         f"Unknown ai subcommand: {args.ai_command!r}. "
-        "Valid: providers | test | run | ingest-response | models."
+        "Valid: providers | test | run | ingest-response | models | telemetry."
     )
     return USER_INPUT_ERROR
+
+
+def cmd_ai_telemetry(args: argparse.Namespace) -> int:
+    """PH-06 slice 6.5: read recent calls from
+    ``mythic/ai/provider_calls.jsonl`` (the per-call ledger that
+    every provider writes to via ``write_provider_log``).
+
+    Filters: ``--provider`` to a single name; ``--limit`` to bound
+    the result count. Output is newest-first regardless of how the
+    file is laid out on disk (the ledger is append-only, so newest
+    sits at the bottom — the reader reverses it).
+    """
+    root = Path(getattr(args, "path", ".")).resolve()
+    log_path = root / "mythic" / "ai" / "provider_calls.jsonl"
+    provider_filter = (getattr(args, "provider", "") or "").strip()
+    raw_limit = int(getattr(args, "limit", 20) or 0)
+    limit = max(0, raw_limit)
+
+    entries: list[dict[str, object]] = []
+    if log_path.is_file():
+        try:
+            lines = log_path.read_text(encoding="utf-8").splitlines()
+        except OSError:
+            lines = []
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                payload = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(payload, dict):
+                continue
+            if provider_filter and str(payload.get("provider", "")) != provider_filter:
+                continue
+            entries.append(payload)
+
+    # Newest first; the file is append-only so reverse-iterating is
+    # the cheapest way to surface "most recent N". `limit=0` returns
+    # an empty list (the operator asked for zero results); negative
+    # values were already clamped to 0 above.
+    entries.reverse()
+    entries = entries[:limit]
+
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "ai telemetry",
+                "path": str(log_path),
+                "provider_filter": provider_filter,
+                "limit": limit,
+                "count": len(entries),
+                "entries": entries,
+            }
+        )
+        return SUCCESS
+
+    if not entries:
+        if not log_path.is_file():
+            write_line(
+                f"AI telemetry: no log yet at {log_path} (run an AI call first)."
+            )
+        elif provider_filter:
+            write_line(
+                f"AI telemetry: no entries for provider {provider_filter!r}."
+            )
+        else:
+            write_line("AI telemetry: log is empty.")
+        return SUCCESS
+
+    write_line(f"AI telemetry: {len(entries)} entry / entries (newest first).")
+    for entry in entries:
+        timestamp = str(entry.get("timestamp", ""))
+        provider = str(entry.get("provider", ""))
+        model = str(entry.get("model", ""))
+        latency = entry.get("latency_ms")
+        latency_str = (
+            f"{latency:.1f}ms"
+            if isinstance(latency, (int, float))
+            else "n/a"
+        )
+        dry = " [dry-run]" if entry.get("dry_run") else ""
+        cost = ""
+        if isinstance(entry.get("response"), dict):
+            usage = entry["response"].get("usage")
+            if isinstance(usage, dict):
+                total = usage.get("total_tokens")
+                if isinstance(total, int):
+                    cost = f"  tokens={total}"
+        error = entry.get("error")
+        suffix = f"  ERROR: {error}" if error else ""
+        write_line(
+            f"  {timestamp}  [{provider}/{model}]  "
+            f"latency={latency_str}{cost}{dry}{suffix}"
+        )
+    return SUCCESS
 
 
 def cmd_ai_models(args: argparse.Namespace) -> int:
