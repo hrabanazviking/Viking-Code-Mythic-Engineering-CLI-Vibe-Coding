@@ -217,8 +217,17 @@ additive, cross-platform, open-source):
 | 66 | PH-13 Slice 13.3 — heal v2 reconciliation packet | done — `afa0363` — +6 tests, 719 total |
 | 67 | PH-13 Slice 13.4 — TUI drift panel | done — `d396de7` — +5 tests, 724 total |
 | 68 | **PHASE 13 FULLY COMPLETE.** PHASE13_FINALE_CLOSEOUT.md written. | done |
-| 69 | Update memory + project status (after PH-13 finale) | in progress |
-| 70 | Choose next active phase (PH-05 / PH-11 / PH-12 / etc.) | pending |
+| 69 | Update memory + project status (after PH-13 finale) | done — pushed at b37661d |
+| 70 | PH-05 Slice 5.1 — schema + migration runner | done — `bec9a20` — +9 tests, 733 total |
+| 71 | PH-05 Slice 5.2 — GraphStore | done — `0ca8b16` — +24 tests, 757 total |
+| 72 | PH-05 Slice 5.3 — retriever | done — `c1c902a` — +15 tests, 772 total |
+| 73 | PH-05 Slice 5.4 — rehydrator | done — `5e776d1` — +9 tests, 781 total |
+| 74 | PH-05 Slices 5.5 + 5.6 — graph CLI + Mermaid/DOT | done — `9851c8f` — +18 tests, 799 total |
+| 75 | PH-05 Slice 5.7 — packet retriever integration | done — `3014ab4` — +15 tests, 814 total |
+| 76 | PH-05 Slice 5.8 — drift detector graph wiring | done — `3ae10b6` — +6 tests, 820 total |
+| 77 | **PHASE 5 FULLY COMPLETE.** PHASE5_FINALE_CLOSEOUT.md written. | done |
+| 78 | Update memory + project status (after PH-05 finale) | in progress |
+| 79 | Choose next active phase (PH-06 / PH-08 / PH-11 / PH-12 / PH-15) | pending |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
