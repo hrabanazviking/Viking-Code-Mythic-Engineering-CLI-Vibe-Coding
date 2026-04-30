@@ -245,8 +245,11 @@ additive, cross-platform, open-source):
 | 94 | PH-08 Slice 8.3 — fallback chain | done — `dd9ba19` — +13 tests, 995 total |
 | 95 | PH-08 Slice 8.4 — ai route CLI | done — `ec715fd` — +10 tests, 1005 total |
 | 96 | **PHASE 8 FULLY COMPLETE.** PHASE8_FINALE_CLOSEOUT.md written. | done |
-| 97 | Update memory + project status (after PH-08 finale) | in progress |
-| 98 | Choose next active phase (routing wire-up / PH-07 / PH-11 / PH-12 / PH-16 / PH-18) | pending |
+| 97 | Update memory + project status (after PH-08 finale) | done — pushed at 716b5f5 |
+| 98 | PH-07 Slices 7.1-7.4 — voice transcribe + TTS + intent capture wiring | done — `b0fa860` — +37 tests, 1042 total |
+| 99 | **PHASE 7 FULLY COMPLETE.** PHASE7_FINALE_CLOSEOUT.md written. | done |
+| 100 | Update memory + project status (after PH-07 finale) | in progress |
+| 101 | Choose next active phase (mic-capture / TTS hook / routing wire-up / PH-09 / PH-11 / PH-12 / PH-16 / PH-18) | pending |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
