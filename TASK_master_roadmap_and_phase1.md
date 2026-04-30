@@ -239,8 +239,14 @@ additive, cross-platform, open-source):
 | 88 | PH-06 Slice 6.5 — telemetry extension + reader | done — `3f74ef6` — +14 tests, 931 total |
 | 89 | PH-06 Slice 6.6 — hardware profile | done — `cf7a1d0` — +16 tests, 947 total |
 | 90 | **PHASE 6 PARTIALLY COMPLETE** (5/6; 6.4 streaming deferred). PHASE6_FINALE_CLOSEOUT.md written. | done |
-| 91 | Update memory + project status (after PH-06 finale) | in progress |
-| 92 | Choose next active phase (PH-07 / PH-08 / PH-11 / PH-12 / PH-16 / PH-18) | pending |
+| 91 | Update memory + project status (after PH-06 finale) | done — pushed at f7964d4 |
+| 92 | PH-08 Slice 8.1 — routing table | done — `2bcb93d` — +19 tests, 966 total |
+| 93 | PH-08 Slice 8.2 — cost guards | done — `d180f68` — +16 tests, 982 total |
+| 94 | PH-08 Slice 8.3 — fallback chain | done — `dd9ba19` — +13 tests, 995 total |
+| 95 | PH-08 Slice 8.4 — ai route CLI | done — `ec715fd` — +10 tests, 1005 total |
+| 96 | **PHASE 8 FULLY COMPLETE.** PHASE8_FINALE_CLOSEOUT.md written. | done |
+| 97 | Update memory + project status (after PH-08 finale) | in progress |
+| 98 | Choose next active phase (routing wire-up / PH-07 / PH-11 / PH-12 / PH-16 / PH-18) | pending |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
