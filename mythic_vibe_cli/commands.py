@@ -3788,6 +3788,28 @@ def cmd_audit(args: argparse.Namespace) -> int:
     return cmd_doctor(args)
 
 
+def cmd_drift(args: argparse.Namespace) -> int:
+    """PH-13 slice 13.1: scan the project for drift between docs, code,
+    and decisions.
+
+    Three heuristic detectors run today (undocumented handlers,
+    undocumented modules, superseded-but-referenced decisions). The
+    set will grow as PH-13 progresses. Exit code stays ``SUCCESS``
+    even with findings — the operator decides what to act on. Future
+    slices may bump exit on ``error``-severity findings; the heuristics
+    today only emit ``info`` / ``warning``.
+    """
+    from .drift import render_findings_text, scan_for_drift, to_payload
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    findings = scan_for_drift(root)
+    if _flag(args, "json"):
+        write_json(to_payload(findings))
+        return SUCCESS
+    write_line(render_findings_text(findings))
+    return SUCCESS
+
+
 COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "init": cmd_init,
     "start": cmd_init,
@@ -3843,4 +3865,5 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "forge": cmd_forge_dispatch,
     "provider": cmd_provider,
     "audit": cmd_audit,
+    "drift": cmd_drift,
 }

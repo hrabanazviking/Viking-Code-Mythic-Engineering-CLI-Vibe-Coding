@@ -94,6 +94,8 @@ class CliKernelTests(unittest.TestCase):
             # PH-02 slices 2.4 / 2.5 — provider + audit aliases
             "provider",
             "audit",
+            # PH-13 slice 13.1 — drift detection
+            "drift",
         }
 
         self.assertEqual(set(COMMAND_HANDLERS), expected)

@@ -163,4 +163,7 @@ BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
 
     # --- Diagnostic alias (PH-02 slice 2.5) ---
     BuiltinSlashCommand(name="audit", description="Run a doctor pass and emit JSON (alias of `doctor --json`)"),
+
+    # --- Drift detection (PH-13 slice 13.1) ---
+    BuiltinSlashCommand(name="drift", description="Scan for drift between docs, code, and decisions (heuristic v1)"),
 )
