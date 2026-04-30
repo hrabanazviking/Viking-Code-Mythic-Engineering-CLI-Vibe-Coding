@@ -9,6 +9,7 @@ from .providers import (
     CopyPasteProvider,
     GeminiProvider,
     LocalProvider,
+    OllamaProvider,
     OpenAIProvider,
     OpenRouterProvider,
 )
@@ -26,4 +27,5 @@ class ProviderRegistry:
             "anthropic": AnthropicProvider(root=self.root),
             "gemini": GeminiProvider(root=self.root),
             "openrouter": OpenRouterProvider(root=self.root),
+            "ollama": OllamaProvider(root=self.root),
         }
