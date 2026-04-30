@@ -381,5 +381,100 @@ class CmdDriftTests(unittest.TestCase):
         self.assertTrue(ns.json)
 
 
+# ---- Slice 13.2: doctor integration ----------------------------------
+
+
+class DoctorDriftIntegrationTests(unittest.TestCase):
+    """Slice 13.2: cmd_doctor calls scan_for_drift and surfaces the
+    findings under a ``drift`` key in JSON output and a Drift-findings
+    section in text output."""
+
+    def _init_mythic_project(self, root: Path) -> None:
+        """Bootstrap the minimum scaffold cmd_doctor expects.
+
+        Touches just the few status / structure files MythicWorkflow's
+        doctor_report sanity-checks, so the doctor pass itself
+        doesn't dominate the test signal."""
+        for relpath in (
+            "mythic/status.json",
+            "mythic/plan.md",
+            "mythic/loop.md",
+            "tasks/current_GOALS.md",
+            "docs/DEVLOG.md",
+            "SYSTEM_VISION.md",
+        ):
+            target = root / relpath
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if relpath.endswith(".json"):
+                target.write_text("{}\n", encoding="utf-8")
+            else:
+                target.write_text(f"# {target.name}\n", encoding="utf-8")
+
+    def test_doctor_json_payload_includes_drift_section(self) -> None:
+        from mythic_vibe_cli.commands import cmd_doctor
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._init_mythic_project(root)
+            _write(
+                root / "mythic_vibe_cli" / "commands.py",
+                '"""Synthetic."""\n\ndef cmd_x(args):\n    return 0\n',
+            )
+            args = argparse.Namespace(
+                path=str(root),
+                json=True,
+                repo_boundary=False,
+            )
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                cmd_doctor(args)
+        payload = json.loads(buf.getvalue())
+        self.assertIn("drift", payload)
+        self.assertEqual(len(payload["drift"]), 1)
+        self.assertEqual(
+            payload["drift"][0]["category"], "undocumented_handler"
+        )
+
+    def test_doctor_text_renders_drift_findings_count(self) -> None:
+        from mythic_vibe_cli.commands import cmd_doctor
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._init_mythic_project(root)
+            _write(
+                root / "mythic_vibe_cli" / "commands.py",
+                '"""Synthetic."""\n\ndef cmd_y(args):\n    return 0\n',
+            )
+            args = argparse.Namespace(
+                path=str(root),
+                json=False,
+                repo_boundary=False,
+            )
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                cmd_doctor(args)
+        rendered = buf.getvalue()
+        self.assertIn("Drift findings: 1", rendered)
+        self.assertIn("undocumented_handler", rendered)
+
+    def test_doctor_text_says_none_when_clean(self) -> None:
+        from mythic_vibe_cli.commands import cmd_doctor
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._init_mythic_project(root)
+            # Project has no mythic_vibe_cli/ subdir → drift detectors
+            # find nothing → cmd_doctor reports the empty-case message.
+            args = argparse.Namespace(
+                path=str(root),
+                json=False,
+                repo_boundary=False,
+            )
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                cmd_doctor(args)
+        self.assertIn("Drift findings: none", buf.getvalue())
+
+
 if __name__ == "__main__":
     unittest.main()
