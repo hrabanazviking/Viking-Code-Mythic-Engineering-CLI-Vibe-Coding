@@ -175,4 +175,7 @@ BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
 
     # --- Hardware profile (PH-06 slice 6.6) ---
     BuiltinSlashCommand(name="hardware", description="Detect host hardware (CPU/RAM/OS); --write persists to docs/"),
+
+    # --- Voice & multimodal (PH-07 slices 7.1-7.3) ---
+    BuiltinSlashCommand(name="voice", description="Voice transcribe + TTS (opt-in; stub engines work without extras)"),
 )

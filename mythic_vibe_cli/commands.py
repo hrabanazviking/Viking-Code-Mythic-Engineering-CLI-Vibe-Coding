@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import argparse
 from collections.abc import Callable
+from contextlib import redirect_stdout
+import io
 import json
 import os
 from pathlib import Path
@@ -4690,6 +4692,169 @@ def cmd_memory_rehydrate(args: argparse.Namespace) -> int:
     return SUCCESS
 
 
+def cmd_voice_dispatch(args: argparse.Namespace) -> int:
+    """PH-07 slices 7.1-7.3: dispatch ``mythic-vibe voice <action>``."""
+    sub = getattr(args, "voice_command", "")
+    if sub == "transcribe":
+        return cmd_voice_transcribe(args)
+    if sub == "say":
+        return cmd_voice_say(args)
+    write_error(
+        f"Unknown voice subcommand: {sub!r}. Valid: transcribe | say."
+    )
+    return USER_INPUT_ERROR
+
+
+def cmd_voice_transcribe(args: argparse.Namespace) -> int:
+    """PH-07 slice 7.1 (+ 7.2 via ``--capture-intent``).
+
+    Stub engine works without any audio dep; whisper engine
+    requires ``pip install openai-whisper`` (and ffmpeg on PATH).
+    With ``--capture-intent``, the transcription is piped into a
+    fresh ``mythic/checkins/<ts>-intent.md`` Mythic Phase Record
+    via the slice 2.3 ``cmd_intent_capture`` path.
+    """
+    from .voice.transcribe import TranscriptionRequest, transcribe
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    request = TranscriptionRequest(
+        source_path=str(getattr(args, "file", "") or ""),
+        engine=str(getattr(args, "engine", "stub") or "stub"),
+        language=str(getattr(args, "language", "en") or "en"),
+        model=str(getattr(args, "model", "base") or "base"),
+    )
+    result = transcribe(request)
+
+    payload: dict[str, object] = {
+        "command": "voice transcribe",
+        "path": str(root),
+        "request": request.to_dict(),
+        "result": result.to_dict(),
+    }
+
+    capture_intent = bool(_flag(args, "capture_intent"))
+    intent_payload: dict[str, object] | None = None
+    if capture_intent:
+        task = str(getattr(args, "task", "") or "").strip()
+        if not task:
+            write_error(
+                "--capture-intent requires --task <short task name> so the "
+                "phase record has a meaningful header."
+            )
+            return USER_INPUT_ERROR
+        if result.error:
+            write_error(
+                f"Transcription failed; not writing phase record. {result.error}"
+            )
+            payload["intent_capture"] = {
+                "written": False,
+                "error": result.error,
+            }
+            if _flag(args, "json"):
+                write_json(payload)
+                return OPERATIONAL_FAILURE
+            return OPERATIONAL_FAILURE
+        # Build a minimal Namespace shaped like the slice 2.3 capture
+        # handler expects, then delegate.
+        capture_args = argparse.Namespace(
+            path=str(root),
+            task=task,
+            summary=result.text or "(empty transcription)",
+            note=[
+                f"transcription engine: {result.engine}",
+                f"source file: {result.source_path}",
+            ],
+            confidence="unspecified",
+            risk="",
+            next_step="",
+            operator="",
+            json=False,
+            dry_run=False,
+        )
+        # Capture writes its own JSON to stdout when json=True; we
+        # suppress that and re-surface from our outer payload.
+        captured_buf = io.StringIO()
+        with redirect_stdout(captured_buf):
+            inner_code = cmd_intent_capture(capture_args)
+        intent_payload = {
+            "written": inner_code == SUCCESS,
+            "exit_code": inner_code,
+            "task": task,
+            "summary_chars": len(result.text or ""),
+        }
+        payload["intent_capture"] = intent_payload
+
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS if not result.error else OPERATIONAL_FAILURE
+
+    if result.error:
+        write_error(f"Transcription failed: {result.error}")
+        if "missing_extra" in result.metadata:
+            write_bullet(
+                f"Install hint: `pip install {result.metadata['missing_extra']}`",
+                indent=2,
+            )
+        return OPERATIONAL_FAILURE
+
+    write_line(
+        f"Voice transcribe ({result.engine}/{result.model}, "
+        f"language={result.language}, dry_run={result.dry_run}):"
+    )
+    write_line(result.text or "(empty)")
+    if intent_payload is not None:
+        if intent_payload.get("written"):
+            write_line(
+                f"- Wrote intent phase record (task={intent_payload['task']!r})."
+            )
+        else:
+            write_error(
+                "Failed to write intent phase record "
+                f"(exit_code={intent_payload.get('exit_code')})."
+            )
+            return OPERATIONAL_FAILURE
+    return SUCCESS
+
+
+def cmd_voice_say(args: argparse.Namespace) -> int:
+    """PH-07 slice 7.3 — speak text via the configured TTS engine.
+
+    Default-disabled: respects ``MYTHIC_VOICE_TTS_ENABLED`` unless
+    ``--force`` is passed for direct testing.
+    """
+    from .voice.tts import is_tts_enabled, say
+
+    text = str(getattr(args, "text", "") or "")
+    engine = str(getattr(args, "engine", "stub") or "stub")
+    force = bool(_flag(args, "force"))
+    result = say(text, engine=engine, force=force)
+
+    payload = {
+        "command": "voice say",
+        "tts_enabled": is_tts_enabled(),
+        "force": force,
+        "result": result.to_dict(),
+    }
+
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS if not result.error else OPERATIONAL_FAILURE
+
+    if result.error:
+        write_error(f"voice say failed: {result.error}")
+        if "missing_extra" in result.metadata:
+            write_bullet(
+                f"Install hint: `pip install {result.metadata['missing_extra']}`",
+                indent=2,
+            )
+        return OPERATIONAL_FAILURE
+    if result.spoken:
+        write_line(f"voice say: spoken via {result.engine}.")
+    else:
+        write_line(f"voice say: not spoken ({result.skipped_reason or 'no audio'}).")
+    return SUCCESS
+
+
 def cmd_hardware(args: argparse.Namespace) -> int:
     """PH-06 slice 6.6: detect host hardware and optionally persist
     it to ``docs/hardware_profiles.md`` (plus a JSON sidecar).
@@ -4819,4 +4984,5 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "graph": cmd_graph_dispatch,
     "memory": cmd_memory_dispatch,
     "hardware": cmd_hardware,
+    "voice": cmd_voice_dispatch,
 }
