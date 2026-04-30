@@ -33,7 +33,16 @@ class AIProviderTests(unittest.TestCase):
         providers = ProviderRegistry().providers()
         self.assertEqual(
             set(providers),
-            {"copy-paste", "local", "openai", "anthropic", "gemini", "openrouter"},
+            {
+                "copy-paste",
+                "local",
+                "openai",
+                "anthropic",
+                "gemini",
+                "openrouter",
+                # PH-06 slice 6.1 — local Ollama daemon adapter.
+                "ollama",
+            },
         )
 
     def test_api_key_validation_reflects_environment(self) -> None:
