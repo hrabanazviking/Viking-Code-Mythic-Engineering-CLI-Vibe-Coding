@@ -667,5 +667,104 @@ class DriftScreenIntegrationTests(unittest.TestCase):
             self.assertIn(required, keys, f"DriftScreen missing `{required}`")
 
 
+# ---- Slice 5.8: graph-backed orphaned-module detector ----------------
+
+
+class DetectOrphanedModulesTests(unittest.TestCase):
+    """Slice 5.8: when a populated knowledge graph exists, the drift
+    scanner additionally flags module entities with zero edges
+    (genuine orphans or indexer gaps — both drift). When the graph
+    file is absent or empty, the detector is a no-op so PH-13 v1
+    behaviour is preserved."""
+
+    def test_no_graph_file_returns_empty(self) -> None:
+        from mythic_vibe_cli.drift import detect_orphaned_modules
+
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(detect_orphaned_modules(Path(tmp)), [])
+
+    def test_empty_graph_returns_empty(self) -> None:
+        from mythic_vibe_cli.context.graph import GraphStore
+        from mythic_vibe_cli.drift import detect_orphaned_modules
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with GraphStore.open(root):
+                pass  # creates the file but no entities
+            self.assertEqual(detect_orphaned_modules(root), [])
+
+    def test_module_with_edges_is_clean(self) -> None:
+        from mythic_vibe_cli.context.graph import GraphStore
+        from mythic_vibe_cli.drift import detect_orphaned_modules
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with GraphStore.open(root) as store:
+                a = store.upsert_entity("module", "wired", path="src/wired.py")
+                b = store.upsert_entity("module", "linked", path="src/linked.py")
+                store.upsert_edge(a.id, b.id, "references")
+            self.assertEqual(detect_orphaned_modules(root), [])
+
+    def test_module_with_zero_edges_is_flagged(self) -> None:
+        from mythic_vibe_cli.context.graph import GraphStore
+        from mythic_vibe_cli.drift import detect_orphaned_modules
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with GraphStore.open(root) as store:
+                store.upsert_entity(
+                    "module", "orphan", path="src/orphan.py"
+                )
+            findings = detect_orphaned_modules(root)
+            self.assertEqual(len(findings), 1)
+            self.assertEqual(findings[0].category, "undocumented_module")
+            self.assertEqual(findings[0].severity, "info")
+            self.assertEqual(findings[0].path, "src/orphan.py")
+            self.assertIn("orphan", findings[0].description)
+
+    def test_only_module_kind_is_audited(self) -> None:
+        """Decisions and other entities can sit in the graph without
+        any edges and we should not flag them — only modules."""
+        from mythic_vibe_cli.context.graph import GraphStore
+        from mythic_vibe_cli.drift import detect_orphaned_modules
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with GraphStore.open(root) as store:
+                store.upsert_entity("decision", "0001-foo")
+                store.upsert_entity("packet", "PKT-1")
+            self.assertEqual(detect_orphaned_modules(root), [])
+
+    def test_aggregator_includes_orphan_findings_when_graph_populated(
+        self,
+    ) -> None:
+        from mythic_vibe_cli.context.graph import GraphStore
+        from mythic_vibe_cli.drift import scan_for_drift
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            # File-system heuristic source: an undocumented handler.
+            _write(
+                root / "mythic_vibe_cli" / "commands.py",
+                '"""Synthetic."""\n\ndef cmd_a(args):\n    return 0\n',
+            )
+            # Plus a graph-backed orphan module.
+            with GraphStore.open(root) as store:
+                store.upsert_entity(
+                    "module", "orphan", path="src/orphan.py"
+                )
+            findings = scan_for_drift(root)
+        categories = {f.category for f in findings}
+        self.assertIn("undocumented_handler", categories)
+        self.assertIn("undocumented_module", categories)
+        # The orphan landed under undocumented_module severity=info,
+        # so we additionally check that there's at least one path
+        # pointing at orphan.
+        orphan_finding = [
+            f for f in findings if f.path == "src/orphan.py"
+        ]
+        self.assertEqual(len(orphan_finding), 1)
+
+
 if __name__ == "__main__":
     unittest.main()
