@@ -135,6 +135,25 @@ def post_json(url: str, payload: dict[str, Any], headers: dict[str, str]) -> dic
     return parsed
 
 
+def timed_post_json(
+    url: str, payload: dict[str, Any], headers: dict[str, str]
+) -> tuple[dict[str, Any], float]:
+    """Wrap :func:`post_json` with a ``time.perf_counter`` round-trip
+    measurement. Returns ``(parsed, latency_ms)`` where ``latency_ms``
+    is rounded to two decimal places.
+
+    PH-06 slice 6.5: the telemetry extension. The latency value is
+    written into ``provider_calls.jsonl`` so the slice 6.5 reader
+    can surface latency / cost trends across providers.
+    """
+    import time as _time
+
+    start = _time.perf_counter()
+    parsed = post_json(url, payload, headers)
+    latency_ms = round((_time.perf_counter() - start) * 1000.0, 2)
+    return parsed, latency_ms
+
+
 def extract_usage(provider_name: str, payload: dict[str, Any]) -> dict[str, int]:
     usage = payload.get("usage")
     if isinstance(usage, dict):
