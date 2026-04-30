@@ -283,6 +283,63 @@ def detect_superseded_decisions(root: Path) -> list[DriftFinding]:
 # ---- Aggregator --------------------------------------------------------
 
 
+def detect_orphaned_modules(root: Path) -> list[DriftFinding]:
+    """Surface modules registered in the knowledge graph that have no
+    incoming or outgoing edges. PH-05 slice 5.8.
+
+    A module entity with zero edges suggests either:
+
+    - the module is genuinely unused (legitimate orphan — drift the
+      operator may want to delete);
+    - the graph ingestion missed its references (instrumentation gap
+      — also drift, just on the indexer side).
+
+    Either way it's worth surfacing. Severity ``info`` because we
+    can't yet distinguish the two cases automatically.
+
+    No-op when the graph file is absent or empty — slice 5.8's
+    promise is "graph-backed when populated; falls back to
+    filesystem heuristics otherwise". The other detectors stay
+    filesystem-only because they cover documentation drift the
+    graph doesn't yet model.
+    """
+    from .context.graph import GraphStore, graph_path_for
+
+    graph_file = graph_path_for(root)
+    if not graph_file.exists():
+        return []
+
+    try:
+        store = GraphStore.open(root)
+    except Exception:  # noqa: BLE001 — best-effort
+        return []
+
+    try:
+        if store.entity_count() == 0:
+            return []
+        modules = store.find_entities(kind="module")
+        findings: list[DriftFinding] = []
+        for module in modules:
+            neighbours = store.entity_neighbours(module.id, direction="both")
+            if neighbours:
+                continue
+            findings.append(
+                DriftFinding(
+                    category="undocumented_module",
+                    severity="info",
+                    path=module.path or module.name,
+                    description=(
+                        f"Module '{module.name}' has zero edges in the "
+                        "knowledge graph — possibly orphaned, possibly "
+                        "an indexer gap."
+                    ),
+                )
+            )
+        return findings
+    finally:
+        store.close()
+
+
 def scan_for_drift(root: Path) -> list[DriftFinding]:
     """Run every drift detector against ``root`` and return the union
     of their findings.
@@ -290,11 +347,16 @@ def scan_for_drift(root: Path) -> list[DriftFinding]:
     Detector ordering is stable so JSON output and tests can pin on
     it. Findings within a detector preserve the detector's natural
     order (file-walk order for modules, AST order for handlers).
+
+    PH-05 slice 5.8 added :func:`detect_orphaned_modules`, which is a
+    no-op when the project has no knowledge graph — fully backwards-
+    compatible with PH-13 v1's filesystem-only behaviour.
     """
     findings: list[DriftFinding] = []
     findings.extend(detect_undocumented_handlers(root))
     findings.extend(detect_undocumented_modules(root))
     findings.extend(detect_superseded_decisions(root))
+    findings.extend(detect_orphaned_modules(root))
     return findings
 
 
@@ -335,6 +397,7 @@ __all__ = [
     "DriftCategory",
     "DriftFinding",
     "DriftSeverity",
+    "detect_orphaned_modules",
     "detect_superseded_decisions",
     "detect_undocumented_handlers",
     "detect_undocumented_modules",
