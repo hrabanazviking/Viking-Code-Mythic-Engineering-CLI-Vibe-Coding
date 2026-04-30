@@ -696,6 +696,7 @@ class StatusScreen(Screen):
         Binding("slash", "open_picker", "/  Slash picker"),
         Binding("question_mark", "show_help", "Help"),
         Binding("t", "app.cycle_theme", "Theme"),
+        Binding("d", "open_drift", "Drift"),
     ]
 
     DEFAULT_CSS = """
@@ -804,6 +805,11 @@ class StatusScreen(Screen):
         self.app.push_screen(
             HelpOverlayScreen("Status — keys", binding_help_pairs(self.BINDINGS))
         )
+
+    def action_open_drift(self) -> None:
+        from .drift_panel import DriftScreen
+
+        self.app.push_screen(DriftScreen(self.root))
 
     def _refresh_panels(self) -> None:
         data = build_status_data(self.root)
