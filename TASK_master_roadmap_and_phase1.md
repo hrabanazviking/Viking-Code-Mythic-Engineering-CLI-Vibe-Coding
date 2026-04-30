@@ -226,8 +226,13 @@ additive, cross-platform, open-source):
 | 75 | PH-05 Slice 5.7 — packet retriever integration | done — `3014ab4` — +15 tests, 814 total |
 | 76 | PH-05 Slice 5.8 — drift detector graph wiring | done — `3ae10b6` — +6 tests, 820 total |
 | 77 | **PHASE 5 FULLY COMPLETE.** PHASE5_FINALE_CLOSEOUT.md written. | done |
-| 78 | Update memory + project status (after PH-05 finale) | in progress |
-| 79 | Choose next active phase (PH-06 / PH-08 / PH-11 / PH-12 / PH-15) | pending |
+| 78 | Update memory + project status (after PH-05 finale) | done — pushed at 41d8b26 |
+| 79 | PH-15 Slice 15.1 — conversation log data layer | done — `e51c0be` — +20 tests, 840 total |
+| 80 | PH-15 Slice 15.2 — compaction summariser | done — `ea32851` — +16 tests, 856 total |
+| 81 | PH-15 Slices 15.3 + 15.4 — memory CLI (show/list/compact/rehydrate) | done — `b663c20` — +18 tests, 874 total |
+| 82 | **PHASE 15 FULLY COMPLETE.** PHASE15_FINALE_CLOSEOUT.md written. | done |
+| 83 | Update memory + project status (after PH-15 finale) | in progress |
+| 84 | Choose next active phase (PH-06 / PH-08 / PH-11 / PH-12 / PH-16) | pending |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
