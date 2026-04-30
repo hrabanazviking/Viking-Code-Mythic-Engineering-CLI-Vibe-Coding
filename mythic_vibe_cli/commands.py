@@ -3364,13 +3364,167 @@ def cmd_prune(args: argparse.Namespace) -> int:
 
 
 def cmd_heal(args: argparse.Namespace) -> int:
+    """PH-13 slice 13.3: ``heal`` v2 — generate an additive Scribe
+    reconciliation packet from current drift findings.
+
+    Behaviour:
+
+    1. Run :func:`scan_for_drift`.
+    2. Group findings by category.
+    3. Write a Scribe-targeted markdown packet to
+       ``mythic/heal/<timestamp>-reconciliation.md`` plus a JSON
+       sidecar at ``<timestamp>-reconciliation.json``.
+    4. Print the packet path on stdout (or the full payload under
+       ``--json``).
+
+    The packet describes **additive** reconciliations only — never
+    proposes overwriting or deleting existing content. The Scribe
+    agent reading the packet is the one that turns the proposals
+    into real edits, and only when the operator approves.
+
+    ``--dry-run`` computes the packet but does not write it.
+    """
+    from datetime import datetime, timezone
+
+    from .drift import render_findings_text, scan_for_drift, summarize_findings
+
     root = Path(args.path).resolve()
-    write_line("Heal ritual scaffold ready.")
+    findings = scan_for_drift(root)
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    packet_dir = root / "mythic" / "heal"
+    md_path = packet_dir / f"{timestamp}-reconciliation.md"
+    json_path = packet_dir / f"{timestamp}-reconciliation.json"
+
+    grouped: dict[str, list[dict[str, str]]] = {}
+    for finding in findings:
+        grouped.setdefault(finding.category, []).append(finding.to_dict())
+
+    summary = summarize_findings(findings)
+    failing_test = getattr(args, "failing_test", "") or ""
+
+    md_lines: list[str] = [
+        "# Scribe reconciliation packet",
+        "",
+        f"- Generated: {timestamp}",
+        f"- Project: {root}",
+        f"- Findings: {len(findings)} ({summary['warning']} warning, {summary['info']} info)",
+    ]
+    if failing_test:
+        md_lines.append(f"- Failing test (informational): {failing_test}")
+    md_lines.extend([
+        "",
+        "## Reconciliation principles",
+        "",
+        "1. Additive only — propose new content; never overwrite or delete.",
+        "2. Operator-gated — write nothing without explicit approval.",
+        "3. Per-category grouping — a Scribe agent can prioritise by kind.",
+        "",
+        "## Findings by category",
+        "",
+    ])
+    if not findings:
+        md_lines.append("No drift detected — packet is informational only.")
+    else:
+        for category, items in grouped.items():
+            md_lines.append(f"### {category} ({len(items)})")
+            md_lines.append("")
+            for item in items:
+                md_lines.append(
+                    f"- [{item['severity']}] `{item['path']}` — "
+                    f"{item['description']}"
+                )
+            md_lines.append("")
+            md_lines.extend(_heal_proposal_for_category(category))
+            md_lines.append("")
+
+    md_text = "\n".join(md_lines).rstrip() + "\n"
+
+    payload = {
+        "command": "heal",
+        "timestamp": timestamp,
+        "path": str(root),
+        "failing_test": failing_test,
+        "summary": summary,
+        "findings": [f.to_dict() for f in findings],
+        "markdown_path": str(md_path),
+        "json_path": str(json_path),
+        "markdown_preview": render_findings_text(findings),
+    }
+
+    if not _flag(args, "dry_run"):
+        try:
+            packet_dir.mkdir(parents=True, exist_ok=True)
+            md_path.write_text(md_text, encoding="utf-8")
+            json_path.write_text(
+                json.dumps(payload, indent=2, sort_keys=False) + "\n",
+                encoding="utf-8",
+            )
+            payload["written"] = True
+        except OSError as exc:
+            payload["written"] = False
+            payload["error"] = str(exc)
+    else:
+        payload["written"] = False
+        payload["dry_run"] = True
+
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+
+    write_line("Heal — Scribe reconciliation packet")
     write_key_value("Project", root)
-    if args.failing_test:
-        write_key_value("Target failing test", args.failing_test)
-    write_line("Next: reproduce the failure, patch minimally, then rerun tests.")
+    write_key_value("Findings", str(len(findings)))
+    if failing_test:
+        write_key_value("Failing test", failing_test)
+    if payload.get("dry_run"):
+        write_line("- Dry run: no files written.")
+    elif payload.get("written"):
+        write_key_value("Markdown", md_path)
+        write_key_value("JSON sidecar", json_path)
+    else:
+        write_error(
+            f"Failed to write packet: {payload.get('error', 'unknown error')}"
+        )
     return SUCCESS
+
+
+def _heal_proposal_for_category(category: str) -> list[str]:
+    """Hard-coded proposal stanzas for each known drift category.
+
+    Each stanza is intentionally additive — the Scribe agent reading
+    the packet sees a "Proposal" block telling it exactly what kind
+    of new content to draft. Categories the table doesn't cover get
+    a generic stanza so the packet still reads cleanly."""
+    table: dict[str, list[str]] = {
+        "undocumented_handler": [
+            "**Proposal:** Draft a one-line docstring for each listed",
+            "handler describing what the command does and any side",
+            "effects. The docstring is the primary source for `slash",
+            "inspect` and `--help` — keep it user-facing, not",
+            "implementation-focused.",
+        ],
+        "undocumented_module": [
+            "**Proposal:** Add a short module docstring explaining the",
+            "module's purpose and the public surface it exposes. One",
+            "paragraph is enough; deeper context belongs in DEVLOG /",
+            "decisions.",
+        ],
+        "superseded_decision_referenced": [
+            "**Proposal:** For each external reference, decide:",
+            "(a) update the citing file to reference the replacement",
+            "decision, or (b) remove the citation if the context no",
+            "longer applies. Do not modify the superseded decision",
+            "itself — its archival value depends on staying as-is.",
+        ],
+    }
+    return table.get(
+        category,
+        [
+            "**Proposal:** Draft an additive reconciliation that",
+            "addresses each listed finding. Do not overwrite existing",
+            "content; produce new docs / sidecars / annotations only.",
+        ],
+    )
 
 
 def cmd_workflow_run(args: argparse.Namespace) -> int:
