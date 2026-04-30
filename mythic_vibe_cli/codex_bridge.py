@@ -593,6 +593,21 @@ class PacketBuilder:
         if self.config.auto_compact:
             sections = self._compact_sections(sections, self.config.packet_char_budget)
 
+        # PH-05 slice 5.7: append relevant graph context if the project
+        # has a populated knowledge graph. The helper returns empty when
+        # the graph file is absent / empty / no matches, so packets in
+        # un-scanned projects keep their existing shape.
+        from .context.packet_context import (
+            build_graph_context_section,
+            derive_packet_tags,
+        )
+
+        graph_context = build_graph_context_section(
+            self.root,
+            tags=derive_packet_tags(request.phase, request.role, request.task),
+            budget=max(0, self.config.packet_char_budget // 4),
+        )
+
         goals = sections["goals"]
         architecture = sections["architecture"]
         plan = sections["plan"]
@@ -625,6 +640,7 @@ class PacketBuilder:
                 "verification_commands": role_profile["verification"],
                 "required_output_format": required_output,
                 "method_excerpts": [excerpt.to_dict() for excerpt in method_excerpts],
+                "graph_context": graph_context,
                 "checkin_summary_format": [
                     "Phase: <phase>",
                     "Update: <one sentence>",
@@ -635,6 +651,10 @@ class PacketBuilder:
 
         method_block = self._render_method_excerpts_markdown(method_excerpts)
         method_section = f"\n\n## 12. Method Excerpts\n{method_block}" if method_block else ""
+        # PH-05 slice 5.7: graph_context is already a heading-prefixed
+        # markdown block (or empty); we slot it in as its own section
+        # rather than embedding it in the static template.
+        graph_section = f"\n\n{graph_context.rstrip()}" if graph_context else ""
 
         return textwrap.dedent(
             f"""
@@ -684,7 +704,7 @@ class PacketBuilder:
             - Update: one sentence
             - Files changed: list only what changed
             """
-        ).strip() + method_section + textwrap.dedent(
+        ).strip() + method_section + graph_section + textwrap.dedent(
             f"""
 
             ### SAFETY
