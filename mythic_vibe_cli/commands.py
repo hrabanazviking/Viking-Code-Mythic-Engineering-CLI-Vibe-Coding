@@ -1020,6 +1020,7 @@ def cmd_ai_run(args: argparse.Namespace) -> int:
     ``CV-XXXXXX`` if absent). Dry-runs are never recorded — they
     are estimation passes, not real conversations.
     """
+    from .ai.cost_guard import check_budget
     from .memory.conversation import new_conversation_id, record_turn
 
     root = Path(getattr(args, "path", ".")).resolve()
@@ -1035,6 +1036,21 @@ def cmd_ai_run(args: argparse.Namespace) -> int:
         return USER_INPUT_ERROR
 
     packet = _resolve_ai_packet(root, args.packet)
+
+    # PH-08 slice 8.2: cost-guard gate. Only fires for live calls;
+    # dry-runs go straight through. The estimate's cost_usd is the
+    # projection we charge against the daily cap.
+    if not _flag(args, "dry_run"):
+        try:
+            estimate = provider.estimate(packet)
+            projected = float(getattr(estimate, "cost_usd", 0.0) or 0.0)
+        except Exception:  # noqa: BLE001 — estimator failure shouldn't block the call
+            projected = 0.0
+        budget = check_budget(root, projected)
+        if not budget.allowed:
+            write_error(f"Daily AI cost cap blocked the call: {budget.reason}")
+            return OPERATIONAL_FAILURE
+
     response = provider.run(packet, dry_run=_flag(args, "dry_run"))
 
     # PH-15 sub-slice: conversation auto-record.
