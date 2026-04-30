@@ -634,6 +634,21 @@ def build_parser() -> argparse.ArgumentParser:
         help="Skip recording this call into the conversation log.",
     )
     add_runtime_options(ai_run, json_output=True, dry_run=True)
+    ai_models = ai_sub.add_parser(
+        "models",
+        help="List installed models for a provider (Ollama supported today)",
+    )
+    ai_models.add_argument(
+        "--path",
+        default=".",
+        help="Project directory used for provider logs (default: current directory)",
+    )
+    ai_models.add_argument(
+        "--provider",
+        required=True,
+        choices=sorted(ProviderRegistry().providers().keys()),
+    )
+    add_runtime_options(ai_models, json_output=True)
     ai_ingest = ai_sub.add_parser("ingest-response", help="Record a provider response as metadata only")
     ai_ingest.add_argument("--path", default=".", help="Project directory (default: current directory)")
     ai_ingest.add_argument("--provider", required=True, help="Provider name")

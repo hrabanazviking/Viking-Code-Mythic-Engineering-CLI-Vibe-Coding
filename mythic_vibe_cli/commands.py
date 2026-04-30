@@ -4029,10 +4029,98 @@ def cmd_ai_dispatch(args: argparse.Namespace) -> int:
         return cmd_ai_run(args)
     if args.ai_command == "ingest-response":
         return cmd_ai_ingest_response(args)
+    if args.ai_command == "models":
+        return cmd_ai_models(args)
     write_error(
-        f"Unknown ai subcommand: {args.ai_command!r}. Valid: providers | test | run | ingest-response."
+        f"Unknown ai subcommand: {args.ai_command!r}. "
+        "Valid: providers | test | run | ingest-response | models."
     )
     return USER_INPUT_ERROR
+
+
+def cmd_ai_models(args: argparse.Namespace) -> int:
+    """PH-06 slice 6.3: list installed models for a provider.
+
+    Today only ``ollama`` returns a real list (via the slice 6.2
+    ``list_models`` helper). Other providers report
+    ``configured / not configured`` for parity with ``ai providers``
+    but don't surface a model catalogue — none of the upstream APIs
+    expose a uniform "list models" endpoint that's worth wiring
+    here. Future PH-08 (Provider Routing) may change that.
+    """
+    provider_name = getattr(args, "provider", "")
+
+    if provider_name == "ollama":
+        from .ai.ollama_health import list_models
+
+        models, health = list_models()
+        if _flag(args, "json"):
+            write_json(
+                {
+                    "command": "ai models",
+                    "provider": provider_name,
+                    "health": health.to_dict(),
+                    "models": models,
+                }
+            )
+            return SUCCESS if health.reachable else OPERATIONAL_FAILURE
+
+        if not health.reachable:
+            write_error(
+                f"Ollama daemon unreachable at {health.endpoint}: "
+                f"{health.error or 'no connection'}."
+            )
+            for hint in health.details:
+                write_bullet(hint, indent=2)
+            return OPERATIONAL_FAILURE
+
+        if not models:
+            write_line(f"Ollama at {health.endpoint}: no models installed.")
+            write_line("- Run `ollama pull <model>` to install one (e.g. llama3.2).")
+            return SUCCESS
+
+        write_line(f"Ollama at {health.endpoint}: {len(models)} model(s).")
+        for entry in models:
+            name = str(entry.get("name", "(unnamed)"))
+            size = entry.get("size")
+            family = (entry.get("details") or {}).get("family") if isinstance(
+                entry.get("details"), dict
+            ) else None
+            extras: list[str] = []
+            if isinstance(size, (int, float)) and size > 0:
+                extras.append(f"size={int(size)}")
+            if family:
+                extras.append(f"family={family}")
+            suffix = f"  ({', '.join(extras)})" if extras else ""
+            write_line(f"  - {name}{suffix}")
+        return SUCCESS
+
+    # Other providers: report configured-status only and return a
+    # clean note that the listing isn't implemented for them yet.
+    root = Path(getattr(args, "path", ".")).resolve()
+    registry = _ai_registry(root)
+    provider = registry.providers().get(provider_name)
+    if provider is None:
+        write_error(f"Unknown provider: {provider_name!r}.")
+        return USER_INPUT_ERROR
+
+    status = provider.validate_config()
+    payload = {
+        "command": "ai models",
+        "provider": provider_name,
+        "configured": status.configured,
+        "details": list(status.details),
+        "models": [],
+        "note": (
+            f"Model listing is not implemented for {provider_name!r} yet — "
+            "use the provider's documented model id with `ai run --provider`."
+        ),
+    }
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+    write_line(payload["note"])
+    return SUCCESS
 
 
 def cmd_verify_dispatch(args: argparse.Namespace) -> int:
