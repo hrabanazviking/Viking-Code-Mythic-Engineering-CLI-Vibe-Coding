@@ -4138,6 +4138,202 @@ def cmd_graph_visualize(args: argparse.Namespace) -> int:
     return SUCCESS
 
 
+def cmd_memory_dispatch(args: argparse.Namespace) -> int:
+    """PH-15 slices 15.3 + 15.4: dispatcher for `mythic-vibe memory`
+    subactions (list / show / compact / rehydrate)."""
+    sub = getattr(args, "memory_command", "")
+    if sub == "list":
+        return cmd_memory_list(args)
+    if sub == "show":
+        return cmd_memory_show(args)
+    if sub == "compact":
+        return cmd_memory_compact(args)
+    if sub == "rehydrate":
+        return cmd_memory_rehydrate(args)
+    write_error(
+        f"Unknown memory subcommand: {sub!r}. "
+        "Valid: list | show | compact | rehydrate."
+    )
+    return USER_INPUT_ERROR
+
+
+def cmd_memory_list(args: argparse.Namespace) -> int:
+    """List every conversation record under mythic/ai/conversations/."""
+    from .memory.conversation import list_conversations
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    records = list_conversations(root)
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "memory list",
+                "path": str(root),
+                "conversations": [r.to_dict() for r in records],
+            }
+        )
+        return SUCCESS
+    if not records:
+        write_line("Memory: no conversations recorded yet.")
+        return SUCCESS
+    write_line(f"Memory: {len(records)} conversation(s).")
+    for record in records:
+        write_line(
+            f"  {record.conversation_id}  "
+            f"turns={record.turn_count}  "
+            f"updated={record.updated_at}  "
+            f"provider={record.provider or '-'}"
+        )
+    return SUCCESS
+
+
+def cmd_memory_show(args: argparse.Namespace) -> int:
+    """Print one conversation record by id (text or JSON)."""
+    from .memory.conversation import read_conversation, render_record_text
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    cid = getattr(args, "id", "")
+    record = read_conversation(root, cid)
+    if record is None:
+        write_error(f"Conversation {cid!r} not found.")
+        return USER_INPUT_ERROR
+    if _flag(args, "json"):
+        write_json({"command": "memory show", "conversation": record.to_dict()})
+        return SUCCESS
+    write_line(render_record_text(record))
+    return SUCCESS
+
+
+def cmd_memory_compact(args: argparse.Namespace) -> int:
+    """PH-15 slice 15.2 wrapper — compact a conversation into a
+    summary sidecar. Honours --dry-run."""
+    from .memory.compaction import compact_conversation
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    cid = getattr(args, "id", "")
+    keep_recent = int(getattr(args, "keep_recent", 3) or 3)
+    payload = compact_conversation(
+        root,
+        cid,
+        keep_recent=keep_recent,
+        dry_run=bool(_flag(args, "dry_run")),
+    )
+    if _flag(args, "json"):
+        write_json({"command": "memory compact", "result": payload.to_dict()})
+        return SUCCESS if (payload.written or payload.dry_run) else OPERATIONAL_FAILURE
+    if payload.metadata.get("error") == "conversation not found":
+        write_error(f"Conversation {cid!r} not found.")
+        return USER_INPUT_ERROR
+    if payload.dry_run:
+        write_line(
+            f"Memory compact (dry run): would write "
+            f"{payload.markdown_path} + JSON sidecar."
+        )
+        return SUCCESS
+    if not payload.written:
+        write_error(
+            "Failed to write summary: "
+            f"{payload.metadata.get('error', 'unknown error')}"
+        )
+        return OPERATIONAL_FAILURE
+    write_line(
+        f"Memory compact: {payload.markdown_path} "
+        f"({payload.recent_turns_count} recent / "
+        f"{payload.earlier_turns_count} earlier turns)."
+    )
+    return SUCCESS
+
+
+def cmd_memory_rehydrate(args: argparse.Namespace) -> int:
+    """PH-15 slice 15.4 — combine the graph-backed session brief
+    (PH-05 slice 5.4) with the latest conversation summary (slice
+    15.2) and the latest handoff. The result is a one-call cheat-
+    sheet for session resume."""
+    from .context.graph import GraphStore, graph_path_for
+    from .context.rehydrator import build_session_brief
+    from .memory.compaction import latest_summary_for
+    from .memory.conversation import latest_conversation
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    phase = getattr(args, "phase", "build") or "build"
+
+    # Session brief (graph-backed if graph exists; empty otherwise).
+    brief_payload: dict[str, object] = {}
+    if graph_path_for(root).exists():
+        with GraphStore.open(root) as store:
+            brief = build_session_brief(store, phase)
+            brief_payload = brief.to_dict()
+
+    # Latest conversation + summary.
+    convo = latest_conversation(root)
+    convo_payload: dict[str, object] | None = None
+    summary_text = ""
+    if convo is not None:
+        convo_payload = {
+            "conversation_id": convo.conversation_id,
+            "provider": convo.provider,
+            "model": convo.model,
+            "updated_at": convo.updated_at,
+            "turn_count": convo.turn_count,
+        }
+        summary_text = latest_summary_for(root, convo.conversation_id)
+
+    # Latest handoff (file-based, existing infrastructure).
+    handoff_payload: dict[str, object] | None = None
+    handoff_record = load_latest_handoff(root)
+    if handoff_record is not None:
+        handoff_payload = {
+            "handoff_id": handoff_record.handoff_id,
+            "timestamp": handoff_record.timestamp,
+            "objective": handoff_record.objective,
+            "next_steps": list(handoff_record.next_steps),
+        }
+
+    payload = {
+        "command": "memory rehydrate",
+        "path": str(root),
+        "phase": phase,
+        "session_brief": brief_payload,
+        "latest_conversation": convo_payload,
+        "conversation_summary": summary_text,
+        "latest_handoff": handoff_payload,
+    }
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+
+    write_line(f"Rehydration brief — phase: {phase}")
+    write_line("")
+    if brief_payload:
+        write_line(
+            "- Session brief: graph populated; "
+            f"top {len(brief_payload.get('top_k', []))} retrieval hits, "
+            f"{len(brief_payload.get('recent_decisions', []))} recent decisions."
+        )
+    else:
+        write_line(
+            "- Session brief: graph absent; run `mythic-vibe scan` to populate."
+        )
+    if convo_payload is not None:
+        write_line(
+            f"- Latest conversation: {convo_payload['conversation_id']} "
+            f"({convo_payload['turn_count']} turns)"
+        )
+        if summary_text:
+            write_line("- Summary file present.")
+        else:
+            write_line("- No summary yet; run `memory compact` to generate.")
+    else:
+        write_line("- Latest conversation: none recorded.")
+    if handoff_payload is not None:
+        write_line(
+            f"- Latest handoff: {handoff_payload['handoff_id']} — "
+            f"{handoff_payload.get('objective') or '(no objective)'}"
+        )
+    else:
+        write_line("- Latest handoff: none.")
+    return SUCCESS
+
+
 def cmd_drift(args: argparse.Namespace) -> int:
     """PH-13 slice 13.1: scan the project for drift between docs, code,
     and decisions.
@@ -4217,4 +4413,5 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "audit": cmd_audit,
     "drift": cmd_drift,
     "graph": cmd_graph_dispatch,
+    "memory": cmd_memory_dispatch,
 }

@@ -1266,6 +1266,61 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_runtime_options(graph_visualize)
 
+    # --- PH-15 slices 15.3 + 15.4: memory show / list / compact / rehydrate ---
+    memory_cmd = sub.add_parser(
+        "memory",
+        help="Conversation memory: show, list, compact, rehydrate",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe memory list
+              mythic-vibe memory show --id CV-ABCDEF
+              mythic-vibe memory compact --id CV-ABCDEF --keep-recent 3
+              mythic-vibe memory rehydrate --phase build
+            """
+        ),
+    )
+    memory_sub = memory_cmd.add_subparsers(dest="memory_command", required=True)
+
+    memory_list = memory_sub.add_parser(
+        "list", help="List every conversation record (newest first)"
+    )
+    memory_list.add_argument("--path", default=".")
+    add_runtime_options(memory_list, json_output=True)
+
+    memory_show = memory_sub.add_parser(
+        "show", help="Print one conversation record by id"
+    )
+    memory_show.add_argument("--path", default=".")
+    memory_show.add_argument("--id", required=True, help="Conversation id (CV-XXXXXX)")
+    add_runtime_options(memory_show, json_output=True)
+
+    memory_compact = memory_sub.add_parser(
+        "compact",
+        help="Compact a conversation into a summary sidecar",
+    )
+    memory_compact.add_argument("--path", default=".")
+    memory_compact.add_argument("--id", required=True, help="Conversation id (CV-XXXXXX)")
+    memory_compact.add_argument(
+        "--keep-recent",
+        type=int,
+        default=3,
+        help="Number of trailing turns to reproduce verbatim (default: 3)",
+    )
+    add_runtime_options(memory_compact, json_output=True, dry_run=True)
+
+    memory_rehydrate = memory_sub.add_parser(
+        "rehydrate",
+        help="Build a session-resume brief from graph + handoff + latest conversation",
+    )
+    memory_rehydrate.add_argument("--path", default=".")
+    memory_rehydrate.add_argument(
+        "--phase",
+        default="build",
+        help="Current Mythic phase to scope the brief (default: build)",
+    )
+    add_runtime_options(memory_rehydrate, json_output=True)
+
     # --- PH-13 slice 13.1: drift scan ---
     # Standalone drift-detection scan. Doctor integration (slice 13.2)
     # surfaces the same findings under its own envelope; this top-level
