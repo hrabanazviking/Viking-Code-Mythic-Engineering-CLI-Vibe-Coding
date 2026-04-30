@@ -233,8 +233,14 @@ additive, cross-platform, open-source):
 | 82 | **PHASE 15 FULLY COMPLETE.** PHASE15_FINALE_CLOSEOUT.md written. | done |
 | 83 | Update memory + project status (after PH-15 finale) | done — pushed at 8853249 |
 | 84 | PH-15 sub-slice — provider-call auto-recording wire-up | done — `8b923fc` — +12 tests, 886 total |
-| 85 | Update memory + project status (after PH-15 sub-slice) | in progress |
-| 86 | Choose next active phase (PH-06 / PH-08 / PH-11 / PH-12 / PH-16) | pending |
+| 85 | Update memory + project status (after PH-15 sub-slice) | done — pushed at 20401d9 |
+| 86 | PH-06 Slices 6.1 + 6.2 — Ollama adapter + daemon discovery | done — `26ee516` — +21 tests, 907 total |
+| 87 | PH-06 Slice 6.3 — model picker | done — `dcb0a31` — +10 tests, 917 total |
+| 88 | PH-06 Slice 6.5 — telemetry extension + reader | done — `3f74ef6` — +14 tests, 931 total |
+| 89 | PH-06 Slice 6.6 — hardware profile | done — `cf7a1d0` — +16 tests, 947 total |
+| 90 | **PHASE 6 PARTIALLY COMPLETE** (5/6; 6.4 streaming deferred). PHASE6_FINALE_CLOSEOUT.md written. | done |
+| 91 | Update memory + project status (after PH-06 finale) | in progress |
+| 92 | Choose next active phase (PH-07 / PH-08 / PH-11 / PH-12 / PH-16 / PH-18) | pending |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
