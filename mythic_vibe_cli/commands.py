@@ -4049,11 +4049,72 @@ def cmd_ai_dispatch(args: argparse.Namespace) -> int:
         return cmd_ai_models(args)
     if args.ai_command == "telemetry":
         return cmd_ai_telemetry(args)
+    if args.ai_command == "route":
+        return cmd_ai_route(args)
     write_error(
         f"Unknown ai subcommand: {args.ai_command!r}. "
-        "Valid: providers | test | run | ingest-response | models | telemetry."
+        "Valid: providers | test | run | ingest-response | models | telemetry | route."
     )
     return USER_INPUT_ERROR
+
+
+def cmd_ai_route(args: argparse.Namespace) -> int:
+    """PH-08 slice 8.4: explain how a ``(role, task_type)`` would
+    route through the slice-8.1 provider table.
+
+    Pure routing — never invokes a provider. Operators run this to
+    sanity-check their ``mythic/ai/routing.json`` overlay before a
+    real ``ai run``.
+    """
+    from .ai.router import RoutingTable, route
+    from .hardware import detect_profile
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    role = getattr(args, "role", "Forge Worker") or "Forge Worker"
+    task_type = getattr(args, "task", "*") or "*"
+    explain = bool(_flag(args, "explain"))
+    no_hardware = bool(_flag(args, "no_hardware"))
+
+    table = RoutingTable.load(root)
+    hardware = None if no_hardware else detect_profile()
+    decision = route(table, role=role, task_type=task_type, hardware=hardware)
+
+    payload = {
+        "command": "ai route",
+        "path": str(root),
+        "role": role,
+        "task_type": task_type,
+        "decision": decision.to_dict(),
+        "hardware": hardware.to_dict() if hardware is not None else None,
+        "explain": explain,
+    }
+    if not explain and "reasons" in payload["decision"]:
+        # Keep the JSON envelope tight unless --explain was passed —
+        # the rule_matched + provider/model already cover the
+        # common-case answer.
+        payload["decision"] = {
+            k: v for k, v in payload["decision"].items() if k != "reasons"
+        }
+
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+
+    write_line(
+        f"Route: role={role!r} task_type={task_type!r}  -> "
+        f"provider={decision.provider!r} model={decision.model!r}"
+    )
+    if decision.fallbacks:
+        write_line(f"  fallbacks: {' -> '.join(decision.fallbacks)}")
+    else:
+        write_line("  fallbacks: (none)")
+    if decision.rule_matched is not None and decision.rule_matched.description:
+        write_line(f"  matched rule: {decision.rule_matched.description}")
+    if explain:
+        write_line("  reasons:")
+        for reason in decision.reasons:
+            write_bullet(reason, indent=4)
+    return SUCCESS
 
 
 def cmd_ai_telemetry(args: argparse.Namespace) -> int:

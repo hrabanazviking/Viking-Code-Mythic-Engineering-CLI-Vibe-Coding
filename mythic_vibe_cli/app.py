@@ -634,6 +634,36 @@ def build_parser() -> argparse.ArgumentParser:
         help="Skip recording this call into the conversation log.",
     )
     add_runtime_options(ai_run, json_output=True, dry_run=True)
+    ai_route = ai_sub.add_parser(
+        "route",
+        help="Explain how a (role, task_type) would route through the provider table",
+    )
+    ai_route.add_argument(
+        "--path",
+        default=".",
+        help="Project directory (used to load mythic/ai/routing.json overlay)",
+    )
+    ai_route.add_argument(
+        "--role",
+        default="Forge Worker",
+        help="Mythic role to route (default: Forge Worker)",
+    )
+    ai_route.add_argument(
+        "--task",
+        default="*",
+        help="Task type to route (default: *)",
+    )
+    ai_route.add_argument(
+        "--explain",
+        action="store_true",
+        help="Verbose trace — show every rule the router considered",
+    )
+    ai_route.add_argument(
+        "--no-hardware",
+        action="store_true",
+        help="Skip hardware detection; treat all hardware predicates as pass",
+    )
+    add_runtime_options(ai_route, json_output=True)
     ai_telemetry = ai_sub.add_parser(
         "telemetry",
         help="Read recent provider calls from mythic/ai/provider_calls.jsonl",
