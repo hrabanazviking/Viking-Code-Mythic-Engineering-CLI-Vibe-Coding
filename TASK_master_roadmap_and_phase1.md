@@ -231,8 +231,10 @@ additive, cross-platform, open-source):
 | 80 | PH-15 Slice 15.2 — compaction summariser | done — `ea32851` — +16 tests, 856 total |
 | 81 | PH-15 Slices 15.3 + 15.4 — memory CLI (show/list/compact/rehydrate) | done — `b663c20` — +18 tests, 874 total |
 | 82 | **PHASE 15 FULLY COMPLETE.** PHASE15_FINALE_CLOSEOUT.md written. | done |
-| 83 | Update memory + project status (after PH-15 finale) | in progress |
-| 84 | Choose next active phase (PH-06 / PH-08 / PH-11 / PH-12 / PH-16) | pending |
+| 83 | Update memory + project status (after PH-15 finale) | done — pushed at 8853249 |
+| 84 | PH-15 sub-slice — provider-call auto-recording wire-up | done — `8b923fc` — +12 tests, 886 total |
+| 85 | Update memory + project status (after PH-15 sub-slice) | in progress |
+| 86 | Choose next active phase (PH-06 / PH-08 / PH-11 / PH-12 / PH-16) | pending |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
