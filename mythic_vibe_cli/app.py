@@ -1379,6 +1379,31 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_runtime_options(memory_rehydrate, json_output=True)
 
+    # --- PH-06 slice 6.6: hardware profile ---
+    hardware_cmd = sub.add_parser(
+        "hardware",
+        help="Detect and (optionally) record the host hardware profile",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe hardware
+              mythic-vibe hardware --json
+              mythic-vibe hardware --write --path ./project
+            """
+        ),
+    )
+    hardware_cmd.add_argument(
+        "--path",
+        default=".",
+        help="Project directory used as the docs/ root for --write (default: current directory)",
+    )
+    hardware_cmd.add_argument(
+        "--write",
+        action="store_true",
+        help="Persist the profile to docs/hardware_profiles.md plus a JSON sidecar",
+    )
+    add_runtime_options(hardware_cmd, json_output=True)
+
     # --- PH-13 slice 13.1: drift scan ---
     # Standalone drift-detection scan. Doctor integration (slice 13.2)
     # surfaces the same findings under its own envelope; this top-level
