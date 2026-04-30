@@ -211,8 +211,14 @@ additive, cross-platform, open-source):
 | 60 | Phase 2 Slices 2.4 + 2.5 — `/provider` + `/audit` aliases | done — `9e877e1` — +12 tests, 676 total |
 | 61 | Phase 2 Slice 2.6 — plugin slash dispatch contract | done — `2fa5097` — +10 tests, 686 total |
 | 62 | **PHASE 2 FULLY COMPLETE.** PHASE2_FINALE_CLOSEOUT.md written. | done |
-| 63 | Update memory + project status (after PH-02 finale) | in progress |
-| 64 | Choose next active phase (PH-05 / PH-13 / etc.) | pending |
+| 63 | Update memory + project status (after PH-02 finale) | done — pushed at ec06f12 |
+| 64 | PH-13 Slice 13.1 — drift index foundation | done — `fbc5dc1` — +26 tests, 712 total |
+| 65 | PH-13 Slice 13.2 — doctor surfaces drift | done — `b09aaab` — +3 tests, 715 total |
+| 66 | PH-13 Slice 13.3 — heal v2 reconciliation packet | done — `afa0363` — +6 tests, 719 total |
+| 67 | PH-13 Slice 13.4 — TUI drift panel | done — `d396de7` — +5 tests, 724 total |
+| 68 | **PHASE 13 FULLY COMPLETE.** PHASE13_FINALE_CLOSEOUT.md written. | done |
+| 69 | Update memory + project status (after PH-13 finale) | in progress |
+| 70 | Choose next active phase (PH-05 / PH-11 / PH-12 / etc.) | pending |
 
 ## Phase 1 Slice 1.1 — Findings Summary
 
