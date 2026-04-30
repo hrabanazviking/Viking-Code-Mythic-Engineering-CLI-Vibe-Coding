@@ -102,6 +102,8 @@ class CliKernelTests(unittest.TestCase):
             "memory",
             # PH-06 slice 6.6 — hardware profile
             "hardware",
+            # PH-07 slices 7.1-7.3 — voice & multimodal
+            "voice",
         }
 
         self.assertEqual(set(COMMAND_HANDLERS), expected)

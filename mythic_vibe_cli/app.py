@@ -1409,6 +1409,85 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_runtime_options(memory_rehydrate, json_output=True)
 
+    # --- PH-07 slices 7.1-7.3: voice & multimodal ---
+    voice_cmd = sub.add_parser(
+        "voice",
+        help="Voice transcription + TTS (opt-in; stub engines work without extras)",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe voice transcribe --file fixture.txt
+              mythic-vibe voice transcribe --file fixture.wav --engine whisper
+              mythic-vibe voice transcribe --file fixture.txt --capture-intent --task "Refactor router"
+              mythic-vibe voice say "hello operator"
+            """
+        ),
+    )
+    voice_sub = voice_cmd.add_subparsers(dest="voice_command", required=True)
+
+    voice_transcribe = voice_sub.add_parser(
+        "transcribe",
+        help="Transcribe an audio / text fixture; --capture-intent writes a Mythic Phase Record",
+    )
+    voice_transcribe.add_argument(
+        "--path",
+        default=".",
+        help="Project directory (used for --capture-intent writes)",
+    )
+    voice_transcribe.add_argument(
+        "--file",
+        required=True,
+        help="Path to the source file (audio / text fixture)",
+    )
+    voice_transcribe.add_argument(
+        "--engine",
+        default="stub",
+        choices=("stub", "whisper"),
+        help="Transcription engine (default: stub; whisper requires `pip install openai-whisper`)",
+    )
+    voice_transcribe.add_argument(
+        "--language", default="en", help="Spoken language hint (default: en)"
+    )
+    voice_transcribe.add_argument(
+        "--model",
+        default="base",
+        help="Engine model name (default: base; ignored by stub engine)",
+    )
+    voice_transcribe.add_argument(
+        "--capture-intent",
+        action="store_true",
+        help="Pipe the transcription into a fresh intent Mythic Phase Record",
+    )
+    voice_transcribe.add_argument(
+        "--task",
+        default="",
+        help="Required when --capture-intent is set: short task name for the phase record",
+    )
+    add_runtime_options(voice_transcribe, json_output=True)
+
+    voice_say = voice_sub.add_parser(
+        "say",
+        help="Speak text via the configured TTS engine (default: stub; logs to stderr)",
+    )
+    voice_say.add_argument(
+        "--path",
+        default=".",
+        help="Project directory (default: current directory)",
+    )
+    voice_say.add_argument("text", help="Text to speak")
+    voice_say.add_argument(
+        "--engine",
+        default="stub",
+        choices=("stub", "chatterbox"),
+        help="TTS engine (default: stub; chatterbox requires `pip install chatterbox`)",
+    )
+    voice_say.add_argument(
+        "--force",
+        action="store_true",
+        help="Speak even when MYTHIC_VOICE_TTS_ENABLED is not set",
+    )
+    add_runtime_options(voice_say, json_output=True)
+
     # --- PH-06 slice 6.6: hardware profile ---
     hardware_cmd = sub.add_parser(
         "hardware",
