@@ -2108,6 +2108,19 @@ def cmd_config(args: argparse.Namespace) -> int:
 
 
 def cmd_doctor(args: argparse.Namespace) -> int:
+    """Run project diagnostics — file/scaffold checks plus PH-13
+    drift findings. JSON output gains a ``drift`` section listing
+    every finding the slice-13.1 scanner produced; text output adds
+    a Drift-findings list (empty case suppressed).
+
+    Drift severity does not currently bump the doctor exit code —
+    the heuristics today emit only ``info`` / ``warning``. A future
+    detector that emits ``error`` would naturally promote a doctor
+    run to non-zero exit via the existing ``report["errors"]`` path
+    once it's wired through there.
+    """
+    from .drift import scan_for_drift
+
     root = Path(args.path).resolve()
     workflow = MythicWorkflow(root)
     repo_boundary = _flag(args, "repo_boundary")
@@ -2115,6 +2128,8 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         repo_boundary=repo_boundary,
         project_scaffold=not repo_boundary,
     )
+    drift_findings = scan_for_drift(root)
+    drift_payload = [f.to_dict() for f in drift_findings]
     if _flag(args, "json"):
         write_json(
             {
@@ -2124,6 +2139,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
                 "errors": list(report["errors"]),
                 "warnings": list(report["warnings"]),
                 "sections": report["sections"],
+                "drift": drift_payload,
             }
         )
         return OPERATIONAL_FAILURE if report["errors"] else SUCCESS
@@ -2146,6 +2162,16 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             write_bullet(item, indent=2)
     else:
         write_line("- Warnings: none")
+
+    if drift_findings:
+        write_line(f"- Drift findings: {len(drift_findings)}")
+        for finding in drift_findings:
+            write_bullet(
+                f"[{finding.severity}] {finding.category}: {finding.path}",
+                indent=2,
+            )
+    else:
+        write_line("- Drift findings: none")
 
     return OPERATIONAL_FAILURE if report["errors"] else SUCCESS
 
