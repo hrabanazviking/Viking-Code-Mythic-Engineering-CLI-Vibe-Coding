@@ -4613,6 +4613,54 @@ def cmd_memory_rehydrate(args: argparse.Namespace) -> int:
     return SUCCESS
 
 
+def cmd_hardware(args: argparse.Namespace) -> int:
+    """PH-06 slice 6.6: detect host hardware and optionally persist
+    it to ``docs/hardware_profiles.md`` (plus a JSON sidecar).
+
+    Best-effort throughout — every measurement is guarded so a
+    partially broken environment still produces a usable record.
+    Missing values land in the profile's ``notes`` list rather than
+    raising.
+    """
+    from .hardware import detect_profile, render_profile_text, write_profile
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    profile = detect_profile()
+    payload: dict[str, object] = {
+        "command": "hardware",
+        "path": str(root),
+        "profile": profile.to_dict(),
+        "written": False,
+    }
+
+    if _flag(args, "write"):
+        try:
+            md_path, json_path = write_profile(root, profile)
+        except OSError as exc:
+            payload["written"] = False
+            payload["error"] = str(exc)
+        else:
+            payload["written"] = True
+            payload["markdown_path"] = str(md_path)
+            payload["json_path"] = str(json_path)
+
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+
+    write_line(render_profile_text(profile).rstrip())
+    if _flag(args, "write"):
+        if payload.get("written"):
+            write_key_value("Markdown", payload["markdown_path"])
+            write_key_value("JSON sidecar", payload["json_path"])
+        else:
+            write_error(
+                f"Failed to write profile: {payload.get('error', 'unknown error')}"
+            )
+            return OPERATIONAL_FAILURE
+    return SUCCESS
+
+
 def cmd_drift(args: argparse.Namespace) -> int:
     """PH-13 slice 13.1: scan the project for drift between docs, code,
     and decisions.
@@ -4693,4 +4741,5 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "drift": cmd_drift,
     "graph": cmd_graph_dispatch,
     "memory": cmd_memory_dispatch,
+    "hardware": cmd_hardware,
 }

@@ -100,6 +100,8 @@ class CliKernelTests(unittest.TestCase):
             "graph",
             # PH-15 slices 15.3 + 15.4 — memory show / list / compact / rehydrate
             "memory",
+            # PH-06 slice 6.6 — hardware profile
+            "hardware",
         }
 
         self.assertEqual(set(COMMAND_HANDLERS), expected)
