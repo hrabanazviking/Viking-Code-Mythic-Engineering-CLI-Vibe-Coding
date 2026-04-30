@@ -96,6 +96,8 @@ class CliKernelTests(unittest.TestCase):
             "audit",
             # PH-13 slice 13.1 — drift detection
             "drift",
+            # PH-05 slices 5.5 + 5.6 — graph queries + visualize
+            "graph",
         }
 
         self.assertEqual(set(COMMAND_HANDLERS), expected)
