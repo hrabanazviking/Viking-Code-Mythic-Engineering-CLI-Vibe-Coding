@@ -98,6 +98,8 @@ class CliKernelTests(unittest.TestCase):
             "drift",
             # PH-05 slices 5.5 + 5.6 — graph queries + visualize
             "graph",
+            # PH-15 slices 15.3 + 15.4 — memory show / list / compact / rehydrate
+            "memory",
         }
 
         self.assertEqual(set(COMMAND_HANDLERS), expected)

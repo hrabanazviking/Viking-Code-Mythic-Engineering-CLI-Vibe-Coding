@@ -169,4 +169,7 @@ BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
 
     # --- Knowledge graph (PH-05 slices 5.5 + 5.6) ---
     BuiltinSlashCommand(name="graph", description="Read-only graph queries: query, entity, edges, brief, visualize"),
+
+    # --- Conversation memory (PH-15 slices 15.3 + 15.4) ---
+    BuiltinSlashCommand(name="memory", description="Conversation memory: list, show, compact, rehydrate"),
 )
