@@ -53,6 +53,7 @@ def command_for_builtin(name: str, *, project_root: Path | None = None) -> RunSp
         "provider",
         "audit",
         "drift",
+        "graph",
     }:
         base.extend(["--path", str(project_root)])
     return RunSpec(label=f"/{name}", argv=base)

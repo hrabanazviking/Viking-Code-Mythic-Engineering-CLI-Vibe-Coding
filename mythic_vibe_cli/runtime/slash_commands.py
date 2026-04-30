@@ -166,4 +166,7 @@ BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
 
     # --- Drift detection (PH-13 slice 13.1) ---
     BuiltinSlashCommand(name="drift", description="Scan for drift between docs, code, and decisions (heuristic v1)"),
+
+    # --- Knowledge graph (PH-05 slices 5.5 + 5.6) ---
+    BuiltinSlashCommand(name="graph", description="Read-only graph queries: query, entity, edges, brief, visualize"),
 )

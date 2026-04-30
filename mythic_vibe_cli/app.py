@@ -1167,6 +1167,105 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_runtime_options(audit_cmd)
 
+    # --- PH-05 slice 5.5 / 5.6: graph query + visualize ---
+    graph_cmd = sub.add_parser(
+        "graph",
+        help="Read-only queries over the project knowledge graph",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe graph query --tag cli
+              mythic-vibe graph entity --kind module --name app
+              mythic-vibe graph edges --kind references
+              mythic-vibe graph brief --phase build
+              mythic-vibe graph visualize --format mermaid
+            """
+        ),
+    )
+    graph_sub = graph_cmd.add_subparsers(dest="graph_command", required=True)
+
+    graph_query = graph_sub.add_parser(
+        "query",
+        help="Run a relevance-ranked retrieval against the graph",
+    )
+    graph_query.add_argument(
+        "--path",
+        default=".",
+        help="Project directory (default: current directory)",
+    )
+    graph_query.add_argument(
+        "--tag",
+        action="append",
+        default=[],
+        help="Tag to seed retrieval (repeatable)",
+    )
+    graph_query.add_argument(
+        "--top-k",
+        type=int,
+        default=10,
+        help="Maximum results to return (default: 10)",
+    )
+    graph_query.add_argument(
+        "--no-expand",
+        action="store_true",
+        help="Disable 1-hop neighbour expansion",
+    )
+    add_runtime_options(graph_query, json_output=True)
+
+    graph_entity = graph_sub.add_parser(
+        "entity",
+        help="Find entities matching a kind / name / path filter",
+    )
+    graph_entity.add_argument("--path", default=".")
+    graph_entity.add_argument("--kind", default="", help="Restrict to entity kind")
+    graph_entity.add_argument("--name", default="", help="Substring match on entity name")
+    graph_entity.add_argument(
+        "--name-path", default="", help="Substring match on entity path"
+    )
+    add_runtime_options(graph_entity, json_output=True)
+
+    graph_edges = graph_sub.add_parser("edges", help="List edges by filter")
+    graph_edges.add_argument("--path", default=".")
+    graph_edges.add_argument("--kind", default="", help="Restrict to edge kind")
+    graph_edges.add_argument(
+        "--src-id", type=int, default=0, help="Restrict to source entity id"
+    )
+    graph_edges.add_argument(
+        "--dst-id", type=int, default=0, help="Restrict to destination entity id"
+    )
+    add_runtime_options(graph_edges, json_output=True)
+
+    graph_brief = graph_sub.add_parser(
+        "brief",
+        help="Render the slice 5.4 session brief from the graph",
+    )
+    graph_brief.add_argument("--path", default=".")
+    graph_brief.add_argument(
+        "--phase",
+        default="build",
+        help="Current Mythic phase to scope the brief (default: build)",
+    )
+    add_runtime_options(graph_brief, json_output=True)
+
+    graph_visualize = graph_sub.add_parser(
+        "visualize",
+        help="Export the graph as Mermaid (default) or DOT",
+    )
+    graph_visualize.add_argument("--path", default=".")
+    graph_visualize.add_argument(
+        "--format",
+        choices=("mermaid", "dot"),
+        default="mermaid",
+        help="Output format (default: mermaid)",
+    )
+    graph_visualize.add_argument(
+        "--node",
+        type=int,
+        default=0,
+        help="Optional entity id — restricts to that node's 1-hop subgraph",
+    )
+    add_runtime_options(graph_visualize)
+
     # --- PH-13 slice 13.1: drift scan ---
     # Standalone drift-detection scan. Doctor integration (slice 13.2)
     # surfaces the same findings under its own envelope; this top-level

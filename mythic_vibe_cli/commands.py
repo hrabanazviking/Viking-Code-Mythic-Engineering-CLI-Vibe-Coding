@@ -3968,6 +3968,176 @@ def cmd_audit(args: argparse.Namespace) -> int:
     return cmd_doctor(args)
 
 
+def cmd_graph_dispatch(args: argparse.Namespace) -> int:
+    """PH-05 slices 5.5 / 5.6: dispatcher for `mythic-vibe graph`
+    subcommands (query / entity / edges / brief / visualize)."""
+    sub = getattr(args, "graph_command", "")
+    if sub == "query":
+        return cmd_graph_query(args)
+    if sub == "entity":
+        return cmd_graph_entity(args)
+    if sub == "edges":
+        return cmd_graph_edges(args)
+    if sub == "brief":
+        return cmd_graph_brief(args)
+    if sub == "visualize":
+        return cmd_graph_visualize(args)
+    write_error(
+        f"Unknown graph subcommand: {sub!r}. "
+        "Valid: query | entity | edges | brief | visualize."
+    )
+    return USER_INPUT_ERROR
+
+
+def cmd_graph_query(args: argparse.Namespace) -> int:
+    """Run the slice 5.3 retriever against the project's graph."""
+    from .context.graph import GraphStore
+    from .context.retriever import top_k
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    tags = list(getattr(args, "tag", []) or [])
+    k = int(getattr(args, "top_k", 10) or 10)
+    expand = not bool(getattr(args, "no_expand", False))
+    with GraphStore.open(root) as store:
+        results = top_k(store, tags, k=k, expand_neighbours=expand)
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "graph query",
+                "path": str(root),
+                "tags": tags,
+                "top_k": k,
+                "results": [r.to_dict() for r in results],
+            }
+        )
+        return SUCCESS
+    if not results:
+        write_line(
+            "Graph query: no matches "
+            f"(tags={tags!r}, top_k={k})."
+        )
+        return SUCCESS
+    write_line(f"Graph query: {len(results)} match(es).")
+    for result in results:
+        write_line(
+            f"  [{result.entity.kind}] {result.entity.name}  "
+            f"(score {result.score:.2f})"
+        )
+        for reason in result.reasons:
+            write_bullet(reason, indent=4)
+    return SUCCESS
+
+
+def cmd_graph_entity(args: argparse.Namespace) -> int:
+    """List entities matching kind / name / path filters."""
+    from .context.graph import GraphStore
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    kind = getattr(args, "kind", "") or None
+    name = getattr(args, "name", "") or None
+    path_filter = getattr(args, "name_path", "") or None
+    with GraphStore.open(root) as store:
+        entities = store.find_entities(
+            kind=kind,
+            name_like=name,
+            path_like=path_filter,
+        )
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "graph entity",
+                "path": str(root),
+                "filters": {"kind": kind, "name": name, "path": path_filter},
+                "entities": [e.to_dict() for e in entities],
+            }
+        )
+        return SUCCESS
+    if not entities:
+        write_line("Graph entity: no matches.")
+        return SUCCESS
+    write_line(f"Graph entity: {len(entities)} match(es).")
+    for entity in entities:
+        write_line(
+            f"  #{entity.id}  [{entity.kind}] {entity.name}  "
+            f"(path={entity.path or '-'})"
+        )
+    return SUCCESS
+
+
+def cmd_graph_edges(args: argparse.Namespace) -> int:
+    """List edges by filter."""
+    from .context.graph import GraphStore
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    kind = getattr(args, "kind", "") or None
+    src_id = int(getattr(args, "src_id", 0) or 0)
+    dst_id = int(getattr(args, "dst_id", 0) or 0)
+    with GraphStore.open(root) as store:
+        edges = store.find_edges(
+            kind=kind,
+            src_id=src_id or None,
+            dst_id=dst_id or None,
+        )
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "graph edges",
+                "path": str(root),
+                "filters": {"kind": kind, "src_id": src_id, "dst_id": dst_id},
+                "edges": [e.to_dict() for e in edges],
+            }
+        )
+        return SUCCESS
+    if not edges:
+        write_line("Graph edges: no matches.")
+        return SUCCESS
+    write_line(f"Graph edges: {len(edges)} match(es).")
+    for edge in edges:
+        write_line(
+            f"  #{edge.id}  {edge.src_id} -[{edge.kind}]-> {edge.dst_id}"
+        )
+    return SUCCESS
+
+
+def cmd_graph_brief(args: argparse.Namespace) -> int:
+    """Render the slice 5.4 session brief from the project's graph."""
+    from .context.graph import GraphStore
+    from .context.rehydrator import build_session_brief, render_brief_text
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    phase = getattr(args, "phase", "build") or "build"
+    with GraphStore.open(root) as store:
+        brief = build_session_brief(store, phase)
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "graph brief",
+                "path": str(root),
+                "brief": brief.to_dict(),
+            }
+        )
+        return SUCCESS
+    write_line(render_brief_text(brief))
+    return SUCCESS
+
+
+def cmd_graph_visualize(args: argparse.Namespace) -> int:
+    """Export the graph as Mermaid (default) or DOT."""
+    from .context.graph import GraphStore
+    from .context.visualize import render_dot, render_mermaid
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    fmt = getattr(args, "format", "mermaid")
+    node_id = int(getattr(args, "node", 0) or 0)
+    with GraphStore.open(root) as store:
+        if fmt == "dot":
+            rendered = render_dot(store, focus_node=node_id or None)
+        else:
+            rendered = render_mermaid(store, focus_node=node_id or None)
+    write_line(rendered)
+    return SUCCESS
+
+
 def cmd_drift(args: argparse.Namespace) -> int:
     """PH-13 slice 13.1: scan the project for drift between docs, code,
     and decisions.
@@ -4046,4 +4216,5 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "provider": cmd_provider,
     "audit": cmd_audit,
     "drift": cmd_drift,
+    "graph": cmd_graph_dispatch,
 }
