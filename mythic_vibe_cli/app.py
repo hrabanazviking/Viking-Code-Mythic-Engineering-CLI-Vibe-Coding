@@ -621,6 +621,18 @@ def build_parser() -> argparse.ArgumentParser:
     ai_run.add_argument("--path", default=".", help="Project directory used to resolve packet IDs and logs")
     ai_run.add_argument("--provider", required=True, choices=sorted(ProviderRegistry().providers().keys()))
     ai_run.add_argument("--packet", required=True, help="Packet text or identifier to send")
+    # PH-15 sub-slice: optional conversation-id + opt-out flag for the
+    # slice-15.1 conversation log auto-record.
+    ai_run.add_argument(
+        "--conversation-id",
+        default="",
+        help="Conversation id (CV-XXXXXX) to record under. If empty, a fresh id is generated.",
+    )
+    ai_run.add_argument(
+        "--no-record",
+        action="store_true",
+        help="Skip recording this call into the conversation log.",
+    )
     add_runtime_options(ai_run, json_output=True, dry_run=True)
     ai_ingest = ai_sub.add_parser("ingest-response", help="Record a provider response as metadata only")
     ai_ingest.add_argument("--path", default=".", help="Project directory (default: current directory)")
@@ -628,6 +640,16 @@ def build_parser() -> argparse.ArgumentParser:
     ai_ingest.add_argument("--model", required=True, help="Provider model name")
     ai_ingest.add_argument("--packet-id", required=True, help="Packet ID the response belongs to")
     ai_ingest.add_argument("--response", required=True, help="Provider response text or summary")
+    ai_ingest.add_argument(
+        "--conversation-id",
+        default="",
+        help="Conversation id (CV-XXXXXX) to record under. If empty, a fresh id is generated.",
+    )
+    ai_ingest.add_argument(
+        "--no-record",
+        action="store_true",
+        help="Skip recording this response into the conversation log.",
+    )
     add_runtime_options(ai_ingest, json_output=True)
 
     verify = sub.add_parser(

@@ -1011,6 +1011,17 @@ def cmd_ai_test(args: argparse.Namespace) -> int:
 
 
 def cmd_ai_run(args: argparse.Namespace) -> int:
+    """Run a provider in explicit provider mode.
+
+    PH-15 sub-slice: when ``--no-record`` is unset and the call is
+    not a dry-run, the packet text is recorded as a ``user`` turn
+    and the response content as an ``assistant`` turn under the
+    operator-supplied ``--conversation-id`` (or a fresh
+    ``CV-XXXXXX`` if absent). Dry-runs are never recorded — they
+    are estimation passes, not real conversations.
+    """
+    from .memory.conversation import new_conversation_id, record_turn
+
     root = Path(getattr(args, "path", ".")).resolve()
     registry = _ai_registry(root)
     provider = registry.providers().get(args.provider)
@@ -1025,11 +1036,52 @@ def cmd_ai_run(args: argparse.Namespace) -> int:
 
     packet = _resolve_ai_packet(root, args.packet)
     response = provider.run(packet, dry_run=_flag(args, "dry_run"))
+
+    # PH-15 sub-slice: conversation auto-record.
+    no_record = bool(_flag(args, "no_record"))
+    is_dry_run = bool(_flag(args, "dry_run") or response.dry_run)
+    conversation_id = ""
+    recorded = False
+    if not no_record and not is_dry_run:
+        conversation_id = (
+            getattr(args, "conversation_id", "") or new_conversation_id()
+        )
+        # `packet` is the resolved-and-normalised dict; the operator's
+        # raw input lives at `args.packet`. Record the raw text so the
+        # log reads naturally — packet metadata is in the turn's
+        # `metadata` field for callers that need the structured form.
+        user_content = str(getattr(args, "packet", "") or "")
+        try:
+            record_turn(
+                root,
+                conversation_id,
+                "user",
+                user_content,
+                provider=provider.name,
+                model=response.model,
+                metadata={"packet_id": response.packet_id},
+            )
+            record_turn(
+                root,
+                conversation_id,
+                "assistant",
+                response.content,
+                provider=provider.name,
+                model=response.model,
+                metadata={
+                    "packet_id": response.packet_id,
+                    "usage": response.usage,
+                },
+            )
+            recorded = True
+        except Exception:  # noqa: BLE001 — never crash the CLI on a log write
+            recorded = False
+
     payload = {
         "command": "ai run",
         "path": str(root),
         "provider": provider.name,
-        "dry_run": _flag(args, "dry_run") or response.dry_run,
+        "dry_run": is_dry_run,
         "packet_id": response.packet_id,
         "model": response.model,
         "configured": status.configured,
@@ -1044,22 +1096,60 @@ def cmd_ai_run(args: argparse.Namespace) -> int:
             "usage": response.usage,
             "metadata": response.metadata,
         },
+        "conversation_id": conversation_id,
+        "recorded": recorded,
     }
     write_json(payload)
     return SUCCESS
 
 
 def cmd_ai_ingest_response(args: argparse.Namespace) -> int:
+    """Record a provider response as metadata only.
+
+    PH-15 sub-slice: also append the response as an ``assistant``
+    turn in the slice-15.1 conversation log (under
+    ``--conversation-id`` or a fresh id) unless ``--no-record`` is
+    set. ``ingest-response`` is the manual paste-back flow; the
+    matching user turn typically lives elsewhere (the operator
+    submitted the packet to the AI by hand) so we record only the
+    assistant side.
+    """
+    from .memory.conversation import new_conversation_id, record_turn
+
     root = Path(args.path).resolve()
     out_dir = root / "mythic" / "ai"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / "latest_response.json"
+
+    no_record = bool(_flag(args, "no_record"))
+    conversation_id = ""
+    recorded = False
+    if not no_record:
+        conversation_id = (
+            getattr(args, "conversation_id", "") or new_conversation_id()
+        )
+        try:
+            record_turn(
+                root,
+                conversation_id,
+                "assistant",
+                args.response,
+                provider=args.provider,
+                model=args.model,
+                metadata={"packet_id": args.packet_id, "ingest": True},
+            )
+            recorded = True
+        except Exception:  # noqa: BLE001 — never crash the CLI on a log write
+            recorded = False
+
     payload = {
         "provider": args.provider,
         "model": args.model,
         "packet_id": args.packet_id,
         "response": args.response,
         "applied": False,
+        "conversation_id": conversation_id,
+        "recorded": recorded,
     }
     out_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     if _flag(args, "json"):
@@ -1068,6 +1158,8 @@ def cmd_ai_ingest_response(args: argparse.Namespace) -> int:
     write_line("AI response ingested as metadata only.")
     write_key_value("Path", out_path)
     write_key_value("Applied", "false")
+    if conversation_id:
+        write_key_value("Conversation", conversation_id)
     return SUCCESS
 
 
