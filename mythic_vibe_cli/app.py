@@ -1164,6 +1164,29 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_runtime_options(audit_cmd)
 
+    # --- PH-13 slice 13.1: drift scan ---
+    # Standalone drift-detection scan. Doctor integration (slice 13.2)
+    # surfaces the same findings under its own envelope; this top-level
+    # subcommand is the focused entry point operators reach for when
+    # they want only drift output.
+    drift_cmd = sub.add_parser(
+        "drift",
+        help="Scan the project for drift between docs, code, and decisions",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe drift
+              mythic-vibe drift --path ./project --json
+            """
+        ),
+    )
+    drift_cmd.add_argument(
+        "--path",
+        default=".",
+        help="Project directory (default: current directory)",
+    )
+    add_runtime_options(drift_cmd, json_output=True)
+
     return parser
 
 
