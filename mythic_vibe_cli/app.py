@@ -469,10 +469,13 @@ def build_parser() -> argparse.ArgumentParser:
     prune.add_argument("--path", default=".", help="Project directory (default: current directory)")
     add_runtime_options(prune)
 
-    heal = sub.add_parser("heal", help="Guide a test-healing workflow")
+    heal = sub.add_parser(
+        "heal",
+        help="Generate an additive Scribe reconciliation packet from drift findings",
+    )
     heal.add_argument("--path", default=".", help="Project directory (default: current directory)")
-    heal.add_argument("--failing-test", default="", help="Optional failing test identifier")
-    add_runtime_options(heal)
+    heal.add_argument("--failing-test", default="", help="Optional failing test identifier (informational; not yet acted on)")
+    add_runtime_options(heal, json_output=True, dry_run=True)
 
     resume = sub.add_parser(
         "resume",

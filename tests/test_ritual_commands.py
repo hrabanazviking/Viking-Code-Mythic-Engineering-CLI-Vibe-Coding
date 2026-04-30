@@ -40,30 +40,54 @@ class RitualScaffoldTests(unittest.TestCase):
             self.assertIn("Prune ritual scaffold ready", output)
             self.assertIn("linter/dead-code tool", output)
 
-    # ----- heal -----
+    # ----- heal (PH-13 slice 13.3 — Scribe reconciliation packet) -----
 
-    def test_cmd_heal_prints_scaffold_message_without_target(self) -> None:
+    def test_cmd_heal_writes_packet_and_prints_paths(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            ns = argparse.Namespace(path=tmp, failing_test=None)
+            ns = argparse.Namespace(path=tmp, failing_test=None, json=False, dry_run=False)
             stdout = io.StringIO()
             with redirect_stdout(stdout):
                 code = commands.cmd_heal(ns)
             self.assertEqual(code, SUCCESS)
             output = stdout.getvalue()
-            self.assertIn("Heal ritual scaffold ready", output)
-            self.assertIn("reproduce the failure", output)
-            self.assertNotIn("Target failing test", output)
+            self.assertIn("Scribe reconciliation packet", output)
+            # Packet was written under mythic/heal/.
+            heal_dir = Path(tmp) / "mythic" / "heal"
+            self.assertTrue(heal_dir.is_dir())
+            md_files = list(heal_dir.glob("*-reconciliation.md"))
+            json_files = list(heal_dir.glob("*-reconciliation.json"))
+            self.assertEqual(len(md_files), 1)
+            self.assertEqual(len(json_files), 1)
 
-    def test_cmd_heal_echoes_failing_test_target(self) -> None:
+    def test_cmd_heal_records_failing_test_when_supplied(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            ns = argparse.Namespace(path=tmp, failing_test="tests/test_x.py::test_y")
+            ns = argparse.Namespace(
+                path=tmp,
+                failing_test="tests/test_x.py::test_y",
+                json=False,
+                dry_run=False,
+            )
             stdout = io.StringIO()
             with redirect_stdout(stdout):
                 code = commands.cmd_heal(ns)
             self.assertEqual(code, SUCCESS)
-            output = stdout.getvalue()
-            self.assertIn("Target failing test", output)
-            self.assertIn("tests/test_x.py::test_y", output)
+            self.assertIn("tests/test_x.py::test_y", stdout.getvalue())
+            md_files = list((Path(tmp) / "mythic" / "heal").glob("*-reconciliation.md"))
+            self.assertIn(
+                "tests/test_x.py::test_y",
+                md_files[0].read_text(encoding="utf-8"),
+            )
+
+    def test_cmd_heal_dry_run_writes_no_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            ns = argparse.Namespace(path=tmp, failing_test=None, json=False, dry_run=True)
+            stdout = io.StringIO()
+            with redirect_stdout(stdout):
+                code = commands.cmd_heal(ns)
+            self.assertEqual(code, SUCCESS)
+            self.assertIn("Dry run", stdout.getvalue())
+            # Heal dir is not created on dry-run.
+            self.assertFalse((Path(tmp) / "mythic" / "heal").exists())
 
     # ----- oath -----
 

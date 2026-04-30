@@ -476,5 +476,100 @@ class DoctorDriftIntegrationTests(unittest.TestCase):
         self.assertIn("Drift findings: none", buf.getvalue())
 
 
+# ---- Slice 13.3: heal v2 reconciliation packet -----------------------
+
+
+class HealReconciliationPacketTests(unittest.TestCase):
+    """Slice 13.3: cmd_heal generates a Scribe-targeted markdown +
+    JSON packet from current drift findings, additive-only and
+    operator-gated (--dry-run honoured)."""
+
+    def test_packet_contents_group_findings_by_category(self) -> None:
+        from mythic_vibe_cli.commands import cmd_heal
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _write(
+                root / "mythic_vibe_cli" / "commands.py",
+                '"""Synthetic."""\n\n'
+                "def cmd_a(args):\n    return 0\n\n"
+                "def cmd_b(args):\n    return 0\n",
+            )
+            _write(
+                root / "mythic_vibe_cli" / "noisy.py",
+                "from __future__ import annotations\n\ndef f():\n    return 1\n",
+            )
+            args = argparse.Namespace(
+                path=str(root),
+                failing_test=None,
+                json=True,
+                dry_run=False,
+            )
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                cmd_heal(args)
+            payload = json.loads(buf.getvalue())
+
+            self.assertEqual(payload["command"], "heal")
+            self.assertTrue(payload["written"])
+            # Two handler findings + one module finding => 3 in summary.
+            self.assertEqual(payload["summary"]["warning"], 2)
+            self.assertEqual(payload["summary"]["info"], 1)
+            # Both files exist on disk.
+            md_path = Path(payload["markdown_path"])
+            json_path = Path(payload["json_path"])
+            self.assertTrue(md_path.is_file())
+            self.assertTrue(json_path.is_file())
+            # Markdown content groups by category and includes a Proposal.
+            text = md_path.read_text(encoding="utf-8")
+            self.assertIn("undocumented_handler", text)
+            self.assertIn("undocumented_module", text)
+            self.assertIn("Proposal", text)
+            self.assertIn("Additive only", text)
+
+    def test_dry_run_does_not_write_files(self) -> None:
+        from mythic_vibe_cli.commands import cmd_heal
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            args = argparse.Namespace(
+                path=str(root),
+                failing_test=None,
+                json=True,
+                dry_run=True,
+            )
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                cmd_heal(args)
+            payload = json.loads(buf.getvalue())
+
+        self.assertTrue(payload.get("dry_run"))
+        self.assertFalse(payload.get("written"))
+        self.assertFalse((Path(tmp) / "mythic" / "heal").exists())
+
+    def test_clean_project_still_writes_an_informational_packet(self) -> None:
+        """A project with no drift findings should still produce a
+        readable packet — useful as a baseline / heartbeat."""
+        from mythic_vibe_cli.commands import cmd_heal
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _write(root / "mythic_vibe_cli" / "ok.py", '"""Clean."""\n')
+            args = argparse.Namespace(
+                path=str(root),
+                failing_test="",
+                json=True,
+                dry_run=False,
+            )
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                cmd_heal(args)
+            payload = json.loads(buf.getvalue())
+            self.assertEqual(payload["summary"]["warning"], 0)
+            self.assertEqual(payload["summary"]["info"], 0)
+            text = Path(payload["markdown_path"]).read_text(encoding="utf-8")
+            self.assertIn("No drift detected", text)
+
+
 if __name__ == "__main__":
     unittest.main()
