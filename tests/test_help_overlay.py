@@ -92,9 +92,16 @@ class HelpBindingAuditTests(unittest.TestCase):
         from textual.screen import Screen
 
         # Import the modules so subclasses are registered.
-        from mythic_vibe_cli.tui import app, diff_review, help_overlay, picker, runner
+        from mythic_vibe_cli.tui import (
+            app,
+            diff_review,
+            drift_panel,
+            help_overlay,
+            picker,
+            runner,
+        )
 
-        modules = [app, diff_review, help_overlay, picker, runner]
+        modules = [app, diff_review, drift_panel, help_overlay, picker, runner]
         seen: set[type] = set()
         screens: list[type] = []
         for module in modules:

@@ -37,9 +37,16 @@ def _all_tui_screens() -> list[type]:
     """Walk the TUI package and return every Screen subclass we ship."""
     from textual.screen import Screen
 
-    from mythic_vibe_cli.tui import app, diff_review, help_overlay, picker, runner
+    from mythic_vibe_cli.tui import (
+        app,
+        diff_review,
+        drift_panel,
+        help_overlay,
+        picker,
+        runner,
+    )
 
-    modules = [app, diff_review, help_overlay, picker, runner]
+    modules = [app, diff_review, drift_panel, help_overlay, picker, runner]
     seen: set[type] = set()
     screens: list[type] = []
     for module in modules:

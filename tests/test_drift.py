@@ -571,5 +571,101 @@ class HealReconciliationPacketTests(unittest.TestCase):
             self.assertIn("No drift detected", text)
 
 
+# ---- Slice 13.4: TUI drift panel -------------------------------------
+
+
+textual_unavailable = False
+try:
+    import textual  # noqa: F401
+except ImportError:
+    textual_unavailable = True
+
+
+class DriftPanelFormatTests(unittest.TestCase):
+    """Pure formatter — `_format_drift_panel` Rich-tag rendering with
+    severity colour-codes alongside the severity word (slice 4.9
+    accessibility discipline: never colour without text fallback)."""
+
+    def test_empty_findings_render_no_drift_message(self) -> None:
+        from mythic_vibe_cli.tui.drift_panel import _format_drift_panel
+
+        rendered = _format_drift_panel([])
+        self.assertIn("No drift detected", rendered)
+        # The pulse counter still renders 0/0/0 in monochrome.
+        self.assertIn("0 error", rendered)
+        self.assertIn("0 warning", rendered)
+        self.assertIn("0 info", rendered)
+
+    def test_findings_render_with_severity_word_and_tag(self) -> None:
+        from mythic_vibe_cli.tui.drift_panel import _format_drift_panel
+
+        findings = [
+            DriftFinding("undocumented_handler", "warning", "x.py:1", "missing"),
+            DriftFinding("undocumented_module", "info", "y.py", "no docstring"),
+        ]
+        rendered = _format_drift_panel(findings)
+        # Both severity words present in monochrome.
+        self.assertIn("warning", rendered.lower())
+        self.assertIn("info", rendered.lower())
+        # Colour tags wrap the severity word.
+        self.assertIn("[yellow]warning[/yellow]", rendered)
+        self.assertIn("[cyan]info[/cyan]", rendered)
+
+
+@unittest.skipIf(textual_unavailable, "textual not installed")
+class DriftScreenIntegrationTests(unittest.TestCase):
+    def test_drift_screen_mounts_and_shows_findings(self) -> None:
+        import asyncio
+
+        from mythic_vibe_cli.tui.app import MythicTuiApp
+        from mythic_vibe_cli.tui.drift_panel import DriftScreen
+
+        async def run_test() -> str:
+            with tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                _write(
+                    root / "mythic_vibe_cli" / "commands.py",
+                    '"""Synthetic."""\n\n'
+                    "def cmd_a(args):\n    return 0\n",
+                )
+                app = MythicTuiApp(root)
+                async with app.run_test() as pilot:
+                    await pilot.pause()
+                    app.push_screen(DriftScreen(root))
+                    await pilot.pause()
+                    card = app.screen.query_one("#drift-card")
+                    return str(card.render())
+
+        rendered = asyncio.run(run_test())
+        self.assertIn("undocumented_handler", rendered)
+        self.assertIn("warning", rendered.lower())
+
+    def test_status_screen_d_key_pushes_drift_screen(self) -> None:
+        import asyncio
+
+        from mythic_vibe_cli.tui.app import MythicTuiApp
+        from mythic_vibe_cli.tui.drift_panel import DriftScreen
+
+        async def run_test() -> bool:
+            with tempfile.TemporaryDirectory() as tmp:
+                app = MythicTuiApp(Path(tmp))
+                async with app.run_test() as pilot:
+                    await pilot.pause()
+                    await pilot.press("d")
+                    await pilot.pause()
+                    return isinstance(app.screen, DriftScreen)
+
+        self.assertTrue(asyncio.run(run_test()))
+
+    def test_drift_screen_has_uniform_keymap(self) -> None:
+        """DriftScreen must register the slice 4.7 / 4.8 uniform keys
+        (`?` Help, `t` Theme, `r` Refresh, `escape`/`q` Back)."""
+        from mythic_vibe_cli.tui.drift_panel import DriftScreen
+
+        keys = {b.key for b in DriftScreen.BINDINGS}
+        for required in {"question_mark", "t", "r", "q", "escape"}:
+            self.assertIn(required, keys, f"DriftScreen missing `{required}`")
+
+
 if __name__ == "__main__":
     unittest.main()
