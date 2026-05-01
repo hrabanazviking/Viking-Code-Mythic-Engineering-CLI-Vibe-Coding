@@ -199,4 +199,7 @@ BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
 
     # --- Resilience simulation (PH-18 slice 18.4) ---
     BuiltinSlashCommand(name="simulate", description="Resilience simulation — inject canonical failures, confirm graceful degradation"),
+
+    # --- Standards-based protocols (PH-16) ---
+    BuiltinSlashCommand(name="protocols", description="MCP server / ACP bridge / OpenTelemetry status — standards-based protocol surfaces"),
 )

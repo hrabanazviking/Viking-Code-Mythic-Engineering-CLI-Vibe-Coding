@@ -2892,6 +2892,64 @@ def cmd_policy_dispatch(args: argparse.Namespace) -> int:
     return USER_INPUT_ERROR
 
 
+def cmd_protocols_mcp_server(args: argparse.Namespace) -> int:
+    """PH-16 Slice 16.1 — bind the MCP server to stdio.
+
+    Reads JSON-RPC 2.0 frames on stdin, writes responses on
+    stdout until stdin closes. Operators wire this into their
+    MCP-aware client (Claude Desktop, Cursor, etc.) via the
+    client's server config.
+    """
+    from .protocols.mcp_server import run_stdio_server
+
+    return run_stdio_server()
+
+
+def cmd_protocols_acp_bridge(args: argparse.Namespace) -> int:
+    """PH-16 Slice 16.3 — bind the ACP bridge to stdio."""
+    from .protocols.acp_bridge import run_stdio_server
+
+    return run_stdio_server()
+
+
+def cmd_protocols_otel_status(args: argparse.Namespace) -> int:
+    """PH-16 Slice 16.4 — print the OpenTelemetry tracing
+    status. Diagnostic only — never enables tracing."""
+    from .protocols.otel import status
+
+    snapshot = status()
+    payload = {
+        "command": "protocols otel-status",
+        "status": snapshot.to_dict(),
+    }
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+
+    write_line("OpenTelemetry status")
+    write_key_value("Active", snapshot.active)
+    write_key_value("Enabled (env)", snapshot.enabled_env)
+    write_key_value("SDK available", snapshot.sdk_available)
+    for note in snapshot.notes:
+        write_bullet(note, indent=2)
+    return SUCCESS
+
+
+def cmd_protocols_dispatch(args: argparse.Namespace) -> int:
+    sub = getattr(args, "protocols_command", "")
+    if sub == "mcp-server":
+        return cmd_protocols_mcp_server(args)
+    if sub == "acp-bridge":
+        return cmd_protocols_acp_bridge(args)
+    if sub == "otel-status":
+        return cmd_protocols_otel_status(args)
+    write_error(
+        f"Unknown protocols subcommand: {sub!r}. "
+        "Try `mythic-vibe protocols mcp-server | acp-bridge | otel-status`."
+    )
+    return USER_INPUT_ERROR
+
+
 def cmd_simulate(args: argparse.Namespace) -> int:
     """PH-18 Slice 18.4 — `mythic-vibe simulate`. Runs canonical
     failure scenarios and reports pass/fail per scenario.
@@ -5787,6 +5845,7 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "rollback": cmd_rollback,
     "policy": cmd_policy_dispatch,
     "simulate": cmd_simulate,
+    "protocols": cmd_protocols_dispatch,
     "config": cmd_config_dispatch,
     "state": cmd_state_dispatch,
     "db": cmd_db_dispatch,
