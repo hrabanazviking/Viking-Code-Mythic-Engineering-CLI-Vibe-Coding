@@ -211,6 +211,19 @@ def cmd_checkin(args: argparse.Namespace) -> int:
         write_error(str(exc))
         return USER_INPUT_ERROR
 
+    # PH-05 follow-up: graph auto-population. Best-effort — any
+    # sqlite / I/O failure logs into the result and never crashes
+    # the parent command.
+    from .context.autopopulate import populate_from_checkin
+    populate_from_checkin(
+        root,
+        phase=args.phase,
+        update_text=args.update,
+        timestamp=utc_now(),
+        status_path=status_file,
+        devlog_path=devlog_file,
+    )
+
     write_line("Mythic check-in recorded.")
     write_key_value("Status", status_file)
     write_key_value("Devlog", devlog_file)
@@ -284,6 +297,10 @@ def cmd_scan(args: argparse.Namespace) -> int:
             include_patterns=getattr(args, "include", []) or [],
             exclude_patterns=getattr(args, "exclude", []) or [],
         )
+
+        # PH-05 follow-up: graph auto-population. Best-effort.
+        from .context.autopopulate import populate_from_scan
+        populate_from_scan(root, index)
 
         dispatcher.emit(
             "after_scan",
