@@ -2950,6 +2950,131 @@ def cmd_protocols_dispatch(args: argparse.Namespace) -> int:
     return USER_INPUT_ERROR
 
 
+def cmd_surface_web(args: argparse.Namespace) -> int:
+    """PH-17 Slice 17.1 — launch the web terminal HTTP server.
+
+    Binds to 127.0.0.1 by default. External exposure requires
+    --bind 0.0.0.0 + (responsibly) a TLS reverse proxy.
+    """
+    from .surfaces.web_terminal import (
+        DEFAULT_HOST,
+        DEFAULT_PORT,
+        WebTerminalConfig,
+        WebTerminalServer,
+    )
+    import secrets as _secrets
+
+    host = str(getattr(args, "bind", "") or DEFAULT_HOST)
+    port = int(getattr(args, "port", 0) or DEFAULT_PORT)
+    token = str(getattr(args, "token", "") or "").strip()
+    if not token:
+        token = _secrets.token_urlsafe(32)
+    config = WebTerminalConfig(host=host, port=port, token=token)
+
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "surface web",
+                "host": config.host,
+                "port": config.port,
+                "token": config.token,
+                "url": f"http://{config.host}:{config.port}/",
+            }
+        )
+        return SUCCESS
+
+    write_line("Mythic Vibe CLI - Web Terminal launching")
+    write_key_value("URL", f"http://{config.host}:{config.port}/")
+    write_key_value("Token", config.token)
+    write_line(
+        "  Paste the token into the browser field. Press Ctrl-C to stop."
+    )
+    server = WebTerminalServer(config=config)
+    try:
+        server.start()
+    except KeyboardInterrupt:
+        write_line("Web terminal stopped.")
+        server.stop()
+    return SUCCESS
+
+
+def cmd_surface_ssh_doctor(args: argparse.Namespace) -> int:
+    """PH-17 Slice 17.3 - SSH-readiness diagnostic."""
+    from .surfaces.ssh_doctor import run_ssh_doctor
+
+    report = run_ssh_doctor()
+    payload = {
+        "command": "surface ssh-doctor",
+        "report": report.to_dict(),
+    }
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+
+    write_line("SSH readiness check")
+    write_key_value("Total checks", payload["report"]["total"])
+    write_key_value("Passed", payload["report"]["passed"])
+    write_key_value("Warnings", payload["report"]["warnings"])
+    for check in report.checks:
+        marker = "PASS" if check.passed else f"WARN ({check.severity})"
+        write_bullet(f"[{marker}] {check.name}: {check.detail}")
+    return SUCCESS
+
+
+def cmd_surface_chat(args: argparse.Namespace) -> int:
+    """PH-17 Slice 17.4 - chat bridge scaffolding entry.
+
+    The actual long-poll loop lives in surfaces/chat_bridge.py
+    and requires backend credentials. This handler is a
+    diagnostic / scaffolding entry - operators wire their own
+    credential management before running the loop.
+    """
+    backend = str(getattr(args, "backend", "") or "").lower()
+    if backend not in {"matrix", "telegram"}:
+        write_error(
+            "surface chat requires --backend matrix|telegram. "
+            "Both are open-source-friendly; Matrix is the default."
+        )
+        return USER_INPUT_ERROR
+
+    from .surfaces.chat_bridge import COMMAND_PREFIX
+
+    payload = {
+        "command": "surface chat",
+        "backend": backend,
+        "trigger_prefix": COMMAND_PREFIX,
+        "scaffolded": True,
+        "note": (
+            "This is the slice 17.4 scaffolding entry. The chat "
+            "bridge's poll loop expects credentials supplied by "
+            "your own deployment script (e.g. systemd EnvironmentFile, "
+            "1Password CLI, vault). See docs/SSH_DEPLOYMENT.md."
+        ),
+    }
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+
+    write_line(f"Chat bridge ({backend}) - scaffolding entry")
+    write_line(payload["note"])
+    return SUCCESS
+
+
+def cmd_surface_dispatch(args: argparse.Namespace) -> int:
+    sub = getattr(args, "surface_command", "")
+    if sub == "web":
+        return cmd_surface_web(args)
+    if sub == "ssh-doctor":
+        return cmd_surface_ssh_doctor(args)
+    if sub == "chat":
+        return cmd_surface_chat(args)
+    write_error(
+        f"Unknown surface subcommand: {sub!r}. "
+        "Try `mythic-vibe surface web | ssh-doctor | chat --help`."
+    )
+    return USER_INPUT_ERROR
+
+
 def cmd_simulate(args: argparse.Namespace) -> int:
     """PH-18 Slice 18.4 — `mythic-vibe simulate`. Runs canonical
     failure scenarios and reports pass/fail per scenario.
@@ -5846,6 +5971,7 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "policy": cmd_policy_dispatch,
     "simulate": cmd_simulate,
     "protocols": cmd_protocols_dispatch,
+    "surface": cmd_surface_dispatch,
     "config": cmd_config_dispatch,
     "state": cmd_state_dispatch,
     "db": cmd_db_dispatch,

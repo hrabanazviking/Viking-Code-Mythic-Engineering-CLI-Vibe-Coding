@@ -555,6 +555,50 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_runtime_options(proto_otel, json_output=True)
 
+    # PH-17 Multi-Surface Access.
+    surface = sub.add_parser(
+        "surface",
+        help="Multi-surface access (PH-17) — web terminal / SSH check / chat bridge",
+    )
+    surface_sub = surface.add_subparsers(dest="surface_command", required=True)
+
+    surface_web = surface_sub.add_parser(
+        "web",
+        help="Launch the token-protected web terminal (slice 17.1)",
+    )
+    surface_web.add_argument(
+        "--bind",
+        default="127.0.0.1",
+        help="Bind address (default: 127.0.0.1 — loopback only)",
+    )
+    surface_web.add_argument(
+        "--port", type=int, default=8765, help="TCP port (default: 8765)"
+    )
+    surface_web.add_argument(
+        "--token",
+        default="",
+        help="Auth token (32-byte URL-safe). Auto-generated when omitted.",
+    )
+    add_runtime_options(surface_web, json_output=True)
+
+    surface_ssh = surface_sub.add_parser(
+        "ssh-doctor",
+        help="SSH-readiness diagnostic (slice 17.3)",
+    )
+    add_runtime_options(surface_ssh, json_output=True)
+
+    surface_chat = surface_sub.add_parser(
+        "chat",
+        help="Chat bridge scaffolding entry (slice 17.4)",
+    )
+    surface_chat.add_argument(
+        "--backend",
+        default="",
+        choices=("matrix", "telegram"),
+        help="Chat backend (matrix is the default first-class choice)",
+    )
+    add_runtime_options(surface_chat, json_output=True)
+
     grimoire = sub.add_parser("grimoire", help="Manage plugins")
     add_runtime_options(grimoire)
     grimoire_sub = grimoire.add_subparsers(dest="grimoire_command", required=True)
