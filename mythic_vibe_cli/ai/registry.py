@@ -9,6 +9,7 @@ from .providers import (
     CopyPasteProvider,
     GeminiProvider,
     LocalProvider,
+    MindSparkProvider,
     OllamaProvider,
     OpenAIProvider,
     OpenRouterProvider,
@@ -30,4 +31,5 @@ class ProviderRegistry:
             "openrouter": OpenRouterProvider(root=self.root),
             "ollama": OllamaProvider(root=self.root),
             "yggdrasil": YggdrasilProvider(root=self.root),
+            "mindspark": MindSparkProvider(root=self.root),
         }

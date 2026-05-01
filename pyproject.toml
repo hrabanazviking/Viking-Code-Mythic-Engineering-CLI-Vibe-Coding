@@ -70,6 +70,16 @@ ai = [
   "google-genai>=1.0",
   "openai>=1.40"
 ]
+# PH-09 island adapters — each gated behind MYTHIC_ISLAND_<NAME>_ENABLED.
+mindspark = [
+  "thoughtforge>=0.1"
+]
+wyrd = [
+  "wyrd-protocol>=1.0"
+]
+yggdrasil = [
+  "yggdrasil>=0.1"
+]
 dev = [
   "anthropic>=0.34",
   "build>=1.2",
