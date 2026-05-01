@@ -3261,6 +3261,117 @@ def cmd_docker_dispatch(args: argparse.Namespace) -> int:
     return USER_INPUT_ERROR
 
 
+def cmd_release(args: argparse.Namespace) -> int:
+    """PH-12 Slice 12.3 — semver-aware release helper.
+
+    Computes the next version, renders a changelog stub, and
+    optionally writes pyproject.toml + creates a git tag. **Never
+    pushes** — operators own the publish step.
+    """
+    from .cicd.release import prepare_release
+
+    root = Path(args.path).resolve()
+    bump = str(getattr(args, "bump", "patch") or "patch")
+    if bump not in {"major", "minor", "patch"}:
+        write_error(f"--bump must be major | minor | patch, got {bump!r}")
+        return USER_INPUT_ERROR
+
+    apply = bool(_flag(args, "apply"))
+    create_tag = bool(_flag(args, "tag"))
+    summary = str(getattr(args, "summary", "") or "")
+
+    result = prepare_release(
+        root,
+        bump=bump,  # type: ignore[arg-type]
+        apply=apply,
+        create_tag=create_tag,
+        summary=summary,
+    )
+
+    payload = {
+        "command": "release",
+        "path": str(root),
+        "result": result.to_dict(),
+    }
+
+    if _flag(args, "json"):
+        write_json(payload)
+        if result.current_version is None:
+            return USER_INPUT_ERROR
+        return SUCCESS
+
+    if result.current_version is None:
+        write_error(
+            "Could not read a [project] version from pyproject.toml. "
+            "Add `version = \"x.y.z\"` to [project] first."
+        )
+        return USER_INPUT_ERROR
+
+    write_line(
+        f"Release plan: {result.current_version} → {result.new_version} "
+        f"(bump={bump}, dry_run={result.dry_run})"
+    )
+    write_key_value("pyproject_updated", result.pyproject_updated)
+    if result.tag is not None:
+        write_key_value("tag_created", result.tag.created)
+        if result.tag.error:
+            write_key_value("tag_error", result.tag.error)
+    write_line("- Changelog stub:")
+    for line in result.changelog_entry.splitlines():
+        write_bullet(line, indent=2)
+    for note in result.notes:
+        write_key_value("note", note)
+    return SUCCESS
+
+
+def cmd_rollback(args: argparse.Namespace) -> int:
+    """PH-12 Slice 12.4 — read-only rollback summariser. Reports
+    commits + files between a baseline ref and HEAD; never
+    actually reverts anything."""
+    from .cicd.rollback import summarise_rollback
+
+    root = Path(args.path).resolve()
+    since = str(getattr(args, "since", "") or "")
+    report = summarise_rollback(root, since_ref=since)
+
+    payload = {
+        "command": "rollback",
+        "path": str(root),
+        "report": report.to_dict(),
+    }
+
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS if report.ok else OPERATIONAL_FAILURE
+
+    if not report.ok:
+        write_error(report.error)
+        return OPERATIONAL_FAILURE
+
+    write_line(
+        f"Rollback summary: {report.since_ref}..HEAD "
+        f"({len(report.commits)} commit(s), {len(report.files)} file(s))"
+    )
+    if report.commits:
+        write_line("- Commits:")
+        for commit in report.commits:
+            write_bullet(
+                f"{commit.short_sha}  {commit.subject}  ({commit.author})",
+                indent=2,
+            )
+    if report.files:
+        write_line("- Files touched:")
+        for path in report.files:
+            write_bullet(path, indent=2)
+    for note in report.notes:
+        write_key_value("note", note)
+    write_line(
+        "  This helper does NOT revert anything. To revert, run "
+        "`git revert <sha>` or `git reset --hard <ref>` manually."
+    )
+    return SUCCESS
+
+
 def cmd_security_dispatch(args: argparse.Namespace) -> int:
     sub = getattr(args, "security_command", "")
     if sub == "audit":
@@ -5412,6 +5523,8 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "security": cmd_security_dispatch,
     "ci": cmd_ci_dispatch,
     "docker": cmd_docker_dispatch,
+    "release": cmd_release,
+    "rollback": cmd_rollback,
     "config": cmd_config_dispatch,
     "state": cmd_state_dispatch,
     "db": cmd_db_dispatch,

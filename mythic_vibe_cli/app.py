@@ -594,6 +594,52 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_runtime_options(docker_scaffold, json_output=True, dry_run=True)
 
+    # PH-12 Slice 12.3: `mythic-vibe release`.
+    release = sub.add_parser(
+        "release",
+        help="Semver-aware release helper (PH-12). Bumps version, drafts CHANGELOG, optionally tags. Never pushes.",
+    )
+    release.add_argument(
+        "--path", default=".", help="Project directory (default: current directory)"
+    )
+    release.add_argument(
+        "--bump",
+        default="patch",
+        choices=("major", "minor", "patch"),
+        help="Which semver level to bump (default: patch)",
+    )
+    release.add_argument(
+        "--apply",
+        action="store_true",
+        help="Write the version bump to pyproject.toml. Default is dry-run.",
+    )
+    release.add_argument(
+        "--tag",
+        action="store_true",
+        help="Also create a local git tag (requires --apply). Never pushes.",
+    )
+    release.add_argument(
+        "--summary",
+        default="",
+        help="One-line summary for the CHANGELOG stub.",
+    )
+    add_runtime_options(release, json_output=True)
+
+    # PH-12 Slice 12.4: `mythic-vibe rollback`.
+    rollback = sub.add_parser(
+        "rollback",
+        help="Summarise commits + files between a baseline ref and HEAD (read-only)",
+    )
+    rollback.add_argument(
+        "--path", default=".", help="Project directory (default: current directory)"
+    )
+    rollback.add_argument(
+        "--since",
+        required=True,
+        help="Baseline git ref (e.g. v1.2.3 or a sha) to compare against HEAD",
+    )
+    add_runtime_options(rollback, json_output=True)
+
     # PH-11 Slice 11.7: `mythic-vibe security audit`.
     security = sub.add_parser(
         "security",

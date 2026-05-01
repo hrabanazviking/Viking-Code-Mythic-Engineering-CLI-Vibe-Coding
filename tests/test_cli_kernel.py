@@ -110,6 +110,10 @@ class CliKernelTests(unittest.TestCase):
             "ci",
             # PH-12 slice 12.2 — Docker scaffold
             "docker",
+            # PH-12 slice 12.3 — Release helper
+            "release",
+            # PH-12 slice 12.4 — Rollback summariser
+            "rollback",
         }
 
         self.assertEqual(set(COMMAND_HANDLERS), expected)

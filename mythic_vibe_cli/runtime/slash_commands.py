@@ -187,4 +187,10 @@ BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
 
     # --- Docker scaffolding (PH-12 slice 12.2) ---
     BuiltinSlashCommand(name="docker", description="Docker scaffolding (Dockerfile + .dockerignore + docker-compose.yml)"),
+
+    # --- Release helper (PH-12 slice 12.3) ---
+    BuiltinSlashCommand(name="release", description="Semver-aware release helper — version bump + CHANGELOG stub + optional local tag (never pushes)"),
+
+    # --- Rollback helper (PH-12 slice 12.4) ---
+    BuiltinSlashCommand(name="rollback", description="Summarise commits + files between a baseline git ref and HEAD (read-only)"),
 )
