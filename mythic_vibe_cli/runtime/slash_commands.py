@@ -193,4 +193,7 @@ BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
 
     # --- Rollback helper (PH-12 slice 12.4) ---
     BuiltinSlashCommand(name="rollback", description="Summarise commits + files between a baseline git ref and HEAD (read-only)"),
+
+    # --- Policy engine (PH-14 slice 14.4) ---
+    BuiltinSlashCommand(name="policy", description="Policy engine — list constraints + override history (read-only)"),
 )

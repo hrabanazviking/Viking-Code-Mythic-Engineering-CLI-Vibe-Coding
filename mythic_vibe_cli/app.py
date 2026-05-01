@@ -496,7 +496,33 @@ def build_parser() -> argparse.ArgumentParser:
 
     oath = sub.add_parser("oath", help="Display responsible AI usage oath")
     oath.add_argument("--yes", action="store_true", help="Echo acceptance message after displaying the oath")
+    oath.add_argument(
+        "--path", default=".", help="Project directory (default: current directory)"
+    )
+    oath.add_argument(
+        "--override",
+        default="",
+        help=(
+            "PH-14 override reason. Required when blocking constraints exist "
+            "in mythic/oaths.md / constraints.md / docs/ADRS/."
+        ),
+    )
     add_runtime_options(oath)
+
+    # PH-14 Slice 14.4: `mythic-vibe policy report`.
+    policy = sub.add_parser(
+        "policy",
+        help="Policy engine surface (PH-14) — list constraints + override history",
+    )
+    policy_sub = policy.add_subparsers(dest="policy_command", required=True)
+    policy_report = policy_sub.add_parser(
+        "report",
+        help="List current constraints and override history",
+    )
+    policy_report.add_argument(
+        "--path", default=".", help="Project directory (default: current directory)"
+    )
+    add_runtime_options(policy_report, json_output=True)
 
     grimoire = sub.add_parser("grimoire", help="Manage plugins")
     add_runtime_options(grimoire)

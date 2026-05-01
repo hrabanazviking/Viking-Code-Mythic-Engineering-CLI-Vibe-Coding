@@ -2769,11 +2769,127 @@ def cmd_method_dispatch(args: argparse.Namespace) -> int:
 
 
 def cmd_oath(args: argparse.Namespace) -> int:
+    """Recite the operator's standing oath. PH-14 Slice 14.2 wires
+    the policy gate as a demonstration: if blocking constraints
+    exist in mythic/oaths.md / constraints.md / docs/ADRS/, the
+    command requires ``--override "<reason>"`` to proceed."""
+    from .policy.policy_gate import enforce_policy
+
     oath = "I understand that AI may generate incorrect or insecure code. I will review all changes before committing to the Sacred Grove."
+    root = Path(getattr(args, "path", ".")).resolve()
+    override_reason = str(getattr(args, "override", "") or "").strip()
+
+    proceed, decision = enforce_policy(
+        root,
+        action="write",
+        command="oath",
+        override_reason=override_reason or None,
+    )
+
+    if not proceed:
+        write_error(
+            f"Policy gate blocks `oath` — {len(decision.violations)} blocking "
+            "constraint(s). Re-run with --override \"<reason>\" to bypass:"
+        )
+        for constraint in decision.violations:
+            write_bullet(
+                f"[{constraint.severity}] {constraint.text} "
+                f"(from {constraint.source_path})",
+                indent=2,
+            )
+        return UNSAFE_OPERATION_BLOCKED
+
+    if override_reason and decision.violations:
+        write_line(
+            f"Policy override accepted ({len(decision.violations)} blocking "
+            "violation(s)) — reason recorded to mythic/policy_overrides.jsonl."
+        )
+
     write_line(oath)
     if args.yes:
         write_line("Oath accepted.")
     return SUCCESS
+
+
+def cmd_policy_report(args: argparse.Namespace) -> int:
+    """PH-14 Slice 14.4 — list current constraints + override
+    history. JSON and text modes."""
+    from .policy.constraint_store import load_constraints
+    from .policy.override_log import read_overrides
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    load_result = load_constraints(root)
+    overrides = read_overrides(root)
+
+    severity_counts: dict[str, int] = {}
+    for constraint in load_result.constraints:
+        severity_counts[constraint.severity] = (
+            severity_counts.get(constraint.severity, 0) + 1
+        )
+    kind_counts: dict[str, int] = {}
+    for constraint in load_result.constraints:
+        kind_counts[constraint.kind] = kind_counts.get(constraint.kind, 0) + 1
+
+    payload = {
+        "command": "policy report",
+        "path": str(root),
+        "constraints": [c.to_dict() for c in load_result.constraints],
+        "overrides": [o.to_dict() for o in overrides],
+        "counts": {
+            "constraints": len(load_result.constraints),
+            "overrides": len(overrides),
+            "severity": severity_counts,
+            "kind": kind_counts,
+        },
+        "notes": list(load_result.notes),
+    }
+
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+
+    write_line("Mythic policy report")
+    write_key_value("Path", root)
+    write_key_value("Constraints", len(load_result.constraints))
+    write_key_value("Overrides", len(overrides))
+    if not load_result.constraints:
+        write_line(
+            "  (no constraints loaded — populate mythic/oaths.md, "
+            "mythic/constraints.md, or docs/ADRS/ to enable the gate)"
+        )
+        return SUCCESS
+
+    write_line("- Constraints by kind:")
+    for kind, count in kind_counts.items():
+        write_bullet(f"{kind}: {count}", indent=2)
+    write_line("- Constraints by severity:")
+    for severity, count in severity_counts.items():
+        write_bullet(f"{severity}: {count}", indent=2)
+    write_line("- Active constraints:")
+    for constraint in load_result.constraints:
+        write_bullet(
+            f"[{constraint.severity}] {constraint.id}: {constraint.text} "
+            f"(from {constraint.source_path})",
+            indent=2,
+        )
+    if overrides:
+        write_line("- Recent overrides:")
+        for override in overrides[-10:]:  # last 10
+            write_bullet(
+                f"{override.timestamp}  {override.command}  by {override.actor}: {override.reason}",
+                indent=2,
+            )
+    return SUCCESS
+
+
+def cmd_policy_dispatch(args: argparse.Namespace) -> int:
+    sub = getattr(args, "policy_command", "")
+    if sub == "report":
+        return cmd_policy_report(args)
+    write_error(
+        f"Unknown policy subcommand: {sub!r}. Try `mythic-vibe policy report --help`."
+    )
+    return USER_INPUT_ERROR
 
 
 def cmd_grimoire(args: argparse.Namespace) -> int:
@@ -5631,6 +5747,7 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "docker": cmd_docker_dispatch,
     "release": cmd_release,
     "rollback": cmd_rollback,
+    "policy": cmd_policy_dispatch,
     "config": cmd_config_dispatch,
     "state": cmd_state_dispatch,
     "db": cmd_db_dispatch,
