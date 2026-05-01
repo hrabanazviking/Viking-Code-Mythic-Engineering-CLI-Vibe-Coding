@@ -114,6 +114,8 @@ class CliKernelTests(unittest.TestCase):
             "release",
             # PH-12 slice 12.4 — Rollback summariser
             "rollback",
+            # PH-14 slice 14.4 — Policy report
+            "policy",
         }
 
         self.assertEqual(set(COMMAND_HANDLERS), expected)
