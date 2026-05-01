@@ -28,6 +28,7 @@ from ..runtime.slash_commands import SlashCommandInfo
 from .api import PLUGIN_HOOKS, PluginRecord
 from .loader import _split_entrypoint
 from .registry import PluginRegistry
+from .sandbox import SandboxResult, safe_call
 
 
 @dataclass
@@ -172,9 +173,52 @@ class PluginHookDispatcher:
             handler = getattr(plugin_obj, hook, None)
             if not callable(handler):
                 continue
-            unsubscribe = self.bus.on(hook, handler)
+            wrapped = self._wrap_handler(handler, record=record, hook=hook)
+            unsubscribe = self.bus.on(hook, wrapped)
             self._subscriptions.append(
                 _Subscription(plugin=record, hook=hook, unsubscribe=unsubscribe)
             )
             hooks_subscribed.append(hook)
         return hooks_subscribed
+
+    def _wrap_handler(
+        self,
+        handler: Callable[..., object],
+        *,
+        record: PluginRecord,
+        hook: str,
+    ) -> Callable[..., object]:
+        """PH-11 wire-in: route every plugin hook invocation through
+        :func:`mythic_vibe_cli.plugins.sandbox.safe_call` so plugins
+        inherit the slice-10.2 exception isolation + opt-in timing
+        budget. Slow / misbehaving plugins land in the sandbox
+        result rather than blocking the bus or crashing it."""
+
+        plugin_id = record.entrypoint
+
+        def _wrapped(*args: object, **kwargs: object) -> object:
+            result = safe_call(
+                handler,
+                *args,
+                plugin_id=plugin_id,
+                **kwargs,
+            )
+            if not result.ok:
+                self._log_sandbox_failure(result, hook=hook)
+            return result.value
+
+        return _wrapped
+
+    @staticmethod
+    def _log_sandbox_failure(result: SandboxResult, *, hook: str) -> None:
+        """Surface a sandbox-captured failure to stderr in the same
+        log-and-continue style as the event-bus contract."""
+        try:
+            label = result.plugin_id or "unknown plugin"
+            kind = "timed out" if result.timed_out else "raised"
+            print(
+                f"Plugin sandbox: {label} hook {hook!r} {kind}: {result.error}",
+                file=sys.stderr,
+            )
+        except Exception:  # noqa: BLE001 — even logging mustn't crash the bus
+            pass

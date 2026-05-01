@@ -193,8 +193,91 @@ class PluginHookDispatcherTests(unittest.TestCase):
                 module = importlib.import_module("synth_plugin_d")
                 self.assertEqual(len(module.TameplePlugin.received), 1)
                 self.assertIn("plugin-explodes", buffer.getvalue())
-                self.assertIn("Event handler error (before_scan)", buffer.getvalue())
+                # PH-11 wire-in: the sandbox now catches plugin
+                # exceptions before the event bus sees them, so the
+                # log line is the slice-10.2 sandbox message rather
+                # than the bus's "Event handler error" line.
+                self.assertIn("Plugin sandbox", buffer.getvalue())
+                self.assertIn("before_scan", buffer.getvalue())
                 module.TameplePlugin.received.clear()
+
+    def test_sandbox_wire_in_isolates_handler_exceptions(self) -> None:
+        """PH-11 sandbox wire-in: a plugin that raises does not
+        propagate into the dispatcher; the SandboxResult captures
+        the failure and the next emit() proceeds normally."""
+        with tempfile.TemporaryDirectory() as project_root:
+            with _SyntheticPluginHarness(
+                "synth_plugin_sandbox_iso",
+                """
+                class Plugin:
+                    crashes = 0
+
+                    @classmethod
+                    def before_scan(cls, payload):
+                        cls.crashes += 1
+                        raise RuntimeError(f"boom {cls.crashes}")
+                """,
+            ):
+                PluginRegistry(Path(project_root)).add(
+                    "synth_plugin_sandbox_iso:Plugin", hooks=["before_scan"]
+                )
+                buffer = io.StringIO()
+                with PluginHookDispatcher(Path(project_root)) as dispatcher:
+                    dispatcher.load_and_subscribe()
+                    with redirect_stderr(buffer):
+                        # First emit raises but sandbox swallows.
+                        dispatcher.emit("before_scan", {"path": project_root})
+                        # Second emit must still work — sandbox per-call.
+                        dispatcher.emit("before_scan", {"path": project_root})
+
+                module = importlib.import_module("synth_plugin_sandbox_iso")
+                self.assertEqual(module.Plugin.crashes, 2)  # both calls fired
+                # Both failures logged via the sandbox path.
+                self.assertEqual(buffer.getvalue().count("Plugin sandbox"), 2)
+
+    def test_sandbox_wire_in_enforces_timeout(self) -> None:
+        """When MYTHIC_PLUGIN_TIMEOUT_SEC is set, slow plugins are
+        flagged as timed_out via the sandbox layer."""
+        import os
+        import time
+
+        with tempfile.TemporaryDirectory() as project_root:
+            with _SyntheticPluginHarness(
+                "synth_plugin_sandbox_timeout",
+                """
+                import time
+
+                class Plugin:
+                    @classmethod
+                    def before_scan(cls, payload):
+                        time.sleep(0.5)
+                """,
+            ):
+                PluginRegistry(Path(project_root)).add(
+                    "synth_plugin_sandbox_timeout:Plugin",
+                    hooks=["before_scan"],
+                )
+                previous = os.environ.pop("MYTHIC_PLUGIN_TIMEOUT_SEC", None)
+                os.environ["MYTHIC_PLUGIN_TIMEOUT_SEC"] = "0.05"
+                buffer = io.StringIO()
+                try:
+                    started = time.monotonic()
+                    with PluginHookDispatcher(Path(project_root)) as dispatcher:
+                        dispatcher.load_and_subscribe()
+                        with redirect_stderr(buffer):
+                            dispatcher.emit(
+                                "before_scan", {"path": project_root}
+                            )
+                    elapsed = time.monotonic() - started
+                finally:
+                    os.environ.pop("MYTHIC_PLUGIN_TIMEOUT_SEC", None)
+                    if previous is not None:
+                        os.environ["MYTHIC_PLUGIN_TIMEOUT_SEC"] = previous
+                # Soft deadline fired quickly — total elapsed should
+                # be well under the plugin's intended 0.5s sleep
+                # because the sandbox returned on timeout.
+                self.assertLess(elapsed, 0.4)
+                self.assertIn("timed out", buffer.getvalue())
 
     def test_discover_slash_commands_aggregates_from_plugins(self) -> None:
         with tempfile.TemporaryDirectory() as project_root:
