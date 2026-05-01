@@ -633,6 +633,15 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Skip recording this call into the conversation log.",
     )
+    ai_run.add_argument(
+        "--no-fallback",
+        action="store_true",
+        help=(
+            "Disable the routing fallback chain — call the chosen provider "
+            "directly. Default behaviour falls forward onto copy-paste when "
+            "the primary fails or is misconfigured."
+        ),
+    )
     add_runtime_options(ai_run, json_output=True, dry_run=True)
     ai_route = ai_sub.add_parser(
         "route",
