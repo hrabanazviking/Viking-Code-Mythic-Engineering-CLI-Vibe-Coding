@@ -1372,6 +1372,11 @@ def cmd_verify(args: argparse.Namespace) -> int:
     )
     dispatcher.teardown()
 
+    # PH-07 follow-up: TTS phase-transition hook. No-op unless
+    # MYTHIC_VOICE_TTS_ENABLED is set.
+    from .voice.notify import notify_phase as _notify_phase
+    _notify_phase("verify", result)
+
     if _flag(args, "json"):
         write_json(
             {
@@ -2161,6 +2166,11 @@ def _write_phase_record(
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(rendered, encoding="utf-8")
 
+    # PH-07 follow-up: TTS phase-transition hook. No-op unless
+    # MYTHIC_VOICE_TTS_ENABLED is set.
+    from .voice.notify import notify_phase as _notify_phase
+    _notify_phase(phase, "captured")
+
     if _flag(args, "json"):
         write_json({**payload, "dry_run": False})
         return SUCCESS
@@ -2373,6 +2383,10 @@ def _create_handoff(
         session_type=session_type,
     )
     json_path, md_path = write_handoff_record(root, record)
+    # PH-07 follow-up: TTS phase-transition hook. No-op unless
+    # MYTHIC_VOICE_TTS_ENABLED is set.
+    from .voice.notify import notify_phase as _notify_phase
+    _notify_phase("handoff", "written")
     return record, json_path, md_path
 
 

@@ -703,5 +703,213 @@ class CmdVoiceTranscribeMicTests(unittest.TestCase):
         self.assertEqual(exit_code, USER_INPUT_ERROR)
 
 
+# ---- TTS phase-transition hook (PH-07 follow-up) --------------------
+
+
+class ComposePhaseMessageTests(unittest.TestCase):
+    def test_known_preset_returned(self) -> None:
+        from mythic_vibe_cli.voice.notify import compose_phase_message
+
+        self.assertEqual(
+            compose_phase_message("intent", "captured"),
+            "Intent captured.",
+        )
+        self.assertEqual(
+            compose_phase_message("verify", "pass"),
+            "Verification passed.",
+        )
+        self.assertEqual(
+            compose_phase_message("verify", "fail"),
+            "Verification failed.",
+        )
+        self.assertEqual(
+            compose_phase_message("handoff", "written"),
+            "Handoff written.",
+        )
+
+    def test_unknown_phase_falls_back_to_generic_format(self) -> None:
+        from mythic_vibe_cli.voice.notify import compose_phase_message
+
+        line = compose_phase_message("hypernova", "ignited")
+        self.assertEqual(line, "Hypernova ignited.")
+
+    def test_override_short_circuits_lookup(self) -> None:
+        from mythic_vibe_cli.voice.notify import compose_phase_message
+
+        self.assertEqual(
+            compose_phase_message("intent", "captured", override="Custom line"),
+            "Custom line",
+        )
+
+    def test_blank_override_ignored(self) -> None:
+        from mythic_vibe_cli.voice.notify import compose_phase_message
+
+        self.assertEqual(
+            compose_phase_message("intent", "captured", override="   "),
+            "Intent captured.",
+        )
+
+
+class NotifyPhaseGateTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self._previous = os.environ.pop(TTS_ENABLED_ENV, None)
+
+    def tearDown(self) -> None:
+        os.environ.pop(TTS_ENABLED_ENV, None)
+        if self._previous is not None:
+            os.environ[TTS_ENABLED_ENV] = self._previous
+
+    def test_disabled_env_is_no_op(self) -> None:
+        from mythic_vibe_cli.voice.notify import notify_phase
+
+        engine = mock.MagicMock()
+        result = notify_phase("intent", "captured", tts_engine=engine)
+        self.assertFalse(result.fired)
+        self.assertIsNone(result.tts_result)
+        self.assertEqual(result.message, "Intent captured.")
+        engine.say.assert_not_called()
+
+    def test_enabled_env_dispatches_through_engine(self) -> None:
+        from mythic_vibe_cli.voice.notify import notify_phase
+
+        os.environ[TTS_ENABLED_ENV] = "1"
+        buf = io.StringIO()
+        stub = StubTTSEngine(stream=buf)
+        result = notify_phase("verify", "pass", tts_engine=stub)
+        self.assertTrue(result.fired)
+        self.assertIsNotNone(result.tts_result)
+        self.assertIn("Verification passed.", buf.getvalue())
+
+    def test_force_overrides_disabled_env(self) -> None:
+        from mythic_vibe_cli.voice.notify import notify_phase
+
+        buf = io.StringIO()
+        stub = StubTTSEngine(stream=buf)
+        result = notify_phase(
+            "handoff", "written", tts_engine=stub, force=True
+        )
+        self.assertTrue(result.fired)
+        self.assertIn("Handoff written.", buf.getvalue())
+
+    def test_engine_exception_contained(self) -> None:
+        """An engine that raises must not break the parent command —
+        the hook should swallow the exception and surface it via the
+        TTSResult.error field."""
+        from mythic_vibe_cli.voice.notify import notify_phase
+
+        class _Boom:
+            name = "boom"
+
+            def say(self, request):
+                raise RuntimeError("explosion")
+
+        os.environ[TTS_ENABLED_ENV] = "1"
+        result = notify_phase("intent", "captured", tts_engine=_Boom())
+        self.assertTrue(result.fired)
+        self.assertIsNotNone(result.tts_result)
+        self.assertFalse(result.tts_result.spoken)
+        self.assertEqual(result.tts_result.error, "explosion")
+
+
+class PhaseRecordNotifyIntegrationTests(unittest.TestCase):
+    """When MYTHIC_VOICE_TTS_ENABLED is set, the phase capture
+    handler should call notify_phase. We patch notify_phase to
+    capture invocation rather than asserting on the stub stderr
+    stream so the test stays decoupled from the TTS layer."""
+
+    def test_capture_intent_fires_notify(self) -> None:
+        from mythic_vibe_cli.commands import cmd_intent_capture
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            ns = argparse.Namespace(
+                path=str(root),
+                task="Refactor router",
+                summary="Move routing into its own module.",
+                note=[],
+                confidence="high",
+                risk="",
+                next_step="",
+                operator="tester",
+                json=True,
+                dry_run=False,
+            )
+            calls: list[tuple[str, str]] = []
+
+            def spy(phase, status, **kwargs):  # noqa: ANN001 — test spy
+                calls.append((phase, status))
+                from mythic_vibe_cli.voice.notify import NotifyResult
+                return NotifyResult(fired=False, tts_result=None, message="")
+
+            with mock.patch(
+                "mythic_vibe_cli.voice.notify.notify_phase", side_effect=spy
+            ):
+                with redirect_stdout(io.StringIO()):
+                    exit_code = cmd_intent_capture(ns)
+        self.assertEqual(exit_code, SUCCESS)
+        self.assertIn(("intent", "captured"), calls)
+
+
+class HandoffNotifyIntegrationTests(unittest.TestCase):
+    def test_create_handoff_fires_notify(self) -> None:
+        from mythic_vibe_cli.commands import _create_handoff
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            calls: list[tuple[str, str]] = []
+
+            def spy(phase, status, **kwargs):  # noqa: ANN001
+                calls.append((phase, status))
+                from mythic_vibe_cli.voice.notify import NotifyResult
+                return NotifyResult(fired=False, tts_result=None, message="")
+
+            with mock.patch(
+                "mythic_vibe_cli.voice.notify.notify_phase", side_effect=spy
+            ):
+                _create_handoff(
+                    root,
+                    objective="Sub-slice 3 sanity",
+                    session_type="reflect",
+                )
+        self.assertIn(("handoff", "written"), calls)
+
+
+class VerifyNotifyIntegrationTests(unittest.TestCase):
+    def test_cmd_verify_fires_notify_with_result_status(self) -> None:
+        """cmd_verify forwards the verification's pass/fail/blocked
+        result string straight into notify_phase."""
+        from mythic_vibe_cli.commands import cmd_verify
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            ns = argparse.Namespace(
+                path=str(root),
+                commands=False,
+                changed_files=False,
+                docs=False,
+                invariants=False,
+                json=True,
+                record=False,
+            )
+            calls: list[tuple[str, str]] = []
+
+            def spy(phase, status, **kwargs):  # noqa: ANN001
+                calls.append((phase, status))
+                from mythic_vibe_cli.voice.notify import NotifyResult
+                return NotifyResult(fired=False, tts_result=None, message="")
+
+            with mock.patch(
+                "mythic_vibe_cli.voice.notify.notify_phase", side_effect=spy
+            ):
+                with redirect_stdout(io.StringIO()):
+                    cmd_verify(ns)
+
+        # Exactly one verify-phase call.
+        verify_calls = [c for c in calls if c[0] == "verify"]
+        self.assertEqual(len(verify_calls), 1)
+        # status must be one of {pass, fail, blocked}.
+        self.assertIn(verify_calls[0][1], {"pass", "fail", "blocked"})
+
+
 if __name__ == "__main__":
     unittest.main()
