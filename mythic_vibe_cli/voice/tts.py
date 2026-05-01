@@ -37,6 +37,7 @@ from .transcribe import MissingExtraError
 
 
 TTS_ENABLED_ENV = "MYTHIC_VOICE_TTS_ENABLED"
+CHATTERBOX_ISLAND_ENV = "MYTHIC_ISLAND_CHATTERBOX_ENABLED"
 DEFAULT_TTS_ENGINE = "stub"
 KNOWN_TTS_ENGINES: tuple[str, ...] = ("stub", "chatterbox")
 _TRUTHY = {"1", "true", "yes", "on"}
@@ -47,6 +48,22 @@ def is_tts_enabled() -> bool:
     return ``False`` — TTS stays default-disabled until the
     operator explicitly opts in."""
     raw = os.environ.get(TTS_ENABLED_ENV, "").strip().lower()
+    return raw in _TRUTHY
+
+
+def is_chatterbox_island_enabled() -> bool:
+    """PH-09 Slice 9.4 — per-island feature flag for Chatterbox.
+
+    The chatterbox engine requires BOTH
+    :data:`TTS_ENABLED_ENV` (the broader voice gate from PH-07)
+    AND :data:`CHATTERBOX_ISLAND_ENV` (this island-specific flag)
+    to actually emit audio. Either off → chatterbox falls back to
+    a non-spoken result with a clear ``skipped_reason``.
+
+    Stub engine behaviour is unchanged — it stays gated by the
+    broader TTS flag only.
+    """
+    raw = os.environ.get(CHATTERBOX_ISLAND_ENV, "").strip().lower()
     return raw in _TRUTHY
 
 
@@ -226,6 +243,25 @@ def say(
             ),
         )
 
+    # PH-09 Slice 9.4: per-island gate on chatterbox specifically.
+    # Stub engine is unaffected — it stays gated by the broader
+    # TTS flag only.
+    if (
+        not force
+        and (engine or "").strip().lower() == "chatterbox"
+        and not is_chatterbox_island_enabled()
+    ):
+        return TTSResult(
+            text=text,
+            engine=engine,
+            spoken=False,
+            skipped_reason=(
+                f"Chatterbox island disabled — set "
+                f"{CHATTERBOX_ISLAND_ENV}=1 to enable (in addition to "
+                f"{TTS_ENABLED_ENV}=1), or pass --force to override"
+            ),
+        )
+
     if tts_engine is None:
         try:
             tts_engine = make_tts_engine(engine)
@@ -245,6 +281,7 @@ def say(
 
 
 __all__ = [
+    "CHATTERBOX_ISLAND_ENV",
     "DEFAULT_TTS_ENGINE",
     "KNOWN_TTS_ENGINES",
     "TTS_ENABLED_ENV",
@@ -253,6 +290,7 @@ __all__ = [
     "TTSEngine",
     "TTSRequest",
     "TTSResult",
+    "is_chatterbox_island_enabled",
     "is_tts_enabled",
     "make_tts_engine",
     "say",
