@@ -104,6 +104,8 @@ class CliKernelTests(unittest.TestCase):
             "hardware",
             # PH-07 slices 7.1-7.3 — voice & multimodal
             "voice",
+            # PH-11 slice 11.7 — security audit
+            "security",
         }
 
         self.assertEqual(set(COMMAND_HANDLERS), expected)

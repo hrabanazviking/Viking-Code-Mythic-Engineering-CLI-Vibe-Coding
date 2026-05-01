@@ -554,6 +554,27 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_runtime_options(plugin_install, json_output=True, dry_run=True)
 
+    # PH-11 Slice 11.7: `mythic-vibe security audit`.
+    security = sub.add_parser(
+        "security",
+        help="Security audit + sandbox / approval / privacy policy reporting (PH-11)",
+    )
+    security_sub = security.add_subparsers(dest="security_command", required=True)
+    security_audit = security_sub.add_parser(
+        "audit",
+        help="Run secret scan + dangerous-pattern scan; report active policy state",
+    )
+    security_audit.add_argument(
+        "--path", default=".", help="Project directory (default: current directory)"
+    )
+    security_audit.add_argument(
+        "--approval",
+        default=None,
+        choices=("suggest", "auto", "partial"),
+        help="Override approval mode for this run",
+    )
+    add_runtime_options(security_audit, json_output=True)
+
     config = sub.add_parser("config", help="Show or manage configuration values")
     config.add_argument("--path", default=".", help="Project directory used for local overrides")
     add_runtime_options(config, json_output=True)

@@ -3045,6 +3045,127 @@ def cmd_plugin_install(args: argparse.Namespace) -> int:
     return SUCCESS
 
 
+def cmd_security_audit(args: argparse.Namespace) -> int:
+    """PH-11 Slice 11.7 — `mythic-vibe security audit`.
+
+    Walks the repo and runs every PH-11 detector:
+    - secret scanner (slice 11.3)
+    - dangerous-pattern scanner (slice 11.5)
+
+    Plus reports the active config:
+    - approval mode (slice 11.1)
+    - privacy policy (slice 11.6)
+    - sandbox execution policy (slice 11.4)
+    - redaction engine summary (slice 11.2)
+
+    Returns severity-tagged JSON when --json. Non-zero exit code
+    when any "critical" or "high" finding lands.
+    """
+    from .security.approval import resolve_mode, load_security_config
+    from .security.dangerous_patterns import scan_paths as scan_dangerous_paths
+    from .security.exec_policy import resolve_sandbox_policy
+    from .security.privacy import resolve_privacy_policy
+    from .security.redaction import RedactionEngine, engine_from_config
+    from .security.secret_scanner import scan_paths as scan_secret_paths
+
+    root = Path(args.path).resolve()
+    config = load_security_config(root)
+    redaction_engine: RedactionEngine = engine_from_config(config)
+    privacy_policy = resolve_privacy_policy(root)
+    sandbox_policy = resolve_sandbox_policy(root)
+    approval_mode = resolve_mode(root, cli_override=getattr(args, "approval", None))
+
+    # Walk the repo (best-effort) and gather scannable paths.
+    candidates: list[Path] = []
+    skip_dirs = {".git", "__pycache__", "node_modules", ".mypy_cache", ".ruff_cache", "dist", "build", "mythic"}
+    text_extensions = {
+        ".py", ".js", ".ts", ".tsx", ".jsx", ".html", ".sql",
+        ".md", ".toml", ".yaml", ".yml", ".json", ".cfg", ".ini",
+        ".env",  # included so the scanner reports it as forbidden
+    }
+    for path in root.rglob("*"):
+        try:
+            relative = path.relative_to(root)
+        except ValueError:
+            continue
+        if any(part in skip_dirs for part in relative.parts):
+            continue
+        if not path.is_file():
+            continue
+        if path.suffix.lower() in text_extensions or path.name in {".env"}:
+            candidates.append(path)
+
+    secret_result = scan_secret_paths(
+        candidates, root=root, engine=redaction_engine
+    )
+    danger_result = scan_dangerous_paths(candidates, root=root)
+
+    severity_counts: dict[str, int] = {
+        "critical": 0,
+        "high": 0,
+        "medium": 0,
+        "advisory": 0,
+    }
+    for finding in secret_result.findings:
+        severity_counts[finding.severity] = severity_counts.get(finding.severity, 0) + 1
+    for finding in danger_result.findings:
+        severity_counts[finding.severity] = severity_counts.get(finding.severity, 0) + 1
+
+    has_blocking = severity_counts.get("critical", 0) + severity_counts.get("high", 0) > 0
+
+    payload = {
+        "command": "security audit",
+        "path": str(root),
+        "approval_mode": approval_mode,
+        "redaction": redaction_engine.to_dict(),
+        "privacy": privacy_policy.to_dict(),
+        "sandbox": sandbox_policy.to_dict(),
+        "secret_scan": secret_result.to_dict(),
+        "dangerous_pattern_scan": danger_result.to_dict(),
+        "severity_counts": severity_counts,
+        "blocking": has_blocking,
+        "files_audited": len(candidates),
+    }
+
+    if _flag(args, "json"):
+        write_json(payload)
+        return OPERATIONAL_FAILURE if has_blocking else SUCCESS
+
+    write_line("Mythic security audit")
+    write_key_value("Path", root)
+    write_key_value("Approval mode", approval_mode)
+    write_key_value("Privacy enabled", privacy_policy.enabled)
+    write_key_value("Sandbox enabled", sandbox_policy.enabled)
+    write_key_value("Files audited", len(candidates))
+    write_line("- Secret scan:")
+    write_key_value("  Findings", len(secret_result.findings), indent=2)
+    write_key_value("  Forbidden paths skipped", len(secret_result.forbidden_paths), indent=2)
+    write_line("- Dangerous patterns:")
+    write_key_value("  Findings", len(danger_result.findings), indent=2)
+    write_line("- Severity counts:")
+    for severity, count in severity_counts.items():
+        if count:
+            write_bullet(f"{severity}: {count}", indent=2)
+    if has_blocking:
+        write_error(
+            f"Audit reports {severity_counts.get('critical', 0)} critical "
+            f"+ {severity_counts.get('high', 0)} high finding(s). Re-run "
+            "with --json for the full payload."
+        )
+        return OPERATIONAL_FAILURE
+    return SUCCESS
+
+
+def cmd_security_dispatch(args: argparse.Namespace) -> int:
+    sub = getattr(args, "security_command", "")
+    if sub == "audit":
+        return cmd_security_audit(args)
+    write_error(
+        f"Unknown security subcommand: {sub!r}. Try `mythic-vibe security audit --help`."
+    )
+    return USER_INPUT_ERROR
+
+
 def cmd_plugin_dispatch(args: argparse.Namespace) -> int:
     if args.plugin_command == "list":
         return cmd_plugin_list(args)
@@ -5183,6 +5304,7 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "oath": cmd_oath,
     "grimoire": cmd_grimoire,
     "plugin": cmd_plugin_dispatch,
+    "security": cmd_security_dispatch,
     "config": cmd_config_dispatch,
     "state": cmd_state_dispatch,
     "db": cmd_db_dispatch,

@@ -178,4 +178,7 @@ BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
 
     # --- Voice & multimodal (PH-07 slices 7.1-7.3) ---
     BuiltinSlashCommand(name="voice", description="Voice transcribe + TTS (opt-in; stub engines work without extras)"),
+
+    # --- Security audit (PH-11 slice 11.7) ---
+    BuiltinSlashCommand(name="security", description="Security audit (secret scan + dangerous patterns + policy report)"),
 )
