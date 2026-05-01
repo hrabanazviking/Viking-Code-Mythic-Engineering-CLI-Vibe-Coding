@@ -1,12 +1,21 @@
-"""Tests for the routing runtime / fallback chain (PH-08 slice 8.3)."""
+"""Tests for the routing runtime / fallback chain (PH-08 slice 8.3).
+
+Also covers the PH-08 follow-up wire-up of ``cmd_ai_run`` —
+fallback on by default, ``--no-fallback`` preserves the legacy
+direct-``provider.run`` path.
+"""
 
 from __future__ import annotations
 
+import argparse
+import io
 import json
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from dataclasses import dataclass
 from pathlib import Path
+from unittest import mock
 
 from mythic_vibe_cli.ai.providers.base import ProviderResponse, ProviderStatus
 from mythic_vibe_cli.ai.router import RouteDecision, RoutingRule
@@ -318,6 +327,238 @@ class FallbackResultDataclassTests(unittest.TestCase):
         self.assertEqual(payload["used_provider"], "ollama")
         self.assertEqual(payload["response"]["provider"], "ollama")
         self.assertEqual(len(payload["attempts"]), 1)
+
+
+# ---- cmd_ai_run integration (PH-08 follow-up) ------------------------
+
+
+class _FakeRegistry:
+    """Test double for :class:`ProviderRegistry`. Holds a fixed
+    name → fake-provider mapping and exposes the same
+    ``providers()`` shape ``cmd_ai_run`` consumes."""
+
+    def __init__(self, providers: dict[str, _FakeProvider]) -> None:
+        self._providers = providers
+
+    def providers(self) -> dict[str, _FakeProvider]:
+        # Returns a fresh dict each call to mirror the real registry's
+        # behaviour — `cmd_ai_run` and `run_with_fallback` may both
+        # call providers() and the real implementation rebuilds.
+        return dict(self._providers)
+
+
+class _RealResponseProvider:
+    """Wraps a :class:`_FakeProvider` to surface a non-dry-run
+    :class:`ProviderResponse` so the conversation-recording path
+    fires under integration tests."""
+
+    def __init__(self, name: str, *, configured: bool = True) -> None:
+        self.name = name
+        self._configured = configured
+
+    def validate_config(self) -> ProviderStatus:
+        return ProviderStatus(configured=self._configured, details=[f"{self.name} (test)"])
+
+    def estimate(self, packet: object) -> object:  # pragma: no cover — trivial
+        class _E:
+            cost_usd = 0.0
+        return _E()
+
+    def run(self, packet: object, *, dry_run: bool = False) -> ProviderResponse:
+        return ProviderResponse(
+            provider=self.name,
+            model=f"{self.name}-test",
+            content=f"reply from {self.name}",
+            packet_id="PKT-TEST",
+            dry_run=False,  # real-call shape: forces conversation log
+            usage={"input_tokens": 1, "output_tokens": 2, "total_tokens": 3},
+            metadata={"source": "real-test"},
+        )
+
+
+def _ai_run_namespace(**overrides: object) -> argparse.Namespace:
+    base = dict(
+        path=".",
+        provider="anthropic",
+        packet="hello",
+        json=True,
+        dry_run=False,
+        conversation_id="",
+        no_record=False,
+        no_fallback=False,
+    )
+    base.update(overrides)
+    return argparse.Namespace(**base)
+
+
+class CmdAiRunFallbackTests(unittest.TestCase):
+    """Integration: ``cmd_ai_run`` routes through ``run_with_fallback``
+    by default and falls back to copy-paste on primary failure."""
+
+    def test_default_path_records_no_fallback_when_primary_succeeds(self) -> None:
+        from mythic_vibe_cli import commands as cmd_module
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry = _FakeRegistry(
+                {
+                    "anthropic": _RealResponseProvider("anthropic"),
+                    "copy-paste": _RealResponseProvider("copy-paste"),
+                }
+            )
+            ns = _ai_run_namespace(path=str(root))
+            buf = io.StringIO()
+            with mock.patch.object(cmd_module, "_ai_registry", return_value=registry):
+                with redirect_stdout(buf):
+                    exit_code = cmd_module.cmd_ai_run(ns)
+            payload = json.loads(buf.getvalue())
+
+        self.assertEqual(exit_code, 0)
+        self.assertTrue(payload["fallback_enabled"])
+        self.assertFalse(payload["fell_back"])
+        self.assertEqual(payload["primary_provider"], "anthropic")
+        self.assertEqual(payload["used_provider"], "anthropic")
+        # One attempt, succeeded.
+        self.assertEqual(len(payload["fallback_attempts"]), 1)
+        self.assertTrue(payload["fallback_attempts"][0]["succeeded"])
+        self.assertEqual(payload["response"]["provider"], "anthropic")
+
+    def test_primary_failure_falls_forward_to_copy_paste(self) -> None:
+        from mythic_vibe_cli import commands as cmd_module
+
+        # Primary raises; copy-paste catches.
+        anthropic = _FakeProvider(
+            name="anthropic",
+            configured=True,
+            raise_on_run=ConnectionError("offline"),
+        )
+        # Use _FakeProvider for copy-paste too — its `run` returns a
+        # dry_run=False response (default _FakeProvider behaviour
+        # doesn't set dry_run, so ProviderResponse defaults to False).
+        copy_paste = _RealResponseProvider("copy-paste")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry = _FakeRegistry({"anthropic": anthropic, "copy-paste": copy_paste})
+            ns = _ai_run_namespace(path=str(root))
+            buf = io.StringIO()
+            with mock.patch.object(cmd_module, "_ai_registry", return_value=registry):
+                with redirect_stdout(buf):
+                    exit_code = cmd_module.cmd_ai_run(ns)
+            payload = json.loads(buf.getvalue())
+
+        self.assertEqual(exit_code, 0)
+        self.assertTrue(payload["fell_back"])
+        self.assertEqual(payload["primary_provider"], "anthropic")
+        self.assertEqual(payload["used_provider"], "copy-paste")
+        # Two attempts: anthropic raised, copy-paste succeeded.
+        attempts = payload["fallback_attempts"]
+        self.assertEqual(len(attempts), 2)
+        self.assertFalse(attempts[0]["succeeded"])
+        self.assertEqual(attempts[0]["error"], "offline")
+        self.assertTrue(attempts[1]["succeeded"])
+
+    def test_unconfigured_primary_with_fallback_does_not_block(self) -> None:
+        """Legacy behaviour: unconfigured primary + non-dry-run = USER_INPUT_ERROR.
+        With fallback on, the runtime walks past unconfigured providers
+        onto copy-paste; we must not return USER_INPUT_ERROR."""
+        from mythic_vibe_cli import commands as cmd_module
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry = _FakeRegistry(
+                {
+                    "anthropic": _RealResponseProvider(
+                        "anthropic", configured=False
+                    ),
+                    "copy-paste": _RealResponseProvider("copy-paste"),
+                }
+            )
+            ns = _ai_run_namespace(path=str(root))
+            buf = io.StringIO()
+            with mock.patch.object(cmd_module, "_ai_registry", return_value=registry):
+                with redirect_stdout(buf):
+                    exit_code = cmd_module.cmd_ai_run(ns)
+            payload = json.loads(buf.getvalue())
+
+        self.assertEqual(exit_code, 0)
+        self.assertTrue(payload["fell_back"])
+        self.assertEqual(payload["used_provider"], "copy-paste")
+
+    def test_no_fallback_flag_blocks_unconfigured_primary(self) -> None:
+        """With ``--no-fallback`` set and an unconfigured provider on
+        a non-dry-run, the legacy USER_INPUT_ERROR path fires."""
+        from mythic_vibe_cli import commands as cmd_module
+        from mythic_vibe_cli.exit_codes import USER_INPUT_ERROR
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry = _FakeRegistry(
+                {
+                    "anthropic": _RealResponseProvider(
+                        "anthropic", configured=False
+                    ),
+                    "copy-paste": _RealResponseProvider("copy-paste"),
+                }
+            )
+            ns = _ai_run_namespace(path=str(root), no_fallback=True)
+            stderr = io.StringIO()
+            stdout = io.StringIO()
+            with mock.patch.object(cmd_module, "_ai_registry", return_value=registry):
+                from contextlib import redirect_stderr
+                with redirect_stderr(stderr), redirect_stdout(stdout):
+                    exit_code = cmd_module.cmd_ai_run(ns)
+
+        self.assertEqual(exit_code, USER_INPUT_ERROR)
+        self.assertIn("Provider not configured", stderr.getvalue())
+
+    def test_no_fallback_flag_calls_provider_directly(self) -> None:
+        """With ``--no-fallback`` and a configured provider, the
+        legacy ``provider.run`` path fires — fallback fields show
+        the chain was disabled."""
+        from mythic_vibe_cli import commands as cmd_module
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            registry = _FakeRegistry(
+                {
+                    "anthropic": _RealResponseProvider("anthropic"),
+                    "copy-paste": _RealResponseProvider("copy-paste"),
+                }
+            )
+            ns = _ai_run_namespace(path=str(root), no_fallback=True)
+            buf = io.StringIO()
+            with mock.patch.object(cmd_module, "_ai_registry", return_value=registry):
+                with redirect_stdout(buf):
+                    exit_code = cmd_module.cmd_ai_run(ns)
+            payload = json.loads(buf.getvalue())
+
+        self.assertEqual(exit_code, 0)
+        self.assertFalse(payload["fallback_enabled"])
+        self.assertFalse(payload["fell_back"])
+        self.assertEqual(payload["used_provider"], "anthropic")
+        # Empty attempts list — the runtime was not invoked.
+        self.assertEqual(payload["fallback_attempts"], [])
+
+
+class CmdAiRunArgparseTests(unittest.TestCase):
+    def test_no_fallback_flag_parses(self) -> None:
+        from mythic_vibe_cli.app import build_parser
+
+        parser = build_parser()
+        ns = parser.parse_args(
+            ["ai", "run", "--provider", "copy-paste", "--packet", "hi", "--no-fallback"]
+        )
+        self.assertTrue(ns.no_fallback)
+
+    def test_no_fallback_default_false(self) -> None:
+        from mythic_vibe_cli.app import build_parser
+
+        parser = build_parser()
+        ns = parser.parse_args(
+            ["ai", "run", "--provider", "copy-paste", "--packet", "hi"]
+        )
+        self.assertFalse(ns.no_fallback)
 
 
 if __name__ == "__main__":

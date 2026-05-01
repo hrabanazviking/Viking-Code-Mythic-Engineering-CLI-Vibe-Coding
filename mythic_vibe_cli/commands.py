@@ -1021,8 +1021,16 @@ def cmd_ai_run(args: argparse.Namespace) -> int:
     operator-supplied ``--conversation-id`` (or a fresh
     ``CV-XXXXXX`` if absent). Dry-runs are never recorded — they
     are estimation passes, not real conversations.
+
+    PH-08 follow-up: by default the call is routed through
+    :func:`run_with_fallback` so a primary failure falls forward
+    onto ``copy-paste`` rather than crashing the CLI. Pass
+    ``--no-fallback`` to preserve the legacy direct-``provider.run``
+    path.
     """
     from .ai.cost_guard import check_budget
+    from .ai.router import RouteDecision
+    from .ai.routing_runtime import run_with_fallback
     from .memory.conversation import new_conversation_id, record_turn
 
     root = Path(getattr(args, "path", ".")).resolve()
@@ -1032,16 +1040,24 @@ def cmd_ai_run(args: argparse.Namespace) -> int:
         write_error(f"Unknown provider: {args.provider}")
         return USER_INPUT_ERROR
 
+    use_fallback = not _flag(args, "no_fallback")
+
     status = provider.validate_config()
-    if not status.configured and not _flag(args, "dry_run"):
+    # When fallback is off, an unconfigured provider is a hard error
+    # (legacy behaviour). When fallback is on, the routing runtime
+    # walks past unconfigured providers onto copy-paste, so we don't
+    # block here — the operator gets a fell_back=True payload instead.
+    if not use_fallback and not status.configured and not _flag(args, "dry_run"):
         write_error(f"Provider not configured: {args.provider}. Use --dry-run or set the required API key.")
         return USER_INPUT_ERROR
 
     packet = _resolve_ai_packet(root, args.packet)
 
     # PH-08 slice 8.2: cost-guard gate. Only fires for live calls;
-    # dry-runs go straight through. The estimate's cost_usd is the
-    # projection we charge against the daily cap.
+    # dry-runs go straight through. The estimate is taken from the
+    # operator's chosen provider — that's the cost they consented to.
+    # If fallback fires, the actual call lands on copy-paste (free),
+    # but we still respect the cap on the planned spend.
     if not _flag(args, "dry_run"):
         try:
             estimate = provider.estimate(packet)
@@ -1053,7 +1069,33 @@ def cmd_ai_run(args: argparse.Namespace) -> int:
             write_error(f"Daily AI cost cap blocked the call: {budget.reason}")
             return OPERATIONAL_FAILURE
 
-    response = provider.run(packet, dry_run=_flag(args, "dry_run"))
+    used_provider = provider.name
+    fell_back = False
+    attempts_payload: list[dict[str, object]] = []
+
+    if use_fallback:
+        decision = RouteDecision(
+            provider=args.provider,
+            model="",
+            rule_matched=None,
+            fallbacks=(),
+            reasons=(),
+            role="",
+            task_type="*",
+        )
+        result = run_with_fallback(
+            decision,
+            packet,
+            resolver=lambda name: registry.providers().get(name),
+            root=root,
+            dry_run=_flag(args, "dry_run"),
+        )
+        response = result.response
+        used_provider = result.used_provider
+        fell_back = result.fell_back
+        attempts_payload = [a.to_dict() for a in result.attempts]
+    else:
+        response = provider.run(packet, dry_run=_flag(args, "dry_run"))
 
     # PH-15 sub-slice: conversation auto-record.
     no_record = bool(_flag(args, "no_record"))
@@ -1116,6 +1158,11 @@ def cmd_ai_run(args: argparse.Namespace) -> int:
         },
         "conversation_id": conversation_id,
         "recorded": recorded,
+        "fallback_enabled": use_fallback,
+        "primary_provider": provider.name,
+        "used_provider": used_provider,
+        "fell_back": fell_back,
+        "fallback_attempts": attempts_payload,
     }
     write_json(payload)
     return SUCCESS
