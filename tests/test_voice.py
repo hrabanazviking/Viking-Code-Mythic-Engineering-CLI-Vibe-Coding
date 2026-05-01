@@ -9,6 +9,7 @@ import os
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
+from dataclasses import dataclass
 from pathlib import Path
 from unittest import mock
 
@@ -302,11 +303,33 @@ class VoiceArgparseTests(unittest.TestCase):
         self.assertEqual(ns.file, "x.txt")
         self.assertEqual(ns.engine, "stub")
 
-    def test_transcribe_requires_file(self) -> None:
+    def test_transcribe_argparse_accepts_no_source_then_handler_rejects(self) -> None:
+        """PH-07 follow-up: --file is no longer argparse-required so
+        --mic can be used instead. The handler enforces "exactly one
+        of --file / --mic" and returns USER_INPUT_ERROR otherwise."""
+        from mythic_vibe_cli.commands import cmd_voice_transcribe
+        from mythic_vibe_cli.exit_codes import USER_INPUT_ERROR
+
         parser = build_parser()
-        with self.assertRaises(SystemExit):
-            with redirect_stderr(io.StringIO()):
-                parser.parse_args(["voice", "transcribe"])
+        ns = parser.parse_args(["voice", "transcribe"])
+        with redirect_stderr(io.StringIO()):
+            with redirect_stdout(io.StringIO()):
+                exit_code = cmd_voice_transcribe(ns)
+        self.assertEqual(exit_code, USER_INPUT_ERROR)
+
+    def test_transcribe_mic_flag_parses(self) -> None:
+        parser = build_parser()
+        ns = parser.parse_args(
+            ["voice", "transcribe", "--mic", "--duration", "3"]
+        )
+        self.assertTrue(ns.mic)
+        self.assertEqual(ns.duration, 3.0)
+        self.assertEqual(ns.file, "")
+
+    def test_transcribe_mic_default_duration(self) -> None:
+        parser = build_parser()
+        ns = parser.parse_args(["voice", "transcribe", "--mic"])
+        self.assertEqual(ns.duration, 5.0)
 
     def test_say_parses_text_positional(self) -> None:
         parser = build_parser()
@@ -329,6 +352,8 @@ class CmdVoiceTranscribeTests(unittest.TestCase):
             model="base",
             capture_intent=False,
             task="",
+            mic=False,
+            duration=5.0,
             json=True,
         )
         base.update(overrides)
@@ -484,6 +509,198 @@ class VoiceSlashCatalogTests(unittest.TestCase):
             spec = command_for_builtin("voice", project_root=Path(tmp))
         self.assertIn("--path", spec.argv)
         self.assertIn(str(Path(tmp)), spec.argv)
+
+
+# ---- Mic capture (PH-07 follow-up) -----------------------------------
+
+
+@dataclass
+class _FakeMicRecorder:
+    """Test double for :class:`MicRecorder`. Returns a deterministic
+    PCM payload sized to ``duration * sample_rate`` int16 samples."""
+
+    sample_rate: int = 16_000
+    channels: int = 1
+    last_duration: float = 0.0
+
+    def record(self, duration: float) -> bytes:
+        self.last_duration = duration
+        # int16 silence — frames * channels * 2 bytes per sample.
+        frame_count = int(round(duration * self.sample_rate))
+        return b"\x00\x00" * frame_count * self.channels
+
+
+class RecordToTempWavTests(unittest.TestCase):
+    def test_returns_path_to_existing_wav(self) -> None:
+        from mythic_vibe_cli.voice.transcribe import record_to_temp_wav
+
+        recorder = _FakeMicRecorder()
+        path = record_to_temp_wav(0.5, recorder=recorder)
+        try:
+            self.assertTrue(Path(path).is_file())
+            self.assertTrue(path.endswith(".wav"))
+            self.assertEqual(recorder.last_duration, 0.5)
+            # Verify it's a valid WAV: stdlib wave should open it.
+            import wave
+
+            with wave.open(path, "rb") as wav:
+                self.assertEqual(wav.getnchannels(), 1)
+                self.assertEqual(wav.getframerate(), 16_000)
+                # 0.5s * 16k = 8000 frames.
+                self.assertEqual(wav.getnframes(), 8000)
+        finally:
+            Path(path).unlink(missing_ok=True)
+
+    def test_missing_sounddevice_raises_missing_extra(self) -> None:
+        """SoundDeviceRecorder constructor should raise
+        :class:`MissingExtraError` when sounddevice can't be imported."""
+        from mythic_vibe_cli.voice.transcribe import (
+            MissingExtraError,
+            SoundDeviceRecorder,
+        )
+
+        real_import = (
+            __builtins__["__import__"]
+            if isinstance(__builtins__, dict)
+            else __builtins__.__import__
+        )
+
+        def fake_import(name, *args, **kwargs):
+            if name == "sounddevice":
+                raise ImportError("simulated absence")
+            return real_import(name, *args, **kwargs)
+
+        with mock.patch("builtins.__import__", side_effect=fake_import):
+            with self.assertRaises(MissingExtraError) as ctx:
+                SoundDeviceRecorder()
+        self.assertEqual(ctx.exception.extra, "sounddevice")
+        self.assertIn("pip install sounddevice", ctx.exception.install_hint)
+
+    def test_duration_must_be_positive(self) -> None:
+        """The fake recorder is permissive, but the real recorder
+        guards against zero/negative durations."""
+        from mythic_vibe_cli.voice.transcribe import SoundDeviceRecorder
+
+        # Build a SoundDeviceRecorder without invoking __post_init__
+        # (we don't have sounddevice installed in the test env here).
+        rec = SoundDeviceRecorder.__new__(SoundDeviceRecorder)
+        rec.sample_rate = 16_000
+        rec.channels = 1
+        rec._module = mock.MagicMock()
+        rec._numpy = mock.MagicMock()
+        with self.assertRaises(ValueError):
+            rec.record(0.0)
+        with self.assertRaises(ValueError):
+            rec.record(-1.0)
+
+
+class CmdVoiceTranscribeMicTests(unittest.TestCase):
+    """Integration: cmd_voice_transcribe with --mic uses a recorded
+    temp WAV and cleans up afterwards."""
+
+    def _ns(self, **overrides):
+        base = dict(
+            path=".",
+            file="",
+            engine="stub",
+            language="en",
+            model="base",
+            capture_intent=False,
+            task="",
+            mic=False,
+            duration=5.0,
+            json=True,
+        )
+        base.update(overrides)
+        return argparse.Namespace(**base)
+
+    def test_mic_records_and_pipes_through_stub(self) -> None:
+        from mythic_vibe_cli.commands import cmd_voice_transcribe
+        from mythic_vibe_cli.voice import transcribe as voice_transcribe
+
+        recorder = _FakeMicRecorder()
+        # Patch record_to_temp_wav to inject our fake recorder.
+        original = voice_transcribe.record_to_temp_wav
+
+        def patched(duration: float, **kwargs):
+            return original(duration, recorder=recorder)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            ns = self._ns(path=tmp, mic=True, duration=0.25)
+            buf = io.StringIO()
+            with mock.patch.object(voice_transcribe, "record_to_temp_wav", patched):
+                with redirect_stdout(buf):
+                    exit_code = cmd_voice_transcribe(ns)
+            payload = json.loads(buf.getvalue())
+        self.assertEqual(exit_code, SUCCESS)
+        self.assertEqual(recorder.last_duration, 0.25)
+        # The stub transcriber on a binary WAV returns a placeholder
+        # mentioning the basename ("[stub transcript of mythic-mic-...wav]").
+        self.assertIn("stub transcript", payload["result"]["text"])
+        # Temp file must be cleaned up.
+        source_path = payload["request"]["source_path"]
+        self.assertFalse(Path(source_path).exists())
+
+    def test_mic_missing_dep_returns_operational_failure(self) -> None:
+        from mythic_vibe_cli.commands import cmd_voice_transcribe
+        from mythic_vibe_cli.exit_codes import OPERATIONAL_FAILURE
+        from mythic_vibe_cli.voice.transcribe import MissingExtraError
+        from mythic_vibe_cli.voice import transcribe as voice_transcribe
+
+        def raising_record(duration: float, **kwargs):
+            raise MissingExtraError(
+                "sounddevice", "Install with `pip install sounddevice numpy`."
+            )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            ns = self._ns(path=tmp, mic=True, duration=1.0)
+            stderr = io.StringIO()
+            stdout = io.StringIO()
+            with mock.patch.object(
+                voice_transcribe, "record_to_temp_wav", raising_record
+            ):
+                from contextlib import redirect_stderr
+                with redirect_stderr(stderr), redirect_stdout(stdout):
+                    exit_code = cmd_voice_transcribe(ns)
+        self.assertEqual(exit_code, OPERATIONAL_FAILURE)
+        self.assertIn("sounddevice", stderr.getvalue())
+        self.assertIn("pip install sounddevice", stderr.getvalue())
+
+    def test_file_and_mic_mutually_exclusive(self) -> None:
+        from mythic_vibe_cli.commands import cmd_voice_transcribe
+        from mythic_vibe_cli.exit_codes import USER_INPUT_ERROR
+
+        with tempfile.TemporaryDirectory() as tmp:
+            fixture = Path(tmp) / "x.txt"
+            fixture.write_text("hi", encoding="utf-8")
+            ns = self._ns(path=tmp, file=str(fixture), mic=True)
+            stderr = io.StringIO()
+            with redirect_stderr(stderr):
+                with redirect_stdout(io.StringIO()):
+                    exit_code = cmd_voice_transcribe(ns)
+        self.assertEqual(exit_code, USER_INPUT_ERROR)
+        self.assertIn("mutually exclusive", stderr.getvalue())
+
+    def test_neither_file_nor_mic_returns_user_input_error(self) -> None:
+        from mythic_vibe_cli.commands import cmd_voice_transcribe
+        from mythic_vibe_cli.exit_codes import USER_INPUT_ERROR
+
+        ns = self._ns()
+        stderr = io.StringIO()
+        with redirect_stderr(stderr):
+            with redirect_stdout(io.StringIO()):
+                exit_code = cmd_voice_transcribe(ns)
+        self.assertEqual(exit_code, USER_INPUT_ERROR)
+
+    def test_mic_negative_duration_rejected(self) -> None:
+        from mythic_vibe_cli.commands import cmd_voice_transcribe
+        from mythic_vibe_cli.exit_codes import USER_INPUT_ERROR
+
+        ns = self._ns(mic=True, duration=-1.0)
+        with redirect_stderr(io.StringIO()):
+            with redirect_stdout(io.StringIO()):
+                exit_code = cmd_voice_transcribe(ns)
+        self.assertEqual(exit_code, USER_INPUT_ERROR)
 
 
 if __name__ == "__main__":
