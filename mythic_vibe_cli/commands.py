@@ -3206,6 +3206,61 @@ def cmd_ci_dispatch(args: argparse.Namespace) -> int:
     return USER_INPUT_ERROR
 
 
+def cmd_docker_scaffold(args: argparse.Namespace) -> int:
+    """PH-12 Slice 12.2 — generate Dockerfile + .dockerignore +
+    docker-compose.yml tuned to the detected stack."""
+    from .cicd.docker_scaffold import scaffold_docker
+
+    root = Path(args.path).resolve()
+    force = bool(_flag(args, "force"))
+    dry_run = bool(_flag(args, "dry_run"))
+    result = scaffold_docker(root, force=force, dry_run=dry_run)
+
+    payload: dict[str, object] = {
+        "command": "docker scaffold",
+        "path": str(root),
+        "result": result.to_dict(),
+    }
+    if dry_run:
+        payload["previews"] = {
+            str(f.target.name): f.body for f in result.files
+        }
+
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+
+    if dry_run:
+        write_line("Dry run: would write the following files:")
+        for entry in result.files:
+            write_bullet(f"{entry.target.name} ({len(entry.body)} bytes)")
+        return SUCCESS
+
+    skipped = [f for f in result.files if f.skipped_reason]
+    if skipped:
+        for entry in skipped:
+            write_error(entry.skipped_reason)
+        if result.written_count == 0:
+            return USER_INPUT_ERROR
+
+    write_line(f"Docker scaffold complete ({result.written_count} file(s) written).")
+    write_key_value("Stack", result.stack.primary_language)
+    for entry in result.files:
+        marker = "wrote" if entry.written else "skipped"
+        write_bullet(f"{marker}: {entry.target}")
+    return SUCCESS
+
+
+def cmd_docker_dispatch(args: argparse.Namespace) -> int:
+    sub = getattr(args, "docker_command", "")
+    if sub == "scaffold":
+        return cmd_docker_scaffold(args)
+    write_error(
+        f"Unknown docker subcommand: {sub!r}. Try `mythic-vibe docker scaffold --help`."
+    )
+    return USER_INPUT_ERROR
+
+
 def cmd_security_dispatch(args: argparse.Namespace) -> int:
     sub = getattr(args, "security_command", "")
     if sub == "audit":
@@ -5356,6 +5411,7 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "plugin": cmd_plugin_dispatch,
     "security": cmd_security_dispatch,
     "ci": cmd_ci_dispatch,
+    "docker": cmd_docker_dispatch,
     "config": cmd_config_dispatch,
     "state": cmd_state_dispatch,
     "db": cmd_db_dispatch,

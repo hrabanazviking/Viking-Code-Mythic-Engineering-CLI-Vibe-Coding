@@ -108,6 +108,8 @@ class CliKernelTests(unittest.TestCase):
             "security",
             # PH-12 slice 12.1 — CI/CD scaffold
             "ci",
+            # PH-12 slice 12.2 — Docker scaffold
+            "docker",
         }
 
         self.assertEqual(set(COMMAND_HANDLERS), expected)
