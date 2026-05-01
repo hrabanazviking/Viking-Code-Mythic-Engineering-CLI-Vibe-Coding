@@ -184,4 +184,7 @@ BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
 
     # --- CI/CD scaffolding (PH-12 slice 12.1) ---
     BuiltinSlashCommand(name="ci", description="CI workflow scaffolding (.github/workflows/ci.yml tuned to the detected stack)"),
+
+    # --- Docker scaffolding (PH-12 slice 12.2) ---
+    BuiltinSlashCommand(name="docker", description="Docker scaffolding (Dockerfile + .dockerignore + docker-compose.yml)"),
 )

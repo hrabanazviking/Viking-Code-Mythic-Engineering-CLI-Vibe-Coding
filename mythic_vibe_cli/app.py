@@ -574,6 +574,26 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_runtime_options(ci_scaffold, json_output=True, dry_run=True)
 
+    # PH-12 Slice 12.2: `mythic-vibe docker scaffold`.
+    docker = sub.add_parser(
+        "docker",
+        help="Docker scaffolding (PH-12) — Dockerfile + .dockerignore + docker-compose.yml",
+    )
+    docker_sub = docker.add_subparsers(dest="docker_command", required=True)
+    docker_scaffold = docker_sub.add_parser(
+        "scaffold",
+        help="Generate Dockerfile, .dockerignore, and docker-compose.yml tuned to the stack",
+    )
+    docker_scaffold.add_argument(
+        "--path", default=".", help="Project directory (default: current directory)"
+    )
+    docker_scaffold.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite existing Dockerfile / .dockerignore / docker-compose.yml",
+    )
+    add_runtime_options(docker_scaffold, json_output=True, dry_run=True)
+
     # PH-11 Slice 11.7: `mythic-vibe security audit`.
     security = sub.add_parser(
         "security",
