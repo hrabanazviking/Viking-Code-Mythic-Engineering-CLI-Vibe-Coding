@@ -32,8 +32,8 @@ Cross-platform: pure stdlib. POSIX-only paths gate behind
 from __future__ import annotations
 
 import os
+import threading
 import time
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from dataclasses import dataclass, field
 from typing import Any, Callable, TypeVar
 
@@ -137,33 +137,47 @@ def safe_call(
             plugin_id=plugin_id,
         )
 
-    # Slow path: timeout enforcement on a worker thread.
-    with ThreadPoolExecutor(max_workers=1) as pool:
-        future = pool.submit(func, *args, **kwargs)
+    # Slow path: timeout enforcement on a daemon thread. We don't
+    # use ThreadPoolExecutor here because its __exit__ blocks on
+    # the worker, which defeats the timeout. Daemon threads orphan
+    # cleanly on timeout — the worker keeps running but doesn't
+    # block process shutdown.
+    holder: dict[str, Any] = {}
+
+    def _runner() -> None:
         try:
-            value = future.result(timeout=effective_timeout)
-        except FuturesTimeoutError:
-            elapsed_ms = (time.monotonic() - start) * 1000.0
-            return SandboxResult(
-                elapsed_ms=elapsed_ms,
-                error=(
-                    f"plugin exceeded {effective_timeout:.3f}s timeout "
-                    f"(MYTHIC_PLUGIN_TIMEOUT_SEC); worker thread is "
-                    "daemon-flagged but cannot be force-killed"
-                ),
-                timed_out=True,
-                plugin_id=plugin_id,
-            )
-        except Exception as exc:  # noqa: BLE001 — sandbox swallows by design
-            return SandboxResult(
-                elapsed_ms=(time.monotonic() - start) * 1000.0,
-                error=f"{type(exc).__name__}: {exc}",
-                plugin_id=plugin_id,
-            )
+            holder["value"] = func(*args, **kwargs)
+        except BaseException as exc:  # noqa: BLE001 — capture for the caller
+            holder["error"] = exc
+
+    worker = threading.Thread(target=_runner, daemon=True)
+    worker.start()
+    worker.join(timeout=effective_timeout)
+    elapsed_ms = (time.monotonic() - start) * 1000.0
+
+    if worker.is_alive():
+        return SandboxResult(
+            elapsed_ms=elapsed_ms,
+            error=(
+                f"plugin exceeded {effective_timeout:.3f}s timeout "
+                f"(MYTHIC_PLUGIN_TIMEOUT_SEC); worker thread is "
+                "daemon-flagged but cannot be force-killed"
+            ),
+            timed_out=True,
+            plugin_id=plugin_id,
+        )
+
+    captured_exc = holder.get("error")
+    if isinstance(captured_exc, BaseException):
+        return SandboxResult(
+            elapsed_ms=elapsed_ms,
+            error=f"{type(captured_exc).__name__}: {captured_exc}",
+            plugin_id=plugin_id,
+        )
 
     return SandboxResult(
-        value=value,
-        elapsed_ms=(time.monotonic() - start) * 1000.0,
+        value=holder.get("value"),
+        elapsed_ms=elapsed_ms,
         plugin_id=plugin_id,
     )
 
