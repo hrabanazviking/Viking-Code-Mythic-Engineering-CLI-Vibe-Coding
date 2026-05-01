@@ -2541,7 +2541,20 @@ class CliKernelTests(unittest.TestCase):
 
             run_output = io.StringIO()
             with redirect_stdout(run_output):
-                run_code = app.main(["ai", "run", "--provider", "copy-paste", "--packet", "hello", "--dry-run", "--json"])
+                run_code = app.main(
+                    [
+                        "ai",
+                        "run",
+                        "--provider",
+                        "copy-paste",
+                        "--packet",
+                        "hello",
+                        "--path",
+                        str(root),
+                        "--dry-run",
+                        "--json",
+                    ]
+                )
 
             run_payload = json.loads(run_output.getvalue())
             self.assertEqual(run_code, SUCCESS)
