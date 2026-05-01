@@ -118,6 +118,8 @@ class CliKernelTests(unittest.TestCase):
             "policy",
             # PH-18 slice 18.4 — Resilience simulation
             "simulate",
+            # PH-16 — Standards-based protocols
+            "protocols",
         }
 
         self.assertEqual(set(COMMAND_HANDLERS), expected)

@@ -531,6 +531,30 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_runtime_options(simulate, json_output=True)
 
+    # PH-16: `mythic-vibe protocols ...` (MCP / ACP / OpenTelemetry).
+    protocols = sub.add_parser(
+        "protocols",
+        help="Standards-based protocol surfaces (MCP / ACP / OpenTelemetry)",
+    )
+    protocols_sub = protocols.add_subparsers(
+        dest="protocols_command", required=True
+    )
+    proto_mcp_server = protocols_sub.add_parser(
+        "mcp-server",
+        help="Bind the Model Context Protocol server to stdio",
+    )
+    add_runtime_options(proto_mcp_server, json_output=False)
+    proto_acp_bridge = protocols_sub.add_parser(
+        "acp-bridge",
+        help="Bind the Agent Communication Protocol bridge to stdio",
+    )
+    add_runtime_options(proto_acp_bridge, json_output=False)
+    proto_otel = protocols_sub.add_parser(
+        "otel-status",
+        help="Report OpenTelemetry tracing status (env flag + SDK availability)",
+    )
+    add_runtime_options(proto_otel, json_output=True)
+
     grimoire = sub.add_parser("grimoire", help="Manage plugins")
     add_runtime_options(grimoire)
     grimoire_sub = grimoire.add_subparsers(dest="grimoire_command", required=True)
