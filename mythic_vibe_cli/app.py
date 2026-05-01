@@ -776,6 +776,26 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     add_runtime_options(ai_run, json_output=True, dry_run=True)
+
+    # PH-06 Slice 6.4: streaming output.
+    ai_stream = ai_sub.add_parser(
+        "stream",
+        help="Stream a provider response token by token (PH-06 Slice 6.4). Ctrl-C cancels cleanly.",
+    )
+    ai_stream.add_argument(
+        "--path",
+        default=".",
+        help="Project directory used to resolve packet IDs and logs",
+    )
+    ai_stream.add_argument(
+        "--provider",
+        required=True,
+        choices=sorted(ProviderRegistry().providers().keys()),
+    )
+    ai_stream.add_argument(
+        "--packet", required=True, help="Packet text or identifier to stream"
+    )
+    add_runtime_options(ai_stream, json_output=True, dry_run=True)
     ai_route = ai_sub.add_parser(
         "route",
         help="Explain how a (role, task_type) would route through the provider table",

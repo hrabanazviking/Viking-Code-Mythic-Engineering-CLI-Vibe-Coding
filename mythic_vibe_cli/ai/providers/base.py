@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import threading
 from dataclasses import dataclass, field
 import json
 import re
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Protocol, Any
+from typing import Iterator, Protocol, Any, runtime_checkable
 
 from urllib import request as urllib_request
 
@@ -52,6 +53,118 @@ class AIProvider(Protocol):
 
     def run(self, packet: object, *, dry_run: bool = False) -> ProviderResponse:
         ...
+
+
+# ---- Streaming contract (PH-06 Slice 6.4) ----------------------------
+
+
+@dataclass(frozen=True)
+class StreamChunk:
+    """One increment of a streaming provider response.
+
+    ``text`` is the delta — what new text this chunk contributes.
+    ``done`` flags the terminal chunk (carries final usage +
+    metadata; ``text`` may be empty on the terminal chunk if the
+    provider already emitted the full response in earlier
+    chunks).
+
+    Streaming consumers concatenate ``text`` across chunks to
+    reconstruct the full response, then read ``usage`` /
+    ``metadata`` from the ``done=True`` chunk."""
+
+    text: str = ""
+    done: bool = False
+    usage: dict[str, int] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "text": self.text,
+            "done": self.done,
+            "usage": dict(self.usage),
+            "metadata": dict(self.metadata),
+        }
+
+
+@runtime_checkable
+class StreamingProvider(Protocol):
+    """Optional streaming surface. Providers that natively
+    support token streaming (Ollama, OpenAI streaming mode, etc.)
+    implement :meth:`run_stream` returning an iterator of
+    :class:`StreamChunk`. Providers that don't support streaming
+    are wrapped via :func:`single_chunk_stream` to satisfy the
+    same contract."""
+
+    name: str
+
+    def run_stream(
+        self,
+        packet: object,
+        *,
+        dry_run: bool = False,
+        cancel_event: threading.Event | None = None,
+    ) -> Iterator[StreamChunk]:
+        ...
+
+
+def single_chunk_stream(
+    provider: AIProvider,
+    packet: object,
+    *,
+    dry_run: bool = False,
+    cancel_event: threading.Event | None = None,
+) -> Iterator[StreamChunk]:
+    """Adapt a non-streaming provider into the streaming contract.
+
+    Calls ``provider.run(packet, dry_run=dry_run)`` once and
+    yields exactly one terminal :class:`StreamChunk` carrying
+    the full content + usage + metadata.
+
+    Honours ``cancel_event``: if the event is already set when
+    we're about to invoke ``run``, we yield an empty terminal
+    chunk with ``metadata["cancelled"]=True`` instead. (We
+    can't interrupt a synchronous ``run()`` mid-flight from the
+    outside; the event acts as a pre-flight gate.)
+    """
+    if cancel_event is not None and cancel_event.is_set():
+        yield StreamChunk(
+            text="",
+            done=True,
+            metadata={"cancelled": True, "source": "single_chunk_stream"},
+        )
+        return
+
+    response = provider.run(packet, dry_run=dry_run)
+    yield StreamChunk(
+        text=response.content,
+        done=True,
+        usage=dict(response.usage),
+        metadata={
+            **dict(response.metadata),
+            "source": "single_chunk_stream",
+            "wraps_provider": getattr(provider, "name", ""),
+        },
+    )
+
+
+def stream_provider_response(
+    provider: AIProvider,
+    packet: object,
+    *,
+    dry_run: bool = False,
+    cancel_event: threading.Event | None = None,
+) -> Iterator[StreamChunk]:
+    """Top-level streaming entry point. Routes through the
+    provider's native ``run_stream`` if available, else falls
+    back to :func:`single_chunk_stream`. Callers always get a
+    valid :class:`StreamChunk` iterator regardless of provider
+    capability."""
+    run_stream = getattr(provider, "run_stream", None)
+    if callable(run_stream):
+        return run_stream(packet, dry_run=dry_run, cancel_event=cancel_event)
+    return single_chunk_stream(
+        provider, packet, dry_run=dry_run, cancel_event=cancel_event
+    )
 
 
 SECRET_PATTERNS = [

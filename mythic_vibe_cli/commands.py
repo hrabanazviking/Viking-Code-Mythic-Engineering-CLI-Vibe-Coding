@@ -4557,6 +4557,110 @@ def cmd_tui(args: argparse.Namespace) -> int:
     return run_tui(project_root, theme=theme)
 
 
+def cmd_ai_stream(args: argparse.Namespace) -> int:
+    """PH-06 Slice 6.4 — emit a streaming provider response chunk
+    by chunk to stdout. Falls back to single_chunk_stream for
+    providers that don't natively stream.
+
+    Cancellation contract: SIGINT (Ctrl-C) sets a threading.Event
+    the provider checks between chunks. The first Ctrl-C triggers
+    a clean stop; a second one bubbles out as KeyboardInterrupt.
+    """
+    import signal
+    import threading
+
+    from .ai.providers.base import stream_provider_response
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    registry = _ai_registry(root)
+    provider = registry.providers().get(args.provider)
+    if provider is None:
+        write_error(f"Unknown provider: {args.provider}")
+        return USER_INPUT_ERROR
+
+    status = provider.validate_config()
+    dry_run = bool(_flag(args, "dry_run"))
+    if not status.configured and not dry_run:
+        write_error(
+            f"Provider not configured: {args.provider}. "
+            "Use --dry-run or set the required API key."
+        )
+        return USER_INPUT_ERROR
+
+    packet = _resolve_ai_packet(root, args.packet)
+
+    cancel_event = threading.Event()
+    json_mode = bool(_flag(args, "json"))
+
+    previous_handler = signal.getsignal(signal.SIGINT)
+
+    def _on_sigint(signum: int, frame: object) -> None:  # noqa: ANN001
+        # First Ctrl-C: signal cooperative cancel. Second Ctrl-C
+        # restores the default handler so the next signal propagates
+        # as a real KeyboardInterrupt.
+        cancel_event.set()
+        signal.signal(signal.SIGINT, signal.default_int_handler)
+
+    try:
+        signal.signal(signal.SIGINT, _on_sigint)
+    except (ValueError, OSError):
+        # signal.signal must be called from the main thread; tests
+        # / TUI invocations may not have that luxury. Skip the SIGINT
+        # wiring in that case — caller can still set cancel_event
+        # programmatically via args (not exposed today).
+        previous_handler = None
+
+    accumulated_text: list[str] = []
+    final_chunk: object = None
+    chunk_count = 0
+    try:
+        for chunk in stream_provider_response(
+            provider, packet, dry_run=dry_run, cancel_event=cancel_event
+        ):
+            chunk_count += 1
+            if json_mode:
+                # NDJSON line per chunk so consumers can parse
+                # incrementally.
+                write_line(json.dumps(chunk.to_dict(), ensure_ascii=False))
+            else:
+                if chunk.text:
+                    # Render delta to stdout WITHOUT newline so
+                    # the operator sees a flowing response.
+                    print(chunk.text, end="", flush=True)
+                if chunk.text:
+                    accumulated_text.append(chunk.text)
+            if chunk.done:
+                final_chunk = chunk
+                break
+    finally:
+        if previous_handler is not None:
+            try:
+                signal.signal(signal.SIGINT, previous_handler)
+            except (ValueError, OSError):
+                pass
+
+    if not json_mode:
+        # Trailing newline so the prompt lands on its own line.
+        if accumulated_text:
+            print("", flush=True)
+        usage = (
+            getattr(final_chunk, "usage", {}) if final_chunk is not None else {}
+        )
+        cancelled = (
+            bool(getattr(final_chunk, "metadata", {}).get("cancelled", False))
+            if final_chunk is not None
+            else False
+        )
+        write_line("- Stream summary:")
+        write_key_value("Provider", provider.name, indent=2)
+        write_key_value("Chunks", chunk_count, indent=2)
+        write_key_value("Cancelled", cancelled, indent=2)
+        if usage:
+            write_key_value("Usage", usage, indent=2)
+
+    return SUCCESS
+
+
 def cmd_ai_dispatch(args: argparse.Namespace) -> int:
     if args.ai_command == "providers":
         return cmd_ai_providers(args)
@@ -4564,6 +4668,8 @@ def cmd_ai_dispatch(args: argparse.Namespace) -> int:
         return cmd_ai_test(args)
     if args.ai_command == "run":
         return cmd_ai_run(args)
+    if args.ai_command == "stream":
+        return cmd_ai_stream(args)
     if args.ai_command == "ingest-response":
         return cmd_ai_ingest_response(args)
     if args.ai_command == "models":
@@ -4574,7 +4680,7 @@ def cmd_ai_dispatch(args: argparse.Namespace) -> int:
         return cmd_ai_route(args)
     write_error(
         f"Unknown ai subcommand: {args.ai_command!r}. "
-        "Valid: providers | test | run | ingest-response | models | telemetry | route."
+        "Valid: providers | test | run | stream | ingest-response | models | telemetry | route."
     )
     return USER_INPUT_ERROR
 
