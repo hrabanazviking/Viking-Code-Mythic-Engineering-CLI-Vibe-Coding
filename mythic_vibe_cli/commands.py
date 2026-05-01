@@ -4760,17 +4760,61 @@ def cmd_voice_transcribe(args: argparse.Namespace) -> int:
     With ``--capture-intent``, the transcription is piped into a
     fresh ``mythic/checkins/<ts>-intent.md`` Mythic Phase Record
     via the slice 2.3 ``cmd_intent_capture`` path.
+
+    PH-07 follow-up: ``--mic [--duration N]`` records from the
+    system microphone (via sounddevice) into a temp WAV and feeds
+    that into the same transcribe pipeline. The temp file is always
+    cleaned up after the call.
     """
-    from .voice.transcribe import TranscriptionRequest, transcribe
+    from .voice.transcribe import (
+        DEFAULT_MIC_DURATION,
+        MissingExtraError,
+        TranscriptionRequest,
+        record_to_temp_wav,
+        transcribe,
+    )
 
     root = Path(getattr(args, "path", ".")).resolve()
-    request = TranscriptionRequest(
-        source_path=str(getattr(args, "file", "") or ""),
-        engine=str(getattr(args, "engine", "stub") or "stub"),
-        language=str(getattr(args, "language", "en") or "en"),
-        model=str(getattr(args, "model", "base") or "base"),
-    )
-    result = transcribe(request)
+
+    use_mic = bool(_flag(args, "mic"))
+    file_arg = str(getattr(args, "file", "") or "")
+    if not use_mic and not file_arg:
+        write_error("voice transcribe requires either --file PATH or --mic.")
+        return USER_INPUT_ERROR
+    if use_mic and file_arg:
+        write_error("--file and --mic are mutually exclusive.")
+        return USER_INPUT_ERROR
+
+    mic_temp_path: str = ""
+    if use_mic:
+        duration = float(getattr(args, "duration", DEFAULT_MIC_DURATION) or DEFAULT_MIC_DURATION)
+        if duration <= 0:
+            write_error(f"--duration must be > 0 seconds (got {duration!r}).")
+            return USER_INPUT_ERROR
+        try:
+            mic_temp_path = record_to_temp_wav(duration)
+        except MissingExtraError as exc:
+            write_error(f"Microphone capture unavailable: {exc}")
+            write_bullet(f"Install hint: {exc.install_hint}", indent=2)
+            return OPERATIONAL_FAILURE
+        except Exception as exc:  # noqa: BLE001 — surface unexpected audio backend failures cleanly
+            write_error(f"Microphone capture failed: {exc}")
+            return OPERATIONAL_FAILURE
+        source_path = mic_temp_path
+    else:
+        source_path = file_arg
+
+    try:
+        request = TranscriptionRequest(
+            source_path=source_path,
+            engine=str(getattr(args, "engine", "stub") or "stub"),
+            language=str(getattr(args, "language", "en") or "en"),
+            model=str(getattr(args, "model", "base") or "base"),
+        )
+        result = transcribe(request)
+    finally:
+        if mic_temp_path:
+            Path(mic_temp_path).unlink(missing_ok=True)
 
     payload: dict[str, object] = {
         "command": "voice transcribe",

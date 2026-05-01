@@ -25,6 +25,9 @@ Cross-platform: stdlib only on the must-work path.
 
 from __future__ import annotations
 
+import os
+import tempfile
+import wave
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
@@ -34,6 +37,10 @@ DEFAULT_ENGINE = "stub"
 DEFAULT_LANGUAGE = "en"
 DEFAULT_MODEL = "base"
 KNOWN_ENGINES: tuple[str, ...] = ("stub", "whisper")
+
+DEFAULT_MIC_SAMPLE_RATE = 16_000
+DEFAULT_MIC_CHANNELS = 1
+DEFAULT_MIC_DURATION = 5.0
 
 
 class MissingExtraError(RuntimeError):
@@ -292,17 +299,137 @@ def transcribe(
     return transcriber.transcribe(request)
 
 
+# ---- Microphone capture (PH-07 follow-up) -----------------------------
+
+
+@runtime_checkable
+class MicRecorder(Protocol):
+    """Backend interface for microphone capture. ``record`` returns
+    raw int16 PCM bytes for ``duration`` seconds at the recorder's
+    configured sample rate / channel count. Tests inject fakes;
+    production uses :class:`SoundDeviceRecorder`."""
+
+    sample_rate: int
+    channels: int
+
+    def record(self, duration: float) -> bytes:
+        ...
+
+
+@dataclass
+class SoundDeviceRecorder:
+    """Real microphone backend. Try-imports ``sounddevice`` (and the
+    numpy it depends on) at construction time so the CLI fails loudly
+    with a clean install hint when the package isn't available.
+
+    Cross-platform: sounddevice wraps PortAudio (Linux ALSA / macOS
+    CoreAudio / Windows WASAPI / DirectSound)."""
+
+    sample_rate: int = DEFAULT_MIC_SAMPLE_RATE
+    channels: int = DEFAULT_MIC_CHANNELS
+    _module: Any = None
+    _numpy: Any = None
+
+    def __post_init__(self) -> None:
+        try:
+            import sounddevice  # type: ignore[import-not-found]
+            import numpy  # type: ignore[import-not-found]
+        except ImportError as exc:
+            raise MissingExtraError(
+                "sounddevice",
+                "Install with `pip install sounddevice numpy` for "
+                "microphone capture (cross-platform via PortAudio).",
+            ) from exc
+        self._module = sounddevice
+        self._numpy = numpy
+
+    def record(self, duration: float) -> bytes:
+        if self._module is None or self._numpy is None:  # pragma: no cover — guarded by __post_init__
+            raise MissingExtraError(
+                "sounddevice",
+                "Install with `pip install sounddevice numpy`.",
+            )
+        if duration <= 0:
+            raise ValueError(f"duration must be > 0 seconds, got {duration!r}")
+        frames = int(round(duration * self.sample_rate))
+        buf = self._module.rec(
+            frames,
+            samplerate=self.sample_rate,
+            channels=self.channels,
+            dtype="int16",
+        )
+        self._module.wait()
+        # numpy int16 array → little-endian PCM bytes.
+        return buf.tobytes()
+
+
+def _write_wav_temp(
+    pcm_bytes: bytes,
+    *,
+    sample_rate: int,
+    channels: int,
+    sample_width: int = 2,
+) -> str:
+    """Write raw PCM bytes to a temp WAV file. Returns the path.
+    The caller owns the file's lifecycle — the typical pattern is
+    try / finally + ``Path(p).unlink(missing_ok=True)``."""
+    fd, path = tempfile.mkstemp(prefix="mythic-mic-", suffix=".wav")
+    os.close(fd)
+    try:
+        with wave.open(path, "wb") as wav:
+            wav.setnchannels(channels)
+            wav.setsampwidth(sample_width)
+            wav.setframerate(sample_rate)
+            wav.writeframes(pcm_bytes)
+    except Exception:  # noqa: BLE001 — clean up partial file on any failure
+        Path(path).unlink(missing_ok=True)
+        raise
+    return path
+
+
+def record_to_temp_wav(
+    duration: float,
+    *,
+    sample_rate: int = DEFAULT_MIC_SAMPLE_RATE,
+    channels: int = DEFAULT_MIC_CHANNELS,
+    recorder: MicRecorder | None = None,
+) -> str:
+    """Record ``duration`` seconds of microphone audio and write it
+    to a temp WAV. Returns the path.
+
+    If ``recorder`` is supplied, uses it verbatim — tests inject a
+    deterministic fake. Otherwise constructs a
+    :class:`SoundDeviceRecorder` (which try-imports sounddevice and
+    raises :class:`MissingExtraError` cleanly when the dep is
+    missing).
+    """
+    if recorder is None:
+        recorder = SoundDeviceRecorder(sample_rate=sample_rate, channels=channels)
+    pcm = recorder.record(duration)
+    return _write_wav_temp(
+        pcm,
+        sample_rate=recorder.sample_rate,
+        channels=recorder.channels,
+    )
+
+
 __all__ = [
     "DEFAULT_ENGINE",
     "DEFAULT_LANGUAGE",
+    "DEFAULT_MIC_CHANNELS",
+    "DEFAULT_MIC_DURATION",
+    "DEFAULT_MIC_SAMPLE_RATE",
     "DEFAULT_MODEL",
     "KNOWN_ENGINES",
+    "MicRecorder",
     "MissingExtraError",
+    "SoundDeviceRecorder",
     "StubTranscriber",
     "Transcriber",
     "TranscriptionRequest",
     "TranscriptionResult",
     "WhisperTranscriber",
     "make_transcriber",
+    "record_to_temp_wav",
     "transcribe",
 ]

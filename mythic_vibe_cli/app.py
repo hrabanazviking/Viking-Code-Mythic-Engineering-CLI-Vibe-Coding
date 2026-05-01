@@ -1445,8 +1445,22 @@ def build_parser() -> argparse.ArgumentParser:
     )
     voice_transcribe.add_argument(
         "--file",
-        required=True,
-        help="Path to the source file (audio / text fixture)",
+        default="",
+        help="Path to the source file (audio / text fixture). Required unless --mic is set.",
+    )
+    voice_transcribe.add_argument(
+        "--mic",
+        action="store_true",
+        help=(
+            "Record from the system microphone instead of reading --file. "
+            "Requires `pip install sounddevice numpy`."
+        ),
+    )
+    voice_transcribe.add_argument(
+        "--duration",
+        type=float,
+        default=5.0,
+        help="Mic capture duration in seconds (default: 5.0). Only used with --mic.",
     )
     voice_transcribe.add_argument(
         "--engine",
