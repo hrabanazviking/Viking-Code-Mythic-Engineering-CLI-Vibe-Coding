@@ -2945,6 +2945,106 @@ def cmd_plugin_disable(args: argparse.Namespace) -> int:
     return SUCCESS
 
 
+def cmd_plugin_discover(args: argparse.Namespace) -> int:
+    """PH-10 Slice 10.1 — list every installed entry-point in the
+    `mythic_vibe.plugins` group, regardless of whether it's
+    registered in the project. Pure read-only discovery.
+    """
+    from .plugins.entry_points import discover_entry_points
+
+    records = discover_entry_points()
+    payload = {
+        "command": "plugin discover",
+        "group": "mythic_vibe.plugins",
+        "entry_points": [r.to_dict() for r in records],
+        "count": len(records),
+    }
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+
+    if not records:
+        write_line(
+            "No installed entry-points in group 'mythic_vibe.plugins'."
+        )
+        write_line(
+            "  Plugins declare themselves via [project.entry-points] in "
+            "their pyproject.toml; install them via pip first."
+        )
+        return SUCCESS
+    write_line(f"Discovered {len(records)} entry-point(s):")
+    for record in records:
+        suffix = (
+            f" (from {record.distribution} {record.version})"
+            if record.distribution
+            else ""
+        )
+        write_bullet(f"{record.name} → {record.entrypoint_string}{suffix}")
+    return SUCCESS
+
+
+def cmd_plugin_install(args: argparse.Namespace) -> int:
+    """PH-10 Slice 10.1 — register a discovered entry-point in the
+    project's plugin registry. Operators specify either the
+    friendly entry-point name (e.g. ``my_plugin``) or the full
+    ``module:attr`` string.
+    """
+    from .plugins.entry_points import find_entry_point
+
+    root = Path(args.path).resolve()
+    name_or_entrypoint = str(getattr(args, "name", "") or "").strip()
+    if not name_or_entrypoint:
+        write_error("plugin install requires a name or module:attr argument.")
+        return USER_INPUT_ERROR
+
+    record = find_entry_point(name_or_entrypoint)
+    if record is None:
+        write_error(
+            f"Entry-point not found: {name_or_entrypoint!r}. "
+            "Run `mythic-vibe plugin discover` to list installed plugins."
+        )
+        return USER_INPUT_ERROR
+
+    registry = PluginRegistry(root)
+    if _flag(args, "dry_run"):
+        payload = {
+            "command": "plugin install",
+            "dry_run": True,
+            "registry": str(registry.path),
+            "entry_point": record.to_dict(),
+        }
+        if _flag(args, "json"):
+            write_json(payload)
+        else:
+            write_line("Dry run: no plugin will be installed.")
+            write_key_value("Plugin", record.entrypoint_string)
+            write_key_value("Source", record.distribution or "(unknown)")
+        return SUCCESS
+
+    plugin_record, added = registry.add(
+        record.entrypoint_string,
+        hooks=[],
+        version=record.version or "unknown",
+    )
+    payload = {
+        "command": "plugin install",
+        "registry": str(registry.path),
+        "added": added,
+        "entry_point": record.to_dict(),
+        "plugin": plugin_record.to_dict(),
+    }
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+    if added:
+        write_line("Plugin installed.")
+    else:
+        write_line("Plugin already registered (no change).")
+    write_key_value("Plugin", plugin_record.entrypoint)
+    write_key_value("Registry", registry.path)
+    return SUCCESS
+
+
 def cmd_plugin_dispatch(args: argparse.Namespace) -> int:
     if args.plugin_command == "list":
         return cmd_plugin_list(args)
@@ -2952,6 +3052,10 @@ def cmd_plugin_dispatch(args: argparse.Namespace) -> int:
         return cmd_plugin_inspect(args)
     if args.plugin_command == "disable":
         return cmd_plugin_disable(args)
+    if args.plugin_command == "discover":
+        return cmd_plugin_discover(args)
+    if args.plugin_command == "install":
+        return cmd_plugin_install(args)
     return USER_INPUT_ERROR
 
 

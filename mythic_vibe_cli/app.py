@@ -528,6 +528,32 @@ def build_parser() -> argparse.ArgumentParser:
     plugin_disable.add_argument("--path", default=".", help="Project directory (default: current directory)")
     add_runtime_options(plugin_disable, json_output=True, dry_run=True)
 
+    # PH-10 Slice 10.1: discover + install via setuptools entry-points.
+    plugin_discover = plugin_sub.add_parser(
+        "discover",
+        help="List installed entry-points in the mythic_vibe.plugins group",
+    )
+    plugin_discover.add_argument(
+        "--path", default=".", help="Project directory (default: current directory)"
+    )
+    add_runtime_options(plugin_discover, json_output=True)
+
+    plugin_install = plugin_sub.add_parser(
+        "install",
+        help="Register a discovered entry-point in the project's plugin registry",
+    )
+    plugin_install.add_argument(
+        "name",
+        help=(
+            "Entry-point name (friendly) or canonical module:attr string. "
+            "Must already be installed via pip; run `plugin discover` to list."
+        ),
+    )
+    plugin_install.add_argument(
+        "--path", default=".", help="Project directory (default: current directory)"
+    )
+    add_runtime_options(plugin_install, json_output=True, dry_run=True)
+
     config = sub.add_parser("config", help="Show or manage configuration values")
     config.add_argument("--path", default=".", help="Project directory used for local overrides")
     add_runtime_options(config, json_output=True)
