@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mythic-vibe-example-plugin"
+version = "0.1.0"
+description = "Reference plugin for the Mythic Vibe CLI — exercises every extension point and hook."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+  {name = "Mythic Vibe CLI maintainers"}
+]
+keywords = ["mythic-vibe", "plugin", "reference"]
+
+[project.entry-points."mythic_vibe.plugins"]
+mythic_vibe_example = "mythic_vibe_example_plugin:plugin"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["mythic_vibe_example_plugin*"]
