@@ -12,6 +12,7 @@ from .providers import (
     OllamaProvider,
     OpenAIProvider,
     OpenRouterProvider,
+    YggdrasilProvider,
 )
 
 
@@ -28,4 +29,5 @@ class ProviderRegistry:
             "gemini": GeminiProvider(root=self.root),
             "openrouter": OpenRouterProvider(root=self.root),
             "ollama": OllamaProvider(root=self.root),
+            "yggdrasil": YggdrasilProvider(root=self.root),
         }

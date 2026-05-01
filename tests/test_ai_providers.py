@@ -42,6 +42,8 @@ class AIProviderTests(unittest.TestCase):
                 "openrouter",
                 # PH-06 slice 6.1 — local Ollama daemon adapter.
                 "ollama",
+                # PH-09 slice 9.1 — Yggdrasil island adapter.
+                "yggdrasil",
             },
         )
 

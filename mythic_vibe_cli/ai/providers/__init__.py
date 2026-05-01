@@ -6,6 +6,7 @@ from .local import LocalProvider
 from .ollama import OllamaProvider
 from .openai import OpenAIProvider
 from .openrouter import OpenRouterProvider
+from .yggdrasil import YggdrasilProvider
 
 __all__ = [
     "AIProvider",
@@ -19,4 +20,5 @@ __all__ = [
     "OpenRouterProvider",
     "LocalProvider",
     "OllamaProvider",
+    "YggdrasilProvider",
 ]
