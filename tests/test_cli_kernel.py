@@ -106,6 +106,8 @@ class CliKernelTests(unittest.TestCase):
             "voice",
             # PH-11 slice 11.7 — security audit
             "security",
+            # PH-12 slice 12.1 — CI/CD scaffold
+            "ci",
         }
 
         self.assertEqual(set(COMMAND_HANDLERS), expected)

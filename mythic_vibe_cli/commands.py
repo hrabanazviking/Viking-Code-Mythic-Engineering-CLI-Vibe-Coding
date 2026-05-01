@@ -3156,6 +3156,56 @@ def cmd_security_audit(args: argparse.Namespace) -> int:
     return SUCCESS
 
 
+def cmd_ci_scaffold(args: argparse.Namespace) -> int:
+    """PH-12 Slice 12.1 — generate a GitHub Actions workflow tuned
+    to the detected stack."""
+    from .cicd.ci_scaffold import scaffold_ci_workflow
+
+    root = Path(args.path).resolve()
+    force = bool(_flag(args, "force"))
+    dry_run = bool(_flag(args, "dry_run"))
+    result = scaffold_ci_workflow(root, force=force, dry_run=dry_run)
+
+    payload: dict[str, object] = {
+        "command": "ci scaffold",
+        "path": str(root),
+        "result": result.to_dict(),
+    }
+    if dry_run:
+        payload["preview"] = result.body
+
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+
+    if dry_run:
+        write_line(f"Dry run: would write {result.target}")
+        write_key_value("Stack", result.stack.primary_language)
+        write_line("- Preview (first 20 lines):")
+        for line in result.body.splitlines()[:20]:
+            write_bullet(line, indent=2)
+        return SUCCESS
+
+    if result.skipped_reason:
+        write_error(result.skipped_reason)
+        return USER_INPUT_ERROR
+
+    write_line("CI workflow scaffolded.")
+    write_key_value("Path", result.target)
+    write_key_value("Stack", result.stack.primary_language)
+    return SUCCESS
+
+
+def cmd_ci_dispatch(args: argparse.Namespace) -> int:
+    sub = getattr(args, "ci_command", "")
+    if sub == "scaffold":
+        return cmd_ci_scaffold(args)
+    write_error(
+        f"Unknown ci subcommand: {sub!r}. Try `mythic-vibe ci scaffold --help`."
+    )
+    return USER_INPUT_ERROR
+
+
 def cmd_security_dispatch(args: argparse.Namespace) -> int:
     sub = getattr(args, "security_command", "")
     if sub == "audit":
@@ -5305,6 +5355,7 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "grimoire": cmd_grimoire,
     "plugin": cmd_plugin_dispatch,
     "security": cmd_security_dispatch,
+    "ci": cmd_ci_dispatch,
     "config": cmd_config_dispatch,
     "state": cmd_state_dispatch,
     "db": cmd_db_dispatch,
