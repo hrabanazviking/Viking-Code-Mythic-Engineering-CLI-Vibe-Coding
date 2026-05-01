@@ -41,6 +41,7 @@ Until then, dormant islands remain outside the active runtime boundary.
 | Island | Adapter module | ADR | Feature flag | Status |
 |---|---|---|---|---|
 | Island B — Yggdrasil router | `mythic_vibe_cli/ai/providers/yggdrasil.py` | ADR-0005 | `MYTHIC_ISLAND_YGGDRASIL_ENABLED` | live (default off) |
+| Island C — MindSpark ThoughtForge | `mythic_vibe_cli/ai/providers/mindspark.py` | ADR-0006 | `MYTHIC_ISLAND_MINDSPARK_ENABLED` | live (default off; install via `pip install mythic-vibe[mindspark]`) |
 | Island E — Chatterbox TTS | `mythic_vibe_cli/voice/tts.py` (PH-07) | ADR-0008 (pending PH-09 Slice 9.4) | `MYTHIC_VOICE_TTS_ENABLED` (broader gate; per-island flag pending) | live (default off) |
 
 Crossing the gate does **not** lift the dormant-island quarantine for the in-tree snapshots — the adapter resolves whatever Python package the operator's environment provides, never the in-tree path.

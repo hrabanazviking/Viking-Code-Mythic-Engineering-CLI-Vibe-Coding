@@ -44,6 +44,8 @@ class AIProviderTests(unittest.TestCase):
                 "ollama",
                 # PH-09 slice 9.1 — Yggdrasil island adapter.
                 "yggdrasil",
+                # PH-09 slice 9.2 — MindSpark ThoughtForge adapter.
+                "mindspark",
             },
         )
 
