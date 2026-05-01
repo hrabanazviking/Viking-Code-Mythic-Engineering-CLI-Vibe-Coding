@@ -116,6 +116,8 @@ class CliKernelTests(unittest.TestCase):
             "rollback",
             # PH-14 slice 14.4 — Policy report
             "policy",
+            # PH-18 slice 18.4 — Resilience simulation
+            "simulate",
         }
 
         self.assertEqual(set(COMMAND_HANDLERS), expected)

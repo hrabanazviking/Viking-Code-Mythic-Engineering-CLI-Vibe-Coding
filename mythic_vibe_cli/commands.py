@@ -2892,6 +2892,44 @@ def cmd_policy_dispatch(args: argparse.Namespace) -> int:
     return USER_INPUT_ERROR
 
 
+def cmd_simulate(args: argparse.Namespace) -> int:
+    """PH-18 Slice 18.4 — `mythic-vibe simulate`. Runs canonical
+    failure scenarios and reports pass/fail per scenario.
+
+    Read-only against the host filesystem — every scenario
+    operates inside a TemporaryDirectory.
+    """
+    from .robustness.simulate import run_simulation
+
+    report = run_simulation()
+    payload = {
+        "command": "simulate",
+        "report": report.to_dict(),
+    }
+
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS if report.ok else OPERATIONAL_FAILURE
+
+    write_line("Mythic resilience simulation")
+    write_key_value("Total scenarios", len(report.outcomes))
+    write_key_value("Passed", report.passed)
+    write_key_value("Failed", report.failed)
+    for outcome in report.outcomes:
+        marker = "PASS" if outcome.passed else "FAIL"
+        write_bullet(
+            f"[{marker}] {outcome.name} -> exit={outcome.actual_exit_code} "
+            f"({outcome.detail})"
+        )
+    if not report.ok:
+        write_error(
+            f"Simulation reported {report.failed} failure(s). "
+            "Re-run with --json for full payloads."
+        )
+        return OPERATIONAL_FAILURE
+    return SUCCESS
+
+
 def cmd_grimoire(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
     registry = PluginRegistry(root)
@@ -5748,6 +5786,7 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "release": cmd_release,
     "rollback": cmd_rollback,
     "policy": cmd_policy_dispatch,
+    "simulate": cmd_simulate,
     "config": cmd_config_dispatch,
     "state": cmd_state_dispatch,
     "db": cmd_db_dispatch,
