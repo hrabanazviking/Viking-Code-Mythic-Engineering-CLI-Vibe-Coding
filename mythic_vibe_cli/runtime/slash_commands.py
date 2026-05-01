@@ -202,4 +202,7 @@ BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
 
     # --- Standards-based protocols (PH-16) ---
     BuiltinSlashCommand(name="protocols", description="MCP server / ACP bridge / OpenTelemetry status — standards-based protocol surfaces"),
+
+    # --- Multi-surface access (PH-17) ---
+    BuiltinSlashCommand(name="surface", description="Web terminal / SSH-readiness check / chat bridge — multi-surface access"),
 )

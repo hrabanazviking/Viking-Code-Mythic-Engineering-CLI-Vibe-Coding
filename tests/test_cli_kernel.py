@@ -120,6 +120,8 @@ class CliKernelTests(unittest.TestCase):
             "simulate",
             # PH-16 — Standards-based protocols
             "protocols",
+            # PH-17 — Multi-surface access
+            "surface",
         }
 
         self.assertEqual(set(COMMAND_HANDLERS), expected)
