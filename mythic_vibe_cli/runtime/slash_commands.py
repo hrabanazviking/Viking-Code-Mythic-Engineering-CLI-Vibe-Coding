@@ -181,4 +181,7 @@ BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
 
     # --- Security audit (PH-11 slice 11.7) ---
     BuiltinSlashCommand(name="security", description="Security audit (secret scan + dangerous patterns + policy report)"),
+
+    # --- CI/CD scaffolding (PH-12 slice 12.1) ---
+    BuiltinSlashCommand(name="ci", description="CI workflow scaffolding (.github/workflows/ci.yml tuned to the detected stack)"),
 )

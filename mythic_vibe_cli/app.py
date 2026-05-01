@@ -554,6 +554,26 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_runtime_options(plugin_install, json_output=True, dry_run=True)
 
+    # PH-12 Slice 12.1: `mythic-vibe ci scaffold`.
+    ci = sub.add_parser(
+        "ci",
+        help="CI/CD scaffolding (PH-12) — workflow generation tuned to the detected stack",
+    )
+    ci_sub = ci.add_subparsers(dest="ci_command", required=True)
+    ci_scaffold = ci_sub.add_parser(
+        "scaffold",
+        help="Generate .github/workflows/ci.yml tuned to the detected stack",
+    )
+    ci_scaffold.add_argument(
+        "--path", default=".", help="Project directory (default: current directory)"
+    )
+    ci_scaffold.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite an existing .github/workflows/ci.yml",
+    )
+    add_runtime_options(ci_scaffold, json_output=True, dry_run=True)
+
     # PH-11 Slice 11.7: `mythic-vibe security audit`.
     security = sub.add_parser(
         "security",
