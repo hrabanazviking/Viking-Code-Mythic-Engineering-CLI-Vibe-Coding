@@ -196,4 +196,7 @@ BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
 
     # --- Policy engine (PH-14 slice 14.4) ---
     BuiltinSlashCommand(name="policy", description="Policy engine — list constraints + override history (read-only)"),
+
+    # --- Resilience simulation (PH-18 slice 18.4) ---
+    BuiltinSlashCommand(name="simulate", description="Resilience simulation — inject canonical failures, confirm graceful degradation"),
 )

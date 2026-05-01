@@ -524,6 +524,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_runtime_options(policy_report, json_output=True)
 
+    # PH-18 Slice 18.4: `mythic-vibe simulate`.
+    simulate = sub.add_parser(
+        "simulate",
+        help="Resilience simulation (PH-18) — inject canonical failures, confirm graceful degradation",
+    )
+    add_runtime_options(simulate, json_output=True)
+
     grimoire = sub.add_parser("grimoire", help="Manage plugins")
     add_runtime_options(grimoire)
     grimoire_sub = grimoire.add_subparsers(dest="grimoire_command", required=True)
