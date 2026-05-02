@@ -9,7 +9,7 @@ from uuid import uuid4
 
 from .core.state import ProjectState
 from .persistence.json_store import JsonStateStore
-from .runtime.exec import ExecResult, exec_command
+from .runtime.exec import DEFAULT_EXEC_TIMEOUT_SECONDS, ExecResult, exec_command
 from .verify import load_latest_verification
 
 
@@ -86,7 +86,12 @@ def session_handoff_doc_path(root: Path) -> Path:
 
 
 def _git(root: Path, *args: str) -> ExecResult:
-    return exec_command("git", ["-C", str(root), *args], cwd=root)
+    # Phase 19.0 / BS-3 (additive 2026-05-02): default subprocess
+    # timeout — see runtime/exec.py for the rationale.
+    return exec_command(
+        "git", ["-C", str(root), *args], cwd=root,
+        timeout=DEFAULT_EXEC_TIMEOUT_SECONDS,
+    )
 
 
 def _git_metadata(root: Path) -> tuple[str, list[str], list[str]]:

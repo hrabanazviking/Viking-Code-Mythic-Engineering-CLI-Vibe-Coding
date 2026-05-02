@@ -151,5 +151,67 @@ class ExecCommandTests(unittest.TestCase):
         )
 
 
+# ---- Phase 19.0 / BS-3 (audit remediation 2026-05-02) ----------------
+#
+# Regression: callers that pass the new DEFAULT_EXEC_TIMEOUT_SECONDS
+# constant (or any positive float) must see ``killed=True`` and a
+# clean ExecResult — not a hang — when the subprocess outlives the
+# timeout. The 4 audit-flagged call-sites (scanner._run_git,
+# handoff._git, verify/git_diff._git, verify/test_runner.run_command)
+# now pass the default 300s timeout; this test proves the bound
+# actually engages.
+
+
+class DefaultExecTimeoutTests(unittest.TestCase):
+    """The DEFAULT_EXEC_TIMEOUT_SECONDS constant exists and the
+    underlying timeout path engages when a subprocess outlives it."""
+
+    def test_default_constant_is_300_seconds(self) -> None:
+        from mythic_vibe_cli.runtime.exec import DEFAULT_EXEC_TIMEOUT_SECONDS
+
+        self.assertEqual(DEFAULT_EXEC_TIMEOUT_SECONDS, 300.0)
+
+    def test_short_timeout_kills_a_long_running_subprocess(self) -> None:
+        """Use a very short timeout (0.5s) on a subprocess that
+        sleeps 5s. ExecResult must come back with killed=True and
+        non-zero exit code, not block until the sleep finishes."""
+        with tempfile.TemporaryDirectory() as tmp:
+            start = time.perf_counter()
+            result = exec_command(
+                sys.executable,
+                ["-c", _sleep_script(5.0)],
+                cwd=tmp,
+                timeout=0.5,
+            )
+            elapsed = time.perf_counter() - start
+        self.assertTrue(result.killed)
+        self.assertNotEqual(result.code, 0)
+        # The kill must have happened well before the 5s sleep would
+        # naturally complete. Generous upper bound to absorb CI noise.
+        self.assertLess(elapsed, 4.0)
+
+    def test_callsites_inherit_default_via_constant(self) -> None:
+        """The 4 audit-flagged call-sites import the same
+        DEFAULT_EXEC_TIMEOUT_SECONDS constant. Spot-check their
+        modules expose the import without raising."""
+        from mythic_vibe_cli.context.scanner import (
+            DEFAULT_EXEC_TIMEOUT_SECONDS as scanner_default,
+        )
+        from mythic_vibe_cli.handoff import (
+            DEFAULT_EXEC_TIMEOUT_SECONDS as handoff_default,
+        )
+        from mythic_vibe_cli.verify.git_diff import (
+            DEFAULT_EXEC_TIMEOUT_SECONDS as git_diff_default,
+        )
+        from mythic_vibe_cli.verify.test_runner import (
+            DEFAULT_EXEC_TIMEOUT_SECONDS as test_runner_default,
+        )
+
+        self.assertEqual(scanner_default, 300.0)
+        self.assertEqual(handoff_default, 300.0)
+        self.assertEqual(git_diff_default, 300.0)
+        self.assertEqual(test_runner_default, 300.0)
+
+
 if __name__ == "__main__":
     unittest.main()

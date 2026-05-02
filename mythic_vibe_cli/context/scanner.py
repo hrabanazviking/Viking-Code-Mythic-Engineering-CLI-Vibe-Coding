@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from .file_filters import FileFilterRules
-from ..runtime.exec import exec_command
+from ..runtime.exec import DEFAULT_EXEC_TIMEOUT_SECONDS, exec_command
 
 
 CURRENT_INDEX_SCHEMA_VERSION = 1
@@ -374,7 +374,14 @@ def _utc_now() -> str:
 
 
 def _run_git(root: Path, args: list[str], *, quiet: bool = False) -> str | None:
-    result = exec_command("git", ["-C", str(root), *args], cwd=root)
+    # Phase 19.0 / BS-3 (additive 2026-05-02): apply the default
+    # subprocess timeout so a hung git invocation (SSH-passphrase
+    # prompt, NFS stall, dead network mount) surfaces as a non-zero
+    # ExecResult instead of blocking the scanner indefinitely.
+    result = exec_command(
+        "git", ["-C", str(root), *args], cwd=root,
+        timeout=DEFAULT_EXEC_TIMEOUT_SECONDS,
+    )
     if result.code != 0:
         return None
     text = result.stdout.rstrip("\n")
