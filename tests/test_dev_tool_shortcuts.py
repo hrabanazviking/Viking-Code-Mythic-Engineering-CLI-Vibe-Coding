@@ -163,6 +163,138 @@ class ScaffoldAdrTests(unittest.TestCase):
         self.assertIn("not yet implemented", stderr.getvalue())
 
 
+class ScaffoldExtendedTypesTests(unittest.TestCase):
+    """Additive 2026-05-02: tests for the four new artefact types
+    (task / interface / invariant / risk). The original adr tests above
+    are unchanged; these run alongside them.
+    """
+
+    # (artefact, directory_parts, file_prefix, id_label)
+    CASES = [
+        ("task", ("mythic", "tasks"), "TASK-", "TASK"),
+        ("interface", ("docs", "interfaces"), "INT-", "INT"),
+        ("invariant", ("docs", "invariants"), "INV-", "INV"),
+        ("risk", ("docs", "risks"), "RISK-", "RISK"),
+    ]
+
+    def test_each_extended_type_writes_numbered_template(self) -> None:
+        for artefact, directory_parts, file_prefix, id_label in self.CASES:
+            with self.subTest(artefact=artefact):
+                with tempfile.TemporaryDirectory() as tmp:
+                    stdout = io.StringIO()
+                    title = f"Sample {id_label} title"
+                    with redirect_stdout(stdout):
+                        code = app.main(
+                            [
+                                "scaffold",
+                                artefact,
+                                "--title",
+                                title,
+                                "--path",
+                                tmp,
+                                "--json",
+                            ]
+                        )
+                    self.assertEqual(code, SUCCESS)
+                    payload = json.loads(stdout.getvalue())
+                    self.assertEqual(payload["number"], 1)
+                    self.assertEqual(payload["id_label"], id_label)
+                    self.assertIn(f"{file_prefix}0001-", payload["target"])
+
+                    target = Path(payload["target"])
+                    self.assertTrue(target.exists())
+                    expected_dir = Path(tmp).joinpath(*directory_parts)
+                    self.assertEqual(target.parent, expected_dir)
+                    content = target.read_text(encoding="utf-8")
+                    self.assertIn(title, content)
+                    self.assertIn(f"{file_prefix}0001", content)
+
+    def test_each_extended_type_auto_increments(self) -> None:
+        for artefact, directory_parts, file_prefix, _id_label in self.CASES:
+            with self.subTest(artefact=artefact):
+                with tempfile.TemporaryDirectory() as tmp:
+                    for title in ("First", "Second"):
+                        with redirect_stdout(io.StringIO()):
+                            code = app.main(
+                                ["scaffold", artefact, "--title", title, "--path", tmp]
+                            )
+                        self.assertEqual(code, SUCCESS)
+                    target_dir = Path(tmp).joinpath(*directory_parts)
+                    files = sorted(p.name for p in target_dir.glob(f"{file_prefix}*.md"))
+                    self.assertEqual(
+                        files,
+                        [f"{file_prefix}0001-first.md", f"{file_prefix}0002-second.md"],
+                    )
+
+    def test_each_extended_type_dry_run_does_not_write(self) -> None:
+        for artefact, directory_parts, _file_prefix, _id_label in self.CASES:
+            with self.subTest(artefact=artefact):
+                with tempfile.TemporaryDirectory() as tmp:
+                    stdout = io.StringIO()
+                    with redirect_stdout(stdout):
+                        code = app.main(
+                            [
+                                "scaffold",
+                                artefact,
+                                "--title",
+                                "Dry run only",
+                                "--dry-run",
+                                "--path",
+                                tmp,
+                            ]
+                        )
+                    self.assertEqual(code, SUCCESS)
+                    self.assertIn("Dry run", stdout.getvalue())
+                    target_dir = Path(tmp).joinpath(*directory_parts)
+                    self.assertFalse(target_dir.exists())
+
+    def test_each_extended_type_requires_title(self) -> None:
+        from contextlib import redirect_stderr
+
+        for artefact, *_ in self.CASES:
+            with self.subTest(artefact=artefact):
+                ns = argparse.Namespace(path=".", artefact=artefact, title="")
+                stderr = io.StringIO()
+                with redirect_stderr(stderr):
+                    code = commands.cmd_scaffold(ns)
+                self.assertEqual(code, USER_INPUT_ERROR)
+                self.assertIn(f"scaffold {artefact} requires --title", stderr.getvalue())
+
+    def test_extended_types_do_not_collide_with_adr_directory(self) -> None:
+        """Each extended type lands in its own dedicated directory; the
+        existing adr scaffold flow at docs/ADRS/ is untouched."""
+        with tempfile.TemporaryDirectory() as tmp:
+            for artefact, *_ in self.CASES:
+                with redirect_stdout(io.StringIO()):
+                    code = app.main(
+                        ["scaffold", artefact, "--title", "x", "--path", tmp]
+                    )
+                self.assertEqual(code, SUCCESS)
+            adr_dir = Path(tmp) / "docs" / "ADRS"
+            self.assertFalse(adr_dir.exists())
+
+    def test_argparse_choices_include_all_five_types(self) -> None:
+        """Direct argparse-level test: invoking an unknown artefact via
+        the CLI surface must fail at argparse, not at cmd_scaffold."""
+        from contextlib import redirect_stderr
+
+        with tempfile.TemporaryDirectory() as tmp:
+            stderr = io.StringIO()
+            with redirect_stderr(stderr):
+                with self.assertRaises(SystemExit):
+                    app.main(
+                        [
+                            "scaffold",
+                            "taskography",
+                            "--title",
+                            "x",
+                            "--path",
+                            tmp,
+                        ]
+                    )
+            self.assertIn("invalid choice", stderr.getvalue())
+
+
 class ChangelogTests(unittest.TestCase):
     def test_changelog_prints_unreleased_section(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

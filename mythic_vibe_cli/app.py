@@ -1161,21 +1161,44 @@ def build_parser() -> argparse.ArgumentParser:
 
     scaffold_cmd = sub.add_parser(
         "scaffold",
-        help="Add an artefact to an existing Mythic project (today: adr)",
+        help="Add an artefact to an existing Mythic project (adr / task / interface / invariant / risk)",
         **_example_parser_kwargs(
             """
             Examples:
               mythic-vibe scaffold adr --title "Adopt knowledge graph"
               mythic-vibe scaffold adr --title "Use SQLite for state" --dry-run
               mythic-vibe scaffold adr --title "Pin Python 3.11" --json
+              mythic-vibe scaffold task --title "Wire chat-bridge poll loop"
+              mythic-vibe scaffold interface --title "Plugin runtime contract"
+              mythic-vibe scaffold invariant --title "Forge ledger is append-only"
+              mythic-vibe scaffold risk --title "Provider-key leak in handoff"
+
+            Artefacts and where they land:
+              adr        -> docs/ADRS/ADR-NNNN-<slug>.md
+              task       -> mythic/tasks/TASK-NNNN-<slug>.md
+              interface  -> docs/interfaces/INT-NNNN-<slug>.md
+              invariant  -> docs/invariants/INV-NNNN-<slug>.md
+              risk       -> docs/risks/RISK-NNNN-<slug>.md
 
             Notes:
-              Today only `scaffold adr` is implemented. Other artefact types
-              (task / interface / invariant / risk) land in PH-10 slice 10.4.
+              The four extended types (task / interface / invariant / risk)
+              were added additively on 2026-05-02 (closing the long-standing
+              "land in PH-10 slice 10.4" forward reference). The adr path
+              is unchanged from its original implementation.
             """
         ),
     )
-    scaffold_cmd.add_argument("artefact", choices=["adr"], help="Artefact type (adr)")
+    scaffold_cmd.add_argument(
+        "artefact",
+        # Additive 2026-05-02: choices widened from ["adr"] to include the
+        # four new artefact types. The argparse-level allowlist is the only
+        # mechanically-additive way to make the new types reachable through
+        # the CLI; ``cmd_scaffold``'s legacy USER_INPUT_ERROR branch is
+        # preserved unchanged for direct-call callers passing an unknown
+        # artefact (e.g. existing tests).
+        choices=["adr", "task", "interface", "invariant", "risk"],
+        help="Artefact type (adr / task / interface / invariant / risk)",
+    )
     scaffold_cmd.add_argument("--title", required=True, help="Human-readable title for the artefact")
     scaffold_cmd.add_argument("--path", default=".", help="Project directory (default: current directory)")
     add_runtime_options(scaffold_cmd, json_output=True, dry_run=True)
