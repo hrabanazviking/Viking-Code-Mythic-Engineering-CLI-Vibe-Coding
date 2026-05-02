@@ -135,3 +135,21 @@ ceremony) remains.
   a contract concern.
 - Memory updated incrementally (per the durable rule).
 - No new ADRs required.
+
+---
+
+## Update Notice — 2026-05-02 (additive)
+
+A later audit (`AUDIT_FAKE_TEMP_CODE_2026-05-02.md`, HEAD `e0953b6`) re-measured the project on 2026-05-02. The original closeout above is preserved unchanged; this notice is purely additive.
+
+- **Coverage:** the figure above recorded as **"76% (held)"** was a stale carry-over. Live measurement (`pytest --cov=mythic_vibe_cli --cov-report=term-missing`) on 2026-05-02 reports **82%** branch+line coverage on the production package (1694 passed, 1 skipped, 14 subtests). Current coverage is ~6 points higher than recorded.
+
+### Caveat on slice 17.4 — Chat bridge scaffolding
+
+The line `17.4 Chat bridge scaffolding ✓` in the table above remains accurate as written: the **scaffolding** is shipped (`parse_command`, `handle_message`, `MatrixConfig`, `TelegramConfig`, urllib HTTP client primitives, and a `surface chat` entry-point that exits with a notice). The footnote at line 91–93 already discloses that the long-poll loop is deferred. This caveat amplifies that disclosure for any reader who skims the checkmark table only:
+
+⚠ **Operator caveat:** the long-poll loop (Matrix `/sync`, Telegram `getUpdates`) is **deferred to a future PR**. `mythic-vibe surface chat --backend matrix|telegram` is currently a scaffolding-and-exit surface, **not** a running bridge. For a live bridge today, an operator must wrap the exported primitives (`matrix_send_message`, `telegram_send_message`, `parse_command`, `handle_message`) in their own loop until the deferred work lands.
+
+This caveat does **not** retract the checkmark — the slice contract was "scaffolding," and scaffolding shipped — but it ensures readers do not over-read the table.
+
+— *Sólrún Hvítmynd & Runa, additive correction*
