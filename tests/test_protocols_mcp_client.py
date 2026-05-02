@@ -201,5 +201,207 @@ class McpClientHighLevelTests(unittest.TestCase):
         self.assertEqual(result["isError"], False)
 
 
+# ---- Phase 19.0 / BS-2 (audit remediation 2026-05-02) ----------------
+#
+# Hang-protection regression tests. Without these bounds, a stalled
+# server (no lines on stdout) hangs the calling thread on
+# readline() forever; a notification-spamming server spins the
+# discard loop in call() forever. The new bounds close both vectors.
+
+
+class ReadTimeoutTests(unittest.TestCase):
+    """`_read_one` raises `McpClientError` after
+    `read_timeout_seconds` of no data, instead of blocking forever."""
+
+    def test_call_times_out_when_server_stdout_silent(self) -> None:
+        import io
+        import threading
+
+        from mythic_vibe_cli.protocols.mcp_client import (
+            McpClient,
+            McpClientError,
+        )
+
+        # Custom stream-like whose readline() blocks until ``close()``
+        # is called (or forever if it isn't). This is more reliable
+        # than os.pipe across platforms — Windows in particular has
+        # quirks around closing a pipe FD while another thread is
+        # blocked in readline. Here, close() unblocks the reader
+        # thread cooperatively.
+        class _BlockingStdout:
+            def __init__(self) -> None:
+                self._closed = threading.Event()
+
+            def readline(self) -> str:
+                self._closed.wait()
+                return ""  # EOF when closed
+
+            def close(self) -> None:
+                self._closed.set()
+
+        stub = _BlockingStdout()
+        client = McpClient.from_streams(
+            stdin=io.StringIO(),
+            stdout=stub,  # type: ignore[arg-type]
+            read_timeout_seconds=0.3,  # tight bound for fast test
+            max_discard=10,
+        )
+        try:
+            with self.assertRaises(McpClientError) as ctx:
+                client.call("anything")
+            self.assertIn("timed out", str(ctx.exception).lower())
+            self.assertIn("0.3", str(ctx.exception))
+        finally:
+            stub.close()  # unblock the reader thread before close
+            client.close()
+
+    def test_legacy_zero_timeout_preserves_unbounded_readline(self) -> None:
+        """Setting read_timeout_seconds=0.0 opts back into the
+        pre-Phase-19 behaviour: no reader thread is started, and
+        ``_read_one`` calls readline directly. With a stream that
+        EOFs immediately, this surfaces as "server closed stdout"
+        rather than a timeout — proving the legacy path is in use."""
+        import io
+
+        from mythic_vibe_cli.protocols.mcp_client import (
+            McpClient,
+            McpClientError,
+        )
+
+        client = McpClient.from_streams(
+            stdin=io.StringIO(),
+            stdout=io.StringIO(""),  # EOF immediately
+            read_timeout_seconds=0.0,
+        )
+        with self.assertRaises(McpClientError) as ctx:
+            client.call("anything")
+        # Legacy path raises "server closed stdout" — NOT "timed out".
+        self.assertIn("closed stdout", str(ctx.exception).lower())
+        self.assertNotIn("timed out", str(ctx.exception).lower())
+
+
+class DiscardLoopBoundTests(unittest.TestCase):
+    """``call()`` raises after `max_discard` non-matching messages,
+    instead of spinning forever on a notification-spamming server."""
+
+    def test_call_aborts_after_max_discard_unrelated_messages(self) -> None:
+        import io
+        import json
+
+        from mythic_vibe_cli.protocols.mcp_client import (
+            McpClient,
+            McpClientError,
+        )
+
+        # Stream of 50 unrelated responses (id 9999) — never matches
+        # the request id, so the discard loop walks all of them.
+        spam_lines = "\n".join(
+            json.dumps({"jsonrpc": "2.0", "id": 9999, "result": "ignored"})
+            for _ in range(50)
+        ) + "\n"
+        client = McpClient.from_streams(
+            stdin=io.StringIO(),
+            stdout=io.StringIO(spam_lines),
+            read_timeout_seconds=2.0,  # plenty of slack so timeout doesn't fire first
+            max_discard=10,
+        )
+        with self.assertRaises(McpClientError) as ctx:
+            client.call("anything")
+        msg = str(ctx.exception).lower()
+        self.assertIn("discarded", msg)
+        self.assertIn("10", str(ctx.exception))  # max_discard value
+        client.close()
+
+    def test_legitimate_response_still_returns_after_some_discards(
+        self,
+    ) -> None:
+        """Servers legitimately interleave notifications with
+        responses. Make sure a real response found within the
+        max_discard budget still returns successfully."""
+        import io
+        import json
+
+        from mythic_vibe_cli.protocols.mcp_client import McpClient
+
+        # 5 notifications then the actual response (id will be 1
+        # since itertools.count starts at 1 — see _id_counter).
+        lines = []
+        for i in range(5):
+            lines.append(
+                json.dumps({"jsonrpc": "2.0", "method": f"notification.{i}"})
+            )
+        lines.append(
+            json.dumps({"jsonrpc": "2.0", "id": 1, "result": "found-it"})
+        )
+        client = McpClient.from_streams(
+            stdin=io.StringIO(),
+            stdout=io.StringIO("\n".join(lines) + "\n"),
+            read_timeout_seconds=2.0,
+            max_discard=100,  # well above 5
+        )
+        result = client.call("anything")
+        self.assertEqual(result, "found-it")
+        client.close()
+
+
+class EnvVarConfigTests(unittest.TestCase):
+    """The default field factories read MYTHIC_MCP_READ_TIMEOUT and
+    MYTHIC_MCP_MAX_DISCARD env vars so operators can tune without
+    code changes."""
+
+    def test_env_var_overrides_default_read_timeout(self) -> None:
+        import io
+        from unittest import mock
+
+        from mythic_vibe_cli.protocols.mcp_client import McpClient
+
+        with mock.patch.dict(
+            "os.environ", {"MYTHIC_MCP_READ_TIMEOUT": "5.5"}, clear=False
+        ):
+            client = McpClient.from_streams(
+                stdin=io.StringIO(), stdout=io.StringIO()
+            )
+        self.assertEqual(client.read_timeout_seconds, 5.5)
+
+    def test_env_var_overrides_default_max_discard(self) -> None:
+        import io
+        from unittest import mock
+
+        from mythic_vibe_cli.protocols.mcp_client import McpClient
+
+        with mock.patch.dict(
+            "os.environ", {"MYTHIC_MCP_MAX_DISCARD": "42"}, clear=False
+        ):
+            client = McpClient.from_streams(
+                stdin=io.StringIO(), stdout=io.StringIO()
+            )
+        self.assertEqual(client.max_discard, 42)
+
+    def test_invalid_env_var_falls_back_to_default(self) -> None:
+        import io
+        from unittest import mock
+        from mythic_vibe_cli.protocols.mcp_client import (
+            McpClient,
+            DEFAULT_READ_TIMEOUT_SECONDS,
+            DEFAULT_MAX_DISCARD,
+        )
+
+        with mock.patch.dict(
+            "os.environ",
+            {
+                "MYTHIC_MCP_READ_TIMEOUT": "not-a-float",
+                "MYTHIC_MCP_MAX_DISCARD": "not-an-int",
+            },
+            clear=False,
+        ):
+            client = McpClient.from_streams(
+                stdin=io.StringIO(), stdout=io.StringIO()
+            )
+        self.assertEqual(
+            client.read_timeout_seconds, DEFAULT_READ_TIMEOUT_SECONDS
+        )
+        self.assertEqual(client.max_discard, DEFAULT_MAX_DISCARD)
+
+
 if __name__ == "__main__":
     unittest.main()
