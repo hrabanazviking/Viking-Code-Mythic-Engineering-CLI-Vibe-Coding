@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from ..runtime.exec import exec_command
+from ..runtime.exec import DEFAULT_EXEC_TIMEOUT_SECONDS, exec_command
 
 
 @dataclass
@@ -53,7 +53,15 @@ def discover_default_commands(root: Path) -> list[list[str]]:
 def run_command(command: list[str], *, cwd: Path) -> CommandResult:
     if not command:
         return CommandResult(command=[], exit_code=127, stdout="", stderr="Empty command")
-    result = exec_command(command[0], command[1:], cwd=cwd)
+    # Phase 19.0 / BS-3 (additive 2026-05-02): default subprocess
+    # timeout — caps how long a hung pytest / ruff / mypy invocation
+    # can block the verify pipeline. 5 minutes is generous for any
+    # legitimate test suite; longer-running suites can call
+    # exec_command directly with a higher timeout.
+    result = exec_command(
+        command[0], command[1:], cwd=cwd,
+        timeout=DEFAULT_EXEC_TIMEOUT_SECONDS,
+    )
     return CommandResult(
         command=command,
         exit_code=result.code,

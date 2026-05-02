@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from ..runtime.exec import ExecResult, exec_command
+from ..runtime.exec import DEFAULT_EXEC_TIMEOUT_SECONDS, ExecResult, exec_command
 
 
 @dataclass
@@ -22,7 +22,12 @@ class GitDiffResult:
 
 
 def _git(root: Path, *args: str) -> ExecResult:
-    return exec_command("git", ["-C", str(root), *args], cwd=root)
+    # Phase 19.0 / BS-3 (additive 2026-05-02): default subprocess
+    # timeout — see runtime/exec.py for the rationale.
+    return exec_command(
+        "git", ["-C", str(root), *args], cwd=root,
+        timeout=DEFAULT_EXEC_TIMEOUT_SECONDS,
+    )
 
 
 def collect_changed_files(root: Path) -> list[str]:

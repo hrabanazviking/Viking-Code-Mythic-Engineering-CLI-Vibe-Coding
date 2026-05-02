@@ -48,6 +48,17 @@ class ExecResult:
         }
 
 
+# Phase 19.0 / BS-3 (2026-05-02 audit remediation): default upper
+# bound on subprocess wall-clock time when callers don't pass an
+# explicit ``timeout``. 300 seconds (5 min) is generous for any
+# legitimate git / pytest / ruff / mypy invocation — long enough
+# that legitimate work completes, short enough that a hang
+# (SSH-passphrase prompt, NFS stall, dead network mount) surfaces
+# rather than blocking the CLI indefinitely. Callers who genuinely
+# need a longer / shorter bound pass it explicitly.
+DEFAULT_EXEC_TIMEOUT_SECONDS = 300.0
+
+
 def exec_command(
     command: str,
     args: Sequence[str],
