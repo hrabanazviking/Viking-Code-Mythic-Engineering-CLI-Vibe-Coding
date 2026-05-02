@@ -462,3 +462,31 @@ decisions section adds:
 When Volmarr says **"go for PH-19"**, this file's status flips
 to `OPEN — PHASE 19.1 KICKOFF` and 19.1 (JSON contract snapshot
 tests) begins.
+
+---
+
+## Update 2026-05-02 — Distribution channel scope locked (additive)
+
+Volmarr confirmed: **the three v1.0 package channels are PyPI,
+Homebrew, and Scoop.** AUR and winget are deferred to v1.x.
+
+**Why this matters for slice 19.7:** the original draft listed five
+channels (pip / brew / scoop / aur / winget) which would have made
+19.7 a multi-day slice. Cutting to three keeps it ~4-6 hours and
+focuses on the channels that cover the durable cross-platform rule:
+
+| Channel | OS coverage | Estimated effort |
+|---|---|---|
+| **PyPI** | All — anyone with Python | ~2h (release workflow + trusted publishing setup) |
+| **Homebrew** | macOS + Linux | ~1-2h (formula in tap repo) |
+| **Scoop** | Windows | ~1h (manifest in bucket repo) |
+| ~~AUR~~ | ~~Arch Linux only~~ | **deferred to v1.x** |
+| ~~winget~~ | ~~Windows (modern)~~ | **deferred to v1.x** |
+
+Operators who use AUR or winget can install from PyPI in the
+meantime (pip works everywhere). After v1.0 ships and gets real-
+world feedback, AUR + winget become reasonable v1.x additions
+without blocking the launch.
+
+**Slice 19.7 revised effort:** ~4-5 hours (was 4-6).
+**PH-19 cumulative revised:** **~12-17 hours** (was 12-18).
