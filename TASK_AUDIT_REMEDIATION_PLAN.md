@@ -286,6 +286,22 @@ still ≥ 82%. Lint + mypy clean.
 **Cumulative test delta after Phase C:** 1700 → 1751 (+51). Coverage
 still ≥ 82%. Lint + mypy clean.
 
+### Phase D — closed 2026-05-02
+- **D.1 + D.2 + D.3 + D.4 + D.5 + D.6** `ai models` per-provider —
+  commit `a7367c2`. New `ai/providers/model_catalog.py` with
+  `ModelInfo` / `ModelListing` / `ProviderListingError` + static
+  catalogs for Anthropic (3) / OpenAI (4) / Gemini (4) / OpenRouter
+  (5) + per-provider remote fetchers + top-level `list_models`
+  dispatcher. Each of the 4 provider classes gained a `list_models`
+  method delegating to the catalog. `cmd_ai_models` re-routed
+  through the new protocol; legacy "not implemented" branch
+  preserved as defensive fallback. New `--remote` argparse flag.
+  ADR-0010 documents the static-first-with-remote-opt-in policy.
+  PHASE6_FINALE_CLOSEOUT.md gained an additive update notice.
+
+**Cumulative test delta after Phase D:** 1700 → 1783 (+83). Coverage
+still ≥ 82%. Lint + mypy clean.
+
 ---
 
 ## Progress tracker (live — update after each phase commit)
@@ -301,13 +317,13 @@ Phase B — Dead-code reactivation  [CLOSED 2026-05-02]
 Phase C — TUI plugin slash dispatch  [CLOSED 2026-05-02]
   [x] C.1  picker → dispatcher wiring                   (tui/picker.py + tests)
 
-Phase D — ai models per-provider expansion (static + remote, fully featured)
-  [ ] D.1  ModelInfo dataclass + catalog scaffolding    (ai/providers/model_catalog.py or base.py)
-  [ ] D.2  Anthropic static + remote list_models        (ai/providers/anthropic.py)
-  [ ] D.3  OpenAI static + remote list_models           (ai/providers/openai.py)
-  [ ] D.4  Gemini static + remote list_models           (ai/providers/gemini.py)
-  [ ] D.5  OpenRouter static + remote list_models       (ai/providers/openrouter.py)
-  [ ] D.6  Dispatcher refresh + ADR-0010                (commands.py, docs/ADRS/)
+Phase D — ai models per-provider expansion (static + remote)  [CLOSED 2026-05-02]
+  [x] D.1  ModelInfo dataclass + catalog scaffolding    (ai/providers/model_catalog.py)
+  [x] D.2  Anthropic static + remote list_models        (ai/providers/anthropic.py)
+  [x] D.3  OpenAI static + remote list_models           (ai/providers/openai.py)
+  [x] D.4  Gemini static + remote list_models           (ai/providers/gemini.py)
+  [x] D.5  OpenRouter static + remote list_models       (ai/providers/openrouter.py)
+  [x] D.6  Dispatcher refresh + ADR-0010                (commands.py, docs/ADRS/)
 
 Phase E — Chat bridge poll loop (fully featured, all parts)
   [ ] E.0  Config + master gate + allowlist refusal     (surfaces/chat_bridge.py — additive)
@@ -383,3 +399,16 @@ lint + mypy clean, working tree clean and pushed to `development`.
 **Closed so far:** 4 of 8 outstanding findings (audit findings #1, #3,
 #4, #6). 4 remain: chat-bridge poll loop (E), ai models non-Ollama (D),
 chat_bridge HTTP coverage (F.1), yggdrasil/mindspark probes (F.2).
+
+### Status (additive update 2026-05-02 — Phase D)
+
+`STATUS: PHASE D CLOSED — ready for Phase E (chat-bridge poll loop, the big one).`
+
+Live HEAD: `a7367c2` (after Phase D). Tests: 1783 passed, 1 skipped,
+lint + mypy clean, working tree clean and pushed to `development`.
+
+**Closed so far:** 5 of 8 outstanding findings (audit findings #1, #3,
+#4, #5, #6). 3 remain: chat-bridge poll loop (E — biggest item, the
+sole remaining High-severity finding), chat_bridge HTTP coverage (F.1
+— absorbed into E.4's tests as a natural side-effect),
+yggdrasil/mindspark probes (F.2).
