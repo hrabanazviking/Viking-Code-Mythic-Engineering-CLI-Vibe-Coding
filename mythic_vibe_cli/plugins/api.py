@@ -80,3 +80,37 @@ class PluginRecord:
 def validate_hooks(hooks: list[str]) -> list[str]:
     allowed = set(PLUGIN_HOOKS)
     return [hook for hook in hooks if hook not in allowed]
+
+
+# Additive 2026-05-02 (Phase C of audit remediation): in-process
+# slash-command run protocol for plugins. Plugins may declare a
+# ``run_slash(name, args) -> SlashRunResult`` callable; the
+# ``PluginHookDispatcher.dispatch_slash`` helper iterates loaded
+# plugins and returns the first ``handled=True`` result. The TUI
+# slash picker uses this for plugin-contributed entries that did
+# not supply an explicit ``argv`` at registration time, closing
+# the audit's "(plugin dispatch not yet implemented)" gap without
+# replacing the existing argv-based subprocess path.
+
+@dataclass(frozen=True)
+class SlashRunResult:
+    """Result of an in-process plugin slash invocation.
+
+    A plugin's ``run_slash(name, args)`` returns an instance of this
+    class. ``handled=True`` tells the dispatcher this plugin owned
+    the slash and dispatch should stop; ``handled=False`` signals
+    "not mine — try the next plugin / fall through to fallback".
+    """
+
+    handled: bool
+    output: str = ""
+    exit_code: int = 0
+    error: str = ""
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "handled": self.handled,
+            "output": self.output,
+            "exit_code": self.exit_code,
+            "error": self.error,
+        }

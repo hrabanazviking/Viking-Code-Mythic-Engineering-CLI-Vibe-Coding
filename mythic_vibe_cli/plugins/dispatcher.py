@@ -25,7 +25,7 @@ from typing import Callable
 from ..runtime.event_bus import EventBusController, create_event_bus
 from ..runtime.event_log import append_event, event_log_path_for, resolve_max_entries
 from ..runtime.slash_commands import SlashCommandInfo
-from .api import PLUGIN_HOOKS, PluginRecord
+from .api import PLUGIN_HOOKS, PluginRecord, SlashRunResult
 from .loader import _split_entrypoint
 from .registry import PluginRegistry
 from .sandbox import SandboxResult, safe_call
@@ -139,6 +139,57 @@ class PluginHookDispatcher:
                 # Returned object was not iterable; skip silently.
                 continue
         return discovered
+
+    # Additive 2026-05-02 (Phase C of audit remediation): in-process
+    # slash-command dispatch. Iterates loaded plugins, invokes
+    # ``run_slash(name, args)`` on those that declare it, and returns
+    # the first ``SlashRunResult`` whose ``handled`` flag is True.
+    # Returns None when no plugin handled the slash — the caller then
+    # falls back to the legacy "(plugin dispatch not yet implemented)"
+    # message preserved in the picker per the additive-only rule.
+    def dispatch_slash(
+        self, name: str, args: tuple[str, ...] | list[str] | None = None
+    ) -> SlashRunResult | None:
+        """Dispatch a plugin-contributed slash command in-process.
+
+        Walks the loaded plugins in load order; the first plugin
+        whose ``run_slash(name, args)`` returns a ``SlashRunResult``
+        with ``handled=True`` wins. Plugins without a ``run_slash``
+        method are skipped silently. Plugin invocation runs through
+        :func:`safe_call` so a misbehaving plugin's exception or
+        timeout is contained as a non-handled result with an error
+        message — never propagated.
+        """
+        normalised_args: tuple[str, ...] = tuple(args or ())
+        for loaded in self._loaded:
+            method = getattr(loaded.plugin_obj, "run_slash", None)
+            if not callable(method):
+                continue
+            sandbox_result = safe_call(
+                method,
+                name,
+                normalised_args,
+                plugin_id=loaded.record.entrypoint,
+            )
+            if not sandbox_result.ok:
+                self._log_sandbox_failure(sandbox_result, hook="run_slash")
+                continue
+            value = sandbox_result.value
+            if not isinstance(value, SlashRunResult):
+                # Plugin returned something unexpected — log & skip.
+                try:
+                    print(
+                        f"Plugin run_slash: {loaded.record.entrypoint} "
+                        f"returned non-SlashRunResult ({type(value).__name__}); skipping.",
+                        file=sys.stderr,
+                    )
+                except Exception:  # noqa: BLE001 — never crash on logging
+                    pass
+                continue
+            if value.handled:
+                return value
+            # handled=False — try the next plugin.
+        return None
 
     @property
     def loaded_plugins(self) -> list[PluginRecord]:

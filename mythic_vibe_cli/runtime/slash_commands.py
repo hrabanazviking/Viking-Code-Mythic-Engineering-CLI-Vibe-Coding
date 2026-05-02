@@ -68,6 +68,13 @@ class SlashCommandInfo:
     source_info: SourceInfo
     description: str = ""
     argv: tuple[str, ...] = ()
+    # Additive 2026-05-02 (Phase C of audit remediation): when a
+    # plugin sets ``runnable=True``, the picker treats the entry as
+    # dispatchable through the in-process ``run_slash`` protocol
+    # (see :class:`SlashRunResult` in plugins/api.py). ``argv``
+    # remains the older subprocess-based path; the two are
+    # independent — a plugin may opt into either or both.
+    runnable: bool = False
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -76,6 +83,7 @@ class SlashCommandInfo:
             "source_info": self.source_info.to_dict(),
             "description": self.description,
             "argv": list(self.argv),
+            "runnable": self.runnable,
         }
 
 
