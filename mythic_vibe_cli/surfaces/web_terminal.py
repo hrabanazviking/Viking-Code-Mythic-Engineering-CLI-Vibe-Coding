@@ -44,6 +44,25 @@ from typing import Any
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8765
 
+# Phase 19.0 / BS-1 (2026-05-02 audit remediation): bound the
+# acceptable JSON request body size + per-connection socket timeout
+# to defend against DoS via a malicious / misbehaving client that
+# advertises a huge ``Content-Length`` (e.g. ``1073741824``). Without
+# these caps, ``ThreadingHTTPServer`` spawns a thread per connection
+# that blocks in ``rfile.read(length)`` until the byte budget arrives
+# or the connection drops — exhausting the server's thread pool and /
+# or its memory.
+#
+# 64 KiB is generous for any legitimate ``/api/run`` JSON payload
+# (token + command + argv list); the largest plausible argv list
+# for a CLI is well under 4 KiB.
+MAX_REQUEST_BODY_BYTES = 65_536
+
+# 30s per-connection socket timeout. Caps the time a stalled client
+# can hold a server thread. Operators behind a slow link can override
+# via ``WebTerminalConfig.socket_timeout_seconds``.
+DEFAULT_SOCKET_TIMEOUT_SECONDS = 30.0
+
 
 _INDEX_HTML = """<!DOCTYPE html>
 <html lang="en">
@@ -140,6 +159,16 @@ class WebTerminalConfig:
     host: str = DEFAULT_HOST
     port: int = DEFAULT_PORT
     token: str = field(default_factory=lambda: secrets.token_urlsafe(32))
+    # Phase 19.0 / BS-1 (additive 2026-05-02): per-connection socket
+    # timeout. ``0.0`` means "no timeout" (legacy behaviour); the
+    # default applies a sensible 30s cap. Operators behind very slow
+    # links can override.
+    socket_timeout_seconds: float = DEFAULT_SOCKET_TIMEOUT_SECONDS
+    # Phase 19.0 / BS-1: max bytes accepted in a single JSON request
+    # body. Requests exceeding this are rejected with HTTP 413 before
+    # any bytes are read. Default 64 KiB; operators with unusual needs
+    # can raise it but should NOT remove the cap.
+    max_request_body_bytes: int = MAX_REQUEST_BODY_BYTES
 
 
 @dataclass
@@ -152,6 +181,12 @@ class WebTerminalServer:
         self.httpd = ThreadingHTTPServer(
             (self.config.host, self.config.port), handler_cls
         )
+        # Phase 19.0 / BS-1 (additive 2026-05-02): apply a per-connection
+        # socket timeout so a stalled client can't hold a server thread
+        # indefinitely. ``0.0`` disables (legacy behaviour); any positive
+        # value caps the read at that many seconds.
+        if self.config.socket_timeout_seconds > 0.0:
+            self.httpd.socket.settimeout(self.config.socket_timeout_seconds)
         self.httpd.serve_forever()
 
     def stop(self) -> None:
@@ -262,6 +297,22 @@ def _make_handler(config: WebTerminalConfig) -> type[BaseHTTPRequestHandler]:
                 return None
             if length <= 0:
                 self._send_status(400, "empty body")
+                return None
+            # Phase 19.0 / BS-1 (additive 2026-05-02 audit remediation):
+            # reject oversized request bodies with HTTP 413 BEFORE
+            # calling rfile.read(). A malicious client advertising
+            # Content-Length: 1073741824 used to block a server thread
+            # forever waiting for those bytes; capping at
+            # config.max_request_body_bytes (default 64 KiB) defeats
+            # that DoS vector while keeping legitimate /api/run JSON
+            # payloads well under the limit (token + command + argv is
+            # typically < 4 KiB).
+            if length > config.max_request_body_bytes:
+                self._send_status(
+                    413,
+                    f"request body too large: {length} bytes "
+                    f"(max {config.max_request_body_bytes})",
+                )
                 return None
             try:
                 raw = self.rfile.read(length).decode("utf-8")
