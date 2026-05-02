@@ -377,15 +377,21 @@ def write_forge_reflection(root: Path, reflection: ForgeReflection) -> tuple[Pat
     ``file_mutation_queue`` so concurrent forge runs don't trample
     each other.
     """
+    # Phase 19.0 / L-10 (additive 2026-05-02 audit remediation):
+    # route reflection writes through atomic_write_text so a kill
+    # mid-write doesn't truncate the JSON sidecar or markdown
+    # report. See runtime/atomic_write.py for rationale.
+    from .runtime.atomic_write import atomic_write_text
+
     json_path, md_path = reflection_paths(root, reflection.workflow_id)
     json_path.parent.mkdir(parents=True, exist_ok=True)
     payload = json.dumps(reflection.to_dict(), indent=2) + "\n"
     rendered = render_forge_reflection_markdown(reflection)
 
     with file_mutation_queue(json_path):
-        json_path.write_text(payload, encoding="utf-8")
+        atomic_write_text(json_path, payload)
     with file_mutation_queue(md_path):
-        md_path.write_text(rendered, encoding="utf-8")
+        atomic_write_text(md_path, rendered)
     return json_path, md_path
 
 

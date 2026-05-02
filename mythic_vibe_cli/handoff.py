@@ -257,19 +257,24 @@ def render_handoff_markdown(record: HandoffRecord) -> str:
 
 
 def write_handoff_record(root: Path, record: HandoffRecord, *, promote_latest: bool = True) -> tuple[Path, Path]:
+    # Phase 19.0 / L-10 (additive 2026-05-02 audit remediation):
+    # route artifact writes through atomic_write_text — see
+    # runtime/atomic_write.py for rationale.
+    from .runtime.atomic_write import atomic_write_text
+
     dir_path = handoff_dir(root)
     dir_path.mkdir(parents=True, exist_ok=True)
     json_path = handoff_json_path(root, record.handoff_id)
     md_path = handoff_markdown_path(root, record.handoff_id)
     markdown = render_handoff_markdown(record)
-    json_path.write_text(json.dumps(record.to_dict(), indent=2) + "\n", encoding="utf-8")
-    md_path.write_text(markdown, encoding="utf-8")
-    session_handoff_doc_path(root).parent.mkdir(parents=True, exist_ok=True)
-    session_handoff_doc_path(root).write_text(markdown, encoding="utf-8")
+    json_payload = json.dumps(record.to_dict(), indent=2) + "\n"
+    atomic_write_text(json_path, json_payload)
+    atomic_write_text(md_path, markdown)
+    atomic_write_text(session_handoff_doc_path(root), markdown)
 
     if promote_latest:
-        latest_handoff_json_path(root).write_text(json.dumps(record.to_dict(), indent=2) + "\n", encoding="utf-8")
-        latest_handoff_markdown_path(root).write_text(markdown, encoding="utf-8")
+        atomic_write_text(latest_handoff_json_path(root), json_payload)
+        atomic_write_text(latest_handoff_markdown_path(root), markdown)
 
     return json_path, md_path
 
