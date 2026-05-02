@@ -388,10 +388,10 @@ Phase F — Coverage + probe hardening  [CLOSED 2026-05-02]
   [x] F.1  chat_bridge HTTP client tests                (closed by E.4 — see tests/test_chat_bridge_http_client.py)
   [x] F.2  Yggdrasil + MindSpark documented entry points (ai/providers/{yggdrasil,mindspark}.py)
 
-Phase G — Audit re-run + closeout
-  [ ] G.1  Re-dispatch first + second audit             (auditor agent)
-  [ ] G.2  Refresh coverage + metrics                   (MEMORY.md, status memory)
-  [ ] G.3  Write AUDIT_REMEDIATION_CLOSEOUT_...md       (repo root)
+Phase G — Audit re-run + closeout  [CLOSED 2026-05-02]
+  [x] G.1  Re-dispatch auditor                          (verification report at AUDIT_REMEDIATION_VERIFICATION_2026-05-02.md)
+  [x] G.2  Refresh coverage + metrics                   (82%, 1875 passed — recorded in MEMORY.md and project memory)
+  [x] G.3  Write AUDIT_REMEDIATION_CLOSEOUT_2026-05-02.md (repo root)
 ```
 
 ---
@@ -419,6 +419,10 @@ Phase G — Audit re-run + closeout
 ## Status
 
 `STATUS: PLAN WRITTEN — AWAITING VOLMARR'S GO-AHEAD AND PHASE A KICKOFF`
+
+⚠ The original status above is preserved per the additive-only rule.
+The current live status is in the dated update sections at the
+bottom of this file. **As of 2026-05-02 the cycle is CLOSED.**
 
 ---
 
@@ -490,3 +494,30 @@ Codex research-plan merges that landed mid-session — `7940957` and
 work is Phase G — re-run the auditor against the new HEAD to verify
 clean state, refresh coverage metrics in MEMORY.md, and write the
 remediation closeout memo.
+
+### Status (final update 2026-05-02 — Phase G)
+
+`STATUS: AUDIT REMEDIATION CYCLE — CLOSED 2026-05-02.`
+
+**Phase G shipped** — audit re-run dispatched; coverage refreshed
+(82% on `4af3dca`); remediation closeout memo written to
+`AUDIT_REMEDIATION_CLOSEOUT_2026-05-02.md` in the repo root.
+
+**Final metrics:**
+- Tests: 1700 → **1875** (+175 net)
+- Coverage: held at **82%** (post-mega-day floor)
+- Lint (ruff): clean
+- Type (mypy): clean
+- ADRs: 9 → **10** (added ADR-0010 for `ai models` policy)
+- Source files: 135 → **138** (+`chat_bridge_loop.py`, +`model_catalog.py`)
+- Documentation: +1 (`CHAT_BRIDGE_DEPLOYMENT.md`)
+
+**Commit count:** 19 commits this cycle (18 phase commits + this
+closeout commit), all on `development`, all pushed.
+
+**Operational discipline confirmed:** every closeout addendum
+shipped, every `Update Notice` dated, every legacy fallback
+preserved, every commit gated by ruff + mypy + pytest.
+
+This TASK file is **closed**. Future remediation cycles open new
+TASK files; this one is now historical reference material.
