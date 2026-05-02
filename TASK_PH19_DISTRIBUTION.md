@@ -1044,3 +1044,78 @@ Three commits, three sub-fixes, no batching. Each commit:
 step in the cadence.
 
 `STATUS: OPEN — PHASE 19.0 IN PROGRESS — AWAITING "go for BS-4" OR ALTERNATIVE`
+
+---
+
+## Status update 2026-05-02 — 🎉 Slice 19.0 COMPLETE
+
+`STATUS: OPEN — PHASE 19.0 CLOSED (10/10 SUB-FIXES) — READY FOR PHASE 19.1`
+
+Volmarr's "go for all the rest" → chained through BS-4 → BS-5 → BS-6
+→ L-7 → L-8 → L-9 → L-10 in 7 successive commits. Every bug-sweep
+finding is now closed.
+
+### Slice 19.0 final ledger
+
+| Tag | Sev | What | Commit |
+|---|---|---|---|
+| BS-1 | High | web_terminal DoS protection | `fff73f6` |
+| BS-2 | High | mcp_client hang protection | `6575fd3` |
+| BS-3 | High | exec_command timeouts | `a7846cf` |
+| BS-4 | Medium | chat_bridge Telegram backoff order | `7fde32e` |
+| BS-5 | Medium | forge_ledger atomic write | `ac02494` |
+| BS-6 | Medium | cross-process lock | `3a21541` |
+| L-7 | Low | remove dead "succeeded" sentinel | `b79c294` |
+| L-8 | Low | wire should_use_narrow_layout into TUI | `9b247a6` |
+| L-9 | Low | fix test_elapsed_ms_recorded timer flake | `c3d8d55` |
+| L-10 | Low | atomic_write helper + route artifact writes | `31bbcd2` |
+
+### Slice 19.0 metrics
+
+- **Tests:** 1875 → **1925** (+50 from 19.0).
+- **Coverage:** still ≥ 82% (no regression).
+- **Lint (ruff):** clean throughout.
+- **Type (mypy):** clean throughout.
+- **Working tree:** clean, in sync with `origin/development`.
+- **Commits:** 10 fix commits + 1 prior progress-tracker commit
+  = 11 total in 19.0.
+- **New modules added:** `runtime/cross_process_lock.py` (BS-6),
+  `runtime/atomic_write.py` (L-10).
+- **New tests added:** 50 across 6 test files.
+
+### Operational discipline confirmed
+
+Ten commits, ten sub-fixes, no batching. Every commit:
+- Targets exactly one bug-sweep finding (tagged in the commit
+  message and inline source comments).
+- Adds new constants / fields / helpers without removing
+  existing behaviour (legacy fallbacks preserved where
+  applicable; opt-in flags for newer semantics).
+- Includes regression tests that would fail against the un-fixed
+  code where applicable. BS-4 verified against pre-fix code via
+  stash-and-test (assertion `0.05 != 0.1` exactly as predicted).
+- ruff + mypy + pytest gating before push.
+- Detailed commit message referencing the audit finding tag.
+
+### Architectural additions
+
+- **`runtime/cross_process_lock.py`** — stdlib-only fcntl/msvcrt
+  platform branching with auto-release on process death. Wired
+  into `forge_ledger.py` (closes the audit's docstring lie about
+  cross-process safety) and `json_store.py:FileLock` (additive
+  `cross_process=True` opt-in; default O_EXCL behaviour
+  preserved).
+- **`runtime/atomic_write.py`** — write-tmp + os.replace pattern
+  with Windows-specific PermissionError retry. Routed into
+  `verify/__init__.py`, `handoff.py`, `forge_reflection.py`.
+  `BaseException`-catching cleanup so KeyboardInterrupt /
+  SystemExit don't leave orphan .tmp files.
+
+### Next: slice 19.1
+
+The bug-sweep slice was a prepended pre-flight pass; the original
+PH-19 slice queue starts now with **19.1 — JSON contract snapshot
+tests** (smallest, safest, zero production-code change). All
+subsequent PH-19 work builds on the now-fixed baseline.
+
+`STATUS: OPEN — PHASE 19.0 CLOSED — AWAITING "go for 19.1" OR ALTERNATIVE`
