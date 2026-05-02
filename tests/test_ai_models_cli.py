@@ -174,18 +174,31 @@ class CmdAiModelsOllamaTests(unittest.TestCase):
 
 
 class CmdAiModelsNonOllamaTests(unittest.TestCase):
-    def test_other_provider_returns_not_implemented_note(self) -> None:
+    def test_other_provider_returns_implemented_listing(self) -> None:
+        """Phase D 2026-05-02 (audit remediation, finding #5):
+        non-Ollama providers now return a real catalog listing
+        instead of the legacy "not implemented" canned payload.
+        The originally-asserted shape (``models == []`` +
+        ``"note"`` field) is replaced by the new contract
+        (``models`` non-empty, ``implemented=True``, ``source``,
+        ``warnings``). The legacy fallback branch is preserved in
+        ``commands.py`` for any future provider that might lack
+        ``list_models``; this test now asserts the new contract."""
         from mythic_vibe_cli.commands import cmd_ai_models
 
-        ns = argparse.Namespace(provider="anthropic", json=True, path=".")
+        ns = argparse.Namespace(
+            provider="anthropic", json=True, path=".", remote=False
+        )
         buf = io.StringIO()
         with redirect_stdout(buf):
             exit_code = cmd_ai_models(ns)
         self.assertEqual(exit_code, SUCCESS)
         payload = json.loads(buf.getvalue())
         self.assertEqual(payload["provider"], "anthropic")
-        self.assertEqual(payload["models"], [])
-        self.assertIn("not implemented", payload["note"])
+        self.assertTrue(payload["implemented"])
+        self.assertEqual(payload["source"], "static")
+        self.assertGreater(len(payload["models"]), 0)
+        self.assertEqual(payload["warnings"], [])
 
     def test_unknown_provider_returns_user_input_error(self) -> None:
         # cmd_ai_models is dispatched directly here (not via main)

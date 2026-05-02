@@ -206,3 +206,71 @@ $ mythic-vibe hardware --write   # writes docs/hardware_profile{.md,.json}
 `MEMORY.md` and `project_mythic_engineering_cli_status.md` updated
 to HEAD `<close-head>`. `TASK_master_roadmap_and_phase1.md` tracker
 extended through this finale.
+
+---
+
+## Update Notice — 2026-05-02 Phase D (additive, audit remediation)
+
+The first 2026-05-02 audit (`AUDIT_FAKE_TEMP_CODE_2026-05-02.md`,
+finding #5) caught `cmd_ai_models` returning a canned `"models": []`
++ "not implemented" payload for every non-Ollama provider. Operators
+had no way to discover model IDs for Anthropic / OpenAI / Gemini /
+OpenRouter from the CLI.
+
+**Fix shipped in Phase D (additive, fully featured per Volmarr's
+2026-05-02 call):**
+
+1. **New module** `mythic_vibe_cli/ai/providers/model_catalog.py`:
+   `ModelInfo` and `ModelListing` dataclasses; static catalogs for
+   all 4 remote providers; `_http_get_json` helper; per-provider
+   `fetch_*_models_remote` functions; top-level `list_models(family,
+   *, remote=False, api_key=None)` dispatcher with graceful fallback.
+
+2. **Per-provider wire-ups** (`anthropic.py`, `openai.py`,
+   `gemini.py`, `openrouter.py`): each provider class gained a
+   `list_models(remote: bool = False) -> ModelListing` method that
+   delegates to the catalog. Existing `validate_config`, `estimate`,
+   `run` methods unchanged. Gemini reads `GEMINI_API_KEY` first
+   (matches existing `validate_config`), then `GOOGLE_API_KEY` as
+   Google's canonical fallback. OpenRouter's listing is
+   unauthenticated; an optional API key is forwarded as `Bearer`
+   when present.
+
+3. **Dispatcher refresh** (`commands.py:cmd_ai_models`): the
+   non-Ollama branch now calls `provider.list_models(remote=...)` and
+   renders a rich human / JSON output with `implemented: true`,
+   `source: "static" | "remote" | "static-fallback"`, and a
+   `warnings` array. The legacy canned `"not implemented"` payload is
+   **preserved as a defensive fallback** for any provider class that
+   somehow lacks `list_models` (unreachable today but kept per the
+   additive-only rule).
+
+4. **CLI flag** (`app.py`): added `--remote` to `ai models`. Default
+   behaviour is the offline static catalog; `--remote` triggers a
+   live HTTP listing.
+
+5. **ADR-0010** (`docs/ADRS/ADR-0010-ai-model-listing-policy.md`)
+   documents the static-first-with-remote-opt-in policy + endpoint
+   table + tradeoffs.
+
+Tests: `tests/test_ai_model_catalog.py` adds 32 tests covering the
+new module — dataclass round-trips, all four static catalogs
+non-empty, `list_models` static path, `list_models` remote with no
+API key falling back, remote with HTTP error falling back, remote
+with empty `data` falling back, remote success, per-provider
+fetcher parsing (Anthropic / OpenAI / Gemini / OpenRouter),
+per-provider class wire-ups, Gemini env-var precedence
+(`GEMINI_API_KEY` over `GOOGLE_API_KEY`), and `cmd_ai_models`
+dispatcher integration.
+
+The pre-existing
+`tests/test_ai_models_cli.py:test_other_provider_returns_not_implemented_note`
+was renamed to `test_other_provider_returns_implemented_listing`
+and updated to assert the new contract (the legacy "not
+implemented" payload is structurally unreachable for any current
+provider).
+
+Test count: 1751 → 1783 (+32). Coverage still ≥ 82%. Lint + mypy
+clean.
+
+— *Sólrún Hvítmynd & Runa, additive correction*

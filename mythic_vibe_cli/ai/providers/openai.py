@@ -16,6 +16,8 @@ from .base import (
     utc_now,
     write_provider_log,
 )
+# Phase D 2026-05-02 (audit remediation, finding #5).
+from .model_catalog import ModelListing, list_models as _catalog_list_models
 
 
 @dataclass
@@ -27,6 +29,12 @@ class OpenAIProvider:
     def validate_config(self) -> ProviderStatus:
         key = os.getenv("OPENAI_API_KEY", "").strip()
         return ProviderStatus(configured=bool(key), details=["OPENAI_API_KEY is required"] if not key else ["OPENAI_API_KEY detected"])
+
+    # Phase D 2026-05-02 (audit remediation, finding #5): real model
+    # listing — static by default, ``remote=True`` hits OpenAI's
+    # ``/v1/models`` endpoint with the standard Bearer auth.
+    def list_models(self, *, remote: bool = False) -> ModelListing:
+        return _catalog_list_models(self.name, remote=remote)
 
     def estimate(self, packet: object) -> Estimate:
         return estimate_packet(packet, provider_name=self.name)

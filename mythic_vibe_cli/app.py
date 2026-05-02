@@ -950,7 +950,11 @@ def build_parser() -> argparse.ArgumentParser:
     add_runtime_options(ai_telemetry, json_output=True)
     ai_models = ai_sub.add_parser(
         "models",
-        help="List installed models for a provider (Ollama supported today)",
+        help=(
+            "List models for a provider. Static catalog by default; "
+            "--remote hits the provider's models endpoint live "
+            "(Anthropic / OpenAI / Gemini / OpenRouter)."
+        ),
     )
     ai_models.add_argument(
         "--path",
@@ -961,6 +965,20 @@ def build_parser() -> argparse.ArgumentParser:
         "--provider",
         required=True,
         choices=sorted(ProviderRegistry().providers().keys()),
+    )
+    # Phase D 2026-05-02 (audit remediation, finding #5): remote
+    # listing flag. When set, the dispatcher calls
+    # ``provider.list_models(remote=True)`` which hits the documented
+    # listing endpoint. Falls back to the static catalog with a
+    # warning if the API key is missing or the remote call fails.
+    ai_models.add_argument(
+        "--remote",
+        action="store_true",
+        help=(
+            "Hit the provider's models endpoint live instead of "
+            "returning the static catalog. Falls back to static + "
+            "warning on API key / HTTP error."
+        ),
     )
     add_runtime_options(ai_models, json_output=True)
     ai_ingest = ai_sub.add_parser("ingest-response", help="Record a provider response as metadata only")
