@@ -18,13 +18,58 @@ class StateStoreError(RuntimeError):
 
 
 class FileLock(AbstractContextManager["FileLock"]):
-    def __init__(self, lock_path: Path, *, timeout_seconds: float = 5.0):
+    """Cross-process lock backed by ``O_CREAT | O_EXCL`` lockfile
+    creation (the legacy default) OR by ``fcntl.flock`` /
+    ``msvcrt.locking`` when ``cross_process=True`` (Phase 19.0 / BS-6
+    additive opt-in 2026-05-02).
+
+    Both modes protect against simultaneous CLI invocations across
+    different processes. The differences:
+
+    - **Legacy mode (default):** atomic ``O_EXCL`` lockfile creation.
+      Already-existing lockfile blocks new acquisitions. Crash
+      recovery is **not automatic** — a process killed while holding
+      the lock leaves a stale lockfile that blocks all subsequent
+      attempts until the timeout. Existing callers see no change.
+
+    - **OS-lock mode (``cross_process=True``):** uses
+      ``cross_process_lock`` under the hood (``fcntl.flock`` on
+      POSIX, ``msvcrt.locking`` on Windows). Crash recovery **is
+      automatic** — the OS releases the lock when the holding
+      process's file descriptor is closed (which happens
+      unconditionally on process death). Recommended for new
+      callers.
+    """
+
+    def __init__(
+        self,
+        lock_path: Path,
+        *,
+        timeout_seconds: float = 5.0,
+        cross_process: bool = False,
+    ):
         self.lock_path = lock_path
         self.timeout_seconds = timeout_seconds
+        self.cross_process = cross_process
         self._handle: int | None = None
+        # Phase 19.0 / BS-6 (additive): when cross_process=True, we
+        # delegate to the new context manager. Stored here so
+        # __exit__ can close it.
+        self._cross_process_cm: AbstractContextManager[None] | None = None
 
     def __enter__(self) -> FileLock:
         self.lock_path.parent.mkdir(parents=True, exist_ok=True)
+        if self.cross_process:
+            # Phase 19.0 / BS-6 (additive): OS-lock mode.
+            from ..runtime.cross_process_lock import (
+                cross_process_lock as _cpl,
+            )
+
+            cm = _cpl(self.lock_path, deadline=self.timeout_seconds)
+            cm.__enter__()
+            self._cross_process_cm = cm
+            return self
+        # Legacy O_EXCL mode preserved verbatim.
         deadline = time.monotonic() + self.timeout_seconds
         while True:
             try:
@@ -42,6 +87,15 @@ class FileLock(AbstractContextManager["FileLock"]):
         exc_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> bool | None:
+        # Phase 19.0 / BS-6 (additive): OS-lock teardown when
+        # cross_process=True.
+        if self._cross_process_cm is not None:
+            try:
+                self._cross_process_cm.__exit__(exc_type, exc_value, traceback)
+            finally:
+                self._cross_process_cm = None
+            return None
+        # Legacy O_EXCL teardown preserved verbatim.
         if self._handle is not None:
             os.close(self._handle)
             self._handle = None
