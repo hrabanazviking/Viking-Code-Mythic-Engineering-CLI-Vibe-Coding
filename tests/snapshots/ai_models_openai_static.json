@@ -1,0 +1,73 @@
+{
+  "command": "ai models",
+  "configured": false,
+  "details": [
+    "OPENAI_API_KEY is required"
+  ],
+  "implemented": true,
+  "models": [
+    {
+      "capabilities": [
+        "vision",
+        "audio",
+        "tools",
+        "streaming",
+        "json_mode"
+      ],
+      "context_window": 128000,
+      "display_name": "GPT-4o",
+      "family": "openai",
+      "id": "gpt-4o",
+      "last_updated": "2026-05-02",
+      "max_output_tokens": 16384,
+      "source": "static"
+    },
+    {
+      "capabilities": [
+        "vision",
+        "tools",
+        "streaming",
+        "json_mode"
+      ],
+      "context_window": 128000,
+      "display_name": "GPT-4o mini",
+      "family": "openai",
+      "id": "gpt-4o-mini",
+      "last_updated": "2026-05-02",
+      "max_output_tokens": 16384,
+      "source": "static"
+    },
+    {
+      "capabilities": [
+        "vision",
+        "tools",
+        "streaming",
+        "json_mode"
+      ],
+      "context_window": 128000,
+      "display_name": "GPT-4 Turbo",
+      "family": "openai",
+      "id": "gpt-4-turbo",
+      "last_updated": "2026-05-02",
+      "max_output_tokens": 4096,
+      "source": "static"
+    },
+    {
+      "capabilities": [
+        "tools",
+        "streaming",
+        "json_mode"
+      ],
+      "context_window": 16385,
+      "display_name": "GPT-3.5 Turbo",
+      "family": "openai",
+      "id": "gpt-3.5-turbo",
+      "last_updated": "2026-05-02",
+      "max_output_tokens": 4096,
+      "source": "static"
+    }
+  ],
+  "provider": "openai",
+  "source": "static",
+  "warnings": []
+}

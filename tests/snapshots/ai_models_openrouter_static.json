@@ -1,0 +1,84 @@
+{
+  "command": "ai models",
+  "configured": false,
+  "details": [
+    "OPENROUTER_API_KEY is required"
+  ],
+  "implemented": true,
+  "models": [
+    {
+      "capabilities": [
+        "vision",
+        "tools",
+        "thinking",
+        "streaming"
+      ],
+      "context_window": 200000,
+      "display_name": "Claude Opus 4.7 (via OpenRouter)",
+      "family": "openrouter",
+      "id": "anthropic/claude-opus-4-7",
+      "last_updated": "2026-05-02",
+      "max_output_tokens": 8192,
+      "source": "static"
+    },
+    {
+      "capabilities": [
+        "vision",
+        "tools",
+        "streaming"
+      ],
+      "context_window": 200000,
+      "display_name": "Claude Sonnet 4.6 (via OpenRouter)",
+      "family": "openrouter",
+      "id": "anthropic/claude-sonnet-4-6",
+      "last_updated": "2026-05-02",
+      "max_output_tokens": 8192,
+      "source": "static"
+    },
+    {
+      "capabilities": [
+        "vision",
+        "tools",
+        "streaming"
+      ],
+      "context_window": 128000,
+      "display_name": "GPT-4o (via OpenRouter)",
+      "family": "openrouter",
+      "id": "openai/gpt-4o",
+      "last_updated": "2026-05-02",
+      "max_output_tokens": 16384,
+      "source": "static"
+    },
+    {
+      "capabilities": [
+        "vision",
+        "audio",
+        "streaming",
+        "long_context"
+      ],
+      "context_window": 2000000,
+      "display_name": "Gemini 2.5 Pro (via OpenRouter)",
+      "family": "openrouter",
+      "id": "google/gemini-2.5-pro",
+      "last_updated": "2026-05-02",
+      "max_output_tokens": 8192,
+      "source": "static"
+    },
+    {
+      "capabilities": [
+        "tools",
+        "streaming"
+      ],
+      "context_window": 128000,
+      "display_name": "Llama 3.3 70B Instruct (via OpenRouter)",
+      "family": "openrouter",
+      "id": "meta-llama/llama-3.3-70b-instruct",
+      "last_updated": "2026-05-02",
+      "max_output_tokens": 4096,
+      "source": "static"
+    }
+  ],
+  "provider": "openrouter",
+  "source": "static",
+  "warnings": []
+}
