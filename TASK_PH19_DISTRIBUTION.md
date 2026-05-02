@@ -567,3 +567,152 @@ For the durable record of decisions:
 | Optional heavy deps as extras | `pyproject.toml` already has `[ai]`, `[tui]`, `[voice]`, `[mindspark]`, `[wyrd]`, etc. |
 | Compatibility changelog section | Folded into 19.6 (compatibility policy) |
 | PowerShell completion script | `mythic-vibe completion --shell powershell` already exists per the slash catalog |
+
+---
+
+## Update 2026-05-02 — Volmarr's "add everything" expansion (additive)
+
+Volmarr's call: **"I want to add all of them that are not already
+being addressed into the current plan."** That overrides every
+"rejected" / "deferred to v1.x" / "deferred to PH-21+" decision
+above. The original draft prose is preserved verbatim per the
+additive-only rule. This section adds **every previously-deferred
+item** as in-scope work.
+
+The expansion adds **two new phases (PH-21, PH-22)** plus new
+slices to existing PH-20 to honour the "all in" directive while
+keeping v1.0 release-shippable. The original PH-19 → PH-20.7
+sequence remains the **v1.0 launch path**; the new items either
+fold into existing slices or become explicit follow-ons.
+
+### Re-classification of previously-rejected/deferred items
+
+| Item | Original status | New status |
+|---|---|---|
+| First-run wizard | rejected → opt-in 20.0 | already in plan (20.0) |
+| Persona-driven command presets | rejected (philosophical conflict) | **NEW slice 20.A** — opt-in via `--preset` flag, default behaviour preserved |
+| Full GPG / Sigstore signed artifacts | deferred to v1.x | **NEW slice 21.5** |
+| Architecture drift dashboard | rejected (drift.py + JSON enough) | **NEW slice 20.E** — wraps existing `drift.py` with a `drift dashboard` command emitting markdown + JSON scorecard |
+| TUI verification heatmap / plugin risk indicators | rejected (density risk) | **NEW slice 20.I** — opt-in TUI panel, `mythic-vibe tui --panels=heatmap,risk` |
+| `verify replay` command | rejected (duplicates `forge resume`) | **NEW slice 20.B** — thin shortcut command that delegates to `forge resume` machinery |
+| Plunder modified-lines attestation | deferred to v1.x | **NEW slice 20.G** |
+| Quarterly architecture review cadence | deferred to v1.x | **NEW slice 20.H** — `mythic-vibe review architecture` command + `docs/governance/quarterly_review.md` |
+| Automated changelog classification | deferred to v1.x | **NEW slice 20.F** — extends `scripts/check_changelog.py` |
+| Context budget optimizer | deferred to v1.x | **NEW slice 20.D** |
+| Workflow lineage viewer | deferred to v1.x | **NEW slice 20.C** — `mythic-vibe workflow lineage` reads existing `forge_reflection` + `forge_ledger` data, emits a graph view |
+| Single-file executables (PyInstaller) | deferred to v1.x | **NEW slice 21.2** |
+| Single-file executables (Nuitka, alternative) | deferred to v1.x | **NEW slice 21.3** |
+| Container / OCI image | deferred to v1.x | **NEW slice 21.1** |
+| Android / Termux formal support | deferred to v1.x | **NEW slice 21.9** — docs + detection adjustments |
+| Native Android wrapper app | indefinite | **NEW slice 22.2** ⚠ multi-week |
+| SBOM generation | deferred to v1.x | **NEW slice 19.5b** — folds into 19.5 (threat model) |
+| Wheelhouse / offline install | deferred to v1.x | **NEW slice 19.7b** — folds into 19.7 (distribution) |
+| macOS notarization | deferred with PyInstaller | **NEW slice 21.4** — tied to 21.2/21.3 |
+| Reproducible builds + tag signing | deferred to v1.x | **NEW slice 21.6** |
+| AUR package | deferred to v1.x | **NEW slice 21.7** |
+| winget manifest | deferred to v1.x | **NEW slice 21.8** |
+| Rust / Go launcher shim | v2.0 strategic | **NEW slice 22.1** ⚠ multi-week |
+| WASI experimental runtime | indefinite | **NEW slice 22.3** ⚠ multi-week, speculative |
+
+### PH-19 expansions (small fold-ins)
+
+- **19.5b** SBOM generation — adds `cyclonedx-bom` (open-source) to dev extras; CI step generates `mythic-vibe.cdx.json` per release. ~1-2h.
+- **19.7b** Wheelhouse / offline install bundle — release workflow produces a `mythic-vibe-wheelhouse-<version>.tar.gz` containing all dependency wheels for offline `pip install --no-index` on constrained networks. ~1h.
+
+**Revised PH-19 effort: ~16-22h** (was 14-19h).
+
+### PH-20 expansions (9 new slices folded in pre-launch)
+
+The original PH-20 had 8 slices (20.0-20.7). The expansion adds 9
+more (20.A-20.I) pre-`v1.0.0 release tag (20.7)`, so the v1.0
+launch ships with everything Volmarr asked for.
+
+| Slice | What | Estimated effort |
+|---|---|---|
+| **20.A** | Persona-driven command presets (`solo` / `team-lead` / `auditor`) — opt-in via new `--preset` flag on relevant commands; default behaviour preserved | ~3-4h |
+| **20.B** | `verify replay` command — thin shortcut that delegates to `forge resume` | ~1h |
+| **20.C** | `workflow lineage` viewer — emits graph from existing `forge_reflection` + `forge_ledger` data; markdown + JSON output | ~3-4h |
+| **20.D** | Context budget optimizer — per-role token-aware packet trimming in `codex_bridge:PacketBuilder` | ~3-4h |
+| **20.E** | Architecture drift dashboard — wraps `drift.py` with `mythic-vibe drift dashboard` (markdown + JSON scorecard) | ~2h |
+| **20.F** | Automated changelog classification by PR labels — extends `scripts/check_changelog.py` | ~2h |
+| **20.G** | Plunder modified-lines attestation — extends `mythic_vibe_cli/plunder/provenance.py` to record per-line diff hash | ~3h |
+| **20.H** | `review architecture` command + quarterly cadence doc | ~2h |
+| **20.I** | TUI heatmap + plugin risk indicators panel — opt-in via `--panels` flag, default TUI unchanged | ~4-5h |
+
+**Revised PH-20 effort: ~42-54h** (was 19-25h, +23-29h from these 9 slices).
+
+20.7 (v1.0.0 release tag) lands **after** 20.A through 20.I, so the
+v1.0 release artifact has all the polish Volmarr asked for.
+
+### PH-21 — v1.x Distribution Expansion (NEW phase, post-v1.0 release)
+
+These 9 slices are too big to gate v1.0 on but Volmarr wants them in
+the plan. They land **after v1.0 ships**, in a v1.1.0 / v1.2.0
+release wave.
+
+| Slice | What | Estimated effort | Notes |
+|---|---|---|---|
+| **21.1** | Container / OCI image (multi-arch via `buildx`) — published to GHCR + Docker Hub | ~3-4h | |
+| **21.2** | Single-file executables via PyInstaller for Linux + Windows + macOS | ~6-8h | Larger because of per-OS quirks |
+| **21.3** | Single-file executables via Nuitka (alternative; faster startup, smaller binaries) | ~6-8h | Optional alongside 21.2 — operator picks |
+| **21.4** | macOS notarization for binary releases | ~3-4h | Requires Apple Developer account ($99/yr) — **flag for Volmarr** |
+| **21.5** | Full GPG / Sigstore signed artifacts (replaces 20.6 checksums-only) | ~6-8h | Sigstore OIDC keyless signing avoids GPG key management |
+| **21.6** | Reproducible build attestations + tag signing | ~4-6h | |
+| **21.7** | AUR `mythic-vibe-cli-bin` package + maintainer scripts | ~2h | |
+| **21.8** | winget manifest PR to `winget-pkgs` | ~2h | |
+| **21.9** | Android / Termux formal support (docs + platform detection adjustments) | ~3-4h | Termux already works through PyPI; this is polish |
+
+**PH-21 estimated effort: ~35-46h.**
+
+### PH-22 — v2.0 Strategic Stretch (NEW phase, ⚠ multi-week each)
+
+Three items genuinely sized in **weeks**, not hours. Volmarr asked
+for them in scope, so they land in the plan — but flagged
+explicitly so timeline expectations are accurate.
+
+| Slice | What | Estimated effort | Notes |
+|---|---|---|---|
+| **22.1** | Rust / Go launcher shim around the Python runtime — gives operators a single static binary with no Python dep | **~2-4 weeks** | New code language adopted; distribution simplifies dramatically; v2.0 strategic option |
+| **22.2** | Native Android wrapper app — Kotlin/Java app embedding the Python runtime via Chaquopy or BeeWare; presents the CLI as native Android UI | **~3-6 weeks** | Major new product surface; Android dev tooling required; v2.0 strategic |
+| **22.3** | WASI experimental runtime — Mythic Vibe CLI compiled to WebAssembly for browser/sandbox use | **~4+ weeks (speculative)** | Pure exploration; many Python deps don't WASI-compile yet; v2.0 R&D |
+
+**PH-22 estimated effort: ~9-14 weeks (~360-560h).**
+
+### Cumulative totals after expansion
+
+| Phase | Slice count | Estimated effort |
+|---|---|---|
+| PH-19 (Distribution + Hardening) | 10 | ~16-22h |
+| PH-20 (Polish + v1.0.0 Launch) | 17 | ~42-54h |
+| **v1.0 launch gate (PH-19 + PH-20)** | **27 slices** | **~58-76h** |
+| PH-21 (v1.x Distribution Expansion) | 9 | ~35-46h |
+| PH-22 (v2.0 Strategic Stretch) | 3 | ~360-560h |
+| **Cumulative all phases** | **39 slices** | **~450-680h** |
+
+At our demonstrated remediation-cycle pace (~1 commit/hour), v1.0
+launch is **~6-8 working days** of focused work. PH-21 adds
+another **~4-6 working days**. PH-22 alone is **9-14 weeks** if
+all three stretch items are pursued.
+
+### Confirmation requests for Volmarr
+
+The expansion is locked, but two items deserve explicit confirmation
+before kickoff because they have real-world cost or scope implications:
+
+1. **macOS notarization (21.4)** requires an **Apple Developer
+   account ($99/year)**. Confirm willingness to register, or skip
+   21.4 and ship un-notarized macOS binaries (operators will see
+   Gatekeeper warnings on first run).
+2. **PH-22 stretch items (22.1 / 22.2 / 22.3)** are genuinely
+   weeks-each work. Confirm: keep all three in the plan, or trim
+   to 1-2 (recommend keeping 22.1 Rust/Go shim — biggest distribution
+   win — and treating 22.2/22.3 as deferred research)?
+
+### Reordering — what kicks off first
+
+Despite the expansion, **the kickoff sequence is unchanged**: 19.1
+(JSON contract snapshot tests) is still the smallest, safest first
+slice. The expansion only adds work AFTER what was already planned;
+nothing reshuffles the front of the queue.
+
+`STATUS (revised): DRAFT — DECISIONS LOCKED, ALL ITEMS IN SCOPE — AWAITING FINAL GO/NO-GO ON KICKOFF`
