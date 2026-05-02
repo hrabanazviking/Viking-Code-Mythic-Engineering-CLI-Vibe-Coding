@@ -54,6 +54,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+from .runtime.cross_process_lock import cross_process_lock
 from .runtime.file_mutation_queue import file_mutation_queue
 from .workflow_agents import AgentInput, AgentOutput
 
@@ -195,6 +196,14 @@ class ForgeLedger:
     def path(self) -> Path:
         return self.root / "mythic" / FORGE_LEDGER_FILENAME
 
+    @property
+    def _lock_path(self) -> Path:
+        """Sidecar lock file used by :func:`cross_process_lock`.
+        Phase 19.0 / BS-6 (additive 2026-05-02). Separate from the
+        data file so file-replacement on Windows doesn't fight the
+        lock."""
+        return self.path.with_name(self.path.name + ".lock")
+
     def load(self) -> list[ForgeLedgerEntry]:
         """Read and parse the ledger. Empty list on missing file or
         malformed JSON — defensive by design so a corrupt ledger never
@@ -225,15 +234,24 @@ class ForgeLedger:
 
     def append(self, entry: ForgeLedgerEntry) -> ForgeLedgerEntry:
         """Append ``entry`` to the ledger and rotate to keep the file
-        bounded at :data:`FORGE_LEDGER_LIMIT`."""
+        bounded at :data:`FORGE_LEDGER_LIMIT`.
+
+        Phase 19.0 / BS-6 (additive 2026-05-02): wrapped in
+        :func:`cross_process_lock` so two simultaneous CLI
+        invocations in different processes can no longer race on
+        the ledger. The intra-process ``file_mutation_queue``
+        wrapping is preserved (cheaper for same-process writes;
+        cross-process lock is only contended across processes).
+        """
         target = self.path
         target.parent.mkdir(parents=True, exist_ok=True)
         with file_mutation_queue(target):
-            entries = self.load()
-            entries.append(entry)
-            if len(entries) > FORGE_LEDGER_LIMIT:
-                entries = entries[-FORGE_LEDGER_LIMIT:]
-            self._write_entries(target, entries)
+            with cross_process_lock(self._lock_path):
+                entries = self.load()
+                entries.append(entry)
+                if len(entries) > FORGE_LEDGER_LIMIT:
+                    entries = entries[-FORGE_LEDGER_LIMIT:]
+                self._write_entries(target, entries)
         return entry
 
     def update_step(
@@ -254,25 +272,29 @@ class ForgeLedger:
         """
         target = self.path
         target.parent.mkdir(parents=True, exist_ok=True)
+        # Phase 19.0 / BS-6 (additive 2026-05-02): cross-process
+        # lock prevents two simultaneous CLI invocations from
+        # racing on update_step (same protection as append above).
         with file_mutation_queue(target):
-            entries = self.load()
-            for index in range(len(entries) - 1, -1, -1):
-                candidate = entries[index]
-                if candidate.workflow_id == workflow_id and candidate.step_id == step_id:
-                    updated = candidate.with_status(
-                        status,
-                        completed_at=completed_at,
-                        duration_ms=duration_ms,
-                        agent_output=agent_output,
-                        notes=notes,
-                    )
-                    entries[index] = updated
-                    self._write_entries(target, entries)
-                    return updated
-            raise ValueError(
-                f"No forge ledger entry found for workflow_id={workflow_id!r} "
-                f"step_id={step_id!r}"
-            )
+            with cross_process_lock(self._lock_path):
+                entries = self.load()
+                for index in range(len(entries) - 1, -1, -1):
+                    candidate = entries[index]
+                    if candidate.workflow_id == workflow_id and candidate.step_id == step_id:
+                        updated = candidate.with_status(
+                            status,
+                            completed_at=completed_at,
+                            duration_ms=duration_ms,
+                            agent_output=agent_output,
+                            notes=notes,
+                        )
+                        entries[index] = updated
+                        self._write_entries(target, entries)
+                        return updated
+                raise ValueError(
+                    f"No forge ledger entry found for workflow_id={workflow_id!r} "
+                    f"step_id={step_id!r}"
+                )
 
     def latest(self, *, limit: int = 20) -> list[ForgeLedgerEntry]:
         """Return up to ``limit`` most recent entries (newest last)."""
