@@ -23,13 +23,34 @@ the plan-level ledger).
 
 Concurrent writes to the same ledger file are serialised through
 :func:`mythic_vibe_cli.runtime.file_mutation_queue.file_mutation_queue`
-so two simultaneous forge runs cannot corrupt each other's writes.
+so two simultaneous forge runs **inside the same process** cannot
+corrupt each other's writes.
+
+Cross-process safety note (audit 2026-05-02 BS-6 follow-up): the
+``file_mutation_queue`` uses a ``threading.Lock`` keyed by
+``os.path.realpath``, which is process-local. **Two simultaneous
+CLI invocations in different processes can still race on this
+file** — two operators running ``mythic-vibe forge run`` in parallel
+are not protected by the in-process queue alone. PH-19 slice
+BS-6 introduces a real cross-process lock; until that lands,
+operators with this concern should serialise forge runs externally
+(e.g. a process-level lock file or shell-level exclusion).
+
+Phase 19.0 / BS-5 (additive 2026-05-02): ``_write_entries`` now
+uses the ``write-tmp + os.replace`` atomic pattern (the same one
+already in :mod:`mythic_vibe_cli.persistence.json_store`). A
+process kill mid-write no longer leaves the ledger truncated —
+the operator either sees the prior good ledger (replace not yet
+called) or the new one (replace completed). No half-written state.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 import json
+import os
+import secrets
+import time
 from pathlib import Path
 from typing import Any
 
@@ -278,7 +299,66 @@ class ForgeLedger:
             "version": FORGE_LEDGER_SCHEMA_VERSION,
             "entries": [entry.to_dict() for entry in entries],
         }
-        target.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        # Phase 19.0 / BS-5 (additive 2026-05-02 audit remediation):
+        # write-to-tmp + os.replace atomic pattern. A process kill
+        # mid-write leaves either the prior good ledger or the new
+        # one — never a truncated half-written file. Same pattern
+        # used by persistence/json_store.py:write_state. os.replace
+        # is atomic on POSIX (rename(2)) and on Windows (MoveFileEx
+        # with MOVEFILE_REPLACE_EXISTING).
+        #
+        # The tmp filename includes a unique random suffix to avoid
+        # any contention on Windows where a stale handle on a
+        # shared ``.tmp`` name across rapid serialised writes can
+        # surface as PermissionError(13). A unique-per-write tmp
+        # name is collision-free regardless of OS handle behaviour.
+        target.parent.mkdir(parents=True, exist_ok=True)
+        temp_path = target.with_name(
+            f"{target.name}.{secrets.token_hex(6)}.tmp"
+        )
+        try:
+            temp_path.write_text(
+                json.dumps(payload, indent=2) + "\n", encoding="utf-8"
+            )
+            # Phase 19.0 / BS-5 (additive 2026-05-02): retry os.replace
+            # briefly on PermissionError to absorb transient Windows
+            # contention from antivirus / indexing services briefly
+            # holding open handles. POSIX never hits this branch.
+            # Backoff ladder: 50ms → 100ms → 200ms → 400ms → 800ms
+            # (cumulative ~1.55s worst case, almost always satisfied
+            # on the first attempt).
+            _replace_with_retry(temp_path, target)
+        except Exception:
+            # Best-effort cleanup of the tmp file on failure so we
+            # don't leave junk behind.
+            try:
+                temp_path.unlink()
+            except OSError:
+                pass
+            raise
+
+
+def _replace_with_retry(
+    src: Path, dst: Path, *, retries: int = 5, base_delay: float = 0.05
+) -> None:
+    """``os.replace`` with a brief retry loop on Windows-specific
+    ``PermissionError`` from transient handle contention. Each
+    attempt's wait grows by a factor of 2 (50ms → 100ms → 200ms →
+    400ms → 800ms). On non-Windows this is a single straight call —
+    ``rename(2)`` doesn't suffer from this class of failure."""
+    last_exc: Exception | None = None
+    for attempt in range(retries):
+        try:
+            os.replace(src, dst)
+            return
+        except PermissionError as exc:
+            last_exc = exc
+            if attempt + 1 < retries:
+                time.sleep(base_delay * (1 << attempt))
+                continue
+            raise
+    if last_exc is not None:  # pragma: no cover — unreachable
+        raise last_exc
 
 
 __all__ = [

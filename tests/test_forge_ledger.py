@@ -381,5 +381,161 @@ class ForgeLedgerFileShapeTests(unittest.TestCase):
             self.assertEqual(payload["version"], FORGE_LEDGER_SCHEMA_VERSION)
 
 
+# ---- Phase 19.0 / BS-5 (audit remediation 2026-05-02) ----------------
+#
+# _write_entries now uses write-tmp + os.replace so a process kill
+# mid-write can't truncate the ledger file. Plus a brief retry on
+# Windows-specific PermissionError to absorb antivirus / indexing
+# contention.
+
+
+class AtomicWriteTests(unittest.TestCase):
+    """The ledger uses write-to-tmp + os.replace so failure during
+    the write produces no half-written ledger file."""
+
+    def test_write_uses_tmp_then_replace(self) -> None:
+        """Spy on os.replace to confirm the atomic-pattern call
+        sequence: tmp file written, then os.replace with target."""
+        import unittest.mock as _mock
+
+        from mythic_vibe_cli.forge_ledger import ForgeLedger
+        import mythic_vibe_cli.forge_ledger as _mod
+
+        with tempfile.TemporaryDirectory() as tmp:
+            ledger = ForgeLedger(root=Path(tmp))
+            with _mock.patch.object(
+                _mod.os, "replace", wraps=_mod.os.replace
+            ) as spy:
+                ledger.append(_make_entry())
+            self.assertEqual(spy.call_count, 1)
+            src, dst = spy.call_args.args
+            # Source is a unique-suffixed .tmp; destination is the
+            # ledger path.
+            self.assertTrue(str(src).endswith(".tmp"))
+            self.assertEqual(Path(dst), ledger.path)
+
+    def test_kill_mid_write_preserves_prior_ledger(self) -> None:
+        """Simulate a process kill between tmp write and os.replace.
+        The prior good ledger must remain intact and readable; no
+        corrupted half-written file at the target path."""
+        import unittest.mock as _mock
+
+        from mythic_vibe_cli.forge_ledger import ForgeLedger
+        import mythic_vibe_cli.forge_ledger as _mod
+
+        with tempfile.TemporaryDirectory() as tmp:
+            ledger = ForgeLedger(root=Path(tmp))
+            # Establish a known-good prior ledger.
+            ledger.append(_make_entry(workflow_id="WF-1", step_id="step-1"))
+            prior = ledger.path.read_text(encoding="utf-8")
+
+            # Simulate a kill: os.replace raises before completing.
+            with _mock.patch.object(
+                _mod.os, "replace", side_effect=KeyboardInterrupt
+            ):
+                with self.assertRaises(KeyboardInterrupt):
+                    ledger.append(
+                        _make_entry(workflow_id="WF-2", step_id="step-2")
+                    )
+
+            # Prior ledger MUST still be intact and parseable.
+            after = ledger.path.read_text(encoding="utf-8")
+            self.assertEqual(after, prior)
+            payload = json.loads(after)
+            self.assertEqual(len(payload["entries"]), 1)
+            self.assertEqual(payload["entries"][0]["workflow_id"], "WF-1")
+
+    def test_target_directory_created_on_first_write(self) -> None:
+        """forge_ledger.json sits under mythic/; the parent dir may
+        not exist on first write. The atomic helper must mkdir it."""
+        from mythic_vibe_cli.forge_ledger import ForgeLedger
+
+        with tempfile.TemporaryDirectory() as tmp:
+            ledger = ForgeLedger(root=Path(tmp))
+            self.assertFalse(ledger.path.parent.exists())
+            ledger.append(_make_entry())
+            self.assertTrue(ledger.path.exists())
+
+    def test_temp_file_uses_unique_suffix(self) -> None:
+        """The .tmp filename has a random suffix per write so two
+        sequential writes never collide on a stale handle."""
+        import unittest.mock as _mock
+
+        from mythic_vibe_cli.forge_ledger import ForgeLedger
+        import mythic_vibe_cli.forge_ledger as _mod
+
+        seen_tmp_paths: list[str] = []
+
+        def _capturing_replace(src, dst):
+            seen_tmp_paths.append(str(src))
+            os_replace_real(src, dst)
+
+        os_replace_real = _mod.os.replace
+
+        with tempfile.TemporaryDirectory() as tmp:
+            ledger = ForgeLedger(root=Path(tmp))
+            with _mock.patch.object(_mod.os, "replace", side_effect=_capturing_replace):
+                ledger.append(_make_entry(step_id="step-1"))
+                ledger.append(_make_entry(step_id="step-2"))
+                ledger.append(_make_entry(step_id="step-3"))
+
+        self.assertEqual(len(seen_tmp_paths), 3)
+        self.assertEqual(len(set(seen_tmp_paths)), 3)  # all unique
+
+    def test_replace_with_retry_recovers_from_transient_permission_error(
+        self,
+    ) -> None:
+        """The _replace_with_retry helper absorbs transient
+        Windows PermissionError (antivirus / indexing service
+        briefly holding a handle) and succeeds on a later attempt.
+        Pure functional test — doesn't touch the filesystem; just
+        verifies the retry counter and success path."""
+        import unittest.mock as _mock
+
+        from mythic_vibe_cli.forge_ledger import _replace_with_retry
+
+        attempt_count = {"n": 0}
+        succeeded = {"v": False}
+
+        def _flaky_replace(src, dst):
+            attempt_count["n"] += 1
+            if attempt_count["n"] < 3:
+                raise PermissionError("simulated antivirus contention")
+            succeeded["v"] = True  # third attempt succeeds
+
+        with _mock.patch(
+            "mythic_vibe_cli.forge_ledger.os.replace",
+            side_effect=_flaky_replace,
+        ):
+            _replace_with_retry(
+                Path("dummy_src"), Path("dummy_dst"),
+                retries=5, base_delay=0.001,  # tight for fast test
+            )
+
+        self.assertEqual(attempt_count["n"], 3)
+        self.assertTrue(succeeded["v"])
+
+    def test_replace_with_retry_gives_up_after_retries_exhausted(self) -> None:
+        """When PermissionError persists past the retry budget,
+        the helper re-raises so callers see the failure rather than
+        silently dropping the write."""
+        import unittest.mock as _mock
+
+        from mythic_vibe_cli.forge_ledger import _replace_with_retry
+        import mythic_vibe_cli.forge_ledger as _mod
+
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / "src.txt"
+            dst = Path(tmp) / "dst.txt"
+            src.write_text("hello", encoding="utf-8")
+
+            with _mock.patch.object(
+                _mod.os, "replace",
+                side_effect=PermissionError("permanent block"),
+            ):
+                with self.assertRaises(PermissionError):
+                    _replace_with_retry(src, dst, retries=3, base_delay=0.001)
+
+
 if __name__ == "__main__":
     unittest.main()
