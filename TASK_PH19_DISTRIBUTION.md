@@ -780,3 +780,115 @@ Volmarr's word **"go for PH-19"** flips the file's live status to
 `OPEN — PHASE 19.1 KICKOFF` and the cycle begins. First commit:
 slice 19.1 (JSON contract snapshot tests) — smallest, safest, zero
 production-code change.
+
+---
+
+## Update 2026-05-02 — Pre-launch bug sweep findings folded in (additive)
+
+The Auditor's pre-PH-19 bug sweep (`AUDIT_BUG_SWEEP_2026-05-02.md`)
+surfaced **3 High + 3 Medium + 4 Low** real functional bugs in the
+post-remediation HEAD `ba3e1aa`. **No Criticals.** Tests, lint, and
+mypy still clean (1875 passing, 82% coverage).
+
+The findings are real bugs that would surface in production — not
+fakery patterns. Folding them into the plan as a new pre-kickoff
+slice **19.0**, landing before 19.1 so all subsequent work
+(snapshot tests, contract auditor, OS matrix, packaging) lands on
+top of a fixed baseline.
+
+### Findings tabulated
+
+| # | Sev | Location | Bug |
+|---|---|---|---|
+| BS-1 | **High** | `surfaces/web_terminal.py:267` | `rfile.read(client_declared_length)` has no upper bound; a `Content-Length: 1GB` header hangs/exhausts a thread. **DoS vector.** Fix: reject `length > 65536` with HTTP 413. |
+| BS-2 | **High** | `protocols/mcp_client.py:82,112` | `readline()` on subprocess stdout has no read timeout; `while True` discard loop has no iteration limit. A stalled or notification-spamming MCP server hangs the calling thread permanently. |
+| BS-3 | **High** | `context/scanner.py:377`, `handoff.py:89`, `verify/git_diff.py:25`, `verify/test_runner.py:56` | All four `exec_command` call-sites pass no `timeout=`. Hung git process (SSH passphrase prompt, NFS stall, dead network mount) blocks the CLI indefinitely. |
+| BS-4 | Medium | `chat_bridge_loop.py:406` | `bo.reset()` runs before the `ok=false` guard. Persistent Telegram `ok=false` produces a flat 1.0s spin instead of exponential backoff. The covering test asserts only `len(sleeps) >= 1` so it doesn't catch the regression. |
+| BS-5 | Medium | `forge_ledger.py:281` | `_write_entries` uses `write_text()` directly — not write-tmp + `os.replace`. Process kill mid-write corrupts the ledger. The atomic pattern from `json_store.py` already exists in-project. |
+| BS-6 | Medium | `forge_ledger.py` docstring vs `runtime/file_mutation_queue.py:38` | Docstring claims protection from "two simultaneous forge runs"; `file_mutation_queue` uses `threading.Lock` (process-local only). Cross-process race exists. **Doc fix in 19.0; real cross-process locking deferred to PH-20.** |
+| BS-7 | Low | `forge_verifier.py:173` | `"succeeded"` in passing-value set is dead — `VerificationArtifact.result` only writes `pass`/`fail`/`blocked`. Misleading but functionally harmless. |
+| BS-8 | Low | `surfaces/narrow_layout.py:75` | `should_use_narrow_layout` exported in `__all__` and tested but never imported by production. Dead integration point. |
+
+(Two more Lows are cosmetic catalog entries; full list in
+`AUDIT_BUG_SWEEP_2026-05-02.md`.)
+
+### NEW slice 19.0 — Pre-launch bug fixes
+
+**Goal:** close all Highs + 2 Mediums + 2 Lows surfaced by the bug
+sweep. Lands BEFORE 19.1 so the rest of PH-19 builds on a fixed
+baseline.
+
+**Fixes (all additive where possible):**
+
+1. **BS-1** — `web_terminal.py`: add `MAX_REQUEST_BODY_BYTES = 65536`
+   constant; reject `Content-Length` exceeding it with HTTP 413
+   `Payload Too Large`. Update token-gated `/api/run` test to assert
+   the new behaviour.
+
+2. **BS-2** — `protocols/mcp_client.py`: bound the `readline()` call
+   with a deadline (default 30s, configurable via env var); cap
+   the discard loop to N iterations (default 1000) and abort with
+   a `MCPConnectionStalled` error. Test added against a stub that
+   spams notifications.
+
+3. **BS-3** — pass `timeout=300` (5 min) to all four `exec_command`
+   call-sites. Surface a clean `TimeoutExpired` error message.
+   Existing tests covering happy path stay green; add a
+   regression test using a mocked `exec_command` that raises
+   `subprocess.TimeoutExpired`.
+
+4. **BS-4** — `chat_bridge_loop.py`: move `bo.reset()` AFTER the
+   `ok=false` guard. Tighten the existing test to assert
+   monotonically-increasing sleep durations (asserts the backoff
+   ladder, not just "at least one sleep happened"). Catches the
+   regression that the existing test missed.
+
+5. **BS-5** — `forge_ledger.py`: replace `write_text()` with the
+   `json_store.py` atomic pattern (write-tmp + `os.replace`).
+   Existing tests cover happy path; add a kill-mid-write test
+   using `os.kill` + `os.fork` (or mock).
+
+6. **BS-6** — `forge_ledger.py`: additive docstring fix
+   acknowledging that `file_mutation_queue` provides
+   intra-process safety only; cross-process simultaneous runs
+   may race. Recommend external coordination (e.g.
+   process-level lock file) until a future cross-process locking
+   slice ships in PH-20.
+
+7. **BS-7** — `forge_verifier.py:173`: remove the dead
+   `"succeeded"` branch with an additive code comment, OR keep it
+   and add a `# noqa: dead-branch — reserved for future` tag.
+   **Choose:** remove for clarity (one-line subtractive change but
+   purely dead code, not a behavioural change).
+
+8. **BS-8** — `surfaces/narrow_layout.py`: wire
+   `should_use_narrow_layout` into `tui/app.py`'s startup detection.
+   The TUI already has narrow-layout machinery (per the PH-17
+   closeout); this hooks it up so the integration test exercises a
+   real path.
+
+**Slice 19.0 estimated effort: ~3-4 hours, ~15-20 new/extended
+tests, all bugs closed before any other PH-19 work begins.**
+
+### Renumbering — what kicks off first now
+
+Updated kickoff sequence: **19.0 → 19.1 → 19.2 → ... → 19.8.**
+Slice 19.0 is the new first slice; everything else shifts back by
+one position in the queue (no slice numbers change because 19.0
+is a prepend).
+
+### Cumulative totals (revised)
+
+| Tier | Slices | Hours / weeks |
+|---|---|---|
+| v1.0 launch gate (PH-19 + PH-20) | **28** (was 27) | **~62-80h** (was 58-76h, +4h for 19.0) |
+| v1.x expansion (PH-21) | 9 | ~32-43h |
+| v2.0 stretch (PH-22) | 3 | ~360-560h |
+| **All phases** | **40** | ~454-684h |
+
+`STATUS: DRAFT — ALL DECISIONS LOCKED, BUG SWEEP FOLDED IN — READY FOR KICKOFF ON COMMAND`
+
+Volmarr's word **"go for PH-19"** flips the file's live status to
+`OPEN — PHASE 19.0 KICKOFF` and the cycle begins. First commit:
+slice 19.0 (pre-launch bug fixes — closes 3 Highs + 2 Mediums + 2
+Lows from the bug sweep).
