@@ -42,6 +42,13 @@ class PickerEntry:
     constructs ``[python, -m, mythic_vibe_cli, <name>]`` from the
     name) and for contributed entries that haven't opted into
     runnability.
+
+    Phase C 2026-05-02 (audit remediation): ``runnable`` indicates the
+    contributing plugin opted into the in-process ``run_slash`` protocol
+    (see :class:`SlashRunResult` in plugins/api.py). When ``runnable``
+    is True the picker dispatches via the plugin dispatcher instead of
+    a subprocess; ``argv`` is independent — a plugin may opt into either
+    or both paths.
     """
 
     name: str
@@ -49,6 +56,7 @@ class PickerEntry:
     source: str
     source_info_path: str = ""
     argv: tuple[str, ...] = ()
+    runnable: bool = False
 
     @classmethod
     def from_builtin(cls, item: BuiltinSlashCommand) -> "PickerEntry":
@@ -62,6 +70,7 @@ class PickerEntry:
             source=item.source,
             source_info_path=item.source_info.path if item.source_info else "",
             argv=item.argv,
+            runnable=getattr(item, "runnable", False),
         )
 
     @property
@@ -69,8 +78,25 @@ class PickerEntry:
         """Whether the picker has enough information to dispatch this
         entry. Builtins are always dispatchable (argv is reconstructed
         from the name). Contributed entries are dispatchable when
-        they supplied an explicit argv at registration time."""
-        return self.source == "builtin" or bool(self.argv)
+        they supplied an explicit argv at registration time **or**
+        opted into the in-process run_slash protocol via
+        ``runnable=True`` (Phase C 2026-05-02)."""
+        return self.source == "builtin" or bool(self.argv) or self.runnable
+
+    @property
+    def dispatch_mode(self) -> str:
+        """How the picker will dispatch this entry: ``"builtin"`` →
+        runtime.command_for_builtin, ``"argv"`` → subprocess from the
+        contributed argv list, ``"run_slash"`` → in-process plugin
+        dispatcher (Phase C 2026-05-02), or ``"none"`` when the entry
+        is not dispatchable."""
+        if self.source == "builtin":
+            return "builtin"
+        if self.argv:
+            return "argv"
+        if self.runnable:
+            return "run_slash"
+        return "none"
 
     def render_label(self) -> str:
         tag = f"[dim]\\[{self.source}][/dim]"
@@ -159,9 +185,20 @@ class CommandPreviewScreen(Screen):
     def _format_body(self) -> str:
         description = self.entry.description or "(no description)"
         path = self.entry.source_info_path or "(builtin)"
-        if self.entry.is_dispatchable:
+        mode = self.entry.dispatch_mode
+        if mode == "run_slash":
+            # Phase C 2026-05-02: plugin opted into in-process run_slash
+            # protocol — distinct from the argv subprocess path.
+            run_hint = (
+                "[b]Press r[/b] to run this plugin slash command "
+                "(in-process)."
+            )
+        elif self.entry.is_dispatchable:
             run_hint = "[b]Press r[/b] to run this command."
         else:
+            # Final fallback for plugin-contributed entries that
+            # supplied neither argv nor the runnable=True opt-in.
+            # Preserved verbatim per additive-only rule (Phase C).
             run_hint = (
                 "[dim](plugin dispatch not yet implemented; "
                 "press Esc to return.)[/dim]"
@@ -176,9 +213,21 @@ class CommandPreviewScreen(Screen):
     def action_run_command(self) -> None:
         if not self.entry.is_dispatchable:
             return
-        from .runner import RunningCommandScreen, RunSpec, command_for_builtin
 
         cwd = self.project_root if self.project_root is not None else Path.cwd()
+        mode = self.entry.dispatch_mode
+
+        # Phase C 2026-05-02: in-process plugin run_slash dispatch path.
+        # The argv-based subprocess path below is preserved unchanged
+        # for plugins that opted into argv-style dispatch in slice 2.6.
+        if mode == "run_slash":
+            self.app.push_screen(
+                PluginSlashRunScreen(self.entry, project_root=cwd)
+            )
+            return
+
+        from .runner import RunningCommandScreen, RunSpec, command_for_builtin
+
         if self.entry.source == "builtin":
             spec = command_for_builtin(self.entry.name, project_root=cwd)
         else:
@@ -194,6 +243,142 @@ class CommandPreviewScreen(Screen):
         self.app.push_screen(
             HelpOverlayScreen(
                 "Command preview — keys", binding_help_pairs(self.BINDINGS)
+            )
+        )
+
+
+# Additive 2026-05-02 (Phase C of audit remediation): screen that
+# drives in-process plugin slash dispatch and displays the result.
+# Mirrors the shape of CommandPreviewScreen but runs the plugin's
+# ``run_slash`` via :meth:`PluginHookDispatcher.dispatch_slash`
+# instead of pushing a subprocess RunningCommandScreen. Plugin
+# misbehaviour (raise / non-SlashRunResult / no handler) all
+# surface here as a clean error/fallback message rather than a
+# crashed TUI.
+class PluginSlashRunScreen(Screen):
+    """In-process dispatch screen for plugin-contributed slash
+    commands that opted into the ``run_slash`` protocol via
+    ``SlashCommandInfo(runnable=True)``."""
+
+    BINDINGS = [
+        Binding("escape", "app.pop_screen", "Back"),
+        Binding("q", "app.pop_screen", "Back", show=False),
+        Binding("question_mark", "show_help", "Help"),
+        Binding("t", "app.cycle_theme", "Theme"),
+    ]
+
+    DEFAULT_CSS = """
+    PluginSlashRunScreen {
+        layout: vertical;
+        align: center middle;
+    }
+
+    #plugin-slash-card {
+        width: 90%;
+        max-width: 120;
+        border: round $secondary;
+        padding: 1 2;
+    }
+    """
+
+    def __init__(
+        self, entry: PickerEntry, *, project_root: Path | None = None
+    ) -> None:
+        super().__init__()
+        self.entry = entry
+        self.project_root = project_root or Path.cwd()
+        self._result_text: str = ""
+
+    def compose(self) -> ComposeResult:
+        yield Header(show_clock=False)
+        body = Static(id="plugin-slash-card")
+        body.border_title = f"/{self.entry.name}  (plugin run_slash)"
+        body.update(self._initial_text())
+        yield body
+        yield Footer()
+
+    def on_mount(self) -> None:
+        # Run the dispatch on mount so the user sees a quick render
+        # before the plugin code executes. Anything that raises or
+        # mis-types is contained inside dispatch_slash via safe_call.
+        result = self._dispatch()
+        self._render_result(result)
+
+    def _initial_text(self) -> str:
+        return (
+            f"[b]Plugin:[/b]   {self.entry.source_info_path or '(unknown)'}\n"
+            f"[b]Source:[/b]   {self.entry.source}\n\n"
+            "Dispatching…"
+        )
+
+    def _dispatch(self) -> object:
+        """Invoke the plugin dispatcher's ``dispatch_slash`` and
+        return either a SlashRunResult, None, or an Exception (for
+        the very-rare case the dispatcher itself raises before its
+        own contained except path)."""
+        # Late-import to keep the module light when the TUI surface
+        # never displays a runnable plugin entry.
+        from ..plugins.dispatcher import PluginHookDispatcher
+
+        try:
+            with PluginHookDispatcher(self.project_root) as dispatcher:
+                dispatcher.load_and_subscribe()
+                return dispatcher.dispatch_slash(self.entry.name, ())
+        except Exception as exc:  # noqa: BLE001 - never crash the TUI on plugin error
+            return exc
+
+    def _render_result(self, result: object) -> None:
+        body = self.query_one("#plugin-slash-card", Static)
+        if isinstance(result, Exception):
+            body.update(
+                f"[b]Plugin:[/b]   {self.entry.source_info_path or '(unknown)'}\n"
+                f"[b]Source:[/b]   {self.entry.source}\n\n"
+                f"[b red]Error:[/b red] dispatcher raised: {result}\n\n"
+                "[dim]Press Esc to return.[/dim]"
+            )
+            return
+        if result is None:
+            # No plugin handled the slash (no run_slash, or all returned
+            # handled=False). Surface the same fallback message the
+            # preview screen shows for not-yet-runnable entries.
+            body.update(
+                f"[b]Plugin:[/b]   {self.entry.source_info_path or '(unknown)'}\n"
+                f"[b]Source:[/b]   {self.entry.source}\n\n"
+                "[dim](plugin dispatch returned no handler — "
+                "no plugin claimed this slash with handled=True.)[/dim]\n\n"
+                "[dim]Press Esc to return.[/dim]"
+            )
+            return
+        # Real SlashRunResult.
+        # Late-import for symmetry with _dispatch + to keep the
+        # module light at import time.
+        from ..plugins.api import SlashRunResult  # noqa: F401  - type narrowing only
+        exit_code = getattr(result, "exit_code", 0)
+        output = getattr(result, "output", "") or ""
+        error = getattr(result, "error", "") or ""
+        status_color = "green" if exit_code == 0 and not error else "yellow"
+        status_label = "ok" if exit_code == 0 and not error else "warning"
+        text = (
+            f"[b]Plugin:[/b]    {self.entry.source_info_path or '(unknown)'}\n"
+            f"[b]Source:[/b]    {self.entry.source}\n"
+            f"[b]Exit code:[/b] {exit_code}  "
+            f"[{status_color}]({status_label})[/{status_color}]\n\n"
+        )
+        if output:
+            text += f"[b]Output[/b]\n{output}\n\n"
+        if error:
+            text += f"[b red]Error[/b red]\n{error}\n\n"
+        if not output and not error:
+            text += "[dim](plugin returned no output)[/dim]\n\n"
+        text += "[dim]Press Esc to return.[/dim]"
+        body.update(text)
+
+    def action_show_help(self) -> None:
+        from .help_overlay import HelpOverlayScreen, binding_help_pairs
+
+        self.app.push_screen(
+            HelpOverlayScreen(
+                "Plugin slash run — keys", binding_help_pairs(self.BINDINGS)
             )
         )
 

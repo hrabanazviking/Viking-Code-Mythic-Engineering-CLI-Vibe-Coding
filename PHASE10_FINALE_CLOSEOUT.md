@@ -163,3 +163,69 @@ A later audit (`AUDIT_FAKE_TEMP_CODE_2026-05-02.md`, HEAD `e0953b6`) re-measured
 - **Sandbox wiring (good news):** the closeout above states the sandbox is "available but not wired" into the dispatcher. As of HEAD `e0953b6` that wiring **was completed in a subsequent phase** — `plugins/dispatcher.py:31` imports `safe_call`, and `dispatcher.py:200` invokes it inside `_fire`. The original prose is left in place for historical accuracy; the wiring exists today.
 
 — *Sólrún Hvítmynd & Runa, additive correction*
+
+---
+
+## Update Notice — 2026-05-02 Phase C (additive, audit remediation)
+
+The first audit (`AUDIT_FAKE_TEMP_CODE_2026-05-02.md`, finding #4)
+caught the TUI slash picker rendering "(plugin dispatch not yet
+implemented; press Esc to return.)" for plugin-contributed slash
+commands that did not supply an explicit `argv` at registration
+time. Plugin commands could only be run via the REPL; the picker
+was a dead end for any plugin that didn't opt into the slice-2.6
+argv-based subprocess dispatch.
+
+**Fix shipped in Phase C (additive, three layers):**
+
+1. **New plugin protocol** (`plugins/api.py`):
+   `SlashRunResult` frozen dataclass with `handled / output / exit_code
+   / error`. Plugins opting into in-process slash dispatch declare a
+   `run_slash(name, args) -> SlashRunResult` callable.
+
+2. **Dispatcher hook** (`plugins/dispatcher.py`):
+   New `PluginHookDispatcher.dispatch_slash(name, args)` walks loaded
+   plugins, invokes their `run_slash` via `safe_call` (so misbehaving
+   plugins are contained), and returns the first `handled=True`
+   result. Returns `None` when no plugin claims the slash.
+
+3. **Catalog opt-in** (`runtime/slash_commands.py`):
+   `SlashCommandInfo` gained an additive `runnable: bool = False`
+   field. Plugins set `runnable=True` to advertise that their entry
+   is dispatchable through the in-process protocol. `argv` remains
+   the older subprocess path; the two are independent.
+
+4. **Picker integration** (`tui/picker.py`):
+   `PickerEntry` gained `runnable` field + new `dispatch_mode`
+   property (`"builtin" | "argv" | "run_slash" | "none"`). The
+   `CommandPreviewScreen._format_body` shows "(plugin dispatch
+   not yet implemented)" only for the `"none"` mode — for
+   `"run_slash"` it shows "Press r to run this plugin slash command
+   (in-process)." Pressing `r` on a runnable entry pushes the new
+   `PluginSlashRunScreen`, which calls `dispatch_slash` and renders
+   the result (output, exit code, errors) — failures contained
+   never crash the TUI.
+
+   The legacy "(plugin dispatch not yet implemented)" message is
+   **preserved verbatim** as the final fallback for plugins that
+   declared neither `argv` nor `runnable=True`, per the additive-
+   only rule.
+
+5. **Argv path priority lock-in:** when a plugin opts into BOTH
+   argv and runnable, the argv subprocess path wins (older contract;
+   operators with both can clear argv to fall through to in-process).
+   Test locks this so any future change is deliberate.
+
+Tests: `tests/test_plugin_slash_dispatch.py` gained 19 new tests
+across four classes — `SlashCommandInfoRunnableTests` (2),
+`PickerEntryRunnableTests` (6), `PluginDispatcherRunSlashTests` (7),
+`PluginSlashRunScreenTests` + `PreviewScreenRunSlashRoutingTests`
+(headless TUI integration covering handled-result rendering, no-
+handler fallback, dispatcher-raises path, and preview→plugin-screen
+routing).
+
+Test count: 1732 → 1751 (+19). Coverage still ≥ 82%. Lint + mypy
+clean. Help-binding accessibility audit (slice 4.7) honoured —
+`PluginSlashRunScreen` registers `?` like every other TUI screen.
+
+— *Sólrún Hvítmynd & Runa, additive correction*
