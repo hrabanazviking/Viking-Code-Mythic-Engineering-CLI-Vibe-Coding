@@ -302,6 +302,38 @@ still ≥ 82%. Lint + mypy clean.
 **Cumulative test delta after Phase D:** 1700 → 1783 (+83). Coverage
 still ≥ 82%. Lint + mypy clean.
 
+### Phase E — closed 2026-05-02
+- **E.0 + E.1 + E.2 + E.3 + E.4 + E.5** Chat bridge poll loop
+  (the big one) — commit `c44231b`. Closes the **only remaining
+  High-severity finding (#2)** plus Low-severity finding #7
+  (chat_bridge HTTP coverage) as a side-effect.
+- E.0: `MatrixConfig` / `TelegramConfig` gained `from_env`,
+  `from_file`, `from_sources`, `validate`, allowlist accessors.
+  Master gate `MYTHIC_CHAT_BRIDGE_ENABLED=1` (default off).
+  `validate()` refuses without explicit allowlist.
+  `matrix_send_message` / `telegram_send_message` gained
+  `room_id` / `chat_id` keyword overrides additively.
+- E.1: New `surfaces/chat_bridge_loop.py` with `run_matrix_loop`
+  — `/sync` long-poll, allowlist filtering, echo prevention,
+  exponential backoff, terminal raise on 4xx, clean shutdown.
+- E.2: `run_telegram_loop` — `getUpdates` long-poll with
+  allowlist on both chat_id and user_id.
+- E.3: `cmd_surface_chat` gained `--run` / `--config` /
+  `--max-iterations`. Legacy scaffolding-and-exit body
+  preserved when `--run` is absent. SIGINT/SIGTERM → stop_event.
+- E.4: Three new test files (38 + 11 + 31 = 80 tests) covering
+  config, HTTP client, loops, and `cmd_surface_chat --run`
+  wire-up.
+- E.5: New `docs/CHAT_BRIDGE_DEPLOYMENT.md` with security model,
+  env-var reference, systemd / NSSM / launchd unit examples,
+  TLS notes, rate-limit guidance, troubleshooting matrix.
+- PHASE17_FINALE_CLOSEOUT.md gained an additive update notice
+  marking the chat_bridge gap **closed**; the 2026-05-02 caveat
+  block is now historical.
+
+**Cumulative test delta after Phase E:** 1700 → 1863 (+163). Coverage
+still ≥ 82%. Lint + mypy clean.
+
 ---
 
 ## Progress tracker (live — update after each phase commit)
@@ -325,16 +357,16 @@ Phase D — ai models per-provider expansion (static + remote)  [CLOSED 2026-05-
   [x] D.5  OpenRouter static + remote list_models       (ai/providers/openrouter.py)
   [x] D.6  Dispatcher refresh + ADR-0010                (commands.py, docs/ADRS/)
 
-Phase E — Chat bridge poll loop (fully featured, all parts)
-  [ ] E.0  Config + master gate + allowlist refusal     (surfaces/chat_bridge.py — additive)
-  [ ] E.1  Matrix /sync loop + echo prevention + backoff (surfaces/chat_bridge_loop.py)
-  [ ] E.2  Telegram getUpdates loop + allowlist on chat+user (surfaces/chat_bridge_loop.py)
-  [ ] E.3  --run flag + --config + signal handling      (commands.py)
-  [ ] E.4  Tests for loops + config + HTTP coverage     (tests/test_chat_bridge_*.py)
-  [ ] E.5  CHAT_BRIDGE_DEPLOYMENT.md (systemd/NSSM/launchd) (docs/)
+Phase E — Chat bridge poll loop (fully featured, all parts)  [CLOSED 2026-05-02]
+  [x] E.0  Config + master gate + allowlist refusal     (surfaces/chat_bridge.py — additive)
+  [x] E.1  Matrix /sync loop + echo prevention + backoff (surfaces/chat_bridge_loop.py)
+  [x] E.2  Telegram getUpdates loop + allowlist on chat+user (surfaces/chat_bridge_loop.py)
+  [x] E.3  --run flag + --config + signal handling      (commands.py)
+  [x] E.4  Tests for loops + config + HTTP coverage     (tests/test_chat_bridge_*.py)
+  [x] E.5  CHAT_BRIDGE_DEPLOYMENT.md (systemd/NSSM/launchd) (docs/)
 
 Phase F — Coverage + probe hardening
-  [ ] F.1  chat_bridge HTTP client tests                (tests/test_chat_bridge_http_client.py)
+  [x] F.1  chat_bridge HTTP client tests                (closed by E.4 — see tests/test_chat_bridge_http_client.py)
   [ ] F.2  Yggdrasil + MindSpark documented entry points (ai/providers/{yggdrasil,mindspark}.py)
 
 Phase G — Audit re-run + closeout
@@ -412,3 +444,15 @@ lint + mypy clean, working tree clean and pushed to `development`.
 sole remaining High-severity finding), chat_bridge HTTP coverage (F.1
 — absorbed into E.4's tests as a natural side-effect),
 yggdrasil/mindspark probes (F.2).
+
+### Status (additive update 2026-05-02 — Phase E)
+
+`STATUS: PHASE E CLOSED — chat bridge running. Only F.2 + G remain.`
+
+Live HEAD: `c44231b` (after Phase E). Tests: 1863 passed, 1 skipped,
+lint + mypy clean, working tree clean and pushed to `development`.
+
+**Closed so far:** **7 of 8** outstanding findings (audit findings #1,
+#2 **High**, #3, #4, #5, #6, #7). The **only remaining finding** is
+#8 (yggdrasil/mindspark `getattr` probes — Low). After F.2 + G this
+remediation cycle is complete.
