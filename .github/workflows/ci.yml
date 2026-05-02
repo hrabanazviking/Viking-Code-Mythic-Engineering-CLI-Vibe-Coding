@@ -9,12 +9,23 @@ on:
 
 jobs:
   test:
-    name: Tests / Python ${{ matrix.python-version }}
-    runs-on: ubuntu-latest
+    name: Tests / ${{ matrix.os }} / Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        # Phase 19.3 (audit remediation 2026-05-02): expanded from
+        # Linux-only Python matrix to Linux × macOS × Windows ×
+        # Python 3.10/3.11/3.12 + a dedicated arm64 Linux row.
+        # Verifies the durable cross-platform rule with evidence
+        # rather than just intent. Pi tier (pi_zero / pi_5 in
+        # docs/hardware_profiles.md) gets exercised via the arm64
+        # row.
+        os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.10", "3.11", "3.12"]
+        include:
+          - os: ubuntu-24.04-arm
+            python-version: "3.12"
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -32,8 +43,18 @@ jobs:
       - name: Run tests
         run: pytest -q --cov=mythic_vibe_cli --cov-report=term-missing
 
+      # Phase 19.3 (audit remediation 2026-05-02): cross-platform
+      # install + invocation smoke. Catches the "works on my
+      # machine" class of regression that unit tests miss.
+      - name: Smoke test — install + --help + doctor
+        run: |
+          python -m mythic_vibe_cli --help
+          python -m mythic_vibe_cli doctor --json
+          python -m mythic_vibe_cli surface chat --backend matrix --json
+          python -m mythic_vibe_cli ai models --provider anthropic --json
+
   quality:
-    name: Lint, Types, Package
+    name: Lint, Types, Package, Contract
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -50,13 +71,20 @@ jobs:
           python -m pip install -e ".[dev]"
 
       - name: Ruff lint
-        run: ruff check mythic_vibe_cli tests scripts
+        run: ruff check mythic_vibe_cli tests scripts tools
 
       - name: Mypy type check
         run: mypy mythic_vibe_cli
 
       - name: Changelog gate
         run: python scripts/check_changelog.py
+
+      # Phase 19.3 (audit remediation 2026-05-02): docs-↔-code
+      # contract gate from slice 19.2. New handlers added without
+      # documentation fail CI; existing baseline is ratcheted in
+      # tools/contract_audit.py:main.
+      - name: Contract audit gate
+        run: python tools/contract_audit.py --strict
 
       - name: Build package
         run: python -m build
