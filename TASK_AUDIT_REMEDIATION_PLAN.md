@@ -270,6 +270,22 @@ Each phase is independently shippable, ordered by **(real-bug-first, smallest fi
 **Cumulative test delta after Phase B:** 1700 → 1732 (+32). Coverage
 still ≥ 82%. Lint + mypy clean.
 
+### Phase C — closed 2026-05-02
+- **C.1** TUI plugin slash dispatch — commit `39e0497`. Adds an
+  in-process `run_slash` protocol to the plugin layer:
+  `SlashRunResult` dataclass, `PluginHookDispatcher.dispatch_slash`,
+  `SlashCommandInfo.runnable: bool = False` (additive opt-in),
+  `PickerEntry.dispatch_mode` property, and a new
+  `PluginSlashRunScreen` that drives dispatch + renders results.
+  Plugin failures (raise / wrong return type / no handler) all
+  surface as clean error messages. Legacy "(plugin dispatch not
+  yet implemented)" message preserved as final fallback for plugins
+  that opted into neither argv nor runnable. PHASE10_FINALE_CLOSEOUT.md
+  gained an additive update notice.
+
+**Cumulative test delta after Phase C:** 1700 → 1751 (+51). Coverage
+still ≥ 82%. Lint + mypy clean.
+
 ---
 
 ## Progress tracker (live — update after each phase commit)
@@ -282,8 +298,8 @@ Phase A — Surgical real-bug fixes  [CLOSED 2026-05-02]
 Phase B — Dead-code reactivation  [CLOSED 2026-05-02]
   [x] B.1  _matches_command wired into evaluate()       (policy_gate.py)
 
-Phase C — TUI plugin slash dispatch
-  [ ] C.1  picker → dispatcher wiring                   (tui/picker.py + tests)
+Phase C — TUI plugin slash dispatch  [CLOSED 2026-05-02]
+  [x] C.1  picker → dispatcher wiring                   (tui/picker.py + tests)
 
 Phase D — ai models per-provider expansion (static + remote, fully featured)
   [ ] D.1  ModelInfo dataclass + catalog scaffolding    (ai/providers/model_catalog.py or base.py)
@@ -356,3 +372,14 @@ lint + mypy clean, working tree clean and pushed to `development`.
 **Closed so far:** 3 of 8 outstanding findings (audit findings #1, #3,
 #6). 5 remain: chat-bridge poll loop, ai models non-Ollama, TUI plugin
 dispatch, chat_bridge HTTP coverage, yggdrasil/mindspark probes.
+
+### Status (additive update 2026-05-02 — Phase C)
+
+`STATUS: PHASE C CLOSED — ready for Phase D (ai models per-provider, fully featured).`
+
+Live HEAD: `39e0497` (after Phase C). Tests: 1751 passed, 1 skipped,
+lint + mypy clean, working tree clean and pushed to `development`.
+
+**Closed so far:** 4 of 8 outstanding findings (audit findings #1, #3,
+#4, #6). 4 remain: chat-bridge poll loop (E), ai models non-Ollama (D),
+chat_bridge HTTP coverage (F.1), yggdrasil/mindspark probes (F.2).
