@@ -17,6 +17,7 @@ Cross-platform: pure stdlib.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable
@@ -26,6 +27,14 @@ from .constraint_store import (
     SEVERITY_BLOCKING,
     load_constraints,
 )
+
+
+# Additive 2026-05-02 (Phase B of audit remediation): pattern used by
+# the new tag-aware scope helpers below. Recognises ``[command:<name>]``
+# (case-insensitive). Multiple tags inside a single constraint use
+# OR semantics — the constraint applies if ANY tagged name matches
+# the command being evaluated.
+_COMMAND_TAG_PATTERN = re.compile(r"\[command:([^\]]+)\]", re.IGNORECASE)
 
 
 PolicyAction = str  # "read" | "write" | "exec" — narrow vocabulary
@@ -63,8 +72,57 @@ def _matches_command(constraint: Constraint, command: str) -> bool:
     can't miss them.
 
     Tag a constraint with ``[command:<name>]`` to scope it to a
-    specific command (future enhancement; ignored today)."""
+    specific command (future enhancement; ignored today).
+
+    Note (additive 2026-05-02 Phase B of audit remediation): this
+    function's body is preserved verbatim and continues to perform
+    the legacy case-insensitive substring match. Live command
+    scoping inside :func:`evaluate` now consults
+    :func:`_constraint_applies_to_command`, which honours
+    ``[command:<name>]`` tags as the docstring above promised.
+    ``_matches_command`` remains available as a substring-match
+    utility for plugins or callers that prefer the loose semantic.
+    """
     return command.lower() in constraint.text.lower()
+
+
+def _extract_command_tags(constraint: Constraint) -> list[str]:
+    """Return the lowercased command names listed in
+    ``[command:<name>]`` tags within the constraint text. Multiple
+    tags are concatenated; empty list means the constraint carries
+    no scope tag and applies broadly. Whitespace inside a tag is
+    stripped; empty tag values are dropped.
+
+    Examples (informal):
+    - text="never delete data [command:rm]"          -> ["rm"]
+    - text="[command:write] [command:exec] no-op"    -> ["write", "exec"]
+    - text="be brave"                                 -> []
+    """
+    text = (constraint.text or "")
+    matches = _COMMAND_TAG_PATTERN.findall(text)
+    return [m.strip().lower() for m in matches if m.strip()]
+
+
+def _constraint_applies_to_command(
+    constraint: Constraint, command: str
+) -> bool:
+    """Return True if the constraint applies to the given command.
+
+    Scoping rules (additive 2026-05-02 Phase B):
+    - **Untagged constraints** (no ``[command:<name>]`` markers in
+      the text) apply **broadly** to every command. This preserves
+      the original conservative default — operators continue to see
+      every blocking constraint regardless of which command they are
+      running, unless they explicitly opt into scoping.
+    - **Tagged constraints** apply only when ``command`` matches one
+      of the names listed in the constraint's ``[command:<name>]``
+      tags (case-insensitive, leading/trailing whitespace trimmed).
+      Multiple tags inside a single constraint are OR semantics.
+    """
+    tags = _extract_command_tags(constraint)
+    if not tags:
+        return True  # broad default — preserves pre-Phase-B behaviour
+    return command.strip().lower() in tags
 
 
 def evaluate(
@@ -91,12 +149,26 @@ def evaluate(
     # advisory note. List inputs were unaffected (lists support multiple
     # iteration); the bug only fired for generator-style callers.
     constraints = list(constraints)
+
+    # Additive 2026-05-02 (Phase B of audit remediation): apply
+    # `[command:<name>]` tag scoping. Untagged constraints continue to
+    # apply broadly (the conservative pre-Phase-B default); tagged
+    # constraints are filtered to the named command(s) only. Pseudo-
+    # code audit finding #6 caught the existing `_matches_command`
+    # function as defined-but-never-called dead code; the new
+    # `_constraint_applies_to_command` helper realises the docstring's
+    # promised `[command:<name>]` scoping while leaving the legacy
+    # substring matcher intact.
+    scoped_constraints = [
+        c for c in constraints if _constraint_applies_to_command(c, command)
+    ]
+
     violations = [
-        c for c in constraints if c.severity == SEVERITY_BLOCKING
+        c for c in scoped_constraints if c.severity == SEVERITY_BLOCKING
     ]
     requires_override = bool(violations)
     notes: list[str] = []
-    if not violations and any(constraints):
+    if not violations and any(scoped_constraints):
         notes.append(
             f"action={action!r} command={command!r}: "
             "no blocking violations (warn/advisory constraints not gating)"

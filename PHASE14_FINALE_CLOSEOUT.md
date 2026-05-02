@@ -190,3 +190,40 @@ in `EvaluateTests`:
 Test count: 1723 → 1726 (+3). Lint + mypy clean.
 
 — *Sólrún Hvítmynd & Runa, additive correction*
+
+---
+
+## Update Notice — 2026-05-02 Phase B (additive, audit remediation)
+
+The 2026-05-02 pseudo-code audit (`AUDIT_PSEUDOCODE_DEEP_2026-05-02.md`,
+finding #6) caught the `_matches_command()` private function in
+`policy/policy_gate.py:57-67` as defined-but-never-called dead code.
+The function's docstring promised `[command:<name>]` tag scoping
+("Tag a constraint with `[command:<name>]` to scope it to a specific
+command"), but `evaluate()` never called the function — every blocking
+constraint was surfaced for every command regardless of any tag.
+
+**Fix shipped in Phase B (additive, no behaviour regression):**
+- The body of `_matches_command()` is **preserved verbatim** — it
+  remains the legacy substring-match utility, available to plugins
+  or callers that prefer the loose semantic. Its docstring gained
+  an additive 2026-05-02 note explaining the new path.
+- New helpers added: `_extract_command_tags(constraint)` parses
+  `[command:<name>]` tags; `_constraint_applies_to_command(constraint,
+  command)` returns True for untagged constraints (broad default)
+  AND for tagged constraints whose tags list `command`.
+- `evaluate()` now filters constraints through
+  `_constraint_applies_to_command` before evaluating violations.
+  **Untagged constraints continue to apply broadly** — pre-Phase-B
+  behaviour preserved. Tagged constraints are correctly scoped.
+
+Tests: `tests/test_policy_gate.py` `EvaluateTests` gained six new
+tests covering tagged-blocks-named-command, untagged-still-broad,
+case-insensitive tag matching, multi-tag OR semantics, advisory-note
+suppression when all constraints scope away, and mixed
+tagged+untagged filtering.
+
+Test count: 1726 → 1732 (+6). Lint + mypy clean. No regressions
+in the existing 24 policy_gate tests.
+
+— *Sólrún Hvítmynd & Runa, additive correction*

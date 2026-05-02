@@ -173,6 +173,127 @@ class EvaluateTests(unittest.TestCase):
         self.assertTrue(any("no blocking" in n for n in list_decision.notes))
         self.assertTrue(any("no blocking" in n for n in iter_decision.notes))
 
+    # ---- Phase B regression (2026-05-02 audit, finding #6) ------------
+    #
+    # _matches_command was defined-but-never-called. The new
+    # _constraint_applies_to_command honours [command:<name>] tags
+    # (untagged constraints still apply broadly — pre-Phase-B default
+    # preserved). These tests lock the contract.
+
+    def test_tagged_blocking_constraint_blocks_only_named_command(self) -> None:
+        """A blocking constraint tagged ``[command:write]`` blocks
+        ``write`` but not ``oath``."""
+        scoped = Constraint(
+            id="b1",
+            kind="rule",
+            text="never delete data [command:write]",
+            severity=SEVERITY_BLOCKING,
+        )
+        write_decision = evaluate([scoped], action="write", command="write")
+        self.assertFalse(write_decision.allowed)
+        self.assertEqual([c.id for c in write_decision.violations], ["b1"])
+
+        oath_decision = evaluate([scoped], action="write", command="oath")
+        self.assertTrue(oath_decision.allowed)
+        self.assertEqual(oath_decision.violations, [])
+
+    def test_untagged_blocking_constraint_still_applies_broadly(self) -> None:
+        """Pre-Phase-B default preserved: an untagged blocking
+        constraint surfaces for every command."""
+        broad = Constraint(
+            id="b1",
+            kind="rule",
+            text="never break the law",  # no [command:...] tag
+            severity=SEVERITY_BLOCKING,
+        )
+        for command in ("write", "oath", "exec", "anything"):
+            with self.subTest(command=command):
+                decision = evaluate([broad], action="write", command=command)
+                self.assertFalse(decision.allowed)
+                self.assertEqual([c.id for c in decision.violations], ["b1"])
+
+    def test_command_tag_matching_is_case_insensitive(self) -> None:
+        scoped = Constraint(
+            id="b1",
+            kind="rule",
+            text="lock down [command:WRITE]",
+            severity=SEVERITY_BLOCKING,
+        )
+        # Lowercase command name vs upper-case tag.
+        decision = evaluate([scoped], action="write", command="write")
+        self.assertFalse(decision.allowed)
+        self.assertEqual([c.id for c in decision.violations], ["b1"])
+
+    def test_multiple_command_tags_use_or_semantics(self) -> None:
+        scoped = Constraint(
+            id="b1",
+            kind="rule",
+            text="caution [command:write] [command:exec]",
+            severity=SEVERITY_BLOCKING,
+        )
+        # Both 'write' and 'exec' commands are scoped by this constraint;
+        # 'oath' is not.
+        for command in ("write", "exec"):
+            with self.subTest(command=command):
+                decision = evaluate([scoped], action="write", command=command)
+                self.assertFalse(decision.allowed)
+        oath_decision = evaluate([scoped], action="write", command="oath")
+        self.assertTrue(oath_decision.allowed)
+
+    def test_tag_scoped_constraint_for_other_command_omits_advisory_note(
+        self,
+    ) -> None:
+        """When all constraints are tagged for OTHER commands, the
+        scoped subset for THIS command is empty, so the advisory
+        note is correctly omitted (the note exists to acknowledge
+        warn/advisory constraints that apply to this command)."""
+        other_only = Constraint(
+            id="r1",
+            kind="rule",
+            text="advisory note [command:other]",
+            severity=SEVERITY_WARN,
+        )
+        decision = evaluate([other_only], action="write", command="oath")
+        self.assertTrue(decision.allowed)
+        self.assertEqual(decision.violations, [])
+        # No note: scoped_constraints == [] for command 'oath'.
+        self.assertEqual(
+            [n for n in decision.notes if "no blocking" in n],
+            [],
+            f"expected no advisory note for command 'oath' "
+            f"when all constraints are scoped to other commands; got: {decision.notes!r}",
+        )
+
+    def test_mixed_tagged_and_untagged_filters_correctly(self) -> None:
+        """An untagged blocking constraint always blocks; a
+        write-tagged blocking constraint only blocks write."""
+        broad = Constraint(
+            id="b-broad",
+            kind="rule",
+            text="never break the law",
+            severity=SEVERITY_BLOCKING,
+        )
+        write_scoped = Constraint(
+            id="b-write",
+            kind="rule",
+            text="audit writes [command:write]",
+            severity=SEVERITY_BLOCKING,
+        )
+        constraints = [broad, write_scoped]
+
+        write_decision = evaluate(constraints, action="write", command="write")
+        # Both apply for command='write'.
+        self.assertEqual(
+            sorted(c.id for c in write_decision.violations),
+            ["b-broad", "b-write"],
+        )
+
+        oath_decision = evaluate(constraints, action="write", command="oath")
+        # Only the broad untagged one applies for command='oath'.
+        self.assertEqual(
+            [c.id for c in oath_decision.violations], ["b-broad"]
+        )
+
 
 # ---- evaluate_for_root -----------------------------------------------
 
