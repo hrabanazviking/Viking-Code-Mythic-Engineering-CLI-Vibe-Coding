@@ -490,3 +490,80 @@ without blocking the launch.
 
 **Slice 19.7 revised effort:** ~4-5 hours (was 4-6).
 **PH-19 cumulative revised:** **~12-17 hours** (was 12-18).
+
+---
+
+## Update 2026-05-02 — Cross-platform plan fold-ins (additive)
+
+After reading `docs/CROSS_PLATFORM_MULTIPHASE_PLAN.md` (the second
+Codex-authored research plan), three concrete fold-ins land into
+slice **19.3 (CI OS matrix)** before kickoff. The rest of that
+plan is either already done in the codebase (the plan author
+didn't see `hardware.py`, `file_mutation_queue.py`, `FileLock`,
+or `docs/hardware_profiles.md` — all of which already cover what
+the plan recommends) or correctly deferred to post-v1.0.
+
+### 19.3 expansion — three additions
+
+**Original 19.3:** Linux × macOS × Windows × Python 3.10/3.11/3.12 matrix.
+
+**Now adds:**
+
+1. **`ubuntu-24.04-arm` runner row.** GitHub Actions provides a
+   free arm64 Linux runner for public repos. Adding it verifies
+   that the Pi tier (`pi_zero` / `pi_5` profiles already
+   documented in `docs/hardware_profiles.md`) actually runs the
+   test suite on its target architecture. ~1 hour.
+
+2. **Cross-platform install smoke test.** One job per OS that runs:
+   ```bash
+   pip install .
+   mythic-vibe --help
+   mythic-vibe doctor
+   mythic-vibe surface chat --backend matrix    # legacy scaffolding-and-exit
+   ```
+   Asserts exit-0 and expected output on each platform. Catches
+   the "works on my machine" class of regression that unit tests
+   miss. ~1 hour.
+
+3. **Windows long-path test.** Single regression test that creates
+   a path > 260 chars (the historical Windows MAX_PATH limit) and
+   exercises file_mutation_queue + FileLock against it. Catches
+   the long-path gotcha most cross-platform Python projects hit
+   eventually. ~30 minutes.
+
+### Slice 19.3 revised effort: **~3-4 hours** (was 1-2)
+### PH-19 cumulative revised: **~14-19 hours** (was 12-17)
+
+### Cross-platform plan items deferred to v1.x or PH-21+
+
+For the durable record of decisions:
+
+| Plan item | Defer to | Why |
+|---|---|---|
+| Single-file executables (PyInstaller / Nuitka) | v1.x | PyPI/Brew/Scoop cover install needs |
+| Container/OCI image | v1.x | Useful for CI agents but not v1.0 essential |
+| Android/Termux formal support | post-v1.0 | Termux works through PyPI today |
+| Native Android wrapper app | indefinite | Months of work; not on Volmarr's priority list |
+| SBOM generation | v1.x | CI overhead; checksums (20.6) cover integrity |
+| Wheelhouse offline install | v1.x | Niche use case |
+| macOS notarization | with PyInstaller defer | Only relevant for signed binaries |
+| Reproducible builds + tag signing | v1.x | Sigstore infra; checksums first |
+| Rust/Go launcher shim | v2.0 strategic | Months of work |
+| WASI experimental runtime | indefinite | Pure speculation |
+
+### Cross-platform plan items already covered by existing code
+(captured here so future readers don't re-relitigate them)
+
+| Plan recommendation | Already exists at |
+|---|---|
+| Platform detection helper module | `mythic_vibe_cli/hardware.py` (PH-06 slice 6.6) |
+| Path/data-dir abstraction | `mythic_vibe_cli/config.py` |
+| Atomic write + Windows-safe locking | `runtime/file_mutation_queue.py`, `persistence/json_store.py:FileLock` |
+| `pathlib` standardization | Already used throughout |
+| `utf-8` encoding default | Used throughout |
+| Raspberry Pi support tier | `docs/hardware_profiles.md` (`pi_zero`, `pi_5`) |
+| `doctor` with platform diagnostics | `cmd_doctor` + `hardware.py` integration |
+| Optional heavy deps as extras | `pyproject.toml` already has `[ai]`, `[tui]`, `[voice]`, `[mindspark]`, `[wyrd]`, etc. |
+| Compatibility changelog section | Folded into 19.6 (compatibility policy) |
+| PowerShell completion script | `mythic-vibe completion --shell powershell` already exists per the slash catalog |
