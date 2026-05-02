@@ -969,3 +969,78 @@ fixing every known bug before launch is the highest-ROI work we
 can do.
 
 `STATUS: DRAFT — ALL DECISIONS LOCKED, ALL BUGS FOLDED INTO 19.0 — READY FOR KICKOFF ON COMMAND`
+
+---
+
+## Status update 2026-05-02 — Phase 19.0 in progress, 3 of 10 sub-fixes shipped
+
+`STATUS: OPEN — PHASE 19.0 IN PROGRESS — 3/10 SUB-FIXES SHIPPED`
+
+Volmarr's "go for BS-1" → "go for BS-2" → "go for BS-3" cycle.
+All three High-severity bug-sweep findings are now closed in
+clean per-fix commits:
+
+### Slice 19.0 progress ledger
+
+| Tag | Sev | What | Commit | Status |
+|---|---|---|---|---|
+| BS-1 | **High** | web_terminal DoS protection (MAX_REQUEST_BODY_BYTES + HTTP 413 + socket timeout) | `fff73f6` | ✅ closed |
+| BS-2 | **High** | mcp_client hang protection (reader-thread queue with timeout + max_discard bound) | `6575fd3` | ✅ closed |
+| BS-3 | **High** | exec_command timeouts (DEFAULT_EXEC_TIMEOUT_SECONDS=300 wired into 4 call-sites) | `a7846cf` | ✅ closed |
+| BS-4 | Medium | chat_bridge_loop Telegram backoff order | — | pending |
+| BS-5 | Medium | forge_ledger atomic write | — | pending |
+| BS-6 | Medium | cross-process locking module + wire-in | — | pending |
+| L-7 | Low | remove dead "succeeded" sentinel | — | pending |
+| L-8 | Low | wire should_use_narrow_layout into TUI | — | pending |
+| L-9 | Low | fix test_elapsed_ms_recorded timer flake | — | pending |
+| L-10 | Low | atomic_write helper + route artifact writes | — | pending |
+
+### Quality gates at this checkpoint
+
+- **Tests:** post-remediation 1875 → **1890 passed (+15 from 19.0 work to date)**, 1 skipped, 54 subtests passed.
+- **Coverage:** still ≥ 82%.
+- **Lint (ruff):** clean.
+- **Type (mypy):** clean.
+- **Working tree:** clean, in sync with `origin/development`.
+
+### What changed in those 3 commits
+
+**`fff73f6` — BS-1 (web_terminal DoS):**
+- New constants `MAX_REQUEST_BODY_BYTES = 65_536`, `DEFAULT_SOCKET_TIMEOUT_SECONDS = 30.0`.
+- `WebTerminalConfig` gained `max_request_body_bytes` + `socket_timeout_seconds` fields with safe defaults.
+- `_read_json_body` rejects oversized `Content-Length` with HTTP 413 **before** calling `rfile.read()`.
+- `WebTerminalServer.start` applies `httpd.socket.settimeout(...)` when `socket_timeout_seconds > 0.0`.
+- 4 new tests using raw socket (urllib auto-overrides Content-Length).
+
+**`6575fd3` — BS-2 (mcp_client hang):**
+- New constants `DEFAULT_READ_TIMEOUT_SECONDS = 30.0`, `DEFAULT_MAX_DISCARD = 1000`.
+- Daemon reader thread pumps `readline()` → `queue.Queue`; `_read_one` does `queue.get(timeout=...)`.
+- `call()` discard loop bounded by `max_discard`.
+- Env-var configurable via `MYTHIC_MCP_READ_TIMEOUT` and `MYTHIC_MCP_MAX_DISCARD`.
+- Legacy `read_timeout_seconds=0.0` path preserved (direct readline) for opt-out callers.
+- 7 new tests across 3 classes (timeout enforcement, discard bound, env-var config).
+
+**`a7846cf` — BS-3 (exec_command timeouts):**
+- New constant `DEFAULT_EXEC_TIMEOUT_SECONDS = 300.0` in `runtime/exec.py`.
+- Wired into 4 call-sites: `scanner._run_git`, `handoff._git`, `verify/git_diff._git`, `verify/test_runner.run_command`.
+- 3 new tests: locks the constant value, proves the timeout actually engages (0.5s timeout kills 5s sleep in <4s), confirms all 4 modules import the same constant.
+
+### Operational discipline confirmed
+
+Three commits, three sub-fixes, no batching. Each commit:
+- Targets exactly one bug-sweep finding.
+- Adds new constants / fields / helpers without removing existing
+  behaviour (legacy fallbacks preserved where applicable).
+- Includes regression tests that would fail against the un-fixed
+  code (verified for BS-1 + BS-3 directly; BS-2's queue-timeout
+  test is constructively positive).
+- ruff + mypy + pytest gating before push.
+- Detailed commit message referencing the audit finding tag.
+
+### Next pickable
+
+**BS-4 (Telegram backoff order)** is the smallest remaining item
+(~15 min, ~5 lines of code + a test tightening). Natural next
+step in the cadence.
+
+`STATUS: OPEN — PHASE 19.0 IN PROGRESS — AWAITING "go for BS-4" OR ALTERNATIVE`
