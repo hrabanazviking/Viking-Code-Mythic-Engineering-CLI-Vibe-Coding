@@ -115,7 +115,9 @@ class MindSparkProvider:
             )
 
         try:
-            content = _invoke_thoughtforge(self._module, view.text)
+            content, entry_point_label = _invoke_thoughtforge(
+                self._module, view.text
+            )
         except Exception as exc:  # noqa: BLE001 — never crash the CLI on island misbehaviour
             return ProviderResponse(
                 provider=self.name,
@@ -147,17 +149,56 @@ class MindSparkProvider:
             metadata={
                 "source": "mindspark",
                 "agent_bias": "planner",
+                # Phase F.2 2026-05-02 (audit remediation, #8): record
+                # which entry point was used so operators can see at a
+                # glance whether the documented primary path or the
+                # legacy fallback fired.
+                "entry_point": entry_point_label,
             },
         )
 
 
-def _invoke_thoughtforge(module: Any, prompt: str) -> str:
-    """Best-effort dispatch into the thoughtforge package. Tries a
-    couple of common shapes — ``plan(prompt)``, ``cognition.plan(prompt)``,
-    ``cognition.scaffold.plan(prompt)``, ``ask(prompt)`` — and
-    returns the string result. Anything else raises
-    :class:`AttributeError` so the adapter's caller logs the
-    contract gap into ``metadata["error"]``."""
+def _invoke_thoughtforge(module: Any, prompt: str) -> tuple[str, str]:
+    """Dispatch into the thoughtforge package and return
+    ``(response_text, entry_point_label)``.
+
+    Phase F.2 2026-05-02 (audit remediation, finding #8): the
+    documented primary entry point is now used first —
+    ``thoughtforge.cognition.ThoughtForgeCore`` instantiated with
+    default config, then ``.think(prompt)`` returning a
+    ``FinalResponseRecord`` whose ``.text`` field carries the
+    response (verified against MindSpark_ThoughtForge HEAD on
+    2026-05-02; ``ThoughtForgeCore`` is exported from
+    ``thoughtforge.cognition.__init__`` as part of the public API).
+
+    The legacy speculative probe loop is **preserved as a fallback**
+    per the additive-only rule, so any future / fork variant of the
+    package exposing a top-level ``plan(prompt)`` / ``ask(prompt)``
+    callable still works without code change.
+
+    Raises :class:`AttributeError` only when neither the documented
+    primary path nor any legacy candidate resolves — the adapter's
+    caller then reports the contract gap via ``metadata["error"]``.
+    """
+    # ---- Documented primary path: ThoughtForgeCore.think() -----------
+    # Resolved through ``thoughtforge.cognition`` (preferred) with a
+    # fallback through ``thoughtforge.cognition.core``. Only the
+    # AttributeError / ImportError outcomes fall through to the
+    # legacy probes — real runtime errors (config / db missing) are
+    # caught by the outer try/except in the provider's ``run()`` and
+    # reported faithfully to the operator.
+    core_cls = _resolve_thoughtforge_core_class(module)
+    if core_cls is not None:
+        core = core_cls()
+        record = core.think(prompt)
+        text = getattr(record, "text", None)
+        if isinstance(text, str):
+            return text, "thoughtforge.cognition.ThoughtForgeCore.think"
+        # If `think()` returned something other than a record-with-text,
+        # fall through to legacy probes — the modern API contract was
+        # not honoured, possibly an older fork.
+
+    # ---- Legacy speculative probe loop (preserved fallback) ----------
     candidates = (
         "plan",
         "cognition.plan",
@@ -172,11 +213,46 @@ def _invoke_thoughtforge(module: Any, prompt: str) -> str:
             if target is None:
                 break
         if callable(target):
-            return str(target(prompt))
+            return str(target(prompt)), f"legacy:thoughtforge.{attr_path}"
     raise AttributeError(
-        "thoughtforge package does not expose a known entry point "
-        f"(tried: {', '.join(candidates)})"
+        "thoughtforge package does not expose a documented entry "
+        "point. Tried documented: thoughtforge.cognition.ThoughtForgeCore.think; "
+        f"legacy: {', '.join(candidates)}."
     )
+
+
+def _resolve_thoughtforge_core_class(module: Any) -> Any | None:
+    """Locate ``ThoughtForgeCore`` from the thoughtforge package.
+
+    Tries (in order): ``module.cognition.ThoughtForgeCore`` (the
+    public re-export from ``cognition/__init__.py`` if cognition is
+    already imported), then a direct
+    ``from thoughtforge.cognition import core`` fallback to trigger
+    the sub-package import (since ``import thoughtforge`` alone does
+    not eagerly import sub-packages).
+
+    Returns the class or ``None`` if neither resolves. The fallback
+    direct import is **gated on ``module.__name__ == "thoughtforge"``**
+    so test fakes (``_Empty()``, ``MagicMock()``, etc.) don't
+    accidentally pull in the real thoughtforge package — only the
+    operator's chosen module is honoured for resolution."""
+    cognition_pkg = getattr(module, "cognition", None)
+    if cognition_pkg is not None:
+        cls = getattr(cognition_pkg, "ThoughtForgeCore", None)
+        if cls is not None:
+            return cls
+    # Fallback: only trigger the direct sub-package import when
+    # ``module`` is in fact the real ``thoughtforge`` package. For
+    # any other module (test fakes, alternative forks), we honour
+    # what the caller passed in and don't sneak around behind their
+    # back.
+    if getattr(module, "__name__", "") != "thoughtforge":
+        return None
+    try:
+        from thoughtforge.cognition import core as _tf_core  # type: ignore[import-not-found]
+    except ImportError:
+        return None
+    return getattr(_tf_core, "ThoughtForgeCore", None)
 
 
 __all__ = [

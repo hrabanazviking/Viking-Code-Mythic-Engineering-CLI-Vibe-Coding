@@ -128,6 +128,14 @@ class RunRealPathTests(unittest.TestCase):
         self.assertEqual(response.content, "cognition.plan reply")
 
     def test_unknown_shape_returns_error_metadata(self) -> None:
+        # Phase F.2 (audit remediation 2026-05-02, finding #8) note:
+        # the new resolver gates the thoughtforge.cognition direct-
+        # import fallback on ``module.__name__ == "thoughtforge"``
+        # so test fakes don't pull in the real package. ``_Empty``
+        # has no ``__name__`` set and no ``cognition`` attribute,
+        # so the documented primary path returns None and the
+        # legacy probe loop runs against the empty module —
+        # raising AttributeError as in the pre-Phase-F.2 contract.
         class _Empty:
             pass
 
@@ -146,6 +154,100 @@ class RunRealPathTests(unittest.TestCase):
         response = provider.run({"text": "x", "packet_id": "PKT-X"})
         self.assertEqual(response.content, "")
         self.assertEqual(response.metadata.get("error"), "planner blew up")
+
+
+# ---- Phase F.2 (audit remediation 2026-05-02, finding #8) ------------
+#
+# Documented entry-point detection: ``ThoughtForgeCore.think()`` is
+# now the primary path; the legacy probe loop is a fallback.
+
+
+class ThoughtForgeCorePrimaryPathTests(unittest.TestCase):
+    """The documented primary path uses
+    ``thoughtforge.cognition.ThoughtForgeCore`` instantiated, then
+    ``.think(prompt)`` returning a record whose ``.text`` is the
+    response. Resolves through the passed module's ``cognition``
+    attribute (already-imported sub-package) without sneaking into
+    the real thoughtforge package for non-thoughtforge modules."""
+
+    def setUp(self) -> None:
+        self._previous = os.environ.get(ISLAND_ENABLED_ENV)
+        os.environ[ISLAND_ENABLED_ENV] = "1"
+
+    def tearDown(self) -> None:
+        if self._previous is None:
+            os.environ.pop(ISLAND_ENABLED_ENV, None)
+        else:
+            os.environ[ISLAND_ENABLED_ENV] = self._previous
+
+    def _build_fake_thoughtforge(self, response_text: str = "ok-thoughtforge"):
+        """Construct a fake ``thoughtforge``-shaped module with a
+        ``cognition.ThoughtForgeCore`` class whose instance's
+        ``.think()`` returns a record with the given text."""
+        import types
+
+        class FakeRecord:
+            def __init__(self, text: str) -> None:
+                self.text = text
+
+        class FakeCore:
+            def think(self, prompt: str):
+                return FakeRecord(f"{response_text}: {prompt}")
+
+        cog = types.SimpleNamespace(ThoughtForgeCore=FakeCore)
+        # __name__ deliberately not "thoughtforge" so the resolver
+        # doesn't try the direct-import fallback on this fake.
+        return types.SimpleNamespace(cognition=cog, __name__="fake-thoughtforge")
+
+    def test_primary_path_dispatches_through_thoughtforge_core_think(
+        self,
+    ) -> None:
+        from mythic_vibe_cli.ai.providers.mindspark import _invoke_thoughtforge
+
+        fake = self._build_fake_thoughtforge("answered")
+        text, label = _invoke_thoughtforge(fake, "ping")
+        self.assertEqual(text, "answered: ping")
+        self.assertEqual(label, "thoughtforge.cognition.ThoughtForgeCore.think")
+
+    def test_run_metadata_records_documented_entry_point(self) -> None:
+        provider = MindSparkProvider()
+        provider._module = self._build_fake_thoughtforge()
+        response = provider.run({"text": "hi", "packet_id": "PKT-X"})
+        self.assertEqual(
+            response.metadata.get("entry_point"),
+            "thoughtforge.cognition.ThoughtForgeCore.think",
+        )
+
+    def test_falls_back_to_legacy_probe_when_no_core_class(self) -> None:
+        """If the module exposes a legacy ``plan(prompt)`` callable
+        but no ``cognition.ThoughtForgeCore``, the legacy probe loop
+        should still resolve and label the entry point with the
+        ``legacy:`` prefix."""
+        from mythic_vibe_cli.ai.providers.mindspark import _invoke_thoughtforge
+
+        fake = mock.MagicMock(spec=["plan", "__name__"])
+        fake.__name__ = "fake-fork"
+        fake.plan = lambda prompt: f"plan:{prompt}"
+        text, label = _invoke_thoughtforge(fake, "x")
+        self.assertEqual(text, "plan:x")
+        self.assertTrue(label.startswith("legacy:thoughtforge."))
+        self.assertIn("plan", label)
+
+    def test_resolver_does_not_fall_back_for_non_thoughtforge_modules(
+        self,
+    ) -> None:
+        """The resolver must NOT trigger
+        ``from thoughtforge.cognition import core`` when ``module``
+        is not the real thoughtforge package — protects against
+        test fakes accidentally pulling in real implementations."""
+        from mythic_vibe_cli.ai.providers.mindspark import (
+            _resolve_thoughtforge_core_class,
+        )
+
+        class _Empty:
+            __name__ = "definitely-not-thoughtforge"
+
+        self.assertIsNone(_resolve_thoughtforge_core_class(_Empty()))
 
 
 class RegistryIntegrationTests(unittest.TestCase):
