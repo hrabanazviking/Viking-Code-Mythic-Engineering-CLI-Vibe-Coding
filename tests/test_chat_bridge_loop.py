@@ -583,9 +583,57 @@ class RunTelegramLoopTests(unittest.TestCase):
             handler=lambda _t: None,
             clock_sleep=sleeps.append,
             backoff=_Backoff(base=0.05, factor=2.0, cap=1.0),
-            max_iterations=2,
+            max_iterations=4,  # 4 ok=false iterations -> 4 backoff sleeps
         )
-        self.assertGreaterEqual(len(sleeps), 1)
+        # Phase 19.0 / BS-4 (audit remediation 2026-05-02): the
+        # original assertion was only ``len(sleeps) >= 1`` which
+        # the buggy flat-spin behaviour also satisfied. Now we
+        # assert the backoff actually grows: the first 3 sleeps
+        # should exhibit the configured factor=2.0 ladder
+        # (0.05 → 0.10 → 0.20 → 0.40), capped at 1.0s. Pre-fix
+        # the loop reset bo on every iteration so all sleeps were
+        # 0.05s.
+        self.assertGreaterEqual(len(sleeps), 4)
+        self.assertEqual(sleeps[0], 0.05)
+        self.assertEqual(sleeps[1], 0.10)
+        self.assertEqual(sleeps[2], 0.20)
+        self.assertEqual(sleeps[3], 0.40)
+        # Monotonic non-decreasing across the captured ladder.
+        for prev, current in zip(sleeps, sleeps[1:]):
+            self.assertGreaterEqual(current, prev)
+
+    def test_ok_true_response_resets_backoff(self) -> None:
+        """Phase 19.0 / BS-4 regression: after the spin fix, a
+        successful ok=true response must STILL reset the backoff
+        counter so a transient ok=false followed by recovery
+        starts the next failure cycle from the base, not from
+        wherever it left off."""
+        cfg = self._config()
+        sleeps: list[float] = []
+        responses: list[dict] = [
+            {"ok": False, "description": "bad-1"},  # delay grows: 0.05
+            {"ok": False, "description": "bad-2"},  # delay grows: 0.10
+            {"ok": True, "result": []},             # reset (no sleep recorded)
+            {"ok": False, "description": "bad-3"},  # delay back to base: 0.05
+        ]
+
+        def fake_transport(_cfg, offset):
+            return responses.pop(0)
+
+        run_telegram_loop(
+            cfg,
+            transport=fake_transport,
+            sender=lambda *a, **kw: {},
+            handler=lambda _t: None,
+            clock_sleep=sleeps.append,
+            backoff=_Backoff(base=0.05, factor=2.0, cap=1.0),
+            max_iterations=4,
+        )
+        # 3 ok=false → 3 sleeps; ok=true sleeps nothing.
+        self.assertEqual(len(sleeps), 3)
+        self.assertEqual(sleeps[0], 0.05)   # first failure: base
+        self.assertEqual(sleeps[1], 0.10)   # second consecutive: factor
+        self.assertEqual(sleeps[2], 0.05)   # after ok=true reset: base again
 
 
 # --------------------------------------------------------------------------- #

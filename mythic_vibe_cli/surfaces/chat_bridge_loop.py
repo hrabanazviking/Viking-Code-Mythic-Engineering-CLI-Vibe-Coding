@@ -403,12 +403,30 @@ def run_telegram_loop(
             clock_sleep(delay)
             continue
 
-        bo.reset()
+        # Phase 19.0 / BS-4 (additive 2026-05-02 audit remediation):
+        # ``bo.reset()`` is gated behind the ok=true check so a
+        # persistent ``ok=false`` response (e.g. Bot API rate-limit
+        # or auth issue) produces an exponentially-growing backoff
+        # rather than a flat 1.0s spin. Pre-fix the reset ran
+        # unconditionally — every iteration started at attempt=0,
+        # so next_delay() always returned the base. The audit
+        # ``test_ok_false_triggers_backoff_continue`` covering this
+        # asserted only ``len(sleeps) >= 1``, which the spin
+        # behaviour also satisfied; the assertion has since been
+        # tightened to require monotonically-increasing delays.
         if not payload.get("ok", True):
-            # Bot API returned ok=false — likely 4xx-shaped, log + continue.
-            _log("telegram", f"getUpdates returned ok=false: {payload!r}")
-            clock_sleep(bo.next_delay())
+            # Bot API returned ok=false — likely 4xx-shaped, log + continue
+            # WITHOUT resetting the backoff counter. Each consecutive
+            # ok=false grows the next sleep until the cap.
+            delay = bo.next_delay()
+            _log(
+                "telegram",
+                f"getUpdates returned ok=false: {payload!r}; backoff {delay:.1f}s",
+            )
+            clock_sleep(delay)
             continue
+        # ok=true — reset the backoff counter. Real recovery.
+        bo.reset()
 
         messages = _telegram_extract_messages(payload)
         for update_id, chat_id, user_id, text in messages:
