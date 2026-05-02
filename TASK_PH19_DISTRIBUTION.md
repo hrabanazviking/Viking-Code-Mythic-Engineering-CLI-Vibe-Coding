@@ -716,3 +716,67 @@ slice. The expansion only adds work AFTER what was already planned;
 nothing reshuffles the front of the queue.
 
 `STATUS (revised): DRAFT — DECISIONS LOCKED, ALL ITEMS IN SCOPE — AWAITING FINAL GO/NO-GO ON KICKOFF`
+
+---
+
+## Update 2026-05-02 — Final two confirmations resolved (additive)
+
+Volmarr's call:
+1. **macOS notarization (21.4):** **skip — ship un-notarized binaries.**
+2. **PH-22 stretch items:** **keep all three** (22.1 + 22.2 + 22.3).
+
+### 21.4 rescoped — Gatekeeper override docs instead of full notarization
+
+Slice 21.4 changes from "macOS notarization" (Apple Developer
+account, ~3-4h workflow + $99/year) to a much smaller scope:
+
+**21.4 (rescoped) — macOS Gatekeeper override documentation.** When
+operators run a PyInstaller/Nuitka-built `mythic-vibe` binary on
+macOS for the first time, Gatekeeper will block it with a "cannot be
+opened because it is from an unidentified developer" dialog. The
+release docs (`docs/INSTALL.md` + per-platform guides folded into
+21.7/21.8/21.9) need a clear "How to bypass Gatekeeper on first
+launch" section covering:
+- Right-click → Open (the operator-friendly path)
+- `xattr -d com.apple.quarantine /path/to/mythic-vibe` (the CLI path)
+- Why we ship un-notarized (operator-sovereignty + open-source
+  philosophy + no $99/yr Apple tax)
+
+**21.4 revised effort: ~30 minutes** (was 3-4h). **PH-21 cumulative
+revised: ~32-43h** (was 35-46h).
+
+If operator demand for notarization grows post-v1.0, the plan can
+revisit by adding a separate v1.x slice with the Apple Developer
+account work.
+
+### PH-22 confirmed in scope
+
+All three stretch items remain in the plan:
+
+- **22.1** Rust / Go launcher shim — ~2-4 weeks
+- **22.2** Native Android wrapper app — ~3-6 weeks
+- **22.3** WASI experimental runtime — ~4+ weeks (speculative)
+
+PH-22 cumulative: **~9-14 weeks** when all three are pursued in
+sequence. Operating expectation: PH-22 is **post-v1.0 R&D**, not
+gating any release. v1.0 ships at the end of PH-20; v1.x channels
+ship after PH-21; v2.0 emerges from PH-22 work as the strategic
+items mature.
+
+### Final cumulative totals (decisions locked)
+
+| Tier | Slices | Hours / weeks | Calendar at our pace |
+|---|---|---|---|
+| v1.0 launch gate (PH-19 + PH-20) | **27** | ~58-76h | ~6-8 working days |
+| v1.x expansion (PH-21) | **9** | ~32-43h | ~4-5 working days |
+| v2.0 stretch (PH-22) | **3** | ~360-560h | ~9-14 weeks |
+| **All phases** | **39** | ~450-680h | — |
+
+### Status (final, decisions complete)
+
+`STATUS: DRAFT — ALL DECISIONS LOCKED — READY FOR KICKOFF ON COMMAND`
+
+Volmarr's word **"go for PH-19"** flips the file's live status to
+`OPEN — PHASE 19.1 KICKOFF` and the cycle begins. First commit:
+slice 19.1 (JSON contract snapshot tests) — smallest, safest, zero
+production-code change.
