@@ -176,12 +176,33 @@ Each phase is independently shippable, ordered by **(real-bug-first, smallest fi
 
 ---
 
+## Phase closeouts (additive — appended as each phase ships)
+
+### Phase A — closed 2026-05-02
+- **A.1** Chatterbox TTS adapter — commit `6f60e57`. Adds modern-API
+  detection (`ChatterboxTTS` / `ChatterboxMultilingualTTS` via
+  `from_pretrained` → `generate` → `torchaudio.save`) before the
+  legacy `speak()` probe (preserved as fallback). 23 new tests, all
+  failure branches covered. PHASE7_FINALE_CLOSEOUT.md gained an
+  additive 2026-05-02 update notice.
+- **A.2** policy_gate iterable exhaustion — commit `8578698`. Adds
+  `constraints = list(constraints)` at the top of `evaluate()`;
+  list-comp + `any()` check now operate on the same materialised
+  list. 3 new regression tests (one verified to fail against
+  un-fixed code). PHASE14_FINALE_CLOSEOUT.md gained an additive
+  2026-05-02 update notice.
+
+**Cumulative test delta:** 1700 → 1726 (+26 from Phase A).
+**Coverage:** still ≥ 82% (no regression). Lint + mypy clean.
+
+---
+
 ## Progress tracker (live — update after each phase commit)
 
 ```
-Phase A — Surgical real-bug fixes
-  [ ] A.1  Chatterbox TTS adapter                       (voice/tts.py, voice tests)
-  [ ] A.2  policy_gate iterable exhaustion              (policy_gate.py, new test)
+Phase A — Surgical real-bug fixes  [CLOSED 2026-05-02]
+  [x] A.1  Chatterbox TTS adapter                       (voice/tts.py, voice tests)
+  [x] A.2  policy_gate iterable exhaustion              (policy_gate.py, new test)
 
 Phase B — Dead-code reactivation
   [ ] B.1  _matches_command wired into evaluate()       (policy_gate.py)
@@ -234,3 +255,12 @@ Phase G — Audit re-run + closeout
 ## Status
 
 `STATUS: PLAN WRITTEN — AWAITING VOLMARR'S GO-AHEAD AND PHASE A KICKOFF`
+
+---
+
+### Status (additive update 2026-05-02)
+
+`STATUS: PHASE A CLOSED — ready for Phase B (`_matches_command` reactivation).`
+
+Live HEAD: `8578698` (after Phase A.2). Tests: 1726 passed, 1 skipped,
+lint + mypy clean, working tree clean and pushed to `development`.
