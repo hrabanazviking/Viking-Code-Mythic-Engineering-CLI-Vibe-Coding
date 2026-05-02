@@ -75,10 +75,17 @@ def new_verification_id() -> str:
 
 
 def write_verification_artifact(root: Path, artifact: VerificationArtifact, *, promote_latest: bool = True) -> Path:
+    # Phase 19.0 / L-10 (additive 2026-05-02 audit remediation):
+    # route artifact writes through atomic_write_text so a process
+    # kill mid-write leaves either the prior good artifact or the
+    # new one — never a half-written truncated file.
+    from ..runtime.atomic_write import atomic_write_text
+
     ver_dir = verification_dir(root)
     ver_dir.mkdir(parents=True, exist_ok=True)
     path = verification_path(root, artifact.verification_id)
-    path.write_text(json.dumps(artifact.to_dict(), indent=2) + "\n", encoding="utf-8")
+    payload = json.dumps(artifact.to_dict(), indent=2) + "\n"
+    atomic_write_text(path, payload)
     if promote_latest:
-        latest_verification_path(root).write_text(json.dumps(artifact.to_dict(), indent=2) + "\n", encoding="utf-8")
+        atomic_write_text(latest_verification_path(root), payload)
     return path
