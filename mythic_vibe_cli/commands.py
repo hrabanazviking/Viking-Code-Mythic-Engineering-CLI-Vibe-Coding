@@ -3284,12 +3284,20 @@ def cmd_surface_ssh_doctor(args: argparse.Namespace) -> int:
 
 
 def cmd_surface_chat(args: argparse.Namespace) -> int:
-    """PH-17 Slice 17.4 - chat bridge scaffolding entry.
+    """PH-17 Slice 17.4 + Phase E (audit remediation 2026-05-02) -
+    chat bridge surface.
 
-    The actual long-poll loop lives in surfaces/chat_bridge.py
-    and requires backend credentials. This handler is a
-    diagnostic / scaffolding entry - operators wire their own
-    credential management before running the loop.
+    Default behaviour (no ``--run`` flag): the original 17.4
+    scaffolding-and-exit entry — prints a notice and returns
+    SUCCESS. Preserved verbatim for back-compat with the original
+    slice contract.
+
+    With ``--run``: starts the long-poll loop for the chosen
+    backend (Matrix ``/sync`` or Telegram ``getUpdates``). Requires
+    the master gate ``MYTHIC_CHAT_BRIDGE_ENABLED=1`` (default off,
+    durable rule) plus an explicit allowlist via
+    ``MYTHIC_CHAT_<BACKEND>_ALLOWED_*`` env vars or a ``--config``
+    file. Honours SIGINT / SIGTERM for clean shutdown.
     """
     backend = str(getattr(args, "backend", "") or "").lower()
     if backend not in {"matrix", "telegram"}:
@@ -3298,6 +3306,13 @@ def cmd_surface_chat(args: argparse.Namespace) -> int:
             "Both are open-source-friendly; Matrix is the default."
         )
         return USER_INPUT_ERROR
+
+    # Phase E.3 2026-05-02 (audit remediation, finding #2): if the
+    # operator passed --run, dispatch the long-poll loop for the
+    # chosen backend. The legacy scaffolding-and-exit body below
+    # this branch is preserved unchanged.
+    if bool(_flag(args, "run")):
+        return _cmd_surface_chat_run(args, backend)
 
     from .surfaces.chat_bridge import COMMAND_PREFIX
 
@@ -3310,7 +3325,8 @@ def cmd_surface_chat(args: argparse.Namespace) -> int:
             "This is the slice 17.4 scaffolding entry. The chat "
             "bridge's poll loop expects credentials supplied by "
             "your own deployment script (e.g. systemd EnvironmentFile, "
-            "1Password CLI, vault). See docs/SSH_DEPLOYMENT.md."
+            "1Password CLI, vault). See docs/SSH_DEPLOYMENT.md. "
+            "Pass --run to start the long-poll loop (Phase E)."
         ),
     }
     if _flag(args, "json"):
@@ -3319,6 +3335,117 @@ def cmd_surface_chat(args: argparse.Namespace) -> int:
 
     write_line(f"Chat bridge ({backend}) - scaffolding entry")
     write_line(payload["note"])
+    return SUCCESS
+
+
+# Additive 2026-05-02 (Phase E.3): the long-poll dispatch path.
+# Kept as a private helper so the scaffolding-and-exit body of
+# cmd_surface_chat above remains a pure read-only diagnostic.
+def _cmd_surface_chat_run(args: argparse.Namespace, backend: str) -> int:
+    import signal
+    import threading
+
+    from .surfaces.chat_bridge import (
+        CHAT_BRIDGE_ENABLED_ENV,
+        ChatBridgeConfigError,
+        MatrixConfig,
+        TelegramConfig,
+        is_chat_bridge_enabled,
+    )
+    from .surfaces.chat_bridge_loop import run_matrix_loop, run_telegram_loop
+
+    # Master gate — operator must explicitly opt in to the bridge
+    # surface (durable rule for default-off feature gates).
+    if not is_chat_bridge_enabled():
+        write_error(
+            f"Chat bridge surface is disabled. Set "
+            f"{CHAT_BRIDGE_ENABLED_ENV}=1 in the environment to enable. "
+            "(Default-off per the chat-bridge security policy.)"
+        )
+        return USER_INPUT_ERROR
+
+    config_path_str = str(getattr(args, "config", "") or "").strip()
+    config_path = Path(config_path_str) if config_path_str else None
+    max_iterations = getattr(args, "max_iterations", None)
+
+    # Build + validate the per-backend config.
+    try:
+        if backend == "matrix":
+            config = MatrixConfig.from_sources(config_path=config_path)
+            config.validate()
+        else:  # telegram
+            config = TelegramConfig.from_sources(config_path=config_path)
+            config.validate()
+    except ChatBridgeConfigError as exc:
+        write_error(f"Chat bridge config error: {exc}")
+        return USER_INPUT_ERROR
+
+    # Signal handlers → stop_event for clean shutdown. SIGINT is
+    # always available; SIGTERM exists on POSIX. We install whatever
+    # the platform provides.
+    stop_event = threading.Event()
+    previous_handlers: dict[int, object] = {}
+
+    def _on_signal(signum: int, frame: object) -> None:  # noqa: ANN001
+        write_line(f"(chat-bridge {backend}) signal {signum} received; stopping...")
+        stop_event.set()
+
+    for sig_name in ("SIGINT", "SIGTERM"):
+        sig = getattr(signal, sig_name, None)
+        if sig is None:
+            continue
+        try:
+            previous_handlers[sig] = signal.getsignal(sig)
+            signal.signal(sig, _on_signal)
+        except (ValueError, OSError):
+            # signal.signal must be called from the main thread; tests
+            # / TUI invocations may not have that luxury. Skip the
+            # registration; loop still honours stop_event when set
+            # programmatically.
+            previous_handlers.pop(sig, None)
+
+    write_line(f"Chat bridge ({backend}) — running. Ctrl+C to stop.")
+    try:
+        if backend == "matrix":
+            dispatched = run_matrix_loop(
+                config,
+                stop_event=stop_event,
+                max_iterations=max_iterations,
+            )
+        else:  # telegram
+            dispatched = run_telegram_loop(
+                config,
+                stop_event=stop_event,
+                max_iterations=max_iterations,
+            )
+    except ChatBridgeConfigError as exc:
+        write_error(f"Chat bridge config error: {exc}")
+        return USER_INPUT_ERROR
+    except Exception as exc:  # noqa: BLE001 - terminal HTTP / unexpected
+        write_error(f"Chat bridge ({backend}) terminal error: {exc}")
+        return OPERATIONAL_FAILURE
+    finally:
+        # Restore previous signal handlers (best-effort).
+        for sig, prev in previous_handlers.items():
+            try:
+                signal.signal(sig, prev)
+            except (ValueError, OSError):
+                pass
+
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "surface chat --run",
+                "backend": backend,
+                "dispatched": dispatched,
+                "stopped_cleanly": stop_event.is_set(),
+            }
+        )
+    else:
+        write_line(
+            f"Chat bridge ({backend}) stopped cleanly. Dispatched "
+            f"{dispatched} command(s)."
+        )
     return SUCCESS
 
 

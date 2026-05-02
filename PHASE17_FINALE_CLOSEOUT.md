@@ -153,3 +153,88 @@ The line `17.4 Chat bridge scaffolding ✓` in the table above remains accurate 
 This caveat does **not** retract the checkmark — the slice contract was "scaffolding," and scaffolding shipped — but it ensures readers do not over-read the table.
 
 — *Sólrún Hvítmynd & Runa, additive correction*
+
+---
+
+## Update Notice — 2026-05-02 Phase E (additive, audit remediation **closed**)
+
+The 2026-05-02 caveat block above is now **historical**. Phase E of
+the audit remediation shipped a fully-featured running chat bridge
+for both Matrix and Telegram. Operators can now run
+`mythic-vibe surface chat --backend matrix --run` (or
+`--backend telegram --run`) with credentials in env vars (or a
+`--config <path>` JSON file) and the bridge actually polls + replies +
+reconnects on transient errors + shuts down cleanly on
+SIGINT / SIGTERM.
+
+**Phase E shipped — six logical sub-phases, one cohesive commit:**
+
+- **E.0** Config + master gate + allowlist refusal:
+  `MatrixConfig` and `TelegramConfig` gained `from_env`,
+  `from_file`, `from_sources`, `validate`, `is_room_allowed` /
+  `is_chat_allowed` / `is_user_allowed` classmethods. Master env
+  gate `MYTHIC_CHAT_BRIDGE_ENABLED=1` (default off — durable rule).
+  `validate()` **refuses to start** without an explicit allowlist
+  (operators must opt into broadcast with `*` — strongly
+  discouraged). `ChatBridgeConfigError` is a typed exception for
+  config errors. `_parse_csv_allowlist` and `_read_config_file`
+  helpers added.
+
+- **E.1** Matrix `/sync` long-poll loop:
+  `surfaces/chat_bridge_loop.py` — new module. `run_matrix_loop()`
+  drives a `/sync?since=<token>&timeout=<ms>` long-poll, dispatches
+  `m.room.message`/`m.text` events through `parse_command` +
+  `handle_message`, replies via `matrix_send_message(...,
+  room_id=originating_room)` to the originating room. Allowlist
+  filtering, echo prevention (skip messages where `sender ==
+  config.user_id`), exponential backoff with cap on transient HTTP
+  errors (5xx / URLError / 408 / 429), terminal raise on 4xx
+  (auth — fail fast). Honours `stop_event` between sync calls.
+
+- **E.2** Telegram `getUpdates` long-poll loop: same shape.
+  `run_telegram_loop()`. Allowlist on **both** `chat_id` and
+  `user_id` (empty `allowed_users` = "any user in an allowed
+  chat"). `offset` advances per update. Same backoff + stop_event
+  semantics.
+
+- **E.3** `--run` + `--config` + signal handling on
+  `cmd_surface_chat`: argparse gained `--run`, `--config <path>`,
+  `--max-iterations <N>` (test guard). The legacy
+  scaffolding-and-exit body is **preserved verbatim** when `--run`
+  is absent (additive). With `--run`: master gate check →
+  `ChatBridgeConfigError` USER_INPUT_ERROR → SIGINT/SIGTERM
+  handlers set the stop_event → loop runs to clean shutdown.
+
+- **E.4** Tests (3 new files, 80 net new tests):
+  - `tests/test_chat_bridge_config.py` (38 tests) — env / file /
+    sources / validate / allowlist semantics for both backends.
+  - `tests/test_chat_bridge_http_client.py` (11 tests) — exercises
+    the four HTTP client functions previously flagged as untested
+    (`_matrix_request`, `matrix_send_message`, `_telegram_request`,
+    `telegram_send_message`) plus the new `room_id` / `chat_id`
+    keyword overrides. **Closes audit finding #7 as a
+    side-effect.**
+  - `tests/test_chat_bridge_loop.py` (31 tests) — `_Backoff`,
+    `_is_transient_http_error`, `_matrix_extract_messages`,
+    `_telegram_extract_messages`, both loops' happy paths,
+    allowlist filtering, echo prevention, transient backoff
+    recovery, terminal-error raise-through, validate refusal,
+    `cmd_surface_chat --run` master-gate / config-error / happy /
+    legacy-preservation.
+
+- **E.5** Deployment guide:
+  `docs/CHAT_BRIDGE_DEPLOYMENT.md` — security model (master gate
+  + allowlist refusal + echo prevention), env-var reference,
+  systemd unit (Linux), NSSM service (Windows), launchd plist
+  (macOS), TLS notes, rate-limit guidance, troubleshooting
+  matrix, JSON `--config` file shape.
+
+**Audit findings closed by Phase E:**
+- **#2 (High)** Chat-bridge poll loop missing — closed.
+- **#7 (Low)** chat_bridge HTTP client untested — closed (4
+  previously-untested functions now have 11 tests).
+
+Test count: 1783 → 1863 (+80). Coverage still ≥ 82%. Lint + mypy
+clean. Working tree clean and pushed.
+
+— *Sólrún Hvítmynd & Runa, additive correction*

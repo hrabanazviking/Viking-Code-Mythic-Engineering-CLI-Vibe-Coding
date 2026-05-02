@@ -589,13 +589,49 @@ def build_parser() -> argparse.ArgumentParser:
 
     surface_chat = surface_sub.add_parser(
         "chat",
-        help="Chat bridge scaffolding entry (slice 17.4)",
+        help=(
+            "Chat bridge — scaffolding entry by default; --run starts "
+            "the long-poll loop (PH-17 slice 17.4 + Phase E remediation)"
+        ),
     )
     surface_chat.add_argument(
         "--backend",
         default="",
         choices=("matrix", "telegram"),
         help="Chat backend (matrix is the default first-class choice)",
+    )
+    # Phase E.3 2026-05-02 (audit remediation, finding #2): --run +
+    # --config + --max-iterations. The legacy scaffolding-and-exit
+    # behaviour is preserved when --run is absent (additive).
+    surface_chat.add_argument(
+        "--run",
+        action="store_true",
+        help=(
+            "Start the long-poll loop. Requires "
+            "MYTHIC_CHAT_BRIDGE_ENABLED=1 (master gate, default off). "
+            "Reads credentials from MYTHIC_CHAT_<BACKEND>_* env vars + "
+            "optional --config file. Refuses to start without an "
+            "explicit allowlist (see docs/CHAT_BRIDGE_DEPLOYMENT.md)."
+        ),
+    )
+    surface_chat.add_argument(
+        "--config",
+        default="",
+        help=(
+            "Path to a JSON config file with `matrix` / `telegram` "
+            "sections. File values override env-var defaults. "
+            "Without --config, env vars are the sole source."
+        ),
+    )
+    surface_chat.add_argument(
+        "--max-iterations",
+        type=int,
+        default=None,
+        help=(
+            "Test guard: stop the loop after N sync calls. Production "
+            "operators leave this unset; the loop runs until SIGINT / "
+            "SIGTERM."
+        ),
     )
     add_runtime_options(surface_chat, json_output=True)
 
