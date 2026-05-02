@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import os
 import sys
+import tempfile
 from dataclasses import dataclass, field
 from typing import Any, Protocol, runtime_checkable
 
@@ -157,6 +158,13 @@ class ChatterboxEngine:
     name: str = "chatterbox"
     voice: str = ""
     _module: Any = None
+    # Additive 2026-05-02 (Phase A.1 of audit remediation): optional
+    # fields used by the modern Chatterbox API path. ``output_path``
+    # picks the .wav target for the generated waveform; empty means
+    # a temp file is allocated. ``device`` is "auto" by default and
+    # auto-detects cuda/mps/cpu via torch when available.
+    output_path: str = ""
+    device: str = "auto"
 
     def __post_init__(self) -> None:
         try:
@@ -168,16 +176,211 @@ class ChatterboxEngine:
             ) from exc
         self._module = chatterbox
 
+    # ---- Additive 2026-05-02: Modern Chatterbox API adapter ------------
+    #
+    # The pseudo-code audit (AUDIT_PSEUDOCODE_DEEP_2026-05-02.md, finding
+    # #1) showed that the real chatterbox package exposes
+    # ``ChatterboxTTS`` / ``ChatterboxMultilingualTTS`` (each with a
+    # ``from_pretrained(device=...)`` classmethod and a ``generate(text)``
+    # instance method that returns a torch waveform tensor). Saving the
+    # waveform requires ``torchaudio.save(path, wav, sr)``. The legacy
+    # probe for a top-level ``speak()`` function is kept below as a
+    # fallback per the additive-only rule — but the modern path is
+    # tried first.
+    #
+    # Helpers below are deliberately small and individually testable:
+    # ``_resolve_modern_tts_cls`` for class detection (mockable),
+    # ``_detect_device`` for hardware auto-pick, ``_resolve_output_path``
+    # for filesystem target, and ``_say_via_modern`` for the actual
+    # render+save pipeline.
+    # -------------------------------------------------------------------
+
+    _MODERN_CLASS_CANDIDATES: tuple[tuple[str, str], ...] = (
+        ("chatterbox.tts", "ChatterboxTTS"),
+        ("chatterbox", "ChatterboxTTS"),
+        ("chatterbox.mtl_tts", "ChatterboxMultilingualTTS"),
+        ("chatterbox", "ChatterboxMultilingualTTS"),
+    )
+
+    def _resolve_modern_tts_cls(self) -> tuple[Any, str] | None:
+        """Locate a usable Chatterbox TTS class. Returns ``(cls, label)``
+        for the first candidate whose ``from_pretrained`` is callable,
+        or ``None`` if none of the modern import shapes resolves."""
+        for module_name, class_name in self._MODERN_CLASS_CANDIDATES:
+            try:
+                mod = __import__(module_name, fromlist=[class_name])
+            except ImportError:
+                continue
+            cls = getattr(mod, class_name, None)
+            if cls is None:
+                continue
+            if not callable(getattr(cls, "from_pretrained", None)):
+                continue
+            return cls, f"{module_name}.{class_name}"
+        return None
+
+    def _detect_device(self) -> str:
+        """Resolve the torch device. Honours an explicit ``self.device``
+        override; otherwise auto-detects (cuda → mps → cpu)."""
+        cleaned = (self.device or "auto").strip().lower()
+        if cleaned and cleaned != "auto":
+            return cleaned
+        try:
+            import torch  # type: ignore[import-not-found]
+        except ImportError:
+            return "cpu"
+        try:
+            if torch.cuda.is_available():
+                return "cuda"
+        except Exception:  # noqa: BLE001 — defensive against torch internals
+            pass
+        backends = getattr(torch, "backends", None)
+        mps = getattr(backends, "mps", None) if backends is not None else None
+        try:
+            if mps is not None and mps.is_available():
+                return "mps"
+        except Exception:  # noqa: BLE001
+            pass
+        return "cpu"
+
+    def _resolve_output_path(self, request: TTSRequest) -> str:
+        """Pick the target .wav path for the generated waveform.
+
+        Order of precedence: ``self.output_path`` (engine-level config)
+        → ``request.metadata['output_path']`` → temp-dir slug derived
+        from the first ~30 chars of the request text. The slug fallback
+        keeps the same engine usable across many calls without forcing
+        the operator to manage paths.
+        """
+        if self.output_path:
+            return self.output_path
+        meta_path = (request.metadata or {}).get("output_path", "")
+        if meta_path:
+            return str(meta_path)
+        snippet = (request.text or "")[:30]
+        slug = "".join(ch.lower() if ch.isalnum() else "-" for ch in snippet).strip("-")
+        slug = slug or "speech"
+        return os.path.join(tempfile.gettempdir(), f"mythic_chatterbox_{slug}.wav")
+
+    def _say_via_modern(
+        self, request: TTSRequest, cls: Any, label: str
+    ) -> TTSResult:
+        """Render ``request.text`` via ``cls.from_pretrained().generate()``
+        and save the resulting waveform via torchaudio. Returns
+        ``spoken=True`` on a successful end-to-end save, or
+        ``spoken=False`` with a clean error message if any stage fails.
+        Never raises — TTS failures are reported, not propagated.
+        """
+        try:
+            import torchaudio  # type: ignore[import-not-found]
+        except ImportError as exc:
+            return TTSResult(
+                text=request.text,
+                engine=self.name,
+                spoken=False,
+                error=(
+                    "torchaudio is required to save chatterbox output; "
+                    f"install with `pip install torchaudio` ({exc})"
+                ),
+                metadata={"source": "chatterbox-modern", "engine_class": label},
+            )
+
+        device = self._detect_device()
+        try:
+            model = cls.from_pretrained(device=device)
+        except Exception as exc:  # noqa: BLE001 — model load may fail many ways
+            return TTSResult(
+                text=request.text,
+                engine=self.name,
+                spoken=False,
+                error=f"{label}.from_pretrained failed: {exc}",
+                metadata={
+                    "source": "chatterbox-modern",
+                    "engine_class": label,
+                    "device": device,
+                },
+            )
+
+        try:
+            wav = model.generate(request.text)
+        except Exception as exc:  # noqa: BLE001 — generation may fail
+            return TTSResult(
+                text=request.text,
+                engine=self.name,
+                spoken=False,
+                error=f"{label}.generate failed: {exc}",
+                metadata={
+                    "source": "chatterbox-modern",
+                    "engine_class": label,
+                    "device": device,
+                },
+            )
+
+        sr = getattr(model, "sr", None)
+        if sr is None:
+            return TTSResult(
+                text=request.text,
+                engine=self.name,
+                spoken=False,
+                error=f"{label} did not expose `.sr` (sample rate)",
+                metadata={
+                    "source": "chatterbox-modern",
+                    "engine_class": label,
+                    "device": device,
+                },
+            )
+
+        output_path = self._resolve_output_path(request)
+        try:
+            torchaudio.save(output_path, wav, sr)
+        except Exception as exc:  # noqa: BLE001 — save may fail on perms, codec, etc.
+            return TTSResult(
+                text=request.text,
+                engine=self.name,
+                spoken=False,
+                error=f"torchaudio.save failed: {exc}",
+                metadata={
+                    "source": "chatterbox-modern",
+                    "engine_class": label,
+                    "device": device,
+                    "output_path": output_path,
+                },
+            )
+
+        return TTSResult(
+            text=request.text,
+            engine=self.name,
+            spoken=True,
+            metadata={
+                "source": "chatterbox-modern",
+                "engine_class": label,
+                "device": device,
+                "output_path": output_path,
+                "sample_rate": sr,
+            },
+        )
+
     def say(self, request: TTSRequest) -> TTSResult:
         if self._module is None:  # pragma: no cover — __post_init__ guards
             raise MissingExtraError(
                 "chatterbox",
                 "Install with `pip install chatterbox`.",
             )
+
+        # Additive 2026-05-02: prefer the modern Chatterbox API
+        # (ChatterboxTTS / ChatterboxMultilingualTTS) when reachable.
+        # The legacy speak()-probe block below remains as a fallback
+        # so any future / older / fork variant exposing a top-level
+        # speak() still works without code change.
+        modern = self._resolve_modern_tts_cls()
+        if modern is not None:
+            cls, label = modern
+            return self._say_via_modern(request, cls, label)
+
         try:
-            # Chatterbox's public API may shift across versions; we
-            # try a couple of common patterns and fall back to a
-            # clean error rather than guessing.
+            # Legacy probe path — preserved verbatim from the pre-2026-05-02
+            # implementation. Only fires when no modern Chatterbox class
+            # is reachable.
             speak = getattr(self._module, "speak", None)
             if callable(speak):
                 speak(request.text, voice=(request.voice or self.voice or None))

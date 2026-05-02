@@ -200,3 +200,45 @@ $ MYTHIC_VOICE_TTS_ENABLED=1 mythic-vibe voice say "hi" --engine chatterbox
 `MEMORY.md` and `project_mythic_engineering_cli_status.md` updated
 to HEAD `<close-head>`. `TASK_master_roadmap_and_phase1.md` tracker
 extended through this finale.
+
+---
+
+## Update Notice — 2026-05-02 (additive, Phase A.1 of audit remediation)
+
+The 2026-05-02 pseudo-code audit (`AUDIT_PSEUDOCODE_DEEP_2026-05-02.md`,
+finding #1) showed that the `ChatterboxEngine.say()` method shipped in
+PH-07 slice 7.3 probed for a top-level `chatterbox.speak()` function
+that the real chatterbox package does not export. The package's actual
+shape is `from chatterbox.tts import ChatterboxTTS` /
+`from chatterbox.mtl_tts import ChatterboxMultilingualTTS`, with the
+flow `cls.from_pretrained(device=...) -> model.generate(text) -> torch
+waveform tensor`, saved via `torchaudio.save(path, wav, model.sr)`.
+The legacy probe always failed; **Chatterbox TTS had never worked.**
+
+**Fix shipped in Phase A.1 (additive):** `mythic_vibe_cli/voice/tts.py`
+`ChatterboxEngine` now resolves the modern API first via
+`_resolve_modern_tts_cls()` (walking a candidate list of
+`(module_name, class_name)` pairs), and dispatches the render+save
+pipeline in `_say_via_modern()`. The pipeline auto-detects the torch
+device (cuda/mps/cpu) via `_detect_device()` and resolves the output
+path via `_resolve_output_path()` (engine config → request metadata →
+temp-dir slug). Every failure stage (torchaudio missing,
+`from_pretrained` raise, `generate` raise, missing `.sr`,
+`torchaudio.save` raise) returns a `TTSResult(spoken=False, error=...)`
+with diagnostic metadata — never raises. **The legacy `speak()` probe
+is preserved verbatim as a fallback** when no modern class is
+reachable, per the additive-only rule (`feedback_additive_only.md`).
+
+Tests: `tests/test_voice_chatterbox_adapter.py` adds 23 tests covering
+the resolver, device detection, output-path resolution, the modern
+happy path, all five modern failure branches, and the legacy fallback.
+
+**Remaining caveat:** the modern path generates and saves a `.wav`
+file but does not auto-play it. Operators wanting playback can hand
+the `output_path` (returned in `result.metadata`) to a platform
+playback tool (`winsound.PlaySound` on Windows, `afplay` on macOS,
+`aplay`/`paplay` on Linux). A future slice may add a `--play` flag
+that wires playback inline; that is intentionally out of scope for
+Phase A.1.
+
+— *Sólrún Hvítmynd & Runa, additive correction*
