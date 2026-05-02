@@ -334,6 +334,25 @@ still ≥ 82%. Lint + mypy clean.
 **Cumulative test delta after Phase E:** 1700 → 1863 (+163). Coverage
 still ≥ 82%. Lint + mypy clean.
 
+### Phase F.2 — closed 2026-05-02
+- **F.2** Yggdrasil + MindSpark documented entry points — commit
+  `902ac80`. Closes the last outstanding finding (#8, Low).
+  Verified canonical entry points against the actual
+  `WYRD-Protocol` and `MindSpark_ThoughtForge` repos:
+  `thoughtforge.cognition.ThoughtForgeCore.think()` for MindSpark;
+  `wyrdforge` package (canonical) + `yggdrasil` (legacy alias)
+  for the WYRD adapter. Both `_invoke_*` functions now return
+  `(text, label)` so operators see in `response.metadata` which
+  entry point fired. Legacy probe loops preserved as fallbacks
+  per the additive-only rule. PHASE9_FINALE_CLOSEOUT.md gained an
+  additive update notice.
+
+**Cumulative test delta after Phase F.2:** 1700 → 1875 (+175).
+Coverage still ≥ 82%. Lint + mypy clean.
+
+**🎉 8 of 8 audit findings closed. Only Phase G (audit re-run +
+final closeout memo) remains.**
+
 ---
 
 ## Progress tracker (live — update after each phase commit)
@@ -365,9 +384,9 @@ Phase E — Chat bridge poll loop (fully featured, all parts)  [CLOSED 2026-05-0
   [x] E.4  Tests for loops + config + HTTP coverage     (tests/test_chat_bridge_*.py)
   [x] E.5  CHAT_BRIDGE_DEPLOYMENT.md (systemd/NSSM/launchd) (docs/)
 
-Phase F — Coverage + probe hardening
+Phase F — Coverage + probe hardening  [CLOSED 2026-05-02]
   [x] F.1  chat_bridge HTTP client tests                (closed by E.4 — see tests/test_chat_bridge_http_client.py)
-  [ ] F.2  Yggdrasil + MindSpark documented entry points (ai/providers/{yggdrasil,mindspark}.py)
+  [x] F.2  Yggdrasil + MindSpark documented entry points (ai/providers/{yggdrasil,mindspark}.py)
 
 Phase G — Audit re-run + closeout
   [ ] G.1  Re-dispatch first + second audit             (auditor agent)
@@ -456,3 +475,18 @@ lint + mypy clean, working tree clean and pushed to `development`.
 #2 **High**, #3, #4, #5, #6, #7). The **only remaining finding** is
 #8 (yggdrasil/mindspark `getattr` probes — Low). After F.2 + G this
 remediation cycle is complete.
+
+### Status (additive update 2026-05-02 — Phase F.2)
+
+`STATUS: PHASE F.2 CLOSED — 8 of 8 audit findings closed. Only Phase G (audit re-run + final closeout) remains.`
+
+Live HEAD: `902ac80` (after Phase F.2 + post-rebase on top of two
+Codex research-plan merges that landed mid-session — `7940957` and
+`718ccaf`, unrelated to this remediation cycle). Tests: 1875 passed,
+1 skipped, lint + mypy clean, working tree clean and pushed to
+`development`.
+
+**🎉 ALL 8 OUTSTANDING AUDIT FINDINGS CLOSED.** The only remaining
+work is Phase G — re-run the auditor against the new HEAD to verify
+clean state, refresh coverage metrics in MEMORY.md, and write the
+remediation closeout memo.

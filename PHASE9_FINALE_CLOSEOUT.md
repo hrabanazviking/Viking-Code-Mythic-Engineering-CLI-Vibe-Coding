@@ -149,3 +149,73 @@ the plugin surface.
 - New `pyproject.toml` extras: `mindspark`, `wyrd`, `yggdrasil`
   (plus the existing `chatterbox` integration through the
   `voice` flow).
+
+---
+
+## Update Notice — 2026-05-02 Phase F.2 (additive, audit remediation)
+
+The 2026-05-02 pseudo-code audit (`AUDIT_PSEUDOCODE_DEEP_2026-05-02.md`,
+finding #8) caught the `yggdrasil` and `mindspark` adapters using
+**speculative `getattr` probe loops** for entry-point names that
+may not exist in the upstream packages. The probes (`route`,
+`router.route`, `ask` for Yggdrasil; `plan`, `cognition.plan`,
+`cognition.scaffold.plan`, `cognition.router.route`, `ask` for
+MindSpark) were guesses rather than documented contracts.
+
+**Fix shipped in Phase F.2 (additive, both adapters):**
+
+1. **MindSpark — documented primary path:**
+   - Verified against `MindSpark_ThoughtForge` HEAD on 2026-05-02:
+     `thoughtforge.cognition.ThoughtForgeCore` is exported from
+     `cognition/__init__.py`; `.think(prompt)` returns a
+     `FinalResponseRecord` with `.text`.
+   - `_invoke_thoughtforge` tries this canonical path first via
+     the new `_resolve_thoughtforge_core_class(module)` helper.
+   - Helper checks `module.cognition.ThoughtForgeCore` first;
+     when `module.__name__ == "thoughtforge"` (real package), it
+     falls back to a direct `from thoughtforge.cognition import
+     core` import (since `import thoughtforge` alone does not
+     eagerly import sub-packages).
+   - The fallback is **gated on `module.__name__`** so test
+     fakes (`_Empty()`, `MagicMock()`) don't accidentally pull in
+     the real package.
+   - `_invoke_thoughtforge` returns `(text, label)` where label
+     is `thoughtforge.cognition.ThoughtForgeCore.think` for the
+     primary path or `legacy:thoughtforge.<attr_path>` for
+     legacy-probe matches. `run()` propagates the label into
+     `response.metadata["entry_point"]`.
+
+2. **Yggdrasil — wyrdforge import path + entry-point labelling:**
+   - Verified against `WYRD-Protocol` HEAD on 2026-05-02: the
+     canonical published package is `wyrdforge` (per
+     `pyproject.toml`), not `yggdrasil`. The legacy `yggdrasil`
+     name was an aspirational alias never published.
+   - New `_try_import_wyrdforge()` companion to existing
+     `_try_import_yggdrasil()`. `__post_init__` tries `wyrdforge`
+     first, falls back to `yggdrasil`. Either resolves; whichever
+     is on `sys.path` wins.
+   - `validate_config` reports the resolved module name via
+     `module.__name__` rather than hardcoding "yggdrasil".
+   - `_invoke_yggdrasil` returns `(text, label)` where label is
+     `<module>.<attr_path>` (e.g. `wyrdforge.route`). Candidate
+     list (`route`, `router.route`, `ask`) preserved per the
+     additive-only rule.
+   - `AttributeError` raised when no candidate resolves now
+     points operators at `wyrdforge` as the canonical install
+     target.
+   - `run()` propagates the label into
+     `response.metadata["entry_point"]`.
+
+**Tests:** `tests/test_island_yggdrasil.py` gained 8 new tests
+across 3 classes (import priority, entry-point labelling, `run()`
+metadata propagation). `tests/test_island_mindspark.py` gained 4
+new tests covering the documented primary path, legacy fallback
+labelling, and the resolver's "don't fall back for non-thoughtforge
+modules" safety. Two pre-existing tests had their assertion text
+adjusted (yggdrasil's "not installed" wording; mindspark's
+"unknown shape" test gained a Phase-F.2 explanatory comment).
+
+Test count: 1863 → 1875 (+12). Coverage still ≥ 82%. Lint + mypy
+clean.
+
+— *Sólrún Hvítmynd & Runa, additive correction*
