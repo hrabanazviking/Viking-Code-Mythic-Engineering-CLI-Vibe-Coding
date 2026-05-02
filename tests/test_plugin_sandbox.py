@@ -92,8 +92,40 @@ class SafeCallSyncPathTests(unittest.TestCase):
         self.assertFalse(result.timed_out)
 
     def test_elapsed_ms_recorded(self) -> None:
+        # Phase 19.0 / L-9 (audit remediation 2026-05-02): the
+        # original assertion was ``elapsed_ms >= 5.0`` against a
+        # 10ms sleep. On Windows the system timer granularity is
+        # ~15ms — a 10ms sleep can measure as 0ms (rounded down) or
+        # ~15ms depending on when it fires. The strict 5ms floor
+        # produced an intermittent flake that surfaced during the
+        # full-suite remediation runs. Lowered to ``>= 0.0`` to
+        # confirm the field is populated; the actual "elapsed is
+        # plausible" assertion lives in the new mock-clock test
+        # below where machine timer behaviour is removed from the
+        # equation.
         result = safe_call(time.sleep, 0.01)
-        self.assertGreaterEqual(result.elapsed_ms, 5.0)
+        self.assertGreaterEqual(result.elapsed_ms, 0.0)
+        self.assertIsInstance(result.elapsed_ms, float)
+
+    def test_elapsed_ms_with_mock_clock_is_plausible(self) -> None:
+        """Phase 19.0 / L-9: the "elapsed is plausible" assertion
+        the prior test was reaching for. We inject a fake clock
+        sequence (start=100.0, end=100.123) so the assertion is
+        deterministic regardless of OS timer resolution. Uses
+        ``time.monotonic`` (the actual clock used in
+        ``plugins/sandbox.py``)."""
+        from unittest import mock
+
+        # safe_call's sync path calls time.monotonic twice — once
+        # for start, once for end.
+        clock_values = iter([100.0, 100.123])  # 123ms elapsed
+        with mock.patch(
+            "mythic_vibe_cli.plugins.sandbox.time.monotonic",
+            side_effect=lambda: next(clock_values),
+        ):
+            result = safe_call(lambda: "ok")
+        # 100.123 - 100.0 = 0.123s = 123ms.
+        self.assertAlmostEqual(result.elapsed_ms, 123.0, places=2)
 
     def test_plugin_id_propagated(self) -> None:
         result = safe_call(lambda: 1, plugin_id="my_plugin")
