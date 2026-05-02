@@ -892,3 +892,80 @@ Volmarr's word **"go for PH-19"** flips the file's live status to
 `OPEN — PHASE 19.0 KICKOFF` and the cycle begins. First commit:
 slice 19.0 (pre-launch bug fixes — closes 3 Highs + 2 Mediums + 2
 Lows from the bug sweep).
+
+---
+
+## Update 2026-05-02 — All 10 bug-sweep findings folded into 19.0 (additive)
+
+Volmarr's call: **"put all the bug fixes into 19."** That overrides
+the prior partial split (BS-6 cross-process locking deferred to
+PH-20; L-9, L-10 not explicitly assigned). Slice 19.0's scope
+expands to cover **all 10 findings** from
+`AUDIT_BUG_SWEEP_2026-05-02.md` — every High, every Medium, every
+Low — before any other PH-19 work begins.
+
+### Slice 19.0 (revised, complete) — Pre-launch bug fixes
+
+**Goal:** close every bug found by the 2026-05-02 sweep so the
+rest of PH-19 (and v1.0) ships against a verified-clean baseline.
+
+**Sub-tasks (in order of severity):**
+
+| Tag | Sev | What | Effort |
+|---|---|---|---|
+| BS-1 | **High** | `web_terminal.py`: add `MAX_REQUEST_BODY = 65536`; reject `Content-Length` exceeding it with HTTP 413; add `httpd.socket.settimeout(30.0)` for per-connection timeout | ~30 min |
+| BS-2 | **High** | `mcp_client.py`: bound `readline()` with a deadline (default 30s, env-configurable); cap `while True` discard loop with `max_discard=1000` and raise `McpClientError` on excess | ~45 min |
+| BS-3 | **High** | `scanner.py:377`, `handoff.py:89`, `verify/git_diff.py:25`, `verify/test_runner.py:56`: pass `timeout=300` (5 min) to all four `exec_command` call-sites; surface clean `TimeoutExpired` error message | ~30 min |
+| BS-4 | Medium | `chat_bridge_loop.py:406`: move `bo.reset()` to AFTER the `ok=false` guard. Tighten existing test to assert monotonically-increasing sleep durations (catches the regression existing assertion missed) | ~15 min |
+| BS-5 | Medium | `forge_ledger.py:281`: replace `write_text()` with atomic write-tmp + `os.replace` pattern (the same pattern already in `json_store.py`) | ~30 min |
+| BS-6 | Medium | **Cross-process locking** — new module `runtime/cross_process_lock.py` using stdlib `fcntl` (POSIX) + `msvcrt` (Windows) with platform branching, context-manager API, deadline support, crash-safe (lock releases when process dies). Wire into `forge_ledger.py` and `json_store.py` so two simultaneous CLI invocations can't corrupt shared state. Tests cover each platform (will be verified across the matrix once 19.3 ships) | **~3-4h** |
+| L-7 | Low | `forge_verifier.py:173`: remove the dead `"succeeded"` sentinel from the passing-value set. One-line clean-up, purely dead code | ~5 min |
+| L-8 | Low | `surfaces/narrow_layout.py:75`: wire `should_use_narrow_layout` into `tui/app.py` startup detection so the dead export becomes a real integration | ~30 min |
+| L-9 | Low | `tests/test_plugin_sandbox.py:96`: fix `test_elapsed_ms_recorded` Windows-timer-resolution flake. Lower threshold to `>= 0.0` for the "elapsed measured at all" check; add a mock-clock-based separate test for the "elapsed is plausible" assertion | ~15 min |
+| L-10 | Low | New helper `runtime/atomic_write.py` (`def atomic_write_text(path, text, *, encoding="utf-8") -> None` — write-tmp + `os.replace`); route artifact writes in `verify/__init__.py:81,83`, `handoff.py:260-263`, `forge_reflection.py:386,388` through it | ~1h |
+
+**Slice 19.0 total estimated effort: ~7-9 hours, ~25-35 new/extended
+tests.** Bigger than other PH-19 slices but tightly bounded — closes
+every known bug before the rest of the phase begins.
+
+### Architectural note on BS-6 (cross-process locking)
+
+The existing `runtime/file_mutation_queue.py` uses `threading.Lock`
+keyed by `os.path.realpath` — provides intra-process safety only.
+Two simultaneous CLI invocations (e.g. operator runs `mythic-vibe
+forge run` in two terminals) can race on shared state files. The
+docstring claims protection from "two simultaneous forge runs" —
+the audit caught this lie.
+
+**Approach:** new `runtime/cross_process_lock.py` module providing
+a `cross_process_lock(path, *, deadline=30.0)` context manager.
+Platform branching:
+- POSIX: `fcntl.flock(fd, fcntl.LOCK_EX)` — releases on FD close
+  (process death is auto-release).
+- Windows: `msvcrt.locking(fd, msvcrt.LK_LOCK, length)` — same
+  semantic; OS releases on handle close.
+
+Stdlib-only, matches the durable cross-platform + open-source rule.
+~150 lines including tests. Wired into `forge_ledger.py` and
+`json_store.py:FileLock` (the latter gains an opt-in
+`cross_process=True` flag — backward compatible with current
+intra-process callers).
+
+The new CI OS matrix at slice 19.3 will exercise this on all three
+platforms post-implementation, but 19.0 ships first with smoke
+tests on the build platform (Windows for Volmarr's local runs).
+
+### Cumulative totals (revised, third pass)
+
+| Tier | Slices | Hours / weeks |
+|---|---|---|
+| v1.0 launch gate (PH-19 + PH-20) | 28 | **~66-86h** (was 62-80h, +4-6h for expanded 19.0) |
+| v1.x expansion (PH-21) | 9 | ~32-43h |
+| v2.0 stretch (PH-22) | 3 | ~360-560h |
+| **All phases** | 40 | ~458-689h |
+
+Slice 19.0 is now the largest single slice in PH-19. Justified —
+fixing every known bug before launch is the highest-ROI work we
+can do.
+
+`STATUS: DRAFT — ALL DECISIONS LOCKED, ALL BUGS FOLDED INTO 19.0 — READY FOR KICKOFF ON COMMAND`
