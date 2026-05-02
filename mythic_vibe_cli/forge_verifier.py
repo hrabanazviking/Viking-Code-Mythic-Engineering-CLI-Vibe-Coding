@@ -170,7 +170,15 @@ def gate_test_evidence_recorded(
         )
     verification_id = str(latest.get("verification_id") or "?")
     result_value = str(latest.get("result") or "?")
-    if result_value not in {"pass", "succeeded"}:
+    # Phase 19.0 / L-7 (additive 2026-05-02 audit remediation):
+    # the dead ``"succeeded"`` sentinel was removed from the
+    # passing-value set. ``VerificationArtifact.result`` only
+    # ever writes ``"pass"`` / ``"fail"`` / ``"blocked"`` (verified
+    # by grep across the production codebase). The legacy
+    # ``"succeeded"`` value was never assigned and would never
+    # match — its presence was misleading about the valid result
+    # vocabulary.
+    if result_value != "pass":
         return VerificationResult(
             name=name,
             passed=False,
