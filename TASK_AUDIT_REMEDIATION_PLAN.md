@@ -195,6 +195,21 @@ Each phase is independently shippable, ordered by **(real-bug-first, smallest fi
 **Cumulative test delta:** 1700 → 1726 (+26 from Phase A).
 **Coverage:** still ≥ 82% (no regression). Lint + mypy clean.
 
+### Phase B — closed 2026-05-02
+- **B.1** `_matches_command` reactivation — commit `1c482be`. The
+  function body is preserved verbatim. New helpers
+  `_extract_command_tags` + `_constraint_applies_to_command` realise
+  the docstring's promised `[command:<name>]` tag scoping. `evaluate()`
+  now filters constraints through the new helper. Untagged
+  constraints continue to apply broadly (pre-Phase-B default
+  preserved); tagged constraints scope correctly. 6 new tests cover
+  case-insensitivity, multi-tag OR semantics, mixed tagged+untagged
+  filtering, and advisory-note suppression. PHASE14_FINALE_CLOSEOUT.md
+  gained an additive update notice.
+
+**Cumulative test delta after Phase B:** 1700 → 1732 (+32). Coverage
+still ≥ 82%. Lint + mypy clean.
+
 ---
 
 ## Progress tracker (live — update after each phase commit)
@@ -204,8 +219,8 @@ Phase A — Surgical real-bug fixes  [CLOSED 2026-05-02]
   [x] A.1  Chatterbox TTS adapter                       (voice/tts.py, voice tests)
   [x] A.2  policy_gate iterable exhaustion              (policy_gate.py, new test)
 
-Phase B — Dead-code reactivation
-  [ ] B.1  _matches_command wired into evaluate()       (policy_gate.py)
+Phase B — Dead-code reactivation  [CLOSED 2026-05-02]
+  [x] B.1  _matches_command wired into evaluate()       (policy_gate.py)
 
 Phase C — TUI plugin slash dispatch
   [ ] C.1  picker → dispatcher wiring                   (tui/picker.py + tests)
@@ -264,3 +279,14 @@ Phase G — Audit re-run + closeout
 
 Live HEAD: `8578698` (after Phase A.2). Tests: 1726 passed, 1 skipped,
 lint + mypy clean, working tree clean and pushed to `development`.
+
+### Status (additive update 2026-05-02 — Phase B)
+
+`STATUS: PHASE B CLOSED — ready for Phase C (TUI plugin slash dispatch).`
+
+Live HEAD: `1c482be` (after Phase B). Tests: 1732 passed, 1 skipped,
+lint + mypy clean, working tree clean and pushed to `development`.
+
+**Closed so far:** 3 of 8 outstanding findings (audit findings #1, #3,
+#6). 5 remain: chat-bridge poll loop, ai models non-Ollama, TUI plugin
+dispatch, chat_bridge HTTP coverage, yggdrasil/mindspark probes.
