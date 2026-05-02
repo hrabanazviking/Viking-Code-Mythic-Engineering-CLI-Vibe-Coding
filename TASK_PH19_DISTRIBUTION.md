@@ -320,3 +320,145 @@ working days at the pace we just demonstrated.
 The draft will be committed + pushed to `development` so the
 review record is durable. No code work begins until Volmarr's
 explicit go-ahead.
+
+---
+
+## Volmarr's Decisions — 2026-05-02 (additive)
+
+The six open questions have been answered. Below are the decisions
+captured verbatim, locked into the plan. The draft above is preserved
+unchanged per the additive-only rule.
+
+### Q1 — `hypothesis` test-time dep (19.4)
+**Decision:** **ADD it.** `hypothesis` lands in `pyproject.toml`'s
+`[test]` extras. Pure-Python, MPL-licensed, mature. Only loaded
+during property tests; doesn't affect production runtime.
+
+### Q2 — PyPI publishing (19.7)
+**Volmarr asked: "what is PyPI?"** Brief answer recorded for
+durable reference: PyPI (`pypi.org`) is the Python Package Index,
+the standard online registry where Python packages live. `pip
+install <name>` downloads from PyPI by default. Publishing
+requires a free PyPI account; modern best practice is **trusted
+publishing** via GitHub Actions OIDC (no API token stored in repo).
+Once configured, every git tag on the right branch triggers a
+build + upload, and `pip install mythic-vibe-cli` works worldwide.
+
+**Decision (recorded for kickoff):** Volmarr will create or confirm
+a PyPI identity at kickoff. The 19.7 commit will:
+- Add a release workflow (`.github/workflows/release.yml`) that
+  builds wheel + sdist on tag push.
+- Configure trusted publishing pointing at this repo.
+- Test on TestPyPI first (a sandbox PyPI), then promote to real
+  PyPI.
+
+### Q3 — Homebrew + Scoop tap repos (19.7)
+**Volmarr asked: "Explain what is Homebrew + Scoop?"** Brief
+durable answer:
+- **Homebrew** = macOS/Linux package manager. Users run `brew
+  install <name>`. Publishing options: official `homebrew-core`
+  (strict review, requires an established project) or a self-managed
+  **tap** — a GitHub repo named `homebrew-<word>` that anyone uses
+  via `brew tap <user>/<word>; brew install <thing>`. Tap = no
+  review, you control it, standard for new projects.
+- **Scoop** = the Windows equivalent. Users run `scoop install
+  <name>`. The tap-equivalent is a **bucket** — a GitHub repo with
+  JSON manifests. Lighter than Homebrew (no Ruby, just JSON).
+
+Both are free, open-source, GitHub-only. No Apple / Microsoft
+developer account required for the tap/bucket path. Homebrew
+formulas don't need notarization unless we ship signed binaries.
+
+**Decision:** create separate tap / bucket repos at kickoff:
+- `hrabanazviking/homebrew-mythic` — Homebrew formula.
+- `hrabanazviking/scoop-mythic` — Scoop bucket.
+This keeps the main repo clean and lets future projects (NSE,
+WYRD, MindSpark, pygame) join the same tap/bucket without churn.
+
+### Q4 — `doctor --fix` scope (20.2)
+**Decision:** **"yes make all the doctor stuff"** — interpreted as:
+do all three listed auto-remediations **plus any natural reversible
+extensions** the doctor surface ought to have. Concrete extensions
+to fold in:
+- Missing `mythic/` subdirectories ✓ (original)
+- Stale `mythic/method_manifest.json` regeneration ✓ (original)
+- Missing CHANGELOG `[Unreleased]` section ✓ (original)
+- **+** Missing `docs/ADRS/` directory creation
+- **+** Missing `mythic/handoffs/` / `mythic/reflections/` /
+  `mythic/packets/` / `mythic/checkins/` directory creation
+- **+** Missing `.gitignore` lines for `mythic/ai/provider_calls.jsonl`
+  (which contains secrets and should never commit)
+- **+** Stale `mythic/project_index.json` regeneration (when older
+  than 7 days and `mythic/scan.json` exists)
+- **+** Missing `mythic/oaths.md` template scaffold (empty section
+  headers only)
+
+**Hard-rule preserved:** never auto-fix anything that touches user-
+authored content (constraints, oath text, ADRs prose, packets,
+decisions). Only structure / regenerable artefacts / safety hygiene.
+
+20.2 effort estimate revised: **~3-4 hours** (was 2-3); adds ~15
+tests (was ~10).
+
+### Q5 — Plugin circuit-breaker threshold (20.3)
+**Decision:** **configurable.** Threshold lives in `mythic/plugins.json`
+schema as a per-plugin override, with a project-level default and
+an env-var top-level override:
+
+```
+priority: env var > project default > schema default
+MYTHIC_PLUGIN_TIMEOUT_THRESHOLD  >  mythic/plugins.json:default_timeout_threshold  >  3 (built-in)
+```
+
+Per-plugin override:
+```json
+{
+  "entrypoint": "mypkg:Plugin",
+  "timeout_threshold": 5,
+  ...
+}
+```
+
+Auto-disable after threshold consecutive timeouts. Reset counter on
+any successful invocation. Disabled plugins surface in `plugin doctor`
+with a re-enable hint.
+
+### Q6 — First-run wizard (revised)
+**Decision:** **opt-in.** Move the wizard from the "rejected" list
+to a new opt-in slice in PH-20:
+
+**20.0 (new) — `mythic-vibe init --interactive` opt-in wizard**
+- Default `mythic-vibe init` behaviour is **unchanged** (preserves
+  the explicit-operator-intent rule).
+- New `--interactive` flag opens a stdin-based Q&A that asks for:
+  - Project name
+  - Default AI provider (one of the registered providers)
+  - Operator name (defaults to `$USER` / `$USERNAME`)
+  - Whether to scaffold a sample ADR / oath / constraint file
+- Wizard writes `mythic/project_settings.json` and the chosen
+  scaffolds. Operator can run `mythic-vibe init` repeatedly to
+  reconfigure (idempotent — won't overwrite without `--force`).
+- **Strict-additive:** zero change to non-interactive behaviour.
+  Operators who never pass `--interactive` see no difference.
+- Effort estimate: **~2-3 hours, ~10 tests.**
+
+This expands PH-20 to **8 slices** (was 7); revised total
+estimate: **~19-25h** (was ~17-22h). Cumulative PH-19 + PH-20:
+**~31-43h** (was ~30-40h).
+
+---
+
+## Status (revised after Volmarr's decisions)
+
+`STATUS: DRAFT — DECISIONS LOCKED — AWAITING FINAL GO/NO-GO ON KICKOFF`
+
+All six open questions answered; scope is locked. Original draft
+(slices 19.1-19.8 + 20.1-20.7) preserved verbatim above. The
+decisions section adds:
+- 20.2 expanded with extra reversible auto-remediations.
+- 20.3 circuit-breaker threshold made configurable (env var > config > built-in default).
+- New 20.0 opt-in `--interactive` wizard slice.
+
+When Volmarr says **"go for PH-19"**, this file's status flips
+to `OPEN — PHASE 19.1 KICKOFF` and 19.1 (JSON contract snapshot
+tests) begins.
