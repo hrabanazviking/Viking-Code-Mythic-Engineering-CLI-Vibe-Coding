@@ -1,0 +1,75 @@
+{
+  "command": "ai models",
+  "configured": false,
+  "details": [
+    "GEMINI_API_KEY is required"
+  ],
+  "implemented": true,
+  "models": [
+    {
+      "capabilities": [
+        "vision",
+        "audio",
+        "tools",
+        "streaming",
+        "json_mode",
+        "long_context"
+      ],
+      "context_window": 2000000,
+      "display_name": "Gemini 2.5 Pro",
+      "family": "gemini",
+      "id": "gemini-2.5-pro",
+      "last_updated": "2026-05-02",
+      "max_output_tokens": 8192,
+      "source": "static"
+    },
+    {
+      "capabilities": [
+        "vision",
+        "tools",
+        "streaming",
+        "json_mode",
+        "long_context"
+      ],
+      "context_window": 1000000,
+      "display_name": "Gemini 2.5 Flash",
+      "family": "gemini",
+      "id": "gemini-2.5-flash",
+      "last_updated": "2026-05-02",
+      "max_output_tokens": 8192,
+      "source": "static"
+    },
+    {
+      "capabilities": [
+        "vision",
+        "audio",
+        "streaming",
+        "long_context"
+      ],
+      "context_window": 2000000,
+      "display_name": "Gemini 1.5 Pro",
+      "family": "gemini",
+      "id": "gemini-1.5-pro",
+      "last_updated": "2026-05-02",
+      "max_output_tokens": 8192,
+      "source": "static"
+    },
+    {
+      "capabilities": [
+        "vision",
+        "streaming",
+        "long_context"
+      ],
+      "context_window": 1000000,
+      "display_name": "Gemini 1.5 Flash",
+      "family": "gemini",
+      "id": "gemini-1.5-flash",
+      "last_updated": "2026-05-02",
+      "max_output_tokens": 8192,
+      "source": "static"
+    }
+  ],
+  "provider": "gemini",
+  "source": "static",
+  "warnings": []
+}

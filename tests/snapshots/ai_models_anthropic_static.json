@@ -1,0 +1,58 @@
+{
+  "command": "ai models",
+  "configured": false,
+  "details": [
+    "ANTHROPIC_API_KEY is required"
+  ],
+  "implemented": true,
+  "models": [
+    {
+      "capabilities": [
+        "vision",
+        "tools",
+        "thinking",
+        "streaming",
+        "json_mode"
+      ],
+      "context_window": 200000,
+      "display_name": "Claude Opus 4.7",
+      "family": "anthropic",
+      "id": "claude-opus-4-7",
+      "last_updated": "2026-05-02",
+      "max_output_tokens": 8192,
+      "source": "static"
+    },
+    {
+      "capabilities": [
+        "vision",
+        "tools",
+        "streaming",
+        "json_mode"
+      ],
+      "context_window": 200000,
+      "display_name": "Claude Sonnet 4.6",
+      "family": "anthropic",
+      "id": "claude-sonnet-4-6",
+      "last_updated": "2026-05-02",
+      "max_output_tokens": 8192,
+      "source": "static"
+    },
+    {
+      "capabilities": [
+        "vision",
+        "tools",
+        "streaming"
+      ],
+      "context_window": 200000,
+      "display_name": "Claude Haiku 4.5",
+      "family": "anthropic",
+      "id": "claude-haiku-4-5-20251001",
+      "last_updated": "2026-05-02",
+      "max_output_tokens": 8192,
+      "source": "static"
+    }
+  ],
+  "provider": "anthropic",
+  "source": "static",
+  "warnings": []
+}
