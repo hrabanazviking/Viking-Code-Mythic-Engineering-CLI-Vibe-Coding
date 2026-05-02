@@ -155,3 +155,13 @@ operators want IDE / observability bridges before distribution.
 - Memory updated incrementally (per the durable rule).
 - ADR-0009 is the only new ADR — it documents the internal API
   contract that slice 18.3 enforces statically.
+
+---
+
+## Update Notice — 2026-05-02 (additive)
+
+A later audit (`AUDIT_FAKE_TEMP_CODE_2026-05-02.md`, HEAD `e0953b6`) verified this closeout's claims against HEAD on 2026-05-02. **Verdict on PH-18:** the document accurately discloses its remaining gaps (e.g. subprocess bypasses still present in `cicd/release.py:172`, `cicd/rollback.py:74`, `tui/runner.py:137`, `protocols/mcp_client.py:51` — all marked "Not yet" in the original prose). PH-18 is the cleanest of the mega-day closeouts in honesty.
+
+- **Coverage:** any "76%" figure in this or sibling closeouts was a stale carry-over. Live measurement (`pytest --cov=mythic_vibe_cli --cov-report=term-missing`) on 2026-05-02 reports **82%** branch+line coverage on the production package (1694 passed, 1 skipped, 14 subtests). Current coverage is ~6 points higher than recorded.
+
+— *Sólrún Hvítmynd & Runa, additive correction*

@@ -141,3 +141,13 @@ PyPI publish pipelines first.
   durable rule about not batching).
 - No new ADRs required — PH-12 adds capabilities, not new
   boundaries.
+
+---
+
+## Update Notice — 2026-05-02 (additive)
+
+A later audit (`AUDIT_FAKE_TEMP_CODE_2026-05-02.md`, HEAD `e0953b6`) re-measured the project on 2026-05-02. The original closeout above is preserved unchanged; this notice is purely additive.
+
+- **Coverage:** any "76%" figure in this or sibling closeouts was a stale carry-over. Live measurement (`pytest --cov=mythic_vibe_cli --cov-report=term-missing`) on 2026-05-02 reports **82%** branch+line coverage on the production package (1694 passed, 1 skipped, 14 subtests). Current coverage is ~6 points higher than recorded.
+
+— *Sólrún Hvítmynd & Runa, additive correction*
