@@ -840,6 +840,20 @@ class MythicTuiApp(App):
         super().__init__()
         self.root = root
         self._initial_theme = theme
+        # Phase 19.0 / L-8 (additive 2026-05-02 audit remediation):
+        # detect narrow-terminal mode at construction so downstream
+        # screens / panels can adapt their rendering. The detection
+        # honours the MYTHIC_TUI_NARROW env override, an explicit
+        # ``columns`` arg (not exposed here — tests can patch
+        # ``should_use_narrow_layout`` directly), and the live
+        # ``shutil.get_terminal_size`` probe. Pre-Phase-19 the
+        # ``surfaces/narrow_layout.should_use_narrow_layout`` helper
+        # was exported in __all__ and tested but never imported by
+        # production — the audit (L-8) caught it as a dead
+        # integration point.
+        from ..surfaces.narrow_layout import should_use_narrow_layout
+
+        self.narrow_mode: bool = should_use_narrow_layout()
 
     def on_mount(self) -> None:
         if self._initial_theme is not None:
@@ -851,6 +865,11 @@ class MythicTuiApp(App):
                 self.theme = self._initial_theme
             except Exception:  # noqa: BLE001 — never crash the TUI on a bad theme name
                 self._initial_theme = None
+        # Phase 19.0 / L-8 (additive): annotate the sub-title when
+        # narrow mode is active so operators can confirm at a
+        # glance which layout the TUI is rendering for.
+        if self.narrow_mode:
+            self.sub_title = f"{self.SUB_TITLE}  ·  narrow"
         self.push_screen(StatusScreen(self.root))
 
     def action_cycle_theme(self) -> None:

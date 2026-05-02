@@ -83,5 +83,72 @@ class ConstantsTests(unittest.TestCase):
         self.assertEqual(NARROW_LAYOUT_THRESHOLD, 78)
 
 
+# ---- Phase 19.0 / L-8 (audit remediation 2026-05-02) -----------------
+#
+# should_use_narrow_layout used to be exported in __all__ and tested
+# but never imported by any production module — a dead integration
+# point per the audit. It's now wired into MythicTuiApp.__init__ so
+# the TUI knows at startup whether to render its narrow / mobile
+# variant. These tests lock the wire-up.
+
+
+textual_unavailable = False
+try:
+    import textual  # noqa: F401
+except ImportError:
+    textual_unavailable = True
+
+
+@unittest.skipIf(textual_unavailable, "textual not installed")
+class TuiAppNarrowModeWireUpTests(unittest.TestCase):
+    """``MythicTuiApp.__init__`` calls ``should_use_narrow_layout``
+    and stores the result as ``self.narrow_mode``."""
+
+    def test_narrow_mode_attribute_present(self) -> None:
+        import tempfile
+        from pathlib import Path
+        from mythic_vibe_cli.tui.app import MythicTuiApp
+
+        with tempfile.TemporaryDirectory() as tmp:
+            app = MythicTuiApp(Path(tmp))
+        self.assertIsInstance(app.narrow_mode, bool)
+
+    def test_force_narrow_env_sets_narrow_mode_true(self) -> None:
+        import tempfile
+        from pathlib import Path
+        from mythic_vibe_cli.tui.app import MythicTuiApp
+
+        with mock.patch.dict(os.environ, {FORCE_NARROW_ENV: "1"}, clear=False):
+            with tempfile.TemporaryDirectory() as tmp:
+                app = MythicTuiApp(Path(tmp))
+        self.assertTrue(app.narrow_mode)
+
+    def test_force_narrow_env_off_consults_terminal_size(self) -> None:
+        """When the env override is off, narrow_mode reflects the
+        live terminal-size probe. We patch should_use_narrow_layout
+        to a known value to make the assertion deterministic."""
+        import tempfile
+        from pathlib import Path
+        from mythic_vibe_cli.tui.app import MythicTuiApp
+
+        with mock.patch.dict(os.environ, {FORCE_NARROW_ENV: ""}, clear=False), \
+             mock.patch(
+            "mythic_vibe_cli.surfaces.narrow_layout.should_use_narrow_layout",
+            return_value=True,
+        ):
+            with tempfile.TemporaryDirectory() as tmp:
+                app = MythicTuiApp(Path(tmp))
+            self.assertTrue(app.narrow_mode)
+
+        with mock.patch.dict(os.environ, {FORCE_NARROW_ENV: ""}, clear=False), \
+             mock.patch(
+            "mythic_vibe_cli.surfaces.narrow_layout.should_use_narrow_layout",
+            return_value=False,
+        ):
+            with tempfile.TemporaryDirectory() as tmp:
+                app = MythicTuiApp(Path(tmp))
+            self.assertFalse(app.narrow_mode)
+
+
 if __name__ == "__main__":
     unittest.main()
