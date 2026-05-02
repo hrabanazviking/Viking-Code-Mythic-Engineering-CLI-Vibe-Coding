@@ -1811,6 +1811,152 @@ _ADR_TEMPLATE = """# {title}
 """
 
 
+# --- Additive expansion 2026-05-02 -------------------------------------------
+# The four artefact types task/interface/invariant/risk were originally
+# advertised by ``cmd_scaffold`` as "land in PH-10 slice 10.4" but that slice
+# closed without delivering them. The audit on 2026-05-02 surfaced the gap.
+# These templates + dispatcher land them. Existing ``_ADR_TEMPLATE`` and the
+# ADR scaffold path remain untouched.
+# ---------------------------------------------------------------------------
+
+_TASK_TEMPLATE = """# {title}
+
+- ID: TASK-{number:04d}
+- Status: open
+- Date: {date}
+- Owner:
+- Phase:
+
+## Goal
+
+(What outcome counts as done.)
+
+## Subtasks
+
+- [ ]
+
+## Verification
+
+(How we will know this task is complete — tests, observable behaviour, sign-off.)
+
+## Notes
+
+"""
+
+
+_INTERFACE_TEMPLATE = """# {title}
+
+- ID: INT-{number:04d}
+- Status: draft
+- Date: {date}
+- Owner:
+
+## Purpose
+
+(What this interface is for and which boundary it crosses.)
+
+## Contract
+
+(Inputs, outputs, error conditions, and invariants the interface upholds.)
+
+## Producers / Consumers
+
+- Producers:
+- Consumers:
+
+## Notes
+
+"""
+
+
+_INVARIANT_TEMPLATE = """# {title}
+
+- ID: INV-{number:04d}
+- Status: active
+- Date: {date}
+- Owner:
+
+## Invariant
+
+(The condition that must always hold.)
+
+## Rationale
+
+(Why this invariant exists and what it protects.)
+
+## Enforcement
+
+(How this invariant is enforced — tests, gates, types, runtime checks, ADR cross-links.)
+
+## Violation Cost
+
+(What happens if this is broken — incident class, blast radius, recovery work.)
+
+## Notes
+
+"""
+
+
+_RISK_TEMPLATE = """# {title}
+
+- ID: RISK-{number:04d}
+- Status: open
+- Date: {date}
+- Severity:
+- Likelihood:
+- Owner:
+
+## Description
+
+(What the risk is.)
+
+## Impact
+
+(What happens if it materialises — operational, security, reputational, compliance.)
+
+## Mitigation
+
+(What is being done to reduce likelihood or impact.)
+
+## Trigger / Detection
+
+(How we will know if this risk is materialising — alerts, audits, leading indicators.)
+
+## Notes
+
+"""
+
+
+# Specification table for the additive artefact types. ``cmd_scaffold``
+# routes through this table before the legacy adr-only branch.
+_ARTEFACT_SPECS: dict[str, dict[str, object]] = {
+    "task": {
+        "directory_parts": ("mythic", "tasks"),
+        "file_prefix": "TASK-",
+        "id_label": "TASK",
+        "template": _TASK_TEMPLATE,
+    },
+    "interface": {
+        "directory_parts": ("docs", "interfaces"),
+        "file_prefix": "INT-",
+        "id_label": "INT",
+        "template": _INTERFACE_TEMPLATE,
+    },
+    "invariant": {
+        "directory_parts": ("docs", "invariants"),
+        "file_prefix": "INV-",
+        "id_label": "INV",
+        "template": _INVARIANT_TEMPLATE,
+    },
+    "risk": {
+        "directory_parts": ("docs", "risks"),
+        "file_prefix": "RISK-",
+        "id_label": "RISK",
+        "template": _RISK_TEMPLATE,
+    },
+}
+
+
 def _next_adr_number(adr_dir: Path) -> int:
     if not adr_dir.exists():
         return 1
@@ -1838,20 +1984,57 @@ def _slugify_adr_title(title: str) -> str:
     return cleaned.strip("-") or "untitled"
 
 
+# Additive 2026-05-02: generic artefact-number helper used by the new
+# task/interface/invariant/risk scaffold paths. Mirrors ``_next_adr_number``
+# but takes the file prefix as an argument so it can scan ``TASK-*.md``,
+# ``INT-*.md``, ``INV-*.md``, or ``RISK-*.md`` directories. The original
+# ``_next_adr_number`` is left in place (it remains the entry point for the
+# adr scaffold path) per the additive-only rule.
+def _next_artefact_number(directory: Path, file_prefix: str) -> int:
+    if not directory.exists():
+        return 1
+    highest = 0
+    for path in directory.glob(f"{file_prefix}*.md"):
+        prefix = path.stem
+        digits = ""
+        for ch in prefix[len(file_prefix):]:
+            if ch.isdigit():
+                digits += ch
+            else:
+                break
+        if digits:
+            try:
+                highest = max(highest, int(digits))
+            except ValueError:
+                continue
+    return highest + 1
+
+
 def cmd_scaffold(args: argparse.Namespace) -> int:
     """Add a new artefact to an existing Mythic project.
 
-    Today only ``scaffold adr <title>`` is implemented. The remaining
-    artefact types (task / interface / invariant / risk) are routed to
-    PH-10 slice 10.4 (artefact-template extension points).
+    Supported artefact types (additive 2026-05-02): adr, task, interface,
+    invariant, risk. The original adr path is unchanged; the four new
+    types route through ``_cmd_scaffold_extended`` via ``_ARTEFACT_SPECS``.
     """
     root = Path(getattr(args, "path", ".")).resolve()
     artefact = getattr(args, "artefact", None)
 
+    # Additive 2026-05-02: dispatch the four new artefact types before the
+    # legacy rejection branch. The legacy branch is preserved below as the
+    # USER_INPUT_ERROR path for any genuinely unknown artefact.
+    if artefact in _ARTEFACT_SPECS:
+        return _cmd_scaffold_extended(args, root, artefact, _ARTEFACT_SPECS[artefact])
+
     if artefact != "adr":
+        # Note (2026-05-02 additive patch): the "not yet implemented" prefix
+        # is retained for back-compat with existing tests that key on the
+        # substring; the trailing prose was refreshed to reflect the now-
+        # supported set, since the prior reference to "PH-10 slice 10.4"
+        # was stale once the four types landed above.
         write_error(
             f"Scaffold artefact {artefact!r} not yet implemented. "
-            "Available now: adr. Future types (task/interface/invariant/risk) land in PH-10 slice 10.4."
+            "Recognised types: adr, task, interface, invariant, risk."
         )
         return USER_INPUT_ERROR
 
@@ -1904,6 +2087,85 @@ def cmd_scaffold(args: argparse.Namespace) -> int:
         )
     else:
         write_line("ADR scaffold written.")
+        write_key_value("Path", target)
+        write_key_value("Number", number)
+        write_key_value("Title", title)
+    return SUCCESS
+
+
+# Additive 2026-05-02: handler for the four new artefact types
+# (task / interface / invariant / risk). Mirrors the adr scaffold flow
+# above but parameterises directory, file prefix, id label, and template
+# from ``_ARTEFACT_SPECS``. The adr path above is intentionally left as
+# its own dedicated handler — it has the longest history and any drift
+# from this generic helper is a smaller blast radius than collapsing
+# both into one.
+def _cmd_scaffold_extended(
+    args: argparse.Namespace,
+    root: Path,
+    artefact: str,
+    spec: dict[str, object],
+) -> int:
+    title = (getattr(args, "title", "") or "").strip()
+    if not title:
+        write_error(f"scaffold {artefact} requires --title <text>.")
+        return USER_INPUT_ERROR
+
+    directory_parts = spec["directory_parts"]  # type: ignore[index]
+    file_prefix = spec["file_prefix"]  # type: ignore[index]
+    id_label = spec["id_label"]  # type: ignore[index]
+    template = spec["template"]  # type: ignore[index]
+    assert isinstance(directory_parts, tuple)
+    assert isinstance(file_prefix, str)
+    assert isinstance(id_label, str)
+    assert isinstance(template, str)
+
+    target_dir = root.joinpath(*directory_parts)
+    number = _next_artefact_number(target_dir, file_prefix)
+    slug = _slugify_adr_title(title)
+    target = target_dir / f"{file_prefix}{number:04d}-{slug}.md"
+
+    if _flag(args, "dry_run"):
+        payload = {
+            "command": f"scaffold {artefact}",
+            "dry_run": True,
+            "target": str(target),
+            "number": number,
+            "title": title,
+            "slug": slug,
+            "id_label": id_label,
+        }
+        if _flag(args, "json"):
+            write_json(payload)
+        else:
+            write_line(f"Dry run: no {id_label} file will be written.")
+            write_key_value("Target", target)
+            write_key_value("Number", number)
+            write_key_value("Title", title)
+        return SUCCESS
+
+    if target.exists():
+        write_error(f"Refusing to overwrite existing {id_label}: {target}")
+        return UNSAFE_OPERATION_BLOCKED
+
+    target_dir.mkdir(parents=True, exist_ok=True)
+    rendered = template.format(title=title, number=number, date=utc_now())
+    target.write_text(rendered, encoding="utf-8")
+
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": f"scaffold {artefact}",
+                "dry_run": False,
+                "target": str(target),
+                "number": number,
+                "title": title,
+                "slug": slug,
+                "id_label": id_label,
+            }
+        )
+    else:
+        write_line(f"{id_label} scaffold written.")
         write_key_value("Path", target)
         write_key_value("Number", number)
         write_key_value("Title", title)
