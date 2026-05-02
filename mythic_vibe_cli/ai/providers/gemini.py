@@ -16,6 +16,8 @@ from .base import (
     utc_now,
     write_provider_log,
 )
+# Phase D 2026-05-02 (audit remediation, finding #5).
+from .model_catalog import ModelListing, list_models as _catalog_list_models
 
 
 @dataclass
@@ -27,6 +29,21 @@ class GeminiProvider:
     def validate_config(self) -> ProviderStatus:
         key = os.getenv("GEMINI_API_KEY", "").strip()
         return ProviderStatus(configured=bool(key), details=["GEMINI_API_KEY is required"] if not key else ["GEMINI_API_KEY detected"])
+
+    # Phase D 2026-05-02 (audit remediation, finding #5): real model
+    # listing — static by default, ``remote=True`` hits Gemini's
+    # ``/v1beta/models?key=<KEY>`` endpoint. Reads the key from
+    # ``GEMINI_API_KEY`` first (matches validate_config above), then
+    # ``GOOGLE_API_KEY`` as a fallback (Google's canonical name).
+    def list_models(self, *, remote: bool = False) -> ModelListing:
+        api_key: str | None = None
+        if remote:
+            api_key = (
+                os.getenv("GEMINI_API_KEY", "").strip()
+                or os.getenv("GOOGLE_API_KEY", "").strip()
+                or None
+            )
+        return _catalog_list_models(self.name, remote=remote, api_key=api_key)
 
     def estimate(self, packet: object) -> Estimate:
         return estimate_packet(packet, provider_name=self.name)

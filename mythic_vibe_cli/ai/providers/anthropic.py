@@ -16,6 +16,8 @@ from .base import (
     utc_now,
     write_provider_log,
 )
+# Phase D 2026-05-02 (audit remediation, finding #5).
+from .model_catalog import ModelListing, list_models as _catalog_list_models
 
 
 @dataclass
@@ -27,6 +29,13 @@ class AnthropicProvider:
     def validate_config(self) -> ProviderStatus:
         key = os.getenv("ANTHROPIC_API_KEY", "").strip()
         return ProviderStatus(configured=bool(key), details=["ANTHROPIC_API_KEY is required"] if not key else ["ANTHROPIC_API_KEY detected"])
+
+    # Phase D 2026-05-02 (audit remediation, finding #5): real model
+    # listing — static by default, ``remote=True`` triggers a live
+    # ``GET /v1/models`` against the Anthropic API. Falls back to the
+    # static catalog with a warning on any remote failure.
+    def list_models(self, *, remote: bool = False) -> ModelListing:
+        return _catalog_list_models(self.name, remote=remote)
 
     def estimate(self, packet: object) -> Estimate:
         return estimate_packet(packet, provider_name=self.name)

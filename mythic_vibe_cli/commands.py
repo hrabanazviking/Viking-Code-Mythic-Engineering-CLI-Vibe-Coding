@@ -5497,8 +5497,13 @@ def cmd_ai_models(args: argparse.Namespace) -> int:
             write_line(f"  - {name}{suffix}")
         return SUCCESS
 
-    # Other providers: report configured-status only and return a
-    # clean note that the listing isn't implemented for them yet.
+    # Other providers: route through the new ``list_models(remote=...)``
+    # protocol added in Phase D (2026-05-02). Falls through to the
+    # legacy canned "(not implemented)" branch if the provider does
+    # not expose ``list_models`` — preserved per the additive-only
+    # rule. ``--remote`` triggers a live HTTP listing where the
+    # provider supports it (Anthropic / OpenAI / Gemini / OpenRouter
+    # all do). Failures fall back to the static catalog with a warning.
     root = Path(getattr(args, "path", ".")).resolve()
     registry = _ai_registry(root)
     provider = registry.providers().get(provider_name)
@@ -5507,11 +5512,79 @@ def cmd_ai_models(args: argparse.Namespace) -> int:
         return USER_INPUT_ERROR
 
     status = provider.validate_config()
+
+    list_models_method = getattr(provider, "list_models", None)
+    if callable(list_models_method):
+        remote_flag = bool(_flag(args, "remote"))
+        try:
+            listing = list_models_method(remote=remote_flag)
+        except Exception as exc:  # noqa: BLE001 — never crash on listing errors
+            # Defensive fallback: catalog-level errors should already
+            # be wrapped, but this guards a misbehaving provider.
+            payload = {
+                "command": "ai models",
+                "provider": provider_name,
+                "configured": status.configured,
+                "details": list(status.details),
+                "implemented": False,
+                "models": [],
+                "warnings": [f"list_models raised: {exc}"],
+            }
+            if _flag(args, "json"):
+                write_json(payload)
+            else:
+                write_error(f"Model listing failed for {provider_name}: {exc}")
+            return OPERATIONAL_FAILURE
+
+        payload = {
+            "command": "ai models",
+            "provider": provider_name,
+            "configured": status.configured,
+            "details": list(status.details),
+            "implemented": True,
+            "source": listing.source,
+            "models": [m.to_dict() for m in listing.models],
+            "warnings": list(listing.warnings),
+        }
+        if _flag(args, "json"):
+            write_json(payload)
+            return SUCCESS
+
+        # Human render.
+        if not listing.models:
+            write_line(
+                f"{provider_name}: no models in {listing.source} catalog."
+            )
+        else:
+            write_line(
+                f"{provider_name} models ({listing.source}, "
+                f"{len(listing.models)} entries):"
+            )
+            for m in listing.models:
+                ctx = (
+                    f"  ctx={m.context_window:,}" if m.context_window else ""
+                )
+                cap = (
+                    f"  caps=[{', '.join(m.capabilities)}]"
+                    if m.capabilities
+                    else ""
+                )
+                write_line(f"  - {m.id}  ({m.display_name}){ctx}{cap}")
+        for w in listing.warnings:
+            write_line(f"  ! {w}")
+        return SUCCESS
+
+    # Legacy canned fallback — preserved per additive-only rule. Only
+    # reached if a provider somehow lacks ``list_models`` (no current
+    # provider does after Phase D, but this branch keeps the code
+    # robust against future provider additions that forget to
+    # implement it).
     payload = {
         "command": "ai models",
         "provider": provider_name,
         "configured": status.configured,
         "details": list(status.details),
+        "implemented": False,
         "models": [],
         "note": (
             f"Model listing is not implemented for {provider_name!r} yet — "
