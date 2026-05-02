@@ -82,6 +82,15 @@ def evaluate(
     actionable. (Future enhancement: per-command scoping via
     ``[command:<name>]`` tags.)
     """
+    # Additive 2026-05-02 (Phase A.2 of audit remediation): materialise
+    # the iterable once, up-front, so both the list-comprehension below
+    # and the `any(constraints)` check that follows it see the same
+    # constraint set. Pseudo-code audit finding #3 caught this:
+    # generator inputs were exhausted by the comp at line 85, leaving
+    # `any()` to operate on an empty iterator and silently suppress the
+    # advisory note. List inputs were unaffected (lists support multiple
+    # iteration); the bug only fired for generator-style callers.
+    constraints = list(constraints)
     violations = [
         c for c in constraints if c.severity == SEVERITY_BLOCKING
     ]

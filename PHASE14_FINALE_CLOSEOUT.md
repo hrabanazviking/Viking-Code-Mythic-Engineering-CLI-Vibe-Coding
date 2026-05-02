@@ -154,3 +154,39 @@ A later audit (`AUDIT_FAKE_TEMP_CODE_2026-05-02.md`, HEAD `e0953b6`) re-measured
 - **Coverage:** any "76%" figure in this or sibling closeouts was a stale carry-over. Live measurement (`pytest --cov=mythic_vibe_cli --cov-report=term-missing`) on 2026-05-02 reports **82%** branch+line coverage on the production package (1694 passed, 1 skipped, 14 subtests). Current coverage is ~6 points higher than recorded.
 
 — *Sólrún Hvítmynd & Runa, additive correction*
+
+---
+
+## Update Notice — 2026-05-02 Phase A.2 (additive, audit remediation)
+
+The 2026-05-02 pseudo-code audit (`AUDIT_PSEUDOCODE_DEEP_2026-05-02.md`,
+finding #3) caught a real functional bug in the policy gate shipped by
+PH-14 slice 14.2. `policy/policy_gate.py:evaluate()` accepted
+`Iterable[Constraint]`. The body exhausted the iterable in a list-comp
+at line 85, then called `any(constraints)` at the same name a few lines
+later. **List inputs were unaffected** (lists support multiple
+iteration); **generator/iterator inputs silently suppressed the
+"no blocking violations" advisory note** because the iterator was
+already drained.
+
+**Fix shipped in Phase A.2 (additive, one line):**
+`policy/policy_gate.py:evaluate()` now does
+`constraints = list(constraints)` at the top of the body, before any
+iteration. The list-comp and `any()` check that follow operate on the
+same materialised list. **No prior logic was changed** — every
+existing branch behaves identically; only generator-input callers see
+corrected output.
+
+Tests: `tests/test_policy_gate.py` gained three new regression tests
+in `EvaluateTests`:
+- `test_generator_input_with_warn_only_still_emits_note` — verified
+  to fail against the un-fixed code with exactly the expected symptom
+  (`notes=[]` instead of the advisory note); passes with the fix.
+- `test_generator_input_with_blocking_constraint_still_blocks` —
+  locks the blocking-decision path against generator inputs.
+- `test_iterator_input_yields_same_decision_as_list` — parity guard
+  ensuring list-vs-iter inputs always produce identical decisions.
+
+Test count: 1723 → 1726 (+3). Lint + mypy clean.
+
+— *Sólrún Hvítmynd & Runa, additive correction*

@@ -98,6 +98,81 @@ class EvaluateTests(unittest.TestCase):
         }:
             self.assertIn(key, payload)
 
+    # ---- Phase A.2 regression (2026-05-02 audit, finding #3) ----------
+    #
+    # ``evaluate()`` accepts ``Iterable[Constraint]``. Before the fix,
+    # the function exhausted the iterable in the list-comprehension at
+    # the top of the body, then called ``any(constraints)`` on the same
+    # now-empty iterator a few lines later. List inputs were fine
+    # (lists support multiple iteration); generator inputs silently
+    # suppressed the advisory note. The fix materialises the iterable
+    # once at the top of evaluate(); these tests lock the contract.
+
+    def test_generator_input_with_warn_only_still_emits_note(self) -> None:
+        """Regression for finding #3: a generator yielding warn/advisory
+        constraints should still produce the "no blocking" advisory
+        note. Pre-fix this returned an empty notes list because
+        ``any(constraints)`` ran on an exhausted generator."""
+        def constraint_stream():
+            yield Constraint(
+                id="r1", kind="rule", text="be nice", severity=SEVERITY_WARN
+            )
+            yield Constraint(
+                id="r2", kind="rule", text="be brave", severity=SEVERITY_ADVISORY
+            )
+
+        decision = evaluate(constraint_stream(), action="write", command="oath")
+        self.assertTrue(decision.allowed)
+        self.assertFalse(decision.requires_override)
+        self.assertTrue(
+            any("no blocking" in n for n in decision.notes),
+            f"expected advisory note, got notes={decision.notes!r}",
+        )
+
+    def test_generator_input_with_blocking_constraint_still_blocks(self) -> None:
+        """A generator yielding a blocking constraint must still
+        produce the blocking decision (not silently skipped because
+        the iterator was exhausted)."""
+        def constraint_stream():
+            yield Constraint(
+                id="b1",
+                kind="rule",
+                text="never break the law",
+                severity=SEVERITY_BLOCKING,
+            )
+            yield Constraint(
+                id="r2", kind="rule", text="be brave", severity=SEVERITY_WARN
+            )
+
+        decision = evaluate(constraint_stream(), action="write", command="oath")
+        self.assertFalse(decision.allowed)
+        self.assertTrue(decision.requires_override)
+        self.assertEqual([c.id for c in decision.violations], ["b1"])
+
+    def test_iterator_input_yields_same_decision_as_list(self) -> None:
+        """Parity check: list vs iter() of the same constraints must
+        produce the same decision (allowed, requires_override,
+        violation IDs, and the presence of the advisory note when
+        applicable)."""
+        constraints = [
+            Constraint(
+                id="r1", kind="rule", text="be nice", severity=SEVERITY_WARN
+            ),
+        ]
+        list_decision = evaluate(constraints, action="write", command="oath")
+        iter_decision = evaluate(iter(constraints), action="write", command="oath")
+        self.assertEqual(list_decision.allowed, iter_decision.allowed)
+        self.assertEqual(
+            list_decision.requires_override, iter_decision.requires_override
+        )
+        self.assertEqual(
+            [c.id for c in list_decision.violations],
+            [c.id for c in iter_decision.violations],
+        )
+        # Both must surface the advisory note.
+        self.assertTrue(any("no blocking" in n for n in list_decision.notes))
+        self.assertTrue(any("no blocking" in n for n in iter_decision.notes))
+
 
 # ---- evaluate_for_root -----------------------------------------------
 
