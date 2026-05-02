@@ -97,45 +97,105 @@ Each phase is independently shippable, ordered by **(real-bug-first, smallest fi
 
 ---
 
-### Phase D — `ai models` per-provider expansion
-**Goal:** make `ai models --provider anthropic|openai|gemini|openrouter` return a real listing where the provider supports it, instead of the canned "not implemented" payload.
+### Phase D — `ai models` per-provider expansion (fully featured)
+**Goal:** make `ai models --provider <name>` return a rich, real listing for every supported provider, with both static (offline) and remote (live HTTP) paths.
 
-**D.1 — Provider catalog approach** (Finding #5, Medium)
-- Files: `mythic_vibe_cli/commands.py:5253-5257` (the dispatch) + each provider in `ai/providers/{anthropic,openai,gemini,openrouter}.py`
-- Approach: keep the existing `"models": [], "note": "not implemented…"` branch as the catch-all for providers that don't implement listing. ADD a per-provider `list_models()` method on each provider class. Implementations:
-  - **Anthropic:** static catalog (latest Claude IDs hardcoded with last-updated date); ADR-0010 to record why we ship a static catalog vs hitting `/v1/models` (Anthropic's models endpoint is stable enough that a static catalog avoids requiring an API key just to list).
-  - **OpenAI:** static catalog with optional `--remote` flag that does a real `/v1/models` GET if `OPENAI_API_KEY` is set.
-  - **Gemini / OpenRouter:** static catalog; remote optional same shape as OpenAI.
-- ADD `Models implemented: true` flag to JSON payload so consumers can detect real vs canned.
-- Tests: per-provider tests with `unittest.mock.patch("urllib.request.urlopen")` for the remote-listing path; static catalog tests that just assert non-empty + ID format.
-- Done-when: `mythic-vibe ai models --provider <name>` returns a non-empty list for all 5 providers.
+**Locked scope (Volmarr 2026-05-02):** **do BOTH fully** — static catalog AND remote listing for every provider. Static is the default (offline-friendly, no API key needed); `--remote` triggers a real HTTP listing.
 
-**Phase D commit shape:** five small commits (one per provider, then the dispatcher refresh) + ADR-0010 + closeout addendum to `PHASE6_FINALE_CLOSEOUT.md` additively.
+**D.1 — Provider catalog scaffolding** (Finding #5, Medium)
+- New module: `mythic_vibe_cli/ai/providers/model_catalog.py` (or extend `base.py`).
+- Frozen dataclass `ModelInfo`:
+  ```
+  id: str                 # canonical provider model id
+  family: str             # "claude" | "gpt" | "gemini" | "openrouter"
+  display_name: str
+  context_window: int     # tokens; 0 if unknown
+  max_output_tokens: int  # 0 if not declared
+  capabilities: tuple[str, ...]   # ("vision", "audio", "tools", "thinking", ...)
+  source: str             # "static" | "remote"
+  last_updated: str       # ISO date (static records only)
+  ```
+- Helper: `to_dict()` for JSON serialisation.
+
+**D.2 — Anthropic** (static + remote)
+- Static catalog includes: `claude-opus-4-7`, `claude-sonnet-4-6`, `claude-haiku-4-5-20251001` (capabilities tuned per current cutoff).
+- Remote: `GET https://api.anthropic.com/v1/models` with `x-api-key` + `anthropic-version` headers. Falls back to static + warning when `ANTHROPIC_API_KEY` missing.
+
+**D.3 — OpenAI** (static + remote)
+- Static catalog of current GA models.
+- Remote: `GET https://api.openai.com/v1/models` with `Authorization: Bearer $OPENAI_API_KEY`.
+
+**D.4 — Gemini** (static + remote)
+- Static catalog.
+- Remote: `GET https://generativelanguage.googleapis.com/v1beta/models?key=$GOOGLE_API_KEY`.
+
+**D.5 — OpenRouter** (static + remote)
+- Static catalog (curated subset of popular routes).
+- Remote: `GET https://openrouter.ai/api/v1/models` (unauthenticated for listing).
+
+**D.6 — Dispatcher refresh + ADR-0010**
+- `commands.py:cmd_ai_models` honours `--remote`, calls each provider's `list_models(remote=...)`, falls back to static + emits a warning record if remote fails.
+- JSON payload gains `"source": "static" | "remote"`, `"implemented": true`, `"warnings": [...]`.
+- ADR-0010 documents the static-default-with-remote-opt-in policy.
+
+**Phase D commit shape:** five commits (D.1 scaffolding + D.2..D.5 per provider) + D.6 dispatcher + ADR-0010 + closeout addendum to `PHASE6_FINALE_CLOSEOUT.md`.
+
+**Phase D done-when:** `mythic-vibe ai models --provider <name>` returns a non-empty `models` list for **all** 5 providers (Ollama already worked + 4 new). `--remote` actually fetches live listings where the provider supports it. Tests with `unittest.mock.patch("urllib.request.urlopen")` cover the remote path; static-catalog tests assert non-empty + correct ID format. Coverage on `ai/providers/*.py` rises proportionally.
 
 ---
 
-### Phase E — Chat bridge poll loop (the big one)
-**Goal:** ship a runnable Matrix + Telegram chat bridge so PH-17 slice 17.4's checkmark is no longer caveated.
+### Phase E — Chat bridge poll loop (fully featured, the big one)
+**Goal:** ship a production-grade runnable Matrix + Telegram chat bridge so PH-17 slice 17.4's checkmark is no longer caveated.
+
+**Locked scope (Volmarr 2026-05-02):** **do all parts fully featured.** Both backends, env-var + config-file credentials, master gate, allowlist enforcement, clean shutdown, reconnect-with-backoff, structured logging, deployment docs.
+
+**E.0 — Config + master gate** (precedes the loops)
+- `MYTHIC_CHAT_BRIDGE_ENABLED=1` master env gate (default off — durable rule). `--run` refuses without it.
+- `MatrixConfig` and `TelegramConfig` (already exist per audit) gain:
+  - `from_env(cls)` classmethod reading the canonical env vars
+  - `from_file(cls, path: Path)` classmethod reading JSON (alt: TOML if simpler)
+  - `from_sources(cls, *, config_path: Path | None)` that does the merge (env wins for unset file fields and vice versa — file overrides env when both present, since file is more specific)
+  - `validate()` method that raises a typed `ChatBridgeConfigError` on missing required fields, and **refuses if no allowlist is set** (operator must explicitly opt into broadcast via `ALLOWED_*=*`).
 
 **E.1 — Matrix `/sync` long-poll loop**
-- File: ADD a new `surfaces/chat_bridge_loop.py` module. Keep `chat_bridge.py` (parse_command, handle_message, urllib HTTP primitives, `cmd_surface_chat` exit) untouched.
-- Approach: implement `run_matrix_loop(config: MatrixConfig, *, stop_event: threading.Event | None = None)` that calls `/sync` with a long-poll timeout, dispatches each message through `parse_command` + `handle_message`, replies via `matrix_send_message`. Honours `stop_event` for clean shutdown.
-- Add a new CLI subcommand: `mythic-vibe surface chat --backend matrix --run` (the `--run` flag is the additive switch — without it, the existing scaffolding-and-exit behaviour is preserved).
+- File: new `surfaces/chat_bridge_loop.py`. Existing `chat_bridge.py` untouched.
+- `run_matrix_loop(config: MatrixConfig, *, stop_event: threading.Event | None = None, timeout_ms: int = 30000)`:
+  - Initial `GET /sync?timeout=<ms>` to grab `next_batch` token.
+  - Loop: `GET /sync?since=<token>&timeout=<ms>`, dispatch new room messages through `parse_command` + `handle_message`, reply via `matrix_send_message` only to allowlisted rooms.
+  - **Echo prevention:** skip messages whose sender == bot's own user_id (avoids reply loops).
+  - **Reconnect with backoff:** transient HTTP errors (5xx, network reset) → exponential backoff capped at 60s; 4xx → log + abort.
+  - Honours `stop_event` between sync calls for clean shutdown.
 
 **E.2 — Telegram `getUpdates` long-poll loop**
-- Same shape as E.1: `run_telegram_loop(config: TelegramConfig, *, stop_event=None)` in the same new module.
+- Same shape as E.1: `run_telegram_loop(config, *, stop_event, timeout_s=30)`.
+- `GET /bot<token>/getUpdates?offset=<id>&timeout=<s>`, dispatch + reply via `telegram_send_message`.
+- Allowlist enforcement on **both** chat_id and user_id (a chat could have multiple users).
+- Same echo prevention + reconnect backoff.
 
-**E.3 — Wire `--run` into `cmd_surface_chat`**
-- File: `mythic_vibe_cli/commands.py:3024-3060`
-- Approach: keep the entire existing scaffolding-and-exit body. ADD a `--run` branch BEFORE the existing exit that invokes the appropriate loop function. Old behaviour (no `--run` flag) is unchanged.
+**E.3 — `--run` wired into `cmd_surface_chat`**
+- File: `commands.py:3024-3060`. Keep the entire existing scaffolding-and-exit body. ADD a `--run` branch BEFORE the existing exit that invokes the appropriate loop function. Old behaviour preserved when `--run` is absent.
+- New flags: `--config <path>` (file override), `--timeout <seconds>` (long-poll timeout for the chosen backend).
+- SIGINT / SIGTERM → set the `stop_event` so the loop exits cleanly between sync calls.
 
-**E.4 — Tests + docs**
-- Tests: `unittest.mock.patch("urllib.request.urlopen")` to feed canned `/sync` and `getUpdates` responses; assert the loop dispatches expected commands and exits cleanly on `stop_event`.
-- Docs: ADD a "Running the bridge" section to `docs/SSH_DEPLOYMENT.md` (or a new `docs/CHAT_BRIDGE_DEPLOYMENT.md`) with credential setup, systemd unit example, and security caveats.
+**E.4 — Tests**
+- `tests/test_chat_bridge_loop_matrix.py` — `unittest.mock.patch("urllib.request.urlopen")` feeds canned `/sync` payloads. Verify: command dispatch, allowlist filtering (allowed room replies, denied room ignored), echo prevention (own messages skipped), backoff on 5xx, clean stop on `stop_event.set()`, validate refuses without allowlist.
+- `tests/test_chat_bridge_loop_telegram.py` — same shape against `getUpdates` payloads.
+- `tests/test_chat_bridge_config.py` — `from_env`, `from_file`, `from_sources` merge, `validate()` raising on missing fields, `validate()` refusing without allowlist (and accepting explicit `*` opt-in).
+- Existing 4 untested HTTP client functions (`matrix_send_message`, `telegram_send_message`, `_matrix_request`, `_telegram_request`) gain coverage as a side-effect.
 
-**Phase E commit shape:** four commits (E.1, E.2, E.3, E.4 — docs+tests). Per Volmarr's durable rule, each commit closes one slice, no batching.
+**E.5 — Deployment docs**
+- New `docs/CHAT_BRIDGE_DEPLOYMENT.md` with:
+  - Required env vars / config file shape
+  - Allowlist policy + the explicit-broadcast caveat
+  - systemd unit example (Linux)
+  - Windows service example (NSSM)
+  - macOS launchd plist example
+  - TLS / reverse-proxy notes (Matrix homeserver typically on HTTPS)
+  - Rate-limit guidance (Telegram 30 msg/s, Matrix per-room limits)
 
-**Phase E done-when:** an operator can run `mythic-vibe surface chat --backend matrix --run` (or `--backend telegram --run`) with credentials in env and the bridge actually polls + replies. PH-17 closeout gets a follow-up additive note: "**E.1–E.4 closed 2026-XX-XX** — long-poll loop now shipped; the 2026-05-02 caveat block above is now historical."
+**Phase E commit shape:** five commits (E.0 config, E.1 Matrix loop, E.2 Telegram loop, E.3 wire-up, E.4 tests, E.5 docs — six logical commits actually; one per concern). Per Volmarr's durable rule.
+
+**Phase E done-when:** operator can run `mythic-vibe surface chat --backend matrix --run` (or `--backend telegram --run`) with creds in env + allowlist set, and the bridge actually polls + replies + reconnects + shuts down cleanly. PH-17 closeout gets a follow-up additive note: "**E.0–E.5 closed 2026-XX-XX** — long-poll loop now shipped; the 2026-05-02 caveat block above is now historical."
 
 ---
 
@@ -225,18 +285,21 @@ Phase B — Dead-code reactivation  [CLOSED 2026-05-02]
 Phase C — TUI plugin slash dispatch
   [ ] C.1  picker → dispatcher wiring                   (tui/picker.py + tests)
 
-Phase D — ai models per-provider expansion
-  [ ] D.1  Anthropic list_models                        (ai/providers/anthropic.py)
-  [ ] D.2  OpenAI list_models (+ optional --remote)     (ai/providers/openai.py)
-  [ ] D.3  Gemini list_models                           (ai/providers/gemini.py)
-  [ ] D.4  OpenRouter list_models                       (ai/providers/openrouter.py)
-  [ ] D.5  Dispatcher refresh + ADR-0010                (commands.py, docs/ADRS/)
+Phase D — ai models per-provider expansion (static + remote, fully featured)
+  [ ] D.1  ModelInfo dataclass + catalog scaffolding    (ai/providers/model_catalog.py or base.py)
+  [ ] D.2  Anthropic static + remote list_models        (ai/providers/anthropic.py)
+  [ ] D.3  OpenAI static + remote list_models           (ai/providers/openai.py)
+  [ ] D.4  Gemini static + remote list_models           (ai/providers/gemini.py)
+  [ ] D.5  OpenRouter static + remote list_models       (ai/providers/openrouter.py)
+  [ ] D.6  Dispatcher refresh + ADR-0010                (commands.py, docs/ADRS/)
 
-Phase E — Chat bridge poll loop
-  [ ] E.1  Matrix /sync loop                            (surfaces/chat_bridge_loop.py)
-  [ ] E.2  Telegram getUpdates loop                     (surfaces/chat_bridge_loop.py)
-  [ ] E.3  --run flag wired into cmd_surface_chat       (commands.py)
-  [ ] E.4  Tests + deployment docs                      (tests/, docs/)
+Phase E — Chat bridge poll loop (fully featured, all parts)
+  [ ] E.0  Config + master gate + allowlist refusal     (surfaces/chat_bridge.py — additive)
+  [ ] E.1  Matrix /sync loop + echo prevention + backoff (surfaces/chat_bridge_loop.py)
+  [ ] E.2  Telegram getUpdates loop + allowlist on chat+user (surfaces/chat_bridge_loop.py)
+  [ ] E.3  --run flag + --config + signal handling      (commands.py)
+  [ ] E.4  Tests for loops + config + HTTP coverage     (tests/test_chat_bridge_*.py)
+  [ ] E.5  CHAT_BRIDGE_DEPLOYMENT.md (systemd/NSSM/launchd) (docs/)
 
 Phase F — Coverage + probe hardening
   [ ] F.1  chat_bridge HTTP client tests                (tests/test_chat_bridge_http_client.py)
@@ -253,8 +316,11 @@ Phase G — Audit re-run + closeout
 ## Risks / open questions to resolve before coding each phase
 
 - **Phase A.1 (Chatterbox):** what is the chatterbox package's modern API exactly? Need to read `chatterbox/src/chatterbox/__init__.py` for the install we have, OR pin to a known version. If the API takes a model checkpoint argument we need to expose, document it as a CLI flag.
+  - **RESOLVED 2026-05-02:** read the vendored package; modern API is `from chatterbox.tts import ChatterboxTTS` → `cls.from_pretrained(device=...)` → `model.generate(text)` → `torchaudio.save(path, wav, model.sr)`. Adapter shipped in commit `6f60e57`.
 - **Phase D:** Volmarr — preference on remote-listing default? My recommendation: static catalog by default (no API call required), `--remote` opt-in. Anthropic specifically: stick to static-only since the `/v1/models` endpoint isn't widely documented.
+  - **RESOLVED 2026-05-02 (Volmarr's call):** **do BOTH fully — static catalog AND remote listing for every provider.** Static is the default (offline-friendly); `--remote` triggers a real HTTP listing where the provider supports it. Anthropic gets remote too (their `/v1/models` does exist, just less documented historically). Each provider returns metadata-rich `ModelInfo` records (id, family, context_window, capability flags). JSON output gains `"source": "static" | "remote"` and `"implemented": true` for programmatic detection.
 - **Phase E:** Matrix and Telegram bridges both need credentials at runtime. Where do we read them from? Recommend `MYTHIC_CHAT_MATRIX_TOKEN` / `MYTHIC_CHAT_TELEGRAM_TOKEN` env vars (durable cross-platform pattern), with optional `--config <path>` override for ops who prefer a file.
+  - **RESOLVED 2026-05-02 (Volmarr's call):** **do all parts fully featured.** Both Matrix and Telegram backends. Hybrid credentials: env-vars-first with `--config <path>` override. Master gate `MYTHIC_CHAT_BRIDGE_ENABLED=1` (default off — durable rule). Refuse to `--run` without explicit allowlist (rooms for Matrix; chat IDs + user IDs for Telegram); operator must opt into broadcast with `ALLOWED_*=*` (not recommended). Both `MatrixConfig` and `TelegramConfig` gain `from_env()` and `from_file()` classmethods. Loop functions accept `stop_event: threading.Event | None` for clean shutdown. Reconnect-with-backoff on transient HTTP failures. Logging via the existing structured event-log layer. Deployment guide at `docs/CHAT_BRIDGE_DEPLOYMENT.md` with systemd unit example.
 - **Phase F.2:** the probe-loop entry-point names look guessed. Need to verify the actual Yggdrasil and MindSpark APIs. If those packages aren't external (they may live in Volmarr's other repos — `WYRD-Protocol` for Yggdrasil maybe?), we should pin the import to a specific known-good entry point.
 
 ---
