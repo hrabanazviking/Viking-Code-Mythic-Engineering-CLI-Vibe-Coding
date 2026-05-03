@@ -89,15 +89,40 @@ def build_parser() -> argparse.ArgumentParser:
             """
         ),
     )
-    init_cmd.add_argument("--goal", required=True, help="Plain language product goal")
+    # Phase 20.0 (audit remediation 2026-05-02): --goal is no longer
+    # marked required at the argparse layer because the new
+    # --interactive wizard prompts for it. Default behaviour is
+    # preserved by an explicit post-parse check in cmd_init that
+    # rejects "neither --goal nor --interactive supplied".
+    init_cmd.add_argument("--goal", help="Plain language product goal")
     init_cmd.add_argument("--path", default=".", help="Project directory (default: current directory)")
     init_cmd.add_argument("--noob", action="store_true", help="Enable beginner-friendly guidance")
+    init_cmd.add_argument(
+        "--interactive",
+        action="store_true",
+        help="Opt into a Q&A wizard that asks for project name, goal, default AI provider, operator, and sample-scaffold preference.",
+    )
+    init_cmd.add_argument(
+        "--force",
+        action="store_true",
+        help="With --interactive: overwrite mythic/project_settings.json if it already exists.",
+    )
     add_runtime_options(init_cmd, dry_run=True)
 
     start = sub.add_parser("start", help="Alias of `init`")
-    start.add_argument("--goal", required=True, help="Plain language product goal")
+    start.add_argument("--goal", help="Plain language product goal")
     start.add_argument("--path", default=".", help="Project directory (default: current directory)")
     start.add_argument("--noob", action="store_true", help="Enable beginner-friendly guidance")
+    start.add_argument(
+        "--interactive",
+        action="store_true",
+        help="Opt into a Q&A wizard (same as `init --interactive`).",
+    )
+    start.add_argument(
+        "--force",
+        action="store_true",
+        help="With --interactive: overwrite mythic/project_settings.json if it already exists.",
+    )
     add_runtime_options(start, dry_run=True)
 
     checkin = sub.add_parser("checkin", help="Log a Mythic phase update and advance tracking")

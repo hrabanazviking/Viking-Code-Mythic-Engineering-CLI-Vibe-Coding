@@ -164,14 +164,61 @@ def _method_store(root: Path | None = None) -> MethodStore:
 
 def cmd_init(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
+    interactive = _flag(args, "interactive")
+    force = _flag(args, "force")
+
+    # Phase 20.0 (audit remediation 2026-05-02): --goal is no longer
+    # argparse-required because --interactive prompts for it. Validate
+    # the "must have one path to a goal" invariant here so callers
+    # without either flag get a clear USER_INPUT_ERROR instead of a
+    # downstream NoneType crash.
+    if not interactive and not (args.goal and str(args.goal).strip()):
+        write_error(
+            "init requires --goal <text> OR --interactive. "
+            "Pass --goal to run non-interactively (the original behaviour) "
+            "or --interactive to launch the Q&A wizard."
+        )
+        return USER_INPUT_ERROR
+
     if _flag(args, "dry_run"):
         write_line("Dry run: no project files will be written.")
         write_key_value("Project path", root)
-        write_key_value("Goal", args.goal)
+        if interactive:
+            write_line("Would launch the --interactive wizard.")
+        else:
+            write_key_value("Goal", args.goal)
         write_line("Would create Mythic docs, tasks, and runtime state if missing.")
         return SUCCESS
 
     root.mkdir(parents=True, exist_ok=True)
+
+    # Phase 20.0 (additive): wizard branch.
+    wizard_settings_path: Path | None = None
+    wizard_scaffolded: list[Path] = []
+    if interactive:
+        from .init_wizard import (
+            WizardAbortedError,
+            WizardConfig,
+            run_wizard,
+            scaffold_sample_artifacts,
+            write_project_settings,
+        )
+
+        try:
+            answers = run_wizard(
+                WizardConfig(root=root, initial_goal=args.goal),
+            )
+            wizard_settings_path = write_project_settings(
+                root, answers, force=force
+            )
+            wizard_scaffolded = scaffold_sample_artifacts(root, answers)
+        except WizardAbortedError as exc:
+            write_error(str(exc))
+            return USER_INPUT_ERROR
+
+        # Hand the wizard's resolved goal forward to the existing
+        # init_project pipeline so the scaffold matches the answers.
+        args.goal = answers.goal
 
     store = _method_store(root)
     method = store.load()
@@ -189,6 +236,13 @@ def cmd_init(args: argparse.Namespace) -> int:
             write_bullet(str(path))
     else:
         write_line("No new files were created (scaffold already existed).")
+
+    if wizard_settings_path is not None:
+        write_key_value("Project settings", wizard_settings_path)
+    if wizard_scaffolded:
+        write_line("Sample artefacts (delete when no longer needed):")
+        for path in wizard_scaffolded:
+            write_bullet(str(path))
 
     write_line("Next step: run `mythic-vibe import-md` to copy the full Mythic markdown corpus locally.")
     return SUCCESS
