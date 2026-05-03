@@ -83,6 +83,7 @@ consists of:
 | `mythic_vibe_cli` Python module imports | **Internal** — direct `from mythic_vibe_cli...` imports are not supported. We do not promise import-path stability for library use; the CLI is the API |
 | Plugin extension points (`plugins/extension_points.py`) | **Stable** — extension-point names + signatures are SemVer-stable. Plugins built against a `1.x` MAY assume they keep working through all `1.x` releases |
 | File-system layout under `mythic/` | **Stable** — paths and naming conventions are part of the operator contract |
+| **Hermes Agent surface** (`mythic_vibe_cli.agent_api`, v1.0) | **Stable** — the 18 default tool names + their input-schema shapes, the HTTP endpoint paths + auth contract, the `HermesAgent` / `HermesCore` / `ToolSpec` / `Invocation` / `InvocationResult` Python class names + signatures. New tools may be added (MINOR); existing fields may be added (MINOR); removals or type changes require MAJOR + the documented deprecation cadence. See [`docs/HERMES_AGENT.md`](HERMES_AGENT.md) §7 for the full enumeration |
 
 Anything not listed above is internal and may change without
 notice. In particular: undocumented helper modules, internal

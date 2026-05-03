@@ -198,10 +198,6 @@ def main(argv: list[str] | None = None) -> int:
         # command — doc page lands with the v1.0 launch
         # checklist in 20.7.
         "review",
-        # v1.0 / Hermes (additive 2026-05-03): agent control
-        # plane. Doc page docs/HERMES_AGENT.md lands in the
-        # v1.0 launch slice H.4.
-        "hermes",
     })
 
     code_only = audit(

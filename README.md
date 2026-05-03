@@ -64,6 +64,7 @@ Highlights of the v1.0 launch (full detail in `CHANGELOG.md`):
 - **Governance commands** — `mythic-vibe review architecture` produces a quarterly-review checklist. `mythic-vibe drift dashboard` rolls up scan findings as a category × severity scorecard. `mythic-vibe doctor --fix` auto-remediates safe scaffolding gaps (mythic/ subdirs, missing CHANGELOG `[Unreleased]`) and never touches user-authored content.
 - **Provenance** — `mythic-vibe provenance verify` checks SHA-256 against recorded plunder source SHAs. `mythic-vibe provenance attest` computes per-line attestation between a local file and an explicit upstream original.
 - **Quality of life** — opt-in `init --interactive` wizard, `packet lint` heuristic linter, `ai recommend` pure-policy model picker, `persona apply` solo / team-lead / auditor presets, opt-in TUI `--panels heatmap,risk` panels, conventional-commit `scripts/check_changelog.py --classify`.
+- **Hermes Agent** — programmatic control plane for any external AI agent. Two access modes (TCL Python in-process + HTTP API) share one core (`mythic_vibe_cli/agent_api/`). 18 curated tools cover status, doctor, drift, packet creation/lint, verify, reflect, ai recommend, provenance verify, workflow lineage, persona, plugin doctor, artifact read/list, recent events. Every invocation audited via the existing event-log primitive. See [`docs/HERMES_AGENT.md`](docs/HERMES_AGENT.md).
 - **Distribution** — three channels via `.github/workflows/release.yml`: PyPI (OIDC trusted publishing), Homebrew tap, Scoop bucket, plus an offline-install wheelhouse for air-gapped operators.
 - **Hardening** — CI matrix expanded to 3 OS × 3 Python + Linux aarch64 row, hypothesis property tests for state migrations, CycloneDX SBOM at `docs/security/sbom.json`, threat model at `docs/security/threat_model.md`.
 
@@ -676,6 +677,8 @@ Mythic Vibe CLI exposes the following command families. Run `mythic-vibe <comman
 - `ai providers|test|run|stream|ingest-response|models|telemetry|route|recommend` — optional AI provider integrations. PH-20: `recommend` is a pure-policy model picker against the static catalog
 - `persona apply|show` — PH-20: opt-in operator presets (`solo` / `team-lead` / `auditor`) writing `mythic/persona.json`
 - `slash list|inspect` — inspect + introspect the slash-command catalog (built-in + plugin-contributed)
+- `hermes tools|inspect|invoke` — v1.0 / Hermes: list + inspect + invoke the curated agent-tool surface from the CLI without HTTP. See [`docs/HERMES_AGENT.md`](docs/HERMES_AGENT.md).
+- `surface hermes [--bind ADDR --port N --token TOKEN]` — v1.0 / Hermes: launch the token-protected HTTP API for external agents.
 
 ### Operator helpers
 - `examples` — copy-paste command examples
@@ -759,7 +762,8 @@ If you do not know where to stand, begin here and follow the stones in order:
 12. `docs/security/threat_model.md` — assets, attackers, mitigations (with file:line anchors)
 13. `docs/security/sbom.json` — CycloneDX v1.6 dependency manifest
 14. `docs/governance/quarterly_review.md` — architecture-review cadence + agenda
-15. `docs/RELEASE_CHECKLIST.md` — pre-tag manual gates + tag-driven distribution flow
+15. `docs/HERMES_AGENT.md` — v1.0 agent control plane (TCL + HTTP API)
+16. `docs/RELEASE_CHECKLIST.md` — pre-tag manual gates + tag-driven distribution flow
 16. `packaging/README.md` — PyPI / Homebrew / Scoop / wheelhouse channel inventory
 17. `packaging/WHEELHOUSE.md` — offline-install recipe
 18. `DEVLOG.md` — chronological continuity record

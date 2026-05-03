@@ -44,6 +44,7 @@ The five categories of value the CLI must keep intact:
 | A3 | Source files in the operator repo | the repository the CLI is invoked against | A buggy mutation can wipe / corrupt user code |
 | A4 | Web terminal endpoint | `surfaces/web_terminal.py` HTTP server when started | Remote command execution if exposed |
 | A5 | Chat bridge endpoint | `surfaces/chat_bridge.py` Matrix / Telegram polling clients | Remote command execution + provider impersonation |
+| A6 | **Hermes Agent surface** (v1.0) | `agent_api/http_api.py` HTTP server when started; `agent_api/tcl.py` in-process surface | Token-protected programmatic control plane — exposes the curated 18-tool surface to any agent that can reach it |
 
 Secondary assets (defended in transit by the same controls):
 plugin packages and their sandboxed execution context
@@ -144,6 +145,19 @@ codebase.
 | A5.1 | Anyone in a public room sends commands | T2 | Bridge filters to a configured operator allowlist; commands not from allowed senders are dropped |
 | A5.2 | Command injection through chat text | T2 | `parse_command` only accepts a fixed verb whitelist; arguments are passed as discrete argv entries, not shelled out |
 | A5.3 | Long-poll auth header leakage in logs | T1 | Auth headers redacted via `security/redaction.py` before `logging` emits |
+
+### A6 — Hermes Agent surface (v1.0)
+
+| # | Threat | Attackers | Mitigation |
+|---|--------|-----------|------------|
+| A6.1 | Remote attacker hits the endpoint | T2 | Default bind `127.0.0.1` (`agent_api/http_api.py:DEFAULT_HOST`); operator must explicitly pass `--bind 0.0.0.0` and is documented as needing their own TLS reverse proxy |
+| A6.2 | Brute-force token guessing | T2 | 32-byte URL-safe token (`secrets.token_urlsafe(32)`); compared via `secrets.compare_digest` (constant-time) |
+| A6.3 | DoS via huge `Content-Length` advertising | T2 | `MAX_REQUEST_BODY_BYTES = 65_536` cap + per-connection socket timeout (mirror of PH-19.0 / BS-1 fix on `web_terminal.py`) |
+| A6.4 | Path-escape attempt to read files outside the project | T2, T3 | `read_artifact` / `list_artifacts` call `Path.relative_to(project_root)` and refuse on `ValueError` |
+| A6.5 | Unaudited tool invocation | T1 (post-hoc log scraping), T2, T3, T4 | Every invocation appends one line to `mythic/events.jsonl` via `runtime/event_log.append_event` (PH-09); operators see exactly what an agent did |
+| A6.6 | Tool author exposes a destructive operation without operator awareness | T3 (custom-tool authors) | Mandatory `capabilities` + `side_effects` declarations on every `ToolSpec`; surfaced in `mythic-vibe hermes tools` and `GET /api/tools` for operator review before launching the surface |
+| A6.7 | Validation bypass via crafted args | T2, T4 | Minimal stdlib JSON-Schema validator (`_validate_against_schema`) enforces `required` / `type` / `enum` BEFORE the tool implementation runs; failures return a `validation_error` status without invoking the tool |
+| A6.8 | Cross-site request forgery against the local endpoint | T2 (browser-based) | Token must be in the `X-Hermes-Token` header OR a JSON body field — never a cookie. A drive-by browser page cannot read the token |
 
 ### Plugins (sandbox layer)
 
