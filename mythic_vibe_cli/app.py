@@ -2117,8 +2117,21 @@ def build_parser() -> argparse.ArgumentParser:
             Examples:
               mythic-vibe drift
               mythic-vibe drift --path ./project --json
+              mythic-vibe drift dashboard            # Phase 20.E rollup
+              mythic-vibe drift dashboard --json
             """
         ),
+    )
+    # Phase 20.E (audit remediation 2026-05-03): optional
+    # positional sub-verb. Default "" preserves the original
+    # flat ``drift`` behavior. ``drift dashboard`` runs the
+    # rollup view.
+    drift_cmd.add_argument(
+        "subcommand",
+        nargs="?",
+        default="",
+        choices=["", "dashboard"],
+        help="Optional sub-verb (currently: dashboard).",
     )
     drift_cmd.add_argument(
         "--path",

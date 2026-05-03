@@ -397,12 +397,106 @@ __all__ = [
     "DriftCategory",
     "DriftFinding",
     "DriftSeverity",
+    "build_dashboard_payload",
     "detect_orphaned_modules",
     "detect_superseded_decisions",
     "detect_undocumented_handlers",
     "detect_undocumented_modules",
+    "render_dashboard_markdown",
     "render_findings_text",
     "scan_for_drift",
     "summarize_findings",
     "to_payload",
 ]
+
+
+# ---------------------------------------------------------------------------
+# Phase 20.E (audit remediation 2026-05-03) — drift dashboard.
+#
+# Rollup view over the existing scan output, grouped by category +
+# severity. Markdown emits a Mythic-style scorecard suitable for
+# pasting into a CHANGELOG, an ADR, or a status report. JSON
+# returns the structured payload for downstream tooling.
+# ---------------------------------------------------------------------------
+
+
+def _group_by_category(
+    findings: list["DriftFinding"],
+) -> dict[str, list["DriftFinding"]]:
+    grouped: dict[str, list["DriftFinding"]] = {}
+    for finding in findings:
+        grouped.setdefault(finding.category, []).append(finding)
+    return grouped
+
+
+def build_dashboard_payload(
+    findings: list["DriftFinding"],
+) -> dict[str, Any]:
+    """Aggregate findings into a scorecard suitable for JSON
+    consumption. Per-category counts + per-severity counts +
+    overall ok flag (False if any error-severity finding)."""
+    grouped = _group_by_category(findings)
+    by_category = {
+        category: {
+            "total": len(items),
+            "by_severity": {
+                sev: sum(1 for f in items if f.severity == sev)
+                for sev in _VALID_SEVERITIES
+            },
+        }
+        for category, items in sorted(grouped.items())
+    }
+    return {
+        "command": "drift dashboard",
+        "total_findings": len(findings),
+        "by_severity": summarize_findings(findings),
+        "by_category": by_category,
+        "ok": all(f.severity != "error" for f in findings),
+    }
+
+
+def render_dashboard_markdown(
+    findings: list["DriftFinding"],
+) -> str:
+    """Produce a markdown scorecard. Always returns a string —
+    even with zero findings the operator gets a 'No drift' block
+    so the dashboard output is consistent across runs."""
+    payload = build_dashboard_payload(findings)
+    lines: list[str] = []
+    lines.append("# Drift Dashboard")
+    lines.append("")
+    lines.append(
+        f"**Total findings:** {payload['total_findings']} | "
+        f"**Status:** {'OK' if payload['ok'] else 'FAIL (error-severity findings)'}"
+    )
+    lines.append("")
+
+    severity_counts = payload["by_severity"]
+    lines.append("## Severity")
+    lines.append("")
+    lines.append("| Severity | Count |")
+    lines.append("|----------|-------|")
+    for sev in _VALID_SEVERITIES:
+        lines.append(f"| {sev} | {severity_counts.get(sev, 0)} |")
+    lines.append("")
+
+    by_category = payload["by_category"]
+    if not by_category:
+        lines.append("## Categories")
+        lines.append("")
+        lines.append("No drift detected — no category rollup needed.")
+        lines.append("")
+        return "\n".join(lines) + "\n"
+
+    lines.append("## Categories")
+    lines.append("")
+    lines.append("| Category | Total | info | warning | error |")
+    lines.append("|----------|-------|------|---------|-------|")
+    for category, counts in by_category.items():
+        sev = counts["by_severity"]
+        lines.append(
+            f"| {category} | {counts['total']} | "
+            f"{sev.get('info', 0)} | {sev.get('warning', 0)} | "
+            f"{sev.get('error', 0)} |"
+        )
+    return "\n".join(lines) + "\n"

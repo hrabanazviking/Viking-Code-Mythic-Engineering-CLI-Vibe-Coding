@@ -6983,11 +6983,30 @@ def cmd_drift(args: argparse.Namespace) -> int:
     even with findings — the operator decides what to act on. Future
     slices may bump exit on ``error``-severity findings; the heuristics
     today only emit ``info`` / ``warning``.
+
+    Phase 20.E (audit remediation 2026-05-03): when the optional
+    ``subcommand`` positional == ``"dashboard"``, emit the rollup
+    scorecard (markdown by default; JSON via ``--json``).
     """
-    from .drift import render_findings_text, scan_for_drift, to_payload
+    from .drift import (
+        build_dashboard_payload,
+        render_dashboard_markdown,
+        render_findings_text,
+        scan_for_drift,
+        to_payload,
+    )
 
     root = Path(getattr(args, "path", ".")).resolve()
     findings = scan_for_drift(root)
+    sub = (getattr(args, "subcommand", "") or "").strip().lower()
+
+    if sub == "dashboard":
+        if _flag(args, "json"):
+            write_json(build_dashboard_payload(findings))
+            return SUCCESS
+        write_line(render_dashboard_markdown(findings))
+        return SUCCESS
+
     if _flag(args, "json"):
         write_json(to_payload(findings))
         return SUCCESS

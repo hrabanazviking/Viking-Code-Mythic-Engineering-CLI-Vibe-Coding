@@ -2263,3 +2263,37 @@ Per-role token-aware packet trimming in `codex_bridge:PacketBuilder`.
 Wraps existing `drift.py` with `mythic-vibe drift dashboard` emitting markdown + JSON scorecard.
 
 `STATUS: OPEN — SLICE 20.D CLOSED — IN PROGRESS: 20.E`
+
+## ADDITIVE UPDATE — 2026-05-03 (slice 20.E closeout)
+
+**HEAD:** `0b3ab23` (post-20.D) → next commit will land 20.E.
+
+### What shipped — slice 20.E (drift dashboard)
+
+- **`mythic_vibe_cli/drift.py`** — additive `build_dashboard_payload(findings)` + `render_dashboard_markdown(findings)`. Aggregates the existing scan output by category + severity. `ok` flag is False when any error-severity finding fired.
+- **`mythic_vibe_cli/commands.py:cmd_drift`** — branches on optional `subcommand` arg. `""` (default) → existing flat `drift` behavior unchanged. `"dashboard"` → renders the new scorecard.
+- **`mythic_vibe_cli/app.py`** — `drift` parser gains optional positional `subcommand` (choices `["", "dashboard"]`). Existing `mythic-vibe drift` invocations are byte-identical.
+
+### Tests — `tests/test_drift_dashboard.py` (11 tests)
+
+- **Pure rendering (8):** empty → zero totals + ok=True; groups by category; ok=False on error severity; ok=True with only warnings/info; per-category severity breakdown; markdown empty case (No drift block); markdown non-empty (severity + category tables); error severity marks status FAIL.
+- **CLI integration (3):** flat `drift` unchanged; dashboard text output contains the markdown header; dashboard JSON output has the right command name + structure.
+
+### Verification
+
+- `python -m pytest tests/test_drift_dashboard.py -q` → 11 passed in ~0.4s.
+- Full suite: `python -m pytest -q` → **2170 passed, 1 skipped, 109 subtests passed** (+11 from 2159).
+- `ruff check mythic_vibe_cli tests scripts tools` → clean.
+- `mypy mythic_vibe_cli` → no issues found in 149 source files.
+
+### Operating-discipline carry
+
+- Strict additive: existing `drift` command's behavior, output format, and exit code are unchanged when no subcommand is passed. The dashboard is a sibling render, not a replacement.
+- Per compatibility-policy §3, the new positional + new JSON shape are MINOR additions on a stable surface.
+- Mermaid not used here (the dashboard is a tabular scorecard, not a graph). Plain markdown tables render in every common reader.
+
+### Next: slice 20.F — automated changelog classification
+
+Extends `scripts/check_changelog.py` to classify entries by PR labels.
+
+`STATUS: OPEN — SLICE 20.E CLOSED — IN PROGRESS: 20.F`
