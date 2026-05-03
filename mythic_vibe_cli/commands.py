@@ -4319,7 +4319,105 @@ def cmd_plugin_dispatch(args: argparse.Namespace) -> int:
         return cmd_plugin_discover(args)
     if args.plugin_command == "install":
         return cmd_plugin_install(args)
+    # Phase 20.3 (additive 2026-05-02): plugin doctor — audits
+    # capability declarations, manifest health, circuit-breaker
+    # state. Read-only.
+    if args.plugin_command == "doctor":
+        return cmd_plugin_doctor(args)
     return USER_INPUT_ERROR
+
+
+def cmd_plugin_doctor(args: argparse.Namespace) -> int:
+    """Phase 20.3 — audit installed plugins. Reads the registry,
+    validates declared capabilities against the known
+    vocabulary, and surfaces any active circuit-breaker
+    failures from the in-process state. Read-only — does not
+    modify the manifest or disable plugins."""
+    from .plugins.capabilities import (
+        DEFAULT_CAPABILITIES,
+        audit_capabilities,
+    )
+    from .plugins.circuit_breaker import (
+        DEFAULT_THRESHOLD,
+        THRESHOLD_ENV,
+    )
+
+    root = Path(args.path).resolve()
+    registry = PluginRegistry(root)
+    records = registry.list(include_disabled=True)
+
+    audited: list[dict[str, object]] = []
+    plugin_warnings: list[str] = []
+    for record in records:
+        cap_audit = audit_capabilities(tuple(record.capabilities))
+        audited.append(
+            {
+                "entrypoint": record.entrypoint,
+                "enabled": record.enabled,
+                "version": record.version,
+                "hooks": list(record.hooks),
+                "capabilities": cap_audit.to_dict(),
+            }
+        )
+        for unknown in cap_audit.unknown:
+            plugin_warnings.append(
+                f"{record.entrypoint}: unknown capability "
+                f"{unknown!r} (typo? see "
+                "mythic_vibe_cli/plugins/capabilities.py)"
+            )
+
+    breaker_threshold_env = (
+        os.environ.get(THRESHOLD_ENV) or str(DEFAULT_THRESHOLD)
+    )
+
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "plugin doctor",
+                "registry": str(registry.path),
+                "default_capabilities": list(DEFAULT_CAPABILITIES),
+                "breaker_threshold": breaker_threshold_env,
+                "warnings": plugin_warnings,
+                "plugins": audited,
+            }
+        )
+        return SUCCESS
+
+    write_line("Plugin doctor")
+    write_key_value("Registry", registry.path)
+    write_key_value("Breaker threshold", breaker_threshold_env)
+    write_key_value(
+        "Default capabilities",
+        ", ".join(DEFAULT_CAPABILITIES) or "(none — read-own-context only)",
+    )
+    if not audited:
+        write_line("- No plugins registered.")
+        return SUCCESS
+
+    write_line("Plugins:")
+    for entry in audited:
+        cap = entry["capabilities"]
+        if not isinstance(cap, dict):
+            continue
+        cap_label = (
+            ", ".join(cap.get("declared", []))
+            if cap.get("declared")
+            else "default-deny"
+        )
+        unknown = cap.get("unknown") or []
+        marker = " (UNKNOWN: " + ", ".join(unknown) + ")" if unknown else ""
+        enabled_label = "enabled" if entry.get("enabled") else "disabled"
+        write_bullet(
+            f"{entry['entrypoint']} [{enabled_label}] "
+            f"capabilities=[{cap_label}]{marker}",
+            indent=2,
+        )
+
+    if plugin_warnings:
+        write_line("Warnings:")
+        for warning in plugin_warnings:
+            write_bullet(warning, indent=2)
+    return SUCCESS
 
 
 def cmd_config_set(args: argparse.Namespace) -> int:

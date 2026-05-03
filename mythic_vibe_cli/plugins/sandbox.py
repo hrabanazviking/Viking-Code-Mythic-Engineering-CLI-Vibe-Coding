@@ -35,7 +35,13 @@ import os
 import threading
 import time
 from dataclasses import dataclass, field
-from typing import Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
+
+if TYPE_CHECKING:
+    # Phase 20.3 — circuit breaker is opt-in via the new
+    # ``breaker=`` kwarg on safe_call. Imported under
+    # TYPE_CHECKING so the runtime dependency is none-by-default.
+    from .circuit_breaker import CircuitBreaker  # noqa: F401
 
 
 T = TypeVar("T")
@@ -106,6 +112,7 @@ def safe_call(
     *args: Any,
     timeout_sec: float | None = None,
     plugin_id: str = "",
+    breaker: "CircuitBreaker | None" = None,
     **kwargs: Any,
 ) -> SandboxResult:
     """Invoke ``func`` inside the sandbox. Always returns a
@@ -115,6 +122,15 @@ def safe_call(
     is unset, the call runs synchronously without thread overhead.
     Otherwise the call runs on a worker thread with a soft
     deadline.
+
+    Phase 20.3 (additive 2026-05-02): when a ``breaker`` is
+    supplied, every result is reported into the breaker so it
+    can track consecutive failures per ``plugin_id``. The
+    breaker is **soft** — this function never short-circuits a
+    call. Callers (e.g. the plugin-hook dispatcher) can
+    pre-check ``breaker.is_tripped(plugin_id)`` to skip the
+    invocation entirely. Default ``breaker=None`` preserves
+    pre-20.3 behaviour byte-identically.
     """
     effective_timeout = (
         timeout_sec if timeout_sec is not None else resolve_timeout_sec()
@@ -126,16 +142,18 @@ def safe_call(
         try:
             value = func(*args, **kwargs)
         except Exception as exc:  # noqa: BLE001 — sandbox swallows by design
-            return SandboxResult(
+            result = SandboxResult(
                 elapsed_ms=(time.monotonic() - start) * 1000.0,
                 error=f"{type(exc).__name__}: {exc}",
                 plugin_id=plugin_id,
             )
-        return SandboxResult(
+            return _report_to_breaker(result, breaker, plugin_id)
+        result = SandboxResult(
             value=value,
             elapsed_ms=(time.monotonic() - start) * 1000.0,
             plugin_id=plugin_id,
         )
+        return _report_to_breaker(result, breaker, plugin_id)
 
     # Slow path: timeout enforcement on a daemon thread. We don't
     # use ThreadPoolExecutor here because its __exit__ blocks on
@@ -156,7 +174,7 @@ def safe_call(
     elapsed_ms = (time.monotonic() - start) * 1000.0
 
     if worker.is_alive():
-        return SandboxResult(
+        result = SandboxResult(
             elapsed_ms=elapsed_ms,
             error=(
                 f"plugin exceeded {effective_timeout:.3f}s timeout "
@@ -166,20 +184,41 @@ def safe_call(
             timed_out=True,
             plugin_id=plugin_id,
         )
+        return _report_to_breaker(result, breaker, plugin_id)
 
     captured_exc = holder.get("error")
     if isinstance(captured_exc, BaseException):
-        return SandboxResult(
+        result = SandboxResult(
             elapsed_ms=elapsed_ms,
             error=f"{type(captured_exc).__name__}: {captured_exc}",
             plugin_id=plugin_id,
         )
+        return _report_to_breaker(result, breaker, plugin_id)
 
-    return SandboxResult(
+    result = SandboxResult(
         value=holder.get("value"),
         elapsed_ms=elapsed_ms,
         plugin_id=plugin_id,
     )
+    return _report_to_breaker(result, breaker, plugin_id)
+
+
+def _report_to_breaker(
+    result: SandboxResult,
+    breaker: "CircuitBreaker | None",
+    plugin_id: str,
+) -> SandboxResult:
+    """Phase 20.3 (additive): notify the circuit breaker of a
+    success / failure if one is wired in. Returns the result
+    unchanged so callers can still use it normally. No-op when
+    ``breaker`` is None (default)."""
+    if breaker is None or not plugin_id:
+        return result
+    if result.ok:
+        breaker.record_success(plugin_id)
+    else:
+        breaker.record_failure(plugin_id)
+    return result
 
 
 @dataclass(frozen=True)

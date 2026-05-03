@@ -44,6 +44,11 @@ class PluginRecord:
     added_at: str = field(default_factory=utc_now)
     disabled_at: str | None = None
     notes: list[str] = field(default_factory=list)
+    # Phase 20.3 (additive 2026-05-02): declared runtime
+    # capabilities. Empty/missing list = default-deny
+    # (read-own-context only). See plugins/capabilities.py for
+    # the vocabulary and audit_capabilities() for validation.
+    capabilities: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -54,6 +59,12 @@ class PluginRecord:
             "added_at": self.added_at,
             "disabled_at": self.disabled_at,
             "notes": list(self.notes),
+            # Phase 20.3 (additive): always present in the
+            # serialized form so JSON consumers see the
+            # default-deny shape explicitly. Existing manifests
+            # without `capabilities` parse fine via from_raw
+            # falling back to [].
+            "capabilities": list(self.capabilities),
         }
 
     @classmethod
@@ -66,6 +77,9 @@ class PluginRecord:
         if not entrypoint:
             raise ValueError("Plugin entrypoint is required.")
         hooks = [str(item) for item in raw.get("hooks", []) if str(item)]
+        # Phase 20.3 (additive): tolerant capabilities parsing.
+        from .capabilities import parse_capabilities
+        capabilities = list(parse_capabilities(raw.get("capabilities")))
         return cls(
             entrypoint=entrypoint,
             enabled=bool(raw.get("enabled", True)),
@@ -74,6 +88,7 @@ class PluginRecord:
             added_at=str(raw.get("added_at") or utc_now()),
             disabled_at=str(raw.get("disabled_at")) if raw.get("disabled_at") else None,
             notes=[str(item) for item in raw.get("notes", []) if str(item)],
+            capabilities=capabilities,
         )
 
 

@@ -36,7 +36,15 @@
           "version": { "type": "string" },
           "added_at": { "type": "string" },
           "disabled_at": { "type": ["string", "null"] },
-          "notes": { "type": "array", "items": { "type": "string" } }
+          "notes": { "type": "array", "items": { "type": "string" } },
+          "capabilities": {
+            "type": "array",
+            "description": "Phase 20.3: declared runtime capabilities. Empty/missing array = default-deny (read-own-context only). Vocabulary is fixed by mythic_vibe_cli/plugins/capabilities.py:KNOWN_CAPABILITIES.",
+            "items": {
+              "type": "string",
+              "enum": ["read", "network", "subprocess", "file-write"]
+            }
+          }
         },
         "additionalProperties": true
       }

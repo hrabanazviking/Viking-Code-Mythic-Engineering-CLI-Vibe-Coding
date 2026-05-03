@@ -1884,3 +1884,65 @@ Largest PH-20 item:
   default).
 
 `STATUS: OPEN — SLICE 20.2 CLOSED — IN PROGRESS: 20.3`
+
+## ADDITIVE UPDATE — 2026-05-03 (slice 20.3 closeout)
+
+**HEAD:** `ed9c09e` (post-20.2) → next commit will land 20.3.
+
+### What shipped — slice 20.3 (plugin capability + doctor + breaker)
+
+The largest PH-20 slice — three coordinated additions:
+
+#### 1. Capability declarations
+- **`mythic_vibe_cli/plugins/capabilities.py`** (NEW, ~95 lines)
+  - `KNOWN_CAPABILITIES = ("read", "network", "subprocess", "file-write")` — vocabulary locked at module level (test guards drift).
+  - `DEFAULT_CAPABILITIES = ()` — empty list = read-own-context only (default-deny).
+  - `parse_capabilities(raw)` tolerates None / string shorthand / list / non-iterable; preserves order.
+  - `audit_capabilities(declared)` returns `CapabilityAudit` with declared/unknown/is_default_deny.
+- **`mythic_vibe_cli/plugins/api.py:PluginRecord`** — additive `capabilities: list[str]` field with default `[]`. Always serializes (even when empty) so JSON consumers see the explicit shape. `from_raw` reads via `parse_capabilities` so legacy manifests without the field still parse.
+- **`mythic_vibe_cli/resources/schemas/plugin_manifest.schema.json`** — schema gains optional `capabilities` enum array per plugin record.
+
+#### 2. Circuit breaker
+- **`mythic_vibe_cli/plugins/circuit_breaker.py`** (NEW, ~150 lines)
+  - `CircuitBreaker` class with thread-safe per-plugin failure counts.
+  - Threshold resolution: constructor → `MYTHIC_PLUGIN_BREAKER_THRESHOLD` env → `DEFAULT_THRESHOLD = 3`.
+  - `record_failure(plugin_id)` increments; trips at threshold. `record_success(plugin_id)` resets counter + closes breaker. `is_tripped(plugin_id)` is read-only.
+  - `snapshot()` returns alphabetical `BreakerStatus` list (stable for snapshot tests / operator diffs).
+  - **Soft enforcement:** the breaker tracks state but does NOT short-circuit calls. Callers (e.g. dispatcher) can pre-check `is_tripped()` to skip a plugin proactively.
+- **`mythic_vibe_cli/plugins/sandbox.py:safe_call`** — additive `breaker: CircuitBreaker | None = None` kwarg. New `_report_to_breaker` helper notifies success/failure on every return path. Default `breaker=None` is byte-identical to pre-20.3 behavior (regression test guards this).
+
+#### 3. `plugin doctor` CLI
+- **`mythic_vibe_cli/commands.py:cmd_plugin_doctor`** — read-only audit. Lists every registered plugin with its declared capabilities, flags unknown capability tokens as warnings, surfaces the active breaker threshold (env or default).
+- **`mythic_vibe_cli/commands.py:cmd_plugin_dispatch`** — additive branch routes `plugin doctor` to the new handler.
+- **`mythic_vibe_cli/app.py`** — `plugin doctor` parser entry with examples.
+
+### Tests — `tests/test_plugin_capabilities_and_breaker.py` (32 tests)
+
+- **Capabilities (10):** `parse_capabilities` tolerance (5); `audit_capabilities` semantics (5) including a vocabulary-lock test that forces coordinated changes to `KNOWN_CAPABILITIES` + the JSON-schema enum.
+- **Circuit breaker (11):** threshold resolution chain (5); per-plugin state machine (6) including thread-safety smoke test from 10 worker threads.
+- **Serialization (1):** `BreakerStatus.to_dict` shape.
+- **Sandbox+breaker integration (4):** `breaker=None` path is unchanged (backwards-compat guard); breaker records success; breaker records failure and trips at threshold; empty `plugin_id` is a no-op.
+- **`plugin doctor` CLI (6):** no-plugins case; renders capabilities; unknown-capability warning surfaces; default-deny label; JSON payload shape; env threshold propagates to payload.
+
+### Verification
+
+- `python -m pytest tests/test_plugin_capabilities_and_breaker.py -v` → 32 passed in ~0.4s.
+- Full suite: `python -m pytest -q` → **2071 passed, 1 skipped, 54 subtests passed** (+32 from 2039).
+- `ruff check mythic_vibe_cli tests scripts tools` → clean (one F401 fixed mid-slice — unused `field` import in `circuit_breaker.py`).
+- `mypy mythic_vibe_cli` → no issues found in **145** source files (+2 — `capabilities.py`, `circuit_breaker.py`).
+
+### Operating-discipline carry
+
+- Strict additive: every existing module path is unchanged. `safe_call` gains one new keyword (default None preserves shape); `PluginRecord` gains one new field (default empty preserves shape); the JSON schema gains one optional property.
+- Per compatibility-policy §3, all three additions are MINOR (new optional kwarg, new optional field, new subcommand).
+- Soft circuit breaker — doesn't disable plugins. Operators retain explicit control via `mythic-vibe plugin disable`. Future hardening could promote the breaker to hard cut-out behind a flag.
+- Capability declarations are documentation today, **enforcement hooks tomorrow**: when a real subprocess sandbox lands (PH-21+ stretch), the declarations become the policy input.
+
+### Next: slice 20.4 — `ai recommend`
+
+Pure-policy DSL that scores models from the Phase-D catalog
+against task constraints (`--task`, `--max-context`,
+`--vision-required`, `--cost-class`) and recommends top-N. No
+provider call needed.
+
+`STATUS: OPEN — SLICE 20.3 CLOSED — IN PROGRESS: 20.4`
