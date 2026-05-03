@@ -2297,3 +2297,40 @@ Wraps existing `drift.py` with `mythic-vibe drift dashboard` emitting markdown +
 Extends `scripts/check_changelog.py` to classify entries by PR labels.
 
 `STATUS: OPEN — SLICE 20.E CLOSED — IN PROGRESS: 20.F`
+
+## ADDITIVE UPDATE — 2026-05-03 (slice 20.F closeout)
+
+**HEAD:** `58650a5` (post-20.E) → next commit will land 20.F.
+
+### What shipped — slice 20.F (changelog classification)
+
+- **`scripts/check_changelog.py`** — additive `--classify` and `--json` flags. The original release-gate behavior runs unchanged when no flag is passed. Adds 11 conventional-commit-style label mappings to Keep-a-Changelog buckets (`feat→Added`, `fix→Fixed`, `docs→Documentation`, `refactor/perf/deps→Changed`, `test→Tests`, `chore→Chore`, `build→Build`, `ci→CI`, `revert/remove→Removed`).
+- Unknown labels surface in the `label` field (operator can see what they typed) but bucket falls through to `Unclassified` so the count signal stays clean.
+- Pure stdlib; no new dependencies.
+
+### Tests — `tests/test_changelog_classify.py` (13 tests)
+
+- **`extract_unreleased_block` (2):** returns block until next release; empty when marker missing.
+- **`parse_unreleased_entries` (1):** extracts bullet entries.
+- **`classify_entry` (4):** known label, label with scope, unknown prefix surfaces label-but-bucket-Unclassified, no prefix at all.
+- **`classify_unreleased` (2):** full report shape, label counts.
+- **CLI main (4):** `--classify` text output; `--classify --json` JSON; release gate unchanged with no flag; missing CHANGELOG returns 1.
+
+### Verification
+
+- `python -m pytest tests/test_changelog_classify.py -q` → 13 passed in ~0.3s.
+- Full suite: `python -m pytest -q` → **2183 passed, 1 skipped, 109 subtests passed** (+13 from 2170).
+- `ruff check mythic_vibe_cli tests scripts tools` → clean.
+- `mypy mythic_vibe_cli` → no issues found in 149 source files.
+
+### Operating-discipline carry
+
+- Strict additive: original `python scripts/check_changelog.py` invocation behaves byte-identically.
+- Per compatibility-policy §3, the new flags are MINOR additions on a stable surface.
+- The label vocabulary is locked in `LABEL_TO_BUCKET`. Adding new prefixes requires updating both the table and the docs/RELEASE_CHECKLIST.md label section.
+
+### Next: slice 20.G — plunder modified-lines attestation
+
+Extends `mythic_vibe_cli/plunder/provenance.py` with per-line diff hash recording, so post-import operator modifications are recorded with the same precision as the original import.
+
+`STATUS: OPEN — SLICE 20.F CLOSED — IN PROGRESS: 20.G`
