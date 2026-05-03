@@ -1063,6 +1063,29 @@ def build_parser() -> argparse.ArgumentParser:
     persona_show.add_argument("--path", default=".", help="Project directory (default: current directory)")
     add_runtime_options(persona_show, json_output=True)
 
+    # Phase 20.H (audit remediation 2026-05-03): top-level review
+    # commands. Currently one subcommand: architecture.
+    review_cmd = sub.add_parser(
+        "review",
+        help="Generate governance review checklists (quarterly architecture review).",
+    )
+    review_sub = review_cmd.add_subparsers(
+        dest="review_command", required=True
+    )
+    review_arch = review_sub.add_parser(
+        "architecture",
+        help="Emit the quarterly architecture review checklist (read-only).",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe review architecture
+              mythic-vibe review architecture --json
+            """
+        ),
+    )
+    review_arch.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    add_runtime_options(review_arch, json_output=True)
+
     ai = sub.add_parser("ai", help="Manage optional AI provider integrations")
     add_runtime_options(ai, json_output=True, dry_run=True)
     ai_sub = ai.add_subparsers(dest="ai_command", required=True)

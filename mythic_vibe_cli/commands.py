@@ -5022,6 +5022,40 @@ def cmd_provenance_attest(args: argparse.Namespace) -> int:
     return SUCCESS
 
 
+def cmd_review(args: argparse.Namespace) -> int:
+    """Phase 20.H — top-level review commands. Currently one
+    subcommand: ``architecture`` (quarterly governance pass)."""
+    command = getattr(args, "review_command", None)
+    if command == "architecture":
+        return cmd_review_architecture(args)
+    write_error(
+        f"Unknown review subcommand: {command!r}. Valid: architecture."
+    )
+    return USER_INPUT_ERROR
+
+
+def cmd_review_architecture(args: argparse.Namespace) -> int:
+    """Phase 20.H — emit the quarterly architecture review
+    checklist for ``--path``. Read-only; mutates nothing."""
+    from .architecture_review import build_review_report, render_review_markdown
+
+    root = Path(args.path).resolve()
+    report = build_review_report(root)
+
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "review architecture",
+                "path": str(root),
+                **report.to_dict(),
+            }
+        )
+        return SUCCESS
+
+    write_line(render_review_markdown(report))
+    return SUCCESS
+
+
 def cmd_persona(args: argparse.Namespace) -> int:
     """Phase 20.A — opt-in persona presets. Two subcommands:
     ``apply`` (writes mythic/persona.json) and ``show`` (prints
@@ -7136,6 +7170,8 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "provenance": cmd_provenance,
     # Phase 20.A (additive 2026-05-03): persona presets.
     "persona": cmd_persona,
+    # Phase 20.H (additive 2026-05-03): architecture review.
+    "review": cmd_review,
     "ai": cmd_ai_dispatch,
     "verify": cmd_verify_dispatch,
     "slash": cmd_slash_dispatch,

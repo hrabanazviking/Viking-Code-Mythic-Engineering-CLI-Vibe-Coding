@@ -76,6 +76,8 @@ class CliKernelTests(unittest.TestCase):
             "provenance",
             # PH-20.A (audit remediation 2026-05-03)
             "persona",
+            # PH-20.H (audit remediation 2026-05-03)
+            "review",
             "verify",
             "slash",
             "shell",
