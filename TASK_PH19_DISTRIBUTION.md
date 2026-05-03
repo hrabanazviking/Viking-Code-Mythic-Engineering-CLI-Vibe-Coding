@@ -2459,3 +2459,48 @@ Opt-in `--panels` flag on TUI. Default TUI stays unchanged.
 CHANGELOG v1.0.0 entry; RELEASE_CHECKLIST walkthrough; tag pushed; release workflow ships the artifacts.
 
 `STATUS: OPEN — SLICE 20.I CLOSED — IN PROGRESS: 20.7`
+
+## ADDITIVE UPDATE — 2026-05-03 (slice 20.7 closeout — v1.0.0 ready to tag)
+
+**HEAD:** `9e9cf5b` (post-20.I) → next commit will land 20.7.
+
+### What shipped — slice 20.7 (v1.0.0 release prep)
+
+- **`pyproject.toml`** — version bumped 0.1.0 → 1.0.0; classifier flipped from `Development Status :: 3 - Alpha` to `Development Status :: 5 - Production/Stable`.
+- **`mythic_vibe_cli/__init__.py:__version__`** — bumped 0.1.0 → 1.0.0 to match pyproject.
+- **`CHANGELOG.md`** — fresh empty `[Unreleased]` block prepended; the historical Unreleased content preserved verbatim under a new `## [1.0.0] — 2026-05-03` heading with a v1.0 launch summary on top.
+- **`RELEASE_v1_0_0_2026-05-03.md`** (NEW, repo root) — full closeout memo. Lists what v1.0.0 is, how it was built (PH-19 + PH-20 phase tables with test deltas), verification at the cut, exact tag-and-ship commands, deferred-to-v1.x/v2.0 items, sign-off.
+
+### Verification at the v1.0.0 cut
+
+- `python -m pytest -q` → **2224 passed, 1 skipped, 109 subtests passed**.
+- `ruff check mythic_vibe_cli tests scripts tools` → clean.
+- `mypy mythic_vibe_cli` → no issues found in **152 source files**.
+- `python tools/contract_audit.py` → clean.
+
+### Aggregate session totals (PH-19 + PH-20 = 26 slices)
+
+| | Pre-PH-19 | Post-PH-20 | Delta |
+|---|---|---|---|
+| Tests passing | 1665 | **2224** | **+559** |
+| Subtests passing | 0 | **109** | **+109** |
+| Source files | ~135 | **152** | **+17** |
+| Coverage | 76% | ≥ 82% | +6pp |
+| CI matrix rows | 1 | 10 | +9 |
+| New top-level dirs | — | `docs/security/`, `packaging/`, `tests/property/`, `tests/snapshots/`, `docs/governance/` | 5 |
+
+### Operating-discipline carry
+
+- All 26 slices honored the additive-only rule. Every closeout in this file is a dated update notice, not an overwrite.
+- Every commit independently green: ruff + mypy + pytest gating each one. No batching.
+- Per compatibility-policy §3, the version bump itself is a MAJOR transition (0.x → 1.0); the deprecation cadence (announce → wait one minor → remove) is now binding for every surface listed as Stable.
+
+### Next action (operator-gated)
+
+`git tag v1.0.0 && git push origin v1.0.0` — triggers the
+PH-19.7 release pipeline. Per "Executing actions with care",
+this tag-push action waits on Volmarr's explicit approval
+since it triggers PyPI publishing + Homebrew/Scoop
+auto-bump PRs.
+
+`STATUS: PH-20 ALL 17 SLICES CLOSED — v1.0.0 READY TO TAG — AWAITING OPERATOR APPROVAL FOR git tag v1.0.0`
