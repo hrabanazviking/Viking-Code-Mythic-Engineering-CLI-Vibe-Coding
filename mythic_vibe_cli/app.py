@@ -748,6 +748,23 @@ def build_parser() -> argparse.ArgumentParser:
         "--path", default=".", help="Project directory (default: current directory)"
     )
     add_runtime_options(plugin_install, json_output=True, dry_run=True)
+    # Phase 20.3 (audit remediation 2026-05-02): plugin doctor —
+    # capability + circuit-breaker audit. Read-only.
+    plugin_doctor = plugin_sub.add_parser(
+        "doctor",
+        help="Audit plugin capability declarations + circuit-breaker state.",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe plugin doctor
+              mythic-vibe plugin doctor --json
+            """
+        ),
+    )
+    plugin_doctor.add_argument(
+        "--path", default=".", help="Project directory (default: current directory)"
+    )
+    add_runtime_options(plugin_doctor, json_output=True)
 
     # PH-12 Slice 12.1: `mythic-vibe ci scaffold`.
     ci = sub.add_parser(
