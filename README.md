@@ -23,12 +23,16 @@ The hall is wide enough for a first-time builder finding their footing, and disc
 Canonical Mythic Engineering source:
 - https://github.com/hrabanazviking/Mythic-Engineering
 
+---
+
 ## Lines of Code
 
   - Product code + tests + tooling + resources + workflows: 85,721 lines across ~310 Python/JSON/YAML files
   - Of which is shipping product code (no tests): 44,665 lines in 164 files
   - Test-to-product ratio: ~0.95:1 (41,056 test ÷ 43,099 product) — very close to 1:1
   - Plus 10,829 lines of operator/governance documentation
+
+---
 
 ## Cross-Platform Pledge
 
@@ -40,6 +44,8 @@ Mythic Vibe CLI runs on **Windows, macOS, and Linux** without per-OS branches. E
 - closed third-party services as required dependencies
 
 Where a feature would otherwise depend on a single platform, we either pick a pure-Python equivalent (e.g., `textual` for the TUI) or document the omission honestly.
+
+---
 
 ## Active Runtime Path
 
