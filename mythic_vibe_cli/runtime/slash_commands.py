@@ -147,6 +147,8 @@ BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
     BuiltinSlashCommand(name="state", description="Project state: show or validate the schema-versioned status.json"),
     BuiltinSlashCommand(name="db", description="Database operations: migrate the state schema"),
     BuiltinSlashCommand(name="plunder", description="Lawful single-file reuse from upstream Apache/MIT/BSD repositories"),
+    # Phase 20.6 (additive 2026-05-03): provenance verification.
+    BuiltinSlashCommand(name="provenance", description="Verify checksums of plunder-imported files against the recorded source SHA"),
 
     # --- Developer-tool shortcuts (PH-02 slice 2.2) ---
     BuiltinSlashCommand(name="test", description="Run the project's test suite (pytest by default; --command to override)"),

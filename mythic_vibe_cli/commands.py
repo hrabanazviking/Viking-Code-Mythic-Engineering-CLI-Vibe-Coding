@@ -4936,6 +4936,66 @@ def cmd_plunder(args: argparse.Namespace) -> int:
     return cmd_plunder_legacy(args)
 
 
+def cmd_provenance(args: argparse.Namespace) -> int:
+    """Phase 20.6 — top-level provenance commands. Currently
+    one subcommand: ``verify``. Future v1.x slices may extend
+    with ``sign`` / ``attest`` once Sigstore lands."""
+    command = getattr(args, "provenance_command", None)
+    if command == "verify":
+        return cmd_provenance_verify(args)
+    write_error(
+        f"Unknown provenance subcommand: {command!r}. Valid: verify."
+    )
+    return USER_INPUT_ERROR
+
+
+def cmd_provenance_verify(args: argparse.Namespace) -> int:
+    """Verify checksums of every plunder-imported file against
+    the recorded ``source_sha`` in
+    ``mythic/imports/plunder_manifest.json``."""
+    from .plunder.verify import verify_provenance
+
+    root = Path(args.path).resolve()
+    report = verify_provenance(root)
+
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "provenance verify",
+                "path": str(root),
+                **report.to_dict(),
+            }
+        )
+        return SUCCESS
+
+    write_line("Provenance verification")
+    write_key_value("Path", root)
+    write_key_value("Total entries", len(report.entries))
+    write_key_value("Match", len(report.matches))
+    write_key_value("Drift", len(report.drifts))
+    write_key_value("Missing", len(report.missing))
+
+    if not report.entries:
+        write_line(
+            "- No plunder manifest entries found (no imports to verify)."
+        )
+        return SUCCESS
+
+    if report.drifts:
+        write_line("Drifted (local file SHA does not match recorded source SHA):")
+        for entry in report.drifts:
+            write_bullet(
+                f"{entry.destination} (recorded={entry.source_sha[:12]}, "
+                f"actual={entry.actual_sha[:12]})",
+                indent=2,
+            )
+    if report.missing:
+        write_line("Missing destinations:")
+        for entry in report.missing:
+            write_bullet(entry.destination, indent=2)
+    return SUCCESS
+
+
 def cmd_db_migrate(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
     db_path = root / "mythic" / "weave.db"
@@ -6811,6 +6871,8 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "state": cmd_state_dispatch,
     "db": cmd_db_dispatch,
     "plunder": cmd_plunder,
+    # Phase 20.6 (additive 2026-05-03): provenance verify.
+    "provenance": cmd_provenance,
     "ai": cmd_ai_dispatch,
     "verify": cmd_verify_dispatch,
     "slash": cmd_slash_dispatch,

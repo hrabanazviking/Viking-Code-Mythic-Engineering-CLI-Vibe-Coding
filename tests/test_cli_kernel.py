@@ -72,6 +72,8 @@ class CliKernelTests(unittest.TestCase):
             "state",
             "db",
             "plunder",
+            # PH-20.6 (audit remediation 2026-05-03)
+            "provenance",
             "verify",
             "slash",
             "shell",
