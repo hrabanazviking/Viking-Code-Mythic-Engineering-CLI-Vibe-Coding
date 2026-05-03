@@ -2420,3 +2420,42 @@ Extends `mythic_vibe_cli/plunder/provenance.py` with per-line diff hash recordin
 Opt-in `--panels` flag on TUI. Default TUI stays unchanged.
 
 `STATUS: OPEN — SLICE 20.H CLOSED — IN PROGRESS: 20.I`
+
+## ADDITIVE UPDATE — 2026-05-03 (slice 20.I closeout)
+
+**HEAD:** `6ff7f6b` (post-20.H) → next commit will land 20.I.
+
+### What shipped — slice 20.I (opt-in TUI panel data builders)
+
+- **`mythic_vibe_cli/tui_panels.py`** (NEW) — pure data layer for the two opt-in TUI panels:
+  - `parse_panels(raw)` — comma-separated, lowercase, dedupe, drop unknown.
+  - **Heatmap:** `build_heatmap_data(root)` aggregates drift findings into category × severity cells.
+  - **Plugin risk:** `build_plugin_risk_data(root)` walks the registry, classifies each plugin as low / medium / high based on declared capabilities + unknown-capability presence + the `network + subprocess` dangerous combo.
+- **`mythic_vibe_cli/app.py`** — `tui` parser gains `--panels` (string, comma-separated, default empty).
+- **`mythic_vibe_cli/commands.py:cmd_tui`** — parses panels via `parse_panels`, forwards to `run_tui` via kwarg with a `TypeError` fallback that stashes the selection on `os.environ["MYTHIC_TUI_PANELS"]`. The TUI module can pick it up at render time without changing function signatures across the boundary.
+
+### Operating-discipline carry
+
+- Strict additive: default TUI behavior is byte-identical when `--panels` is unset. The data builders are pure (no Textual import) and individually testable. Future TUI slices can wire the actual widgets reading the data via either the kwarg or the env-var fallback.
+- Per compatibility-policy §3, the new flag and the new module are MINOR additions on a stable surface.
+- The risk classifier is intentionally coarse — refinements (e.g. by hook count, by elapsed-time history) belong in v1.x slices that have real operator feedback to tune against.
+
+### Tests — `tests/test_tui_panels.py` (17 tests)
+
+- **`parse_panels` (7):** empty / single / two / case insensitive / unknown dropped / dedupe / vocabulary lock.
+- **`build_heatmap_data` (2):** empty project no findings; serialisable.
+- **`build_plugin_risk_data` (6):** no plugins; low when no caps; medium with network only; high with network+subprocess; high with unknown capability; serialisable.
+- **Parser attachment (2):** `--panels` flag on TUI parser; default empty.
+
+### Verification
+
+- `python -m pytest tests/test_tui_panels.py -q` → 17 passed in ~0.9s.
+- Full suite: `python -m pytest -q` → **2224 passed, 1 skipped, 109 subtests passed** (+17 from 2207).
+- `ruff check mythic_vibe_cli tests scripts tools` → clean (two F401 fixed mid-slice — unused dataclass imports).
+- `mypy mythic_vibe_cli` → no issues found in **152** source files (+1 — `tui_panels.py`).
+
+### Next: slice 20.7 — v1.0.0 release tag + final closeout
+
+CHANGELOG v1.0.0 entry; RELEASE_CHECKLIST walkthrough; tag pushed; release workflow ships the artifacts.
+
+`STATUS: OPEN — SLICE 20.I CLOSED — IN PROGRESS: 20.7`
