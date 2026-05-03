@@ -292,6 +292,20 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Validate active runtime boundary docs and forbidden dormant-island imports",
     )
+    # Phase 20.2 (audit remediation 2026-05-02): tightly-scoped
+    # auto-remediation. Two safe fixes (missing mythic/ subdirs;
+    # missing CHANGELOG [Unreleased] section). Hard-rule: never
+    # touches user-authored content.
+    doctor.add_argument(
+        "--fix",
+        action="store_true",
+        help="Auto-remediate safe scaffolding gaps (missing mythic/ subdirs, missing CHANGELOG [Unreleased]).",
+    )
+    doctor.add_argument(
+        "--fix-dry-run",
+        action="store_true",
+        help="Preview what --fix would do without writing anything.",
+    )
     add_runtime_options(doctor, json_output=True)
 
     # Mythic ritual aliases from design doc.
