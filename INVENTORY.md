@@ -1,10 +1,18 @@
 # INVENTORY — The Narrative Scroll of What Is Here
 
-**Last updated:** 2026-04-23
+**Last updated:** 2026-04-23 (v1.0 callout added 2026-05-03)
 **Branch:** development
-**Scribe:** Eirwyn Rúnblóm
+**Scribe:** Eirwyn Rúnblóm; v1.0 callout by Runa Gridweaver
 **Scope:** Every major directory and notable root-level file in the repository `Viking-Code-Mythic-Engineering-CLI-Vibe-Coding`, described in its current untouched form.
 **Purpose:** A refined reference scroll. Anyone opening this six months hence should be able to understand what was preserved, what each part currently does, and where in the hall to look.
+
+> **v1.0.0 callout (2026-05-03).** This narrative inventory was written when the Mythic Vibe CLI had ~6 source files. v1.0.0 ships with **~150 source files across ~15 subpackages** and a stable distribution pipeline (PyPI / Homebrew / Scoop / wheelhouse). For the v1.0 navigation surface, see:
+>
+> - **[`ROOT_DOC_INDEX.md`](ROOT_DOC_INDEX.md)** — six-tier index of the 200+ root-level .md files.
+> - **[`docs/INDEX.md`](docs/INDEX.md)** — canonical operator-facing docs navigator.
+> - **[`docs/ACTIVE_PRODUCT_BOUNDARY.md`](docs/ACTIVE_PRODUCT_BOUNDARY.md)** — exact runtime contract + ~38-row module table.
+>
+> The narrative below remains accurate for the broader monorepo posture (vendor mirrors, dormant islands, research corpora). Use the v1.0 navigation surfaces above when you want the active-product-only view.
 
 ---
 
