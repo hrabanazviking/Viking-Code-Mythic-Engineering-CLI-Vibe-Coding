@@ -43,6 +43,18 @@ listed in the plunder map below.
 This project is independent and is not affiliated with, endorsed by, or
 sponsored by Mario Zechner, the pi-mono authors, or pi.dev.
 
+### Original-to-this-project runtime primitives (NOT plundered)
+
+For attribution clarity, the following modules in `mythic_vibe_cli/runtime/` are **original** to this project (Apache-2.0 under the project's own license; no third-party attribution applies):
+
+| Mythic file | Origin | Notes |
+|---|---|---|
+| `mythic_vibe_cli/runtime/event_log.py` | Original (PH-09 era) | Bounded JSONL append-and-tail at `mythic/events.jsonl` |
+| `mythic_vibe_cli/runtime/cross_process_lock.py` | Original (v1.0 / PH-19.0 / BS-6) | OS-level fcntl/msvcrt lock with auto-release on process death |
+| `mythic_vibe_cli/runtime/atomic_write.py` | Original (v1.0 / PH-19.0 / L-10) | Write-tmp + os.replace with Windows PermissionError retry |
+
+These modules carry no upstream attribution and require no third-party license text. They are listed here so anyone auditing the runtime layer's provenance gets a complete picture: 7 plundered primitives + 3 originals = 10 total at v1.0.0.
+
 ### Upstream MIT Permission Text
 
 Reproduced verbatim from the upstream `LICENSE` at

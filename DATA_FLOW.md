@@ -1,9 +1,11 @@
 # DATA_FLOW.md — How Data and State Move
 
-**Last updated:** 2026-04-23
-**Author:** Védis Eikleið (Cartographer)
-**Scope:** State locations, transformations, and movement paths in `Viking-Code-Mythic-Engineering-CLI-Vibe-Coding` as it stands on branch `development` today.
+**Last updated:** 2026-05-03 (v1.0.0)
+**Author:** Védis Eikleið (Cartographer); v1.0 refresh by Runa Gridweaver
+**Scope:** State locations, transformations, and movement paths across the whole repository. **Tagged-release docs:** see [`docs/DATA_FLOW.md`](docs/DATA_FLOW.md) for the active-product-only data-flow record (governed by the v1.0 binding contract).
 **Companion scrolls:** `MAP.md`, `ARCHITECTURE.md`, `DEPENDENCIES.md`.
+
+> **v1.0 note.** This root-level DATA_FLOW.md surveys the **whole repository** including dormant islands. The narrower [`docs/DATA_FLOW.md`](docs/DATA_FLOW.md) is the **active-product-only** record with the v1.0 persistence map (project_settings, persona, forge ledger/reflections, governance review logs, SBOM, etc.). When the two diverge in scope, the docs/ version is authoritative for the v1.0.0 product surface.
 
 ## Symbol legend
 

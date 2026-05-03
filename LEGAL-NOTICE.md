@@ -1,8 +1,10 @@
 # Legal Notice and Distribution Position
 
-**Project:** Viking Code Mystic Engineering CLI 
+**Project:** Mythic Vibe CLI (part of the Viking-Code Mythic Engineering CLI Vibe Coding workspace)
 
 **Author:** Volmarr Wyrd
+
+**Effective:** 2026-05-03 (v1.0.0)
 
 This project is licensed under the Apache License, Version 2.0. Nothing in this notice modifies, replaces, narrows, or overrides that license.
 
