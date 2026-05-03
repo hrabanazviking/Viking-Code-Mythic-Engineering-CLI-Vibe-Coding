@@ -80,6 +80,32 @@ class PacketRecord:
         return payload
 
 
+# Phase 20.D (audit remediation 2026-05-03): per-role packet
+# context budget multipliers. Different agent roles need
+# different amounts of context — Skald frames intent (less
+# code), Forge Worker / Debugger / Refactorer need full code
+# context, Auditor needs every invariant + verification
+# command. Multipliers stay conservative so existing packet
+# shapes don't shift dramatically; unknown roles default to
+# 1.0x (no change).
+ROLE_BUDGET_MULTIPLIERS: dict[str, float] = {
+    "Skald": 0.7,
+    "Architect": 1.2,
+    "Cartographer": 1.0,
+    "Forge Worker": 1.5,
+    "Auditor": 1.3,
+    "Scribe": 0.8,
+    "Debugger": 1.5,
+    "Refactorer": 1.5,
+}
+
+# Floor on the multiplier-adjusted budget — if the operator
+# sets an extremely small base budget, we still keep enough
+# room for a usable packet header. Empirically, a packet under
+# ~400 chars stops being useful as agent input.
+MIN_PACKET_BUDGET = 400
+
+
 class PacketBuilder:
     def __init__(self, root: Path, config: AppConfig | None = None):
         self.root = root
@@ -427,7 +453,24 @@ class PacketBuilder:
         }
         return json.dumps(compact, indent=2)
 
-    def _compact_sections(self, sections: dict[str, str], budget: int) -> dict[str, str]:
+    def _compact_sections(
+        self,
+        sections: dict[str, str],
+        budget: int,
+        *,
+        role: str | None = None,
+    ) -> dict[str, str]:
+        # Phase 20.D (audit remediation 2026-05-03): per-role
+        # budget scaling. Different agent roles need different
+        # amounts of context — Skald frames intent (less code),
+        # Forge Worker / Debugger / Refactorer need full code
+        # context. Multipliers are intentionally conservative
+        # so existing packet shapes don't shift dramatically.
+        # role=None preserves pre-20.D behaviour byte-identically.
+        if role:
+            multiplier = ROLE_BUDGET_MULTIPLIERS.get(role, 1.0)
+            if multiplier != 1.0 and budget > 0:
+                budget = max(MIN_PACKET_BUDGET, int(budget * multiplier))
         total = sum(len(value) for value in sections.values())
         if total <= budget:
             return sections
@@ -591,7 +634,16 @@ class PacketBuilder:
         status = self._status_snapshot()
 
         if self.config.auto_compact:
-            sections = self._compact_sections(sections, self.config.packet_char_budget)
+            # Phase 20.D (additive): pass role so per-role
+            # multipliers apply. Backwards-compat: when role
+            # is unknown to ROLE_BUDGET_MULTIPLIERS, the
+            # multiplier defaults to 1.0 and the budget
+            # matches pre-20.D behaviour.
+            sections = self._compact_sections(
+                sections,
+                self.config.packet_char_budget,
+                role=request.role,
+            )
 
         # PH-05 slice 5.7: append relevant graph context if the project
         # has a populated knowledge graph. The helper returns empty when
