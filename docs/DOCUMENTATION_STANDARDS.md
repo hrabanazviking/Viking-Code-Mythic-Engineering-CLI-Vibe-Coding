@@ -41,17 +41,29 @@ Use absolute dates (`YYYY-MM-DD`) in changelog/devlog records and note whether s
 
 ## 2) The active documentation spine
 
-These files form the project’s continuity backbone and should be reviewed together when major behavior changes.
+These files form the project's continuity backbone and should be reviewed together when major behavior changes.
 
 - `README.md` — project identity, scope, install, command orientation.
 - `docs/INDEX.md` — canonical navigation and ownership map.
 - `docs/quickstart.md` — first-loop execution guide.
+- `docs/INSTALL.md` — install matrix (PyPI / Homebrew / Scoop / wheelhouse / contributor / pre-release).
 - `docs/ARCHITECTURE.md` — component model and dependency boundaries.
 - `docs/api.md` — public CLI contracts and compatibility expectations.
+- `docs/COMMAND_CONTRACTS.md` — durable contract surface for every command.
 - `docs/DOMAIN_MAP.md` — ownership and boundary registry.
+- `docs/DATA_FLOW.md` — state and artifact movement through the active CLI.
+- `docs/ACTIVE_PRODUCT_BOUNDARY.md` — exact product paths and runtime contract.
 - `docs/SYSTEM_VISION.md` — long-horizon purpose and non-goals.
+- `docs/PHILOSOPHY.md` — values and engineering stance.
+- `docs/runtime.md` — operator guide for the ten runtime primitives.
+- `docs/plugins.md` — plugin authoring + dispatcher contract.
+- `docs/compatibility_policy.md` (v1.0) — **binding contract** for SemVer, Python + OS support, deprecation cadence.
+- `docs/security/threat_model.md` (v1.0) — assets / attackers / mitigations matrix.
+- `docs/governance/quarterly_review.md` (v1.0) — architecture-review cadence + agenda.
+- `docs/RELEASE_CHECKLIST.md` — pre-tag manual gates + tag-driven distribution flow.
 - `DEVLOG.md` — narrative continuity for contributors.
-- `CHANGELOG.md` — release/user-facing delta log.
+- `CHANGELOG.md` — release/user-facing delta log (v1.0: `python scripts/check_changelog.py --classify` buckets entries by conventional-commit prefix).
+- `CONTRIBUTING.md` — contributor onboarding (incl. compatibility-policy assessment guidance).
 
 When one file changes and the others become stale, drift has begun.
 
@@ -111,10 +123,16 @@ A documentation update is required when any of the following occurs:
 
 ### 4.2 Minimum update set by change type
 
-- **CLI behavior change**: `README.md`, `docs/api.md`, `CHANGELOG.md`.
+- **CLI behavior change**: `README.md`, `docs/api.md`, `docs/COMMAND_CONTRACTS.md`, `CHANGELOG.md`.
 - **Scaffold/template change**: `docs/quickstart.md`, `docs/ARCHITECTURE.md`, `CHANGELOG.md`.
 - **Governance/direction change**: `docs/SYSTEM_VISION.md`, `DEVLOG.md`, `CHANGELOG.md`.
-- **Boundary/ownership change**: `docs/DOMAIN_MAP.md`, `docs/INDEX.md`, `DEVLOG.md`.
+- **Boundary/ownership change**: `docs/DOMAIN_MAP.md`, `docs/ACTIVE_PRODUCT_BOUNDARY.md`, `docs/INDEX.md`, `DEVLOG.md`.
+- **New attack surface / security-relevant change** (v1.0): `docs/security/threat_model.md` (per its §8 update procedure).
+- **Public-surface stability change** (v1.0): `docs/compatibility_policy.md` (per its §9 additive-revision rule), `CHANGELOG.md` with a `Deprecated:` line, `CONTRIBUTING.md` if the contributor process changes.
+- **New runtime primitive**: `docs/runtime.md` (new section), re-export from `mythic_vibe_cli/runtime/__init__.py`, focused test under `tests/`.
+- **New plugin extension point or capability**: `docs/plugins.md` (new section), `mythic_vibe_cli/plugins/capabilities.py` `KNOWN_CAPABILITIES` AND the JSON schema enum (coordinated).
+- **New AI provider**: `docs/api.md`, `mythic_vibe_cli/ai/registry.py`, static catalog rows in `mythic_vibe_cli/ai/providers/model_catalog.py`. The conformance suite (`tests/test_provider_contract_conformance.py`) auto-extends coverage.
+- **Distribution / release flow change**: `docs/RELEASE_CHECKLIST.md`, `packaging/README.md`, `.github/workflows/release.yml`.
 
 ### 4.3 Session closure checklist
 
@@ -135,7 +153,9 @@ Before ending a meaningful session, confirm:
 - docs promise commands that no longer exist,
 - defaults in docs do not match runtime behavior,
 - two files disagree on project scope,
-- troubleshooting sections reference removed paths.
+- troubleshooting sections reference removed paths,
+- (v1.0) the docs↔code contract auditor (`tools/contract_audit.py`) reports new undocumented handlers,
+- (v1.0) the live contract-audit baseline (`tests/test_contract_audit.py:_BASELINE_ALLOW_UNDOCUMENTED`) names a handler that no longer exists in `COMMAND_HANDLERS`.
 
 ### 5.2 Drift response protocol
 
@@ -143,6 +163,17 @@ Before ending a meaningful session, confirm:
 2. Align non-canonical docs to canonical wording.
 3. Add an entry in `DEVLOG.md` summarizing what drift was repaired.
 4. Add a user-facing note in `CHANGELOG.md` if behavior understanding changed.
+5. (v1.0) Re-run `python tools/contract_audit.py --strict` to confirm the docs↔code drift is closed.
+
+### 5.3 Mechanical drift gates (v1.0)
+
+These gates run in CI on every PR and catch a class of drift that prose review misses:
+
+- `tools/contract_audit.py --strict` — every argparse handler must appear in at least one markdown doc reference (or the baseline allowlist).
+- `tests/test_cli_kernel.py:test_command_registry_preserves_current_commands_and_aliases` — full command-handler set is locked.
+- `tests/test_slash_commands.py:SlashCommandsCatalogTests` — every argparse handler must have a `BUILTIN_SLASH_COMMANDS` entry (with documented exclusions).
+- `tests/test_sbom_committed.py` — committed SBOM at `docs/security/sbom.json` must be well-formed CycloneDX.
+- `tests/test_architecture_review.py:CadenceDocPresenceTest` — `docs/governance/quarterly_review.md` must exist with the right header.
 
 ---
 

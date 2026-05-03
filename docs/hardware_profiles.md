@@ -42,12 +42,15 @@ Prioritize in this order:
 - Treat this as knowledge-only or narrowly scoped inference.
 - Build reduced datasets/subsets where applicable.
 - Avoid large context windows and multi-draft generation.
+- **Install via the offline wheelhouse** (PH-19.7) rather than `pip install` over a thin Pi Zero link — the wheelhouse bundles pre-built wheels so install never has to run a build toolchain. See [`packaging/WHEELHOUSE.md`](../packaging/WHEELHOUSE.md).
 
 ### `pi_5`
 
 - Use compact models and moderate context.
 - Limit concurrent services while running local inference.
 - Consider lightweight batching only if thermals stay controlled.
+- **Install via the offline wheelhouse** (PH-19.7) — same reasoning as `pi_zero`, faster than `pip install` over a constrained network and dependency-free of a build toolchain.
+- The CI matrix (`.github/workflows/ci.yml`) includes a dedicated `ubuntu-24.04-arm` row that exercises the Linux aarch64 install path Pi 5 uses. Test failures on that row block release.
 
 ### `desktop_cpu`
 
@@ -103,8 +106,45 @@ Re-tune profile selection when you observe:
 
 ---
 
-## 7) Related docs
+## 7) v1.0 install paths by profile
+
+The PH-19.7 distribution work added several install routes; pick the one that matches your tier:
+
+| Profile | Recommended install | Why |
+|---|---|---|
+| `phone_low`, `pi_zero`, `pi_5` | Wheelhouse (`packaging/WHEELHOUSE.md`) | Pre-built wheels; no build toolchain; works offline |
+| `desktop_cpu`, `desktop_gpu` | `pipx install mythic-vibe-cli` (PyPI) | Isolated user install, easy upgrade |
+| `server_gpu` (shared) | Editable install in a managed venv per service | Lets you pin dep floors per service tier |
+| Air-gapped / compliance-restricted | Wheelhouse via `pip install --no-index --find-links wheelhouse` | Network-free, vendored, SBOM-trackable |
+
+For the full install matrix (Homebrew, Scoop, contributor, pre-release), see [`docs/INSTALL.md`](INSTALL.md).
+
+---
+
+## 8) AI provider routing by profile
+
+`mythic-vibe ai recommend` (PH-20.4) helps pick a model for the work at hand. Pair it with the hardware profile:
+
+```bash
+# Pi-tier: ask for a small / fast model
+mythic-vibe ai recommend --cost-class cheap --max-context 32000
+
+# Desktop: ask for the strongest model that fits a long-context task
+mythic-vibe ai recommend --task "Refactor the auth subsystem" --max-context 200000
+
+# Vision-on (`--vision`) for image-bearing tasks
+mythic-vibe ai recommend --task "Analyse this screenshot" --vision
+```
+
+The `recommend` command makes zero provider calls — it just scores the static catalog. Use it to plan, then switch your `--provider` accordingly.
+
+---
+
+## 9) Related docs
 
 - [Quickstart](quickstart.md)
+- [Install Guide](INSTALL.md)
 - [API Reference](api.md)
 - [Architecture](ARCHITECTURE.md)
+- [Wheelhouse Operator Guide](../packaging/WHEELHOUSE.md)
+- [Compatibility Policy](compatibility_policy.md) (Python + OS support window)
