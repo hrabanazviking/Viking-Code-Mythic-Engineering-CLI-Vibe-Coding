@@ -10,7 +10,7 @@
 
 # Mythic Vibe CLI
 
-**Version:** `1.0.0` · **Python:** `>=3.10` (CI: 3.10 / 3.11 / 3.12 on Linux / macOS / Windows + Linux aarch64) · **License:** `Apache-2.0` · **Tests:** `2224 passing + 109 subtests` · **Status:** Stable — v1.0.0 launch
+**Version:** `1.0.0` · **Python:** `>=3.10` (CI: 3.10 / 3.11 / 3.12 on Linux / macOS / Windows + Linux aarch64) · **License:** `Apache-2.0` · **Tests:** `2224 passing + 109 subtests` · **Status:** Stable — v1.0.0 launch · **Lines of Code:** - 44,665
 
 Mythic Vibe CLI is an open-source, method-first command-line tool for builders who want to **ship software with continuity, architecture, and recoverable memory** — not just momentum.
 
