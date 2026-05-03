@@ -358,6 +358,25 @@ def build_parser() -> argparse.ArgumentParser:
     packet_diff.add_argument("--right", required=True, help="Right packet reference: PKT-... ID, WF-<id>:<step_id>, LATEST:<step_id>, PREVIOUS:<step_id>, or bare step-NN with --latest-workflow")
     packet_diff.add_argument("--latest-workflow", action="store_true", help="Allow bare step-NN refs to resolve against mythic/workflow_plan.json")
     add_runtime_options(packet_diff, json_output=True)
+    # Phase 20.1 (audit remediation 2026-05-02): packet lint —
+    # heuristic packet-quality linter. See packet_lint.py.
+    packet_lint = packet_sub.add_parser(
+        "lint",
+        help="Lint a packet for missing required sections, vague intent, weak verification anchors, etc.",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe packet lint --packet-id PKT-000003
+              mythic-vibe packet lint                       # lints latest stored packet
+              mythic-vibe packet lint --file ./draft.md     # lints an ad-hoc file
+              mythic-vibe packet lint --json                # machine-readable findings
+            """
+        ),
+    )
+    packet_lint.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    packet_lint.add_argument("--packet-id", default="", help="Packet ID to lint (default: latest stored packet)")
+    packet_lint.add_argument("--file", default="", help="Lint an ad-hoc packet file outside the store; bypasses --packet-id resolution")
+    add_runtime_options(packet_lint, json_output=True)
 
     workflow = sub.add_parser(
         "workflow",
