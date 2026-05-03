@@ -1348,3 +1348,127 @@ push). Wheelhouse for offline installs is bundled into the
 release artifact.
 
 `STATUS: OPEN — PHASE 19.6 CLOSED — IN PROGRESS: 19.7`
+
+---
+
+## ADDITIVE UPDATE — 2026-05-02 (slice 19.7 closeout)
+
+**HEAD:** `8dc6394` (post-19.6) → next commit will land 19.7.
+
+### What shipped — slice 19.7 (Distribution pipeline)
+
+End-to-end tag-driven release pipeline across three channels
+(PyPI + Homebrew + Scoop) plus an offline-install wheelhouse.
+
+#### `.github/workflows/release.yml`
+Triggers on git tag `v*.*.*` push (full release) or
+`workflow_dispatch` (build-only rehearsal). Five jobs:
+
+1. **`build`** — wheel + sdist via `python -m build`; `twine
+   check`; SBOM regen via `scripts/regenerate_sbom.py` (with
+   non-fatal drift warning vs the committed copy); offline
+   wheelhouse via `pip wheel ".[ai,otel,ux,tui]"` tar-gzipped;
+   SHA256 + SHA512 checksums computed; all uploaded as the
+   `dist` artifact.
+2. **`publish-pypi`** — PyPI via `pypa/gh-action-pypi-publish`
+   with OIDC trusted publishing (zero long-lived tokens).
+   Drops the wheelhouse + SBOM + SUMS files before upload (PyPI
+   only accepts wheel + sdist).
+3. **`github-release`** — GitHub Release with auto-generated
+   notes; attaches wheel, sdist, wheelhouse tarball, SBOM,
+   `SHA256SUMS`, `SHA512SUMS`.
+4. **`update-homebrew`** — checks out `homebrew-mythic` tap repo
+   via `TAP_BUMP_TOKEN` PAT; renders the formula template with
+   `__VERSION__` + `__SDIST_SHA256__` substituted; opens a
+   bump PR via `gh pr create`.
+5. **`update-scoop`** — same pattern against `scoop-mythic`
+   bucket repo via `BUCKET_BUMP_TOKEN`; renders manifest
+   template with `__VERSION__` + `__WHEEL_SHA256__`; opens PR.
+
+Jobs 2-5 are gated on `startsWith(github.ref, 'refs/tags/v')`
+so `workflow_dispatch` rehearsals only exercise the build job.
+
+#### `packaging/homebrew/mythic-vibe.rb.template`
+`virtualenv_install_with_resources` formula targeting Python
+3.12, sourced from PyPI sdist URL with placeholder sha256.
+Includes a smoke test block (`mythic-vibe --help`, `mythic
+--help`, `mythic-vibe doctor --json`) that mirrors CI's smoke
+test.
+
+#### `packaging/scoop/mythic-vibe.json.template`
+Scoop manifest installing the wheel into a managed
+`site-packages` directory; `bin` entries shim both
+`mythic-vibe.exe` and `mythic.exe`. `autoupdate` block tracks
+the upstream release tag pattern.
+
+#### `packaging/README.md`
+Channel inventory + trigger semantics + required repo secrets
+table + deferred-channels list (AUR + winget → v1.x).
+
+#### `packaging/WHEELHOUSE.md`
+Operator guide for offline installs: artifact verification with
+`SHA256SUMS`, extract + `pip install --no-index --find-links`
+recipe, Pi-tier reasoning for why the wheelhouse path is
+preferred there, reproducibility notes.
+
+#### `tests/test_packaging_templates.py`
+12 sanity tests across three classes:
+
+- **Homebrew template:** declares both required placeholders;
+  substitution leaves zero `__FOO__` markers; rendered output
+  is structurally well-formed Ruby (class declaration, sha256
+  literal, ≥3 `end` keywords).
+- **Scoop template:** declares both required placeholders;
+  rendered output is **valid JSON** parsed by `json.loads`
+  (catches the easiest possible regression — a comma typo in
+  the template); required Scoop fields present (`version`,
+  `hash`, `url`, `bin`, `installer`); each `bin` entry is a
+  `[path, alias]` pair.
+- **Release workflow:** uses `pypa/gh-action-pypi-publish`;
+  contains no `PYPI_API_TOKEN` reference (OIDC enforcement);
+  references both packaging templates by path; runs SBOM regen;
+  runs `twine check`; builds wheelhouse via `pip wheel`.
+
+#### `docs/RELEASE_CHECKLIST.md` — additive section
+New "Tag-driven distribution (PH-19.7, 2026-05-02)" section
+listing what the workflow does + the per-release manual gates
+that remain (compatibility-policy review, approving the bump
+PRs, post-publish install verification on each channel).
+
+### Verification
+
+- `python -m pytest tests/test_packaging_templates.py -q` →
+  12 passed in ~0.2s.
+- Full suite: `python -m pytest -q` → **1976 passed, 1 skipped,
+  54 subtests passed** in ~96s.
+- `ruff check mythic_vibe_cli tests scripts tools` → clean
+  (one F541 found + fixed during the slice — f-string with no
+  placeholders).
+- `mypy mythic_vibe_cli` → no issues found in 140 source files.
+
+### Operating-discipline carry
+
+- Additive-only: no existing workflow modified; `release.yml`
+  is brand new alongside the existing `ci.yml`. No existing
+  doc rewritten — `RELEASE_CHECKLIST.md` got a NEW dated
+  section appended; the original sections are untouched.
+- Three repo-level secrets must be configured BEFORE the first
+  tag push: `TAP_BUMP_TOKEN`, `BUCKET_BUMP_TOKEN`, and the
+  PyPI trusted-publishing binding (no secret needed, but the
+  config must exist at https://pypi.org/manage/account/publishing/).
+  Missing-secret guidance is captured in `packaging/README.md`.
+- AUR + winget channels deferred to v1.x as requested
+  ("we want those 3 package systems"). Scaffolding for adding
+  them is documented in `packaging/README.md` "Defer / future
+  channels" section.
+
+### Next: slice 19.8
+
+Stale-catalog watchdog. Extend `cmd_doctor` with a
+`model_catalog_freshness` check that reads ADR-0010's
+`last_updated` field (the AI provider model catalog is updated
+periodically; if it gets stale, recommendations + cost
+estimates rot). Doctor surfaces a warning when the catalog
+hasn't been refreshed in N days.
+
+`STATUS: OPEN — PHASE 19.7 CLOSED — IN PROGRESS: 19.8`

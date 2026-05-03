@@ -1,0 +1,35 @@
+# Homebrew formula template for mythic-vibe-cli (PH-19.7).
+#
+# This file is consumed by .github/workflows/release.yml — the
+# release workflow substitutes __VERSION__ + __SDIST_SHA256__
+# with the values from the just-built sdist, then opens a PR
+# against the homebrew-mythic tap repo.
+#
+# The formula installs from the published PyPI sdist (not from a
+# git ref) so brew users get the exact bytes that PyPI users get.
+# The single dependency is a recent CPython (>=3.10 per
+# pyproject.toml). All other deps are optional extras and ship
+# as opt-in pip installs into the operator's own venv.
+class MythicVibe < Formula
+  include Language::Python::Virtualenv
+
+  desc "Beginner-friendly CLI that enforces Mythic Engineering vibe-coding workflow"
+  homepage "https://github.com/hrabanazviking/Mythic-Engineering"
+  url "https://files.pythonhosted.org/packages/source/m/mythic-vibe-cli/mythic-vibe-cli-__VERSION__.tar.gz"
+  sha256 "__SDIST_SHA256__"
+  license "Apache-2.0"
+
+  depends_on "python@3.12"
+
+  def install
+    virtualenv_install_with_resources
+  end
+
+  test do
+    # Smoke test - matches the install + invocation gate from
+    # .github/workflows/ci.yml.
+    assert_match "Mythic", shell_output("#{bin}/mythic-vibe --help")
+    assert_match "Mythic", shell_output("#{bin}/mythic --help")
+    system "#{bin}/mythic-vibe", "doctor", "--json"
+  end
+end
