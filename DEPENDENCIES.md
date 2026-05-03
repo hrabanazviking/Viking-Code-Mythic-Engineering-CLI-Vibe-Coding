@@ -1,9 +1,38 @@
 # DEPENDENCIES.md — Internal Edges + External Packages
 
-**Last updated:** 2026-04-23
-**Author:** Védis Eikleið (Cartographer)
+**Last updated:** 2026-05-03 (v1.0.0 callout added; Island A internal-edge section dates to 2026-04-23 and is now superseded — see v1.0 note below)
+**Author:** Védis Eikleið (Cartographer); v1.0 callout by Runa Gridweaver
 **Scope:** Actual import edges between directories, and declared external dependencies per sub-project manifest.
 **Companion scrolls:** `MAP.md` (top-level map), `ARCHITECTURE.md` (layers), `DATA_FLOW.md` (state movement).
+
+> **v1.0 note (2026-05-03).** The "Island A — Mythic Vibe CLI" internal-edge table below was written when the CLI had ~6 source files. v1.0.0 ships **~150 source files** across **~15 subpackages**. The cross-island invariant ("nothing in Island A imports anything from any other island") still holds — that's the load-bearing claim. For the v1.0 internal-edge ownership map, the authoritative source is now [`docs/DOMAIN_MAP.md`](docs/DOMAIN_MAP.md) §4 (~25-row table) and [`docs/ACTIVE_PRODUCT_BOUNDARY.md`](docs/ACTIVE_PRODUCT_BOUNDARY.md) "Current Runtime Modules" (~38-row table). v1.0 also added [ADR-0009](docs/ADRS/ADR-0009-internal-api-surfaces.md) governing cross-subpackage imports inside `mythic_vibe_cli/`. The cross-subpackage drift gate is `mythic_vibe_cli.robustness.api_audit.audit_api_surfaces`.
+
+### v1.0 declared external dependencies (active-product CLI)
+
+The runtime base (`pyproject.toml [project.dependencies]`) is **empty** — Mythic Vibe CLI v1.0.0 has zero non-stdlib runtime dependencies. Every external package is opt-in via an extra:
+
+| Extra | Wheels | Gating env var (when applicable) |
+|---|---|---|
+| `tui` | `textual>=0.80` | — |
+| `ai` | `anthropic>=0.34`, `google-genai>=1.0`, `openai>=1.40` | per-provider API key vars |
+| `ux` | `rich>=13.0` | `MYTHIC_RICH=1` |
+| `otel` | `opentelemetry-api/-sdk/-exporter-otlp-proto-http >= 1.20` | `MYTHIC_OTEL_ENABLED=1` |
+| `mindspark` | `thoughtforge>=0.1` | `MYTHIC_ISLAND_MINDSPARK_ENABLED=1` |
+| `wyrd` | `wyrd-protocol>=1.0` | `MYTHIC_ISLAND_WYRD_ENABLED=1` |
+| `yggdrasil` | `yggdrasil>=0.1` | `MYTHIC_ISLAND_YGGDRASIL_ENABLED=1` |
+| `test` | `pytest>=8.0`, `pytest-cov>=5.0`, `hypothesis>=6.0` | — |
+| `lint`, `type`, `build`, `docs` | `ruff>=0.8`, `mypy>=1.10`, `build>=1.2`+`twine>=5.0`, `mkdocs>=1.6` | — |
+| `dev` | combines `test` + `lint` + `type` + `build` + `docs` + `ai` + `ux` + `tui` | — |
+
+The complete CycloneDX SBOM at `docs/security/sbom.json` enumerates every transitive dependency for the documented extras (regenerable via `python scripts/regenerate_sbom.py`).
+
+The v1.0 binding **compatibility-policy** ([`docs/compatibility_policy.md`](docs/compatibility_policy.md) §6) says: dependency **floors** are pinned in `pyproject.toml`; ceilings are NOT pinned. Floor bumps are PATCH if within a major (e.g. `>=8.0` → `>=8.5`); MINOR if a new optional surface introduces a new dep family. The SBOM is the authoritative inventory for any installed environment.
+
+---
+
+The historical Island A → Island E survey below remains accurate for what it covers (cross-island edges, dormant-island internal structure). It is no longer comprehensive for the v1.0 active-product internal edges.
+
+---
 
 ## Symbol legend
 

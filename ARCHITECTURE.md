@@ -1,9 +1,11 @@
 # ARCHITECTURE.md — Layered Decomposition
 
-**Last updated:** 2026-04-23
-**Author:** Védis Eikleið (Cartographer)
-**Scope:** Subsystem stack and layer ownership inside `Viking-Code-Mythic-Engineering-CLI-Vibe-Coding`, branch `development`.
+**Last updated:** 2026-05-03 (v1.0.0)
+**Author:** Védis Eikleið (Cartographer); v1.0 refresh by Runa Gridweaver
+**Scope:** Subsystem stack and layer ownership inside `Viking-Code-Mythic-Engineering-CLI-Vibe-Coding`, branch `development`. **Tagged-release docs:** see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the active-product-only architectural record (governed by the v1.0 binding contract in [`docs/compatibility_policy.md`](docs/compatibility_policy.md)).
 **Companion scrolls:** `MAP.md` (directory map), `DEPENDENCIES.md` (concrete edges), `DATA_FLOW.md` (state movement), `DOMAIN_MAP.md` (ownership/boundaries), `ARCHITECT_REFACTOR_BLUEPRINT.md` (phased refactor), `CODE_REQUIREMENTS_MATRIX.md` (required code), `ROBUSTNESS_ADVANCEMENT_ROADMAP.md` (hardening trajectory).
+
+> **v1.0 note.** This root-level ARCHITECTURE.md surveys the **whole repository** including dormant islands and vendor mirrors. The narrower [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) is the **active-product-only** architectural record. When the two diverge in scope, the docs/ version is authoritative for the v1.0.0 product surface; this file is authoritative for the broader monorepo posture.
 
 ## Symbol legend
 
