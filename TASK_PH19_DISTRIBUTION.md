@@ -1190,3 +1190,92 @@ plus `cyclonedx-bom`-generated SBOM checked into `docs/security/`
 with a CI gate so the SBOM stays current.
 
 `STATUS: OPEN — PHASE 19.4 CLOSED — IN PROGRESS: 19.5`
+
+---
+
+## ADDITIVE UPDATE — 2026-05-02 (slice 19.5 closeout)
+
+**HEAD:** `a5a7c0f` (post-19.4) → next commit will land 19.5.
+
+### What shipped — slice 19.5 (Threat model + SBOM)
+
+- **`docs/security/threat_model.md`** — 9-section descriptive
+  threat model, grounded in actual surfaces:
+  - **Assets (5):** project state, AI credentials, repo source,
+    web terminal, chat bridge.
+  - **Trust boundaries (6):** each row names the chokepoint
+    file:line.
+  - **Attacker profiles (4):** local unprivileged process,
+    network attacker, hostile plugin, malicious AI response.
+    Excludes root + interpreter-supply-chain attackers
+    explicitly with the reasoning.
+  - **Threat matrix:** ~22 rows across A1-A5 + plugin sandbox,
+    each row pointing at the file:line that mitigates it (or
+    the documented limitation that explains why no mitigation
+    exists).
+  - **Supply-chain integrity (§6):** PyPI OIDC trusted
+    publishing, twine check, SBOM, dependency floor.
+  - **Known limitations (§7):** five honest gaps — no in-process
+    plugin isolation, no bundled TLS for web terminal, legacy
+    O_EXCL doesn't auto-recover, no credential vault adapter,
+    no log signing on forge ledger. These are listed so an
+    auditor doesn't have to reverse-engineer them.
+  - **Update procedure (§8):** new network surface / persisted
+    state / credential input / plugin extension MUST update §5
+    before merge. Code-review enforced.
+
+- **`docs/security/sbom.json`** — CycloneDX v1.6 SBOM, 85
+  components. Generated from a clean isolated venv (project +
+  `[ai,otel,ux,tui]` extras), not the polluted dev env.
+
+- **`scripts/regenerate_sbom.py`** — reproducible regeneration
+  helper. Builds a fresh venv, installs project + extras +
+  `cyclonedx-bom`, generates the SBOM with
+  `--output-reproducible`. Pure stdlib for orchestration; ready
+  to drop into the PH-19.7 release workflow.
+
+- **`tests/test_sbom_committed.py`** — five sanity tests on the
+  committed SBOM:
+  1. Format is CycloneDX.
+  2. specVersion starts with "1.".
+  3. Root component name is "mythic-vibe-cli".
+  4. Component count >= 20 (catches truncation / wrong-env
+     regen).
+  5. Every component has both `name` and `version` (catches
+     downstream-vuln-scanner gaps before they happen).
+
+  These run on every PR with the rest of the suite — fast
+  (~0.2s), zero external deps. Freshness vs the actual published
+  artifact is enforced separately at release time by the
+  PH-19.7 workflow re-running `regenerate_sbom.py`.
+
+### Verification
+
+- `python -m pytest tests/test_sbom_committed.py -q` → 5 passed
+  in ~0.2s.
+- Full suite: `python -m pytest -q` → **1964 passed, 1 skipped,
+  54 subtests passed** in ~99s.
+- `ruff check mythic_vibe_cli tests scripts tools` → clean.
+- `mypy mythic_vibe_cli` → no issues found in 140 source files.
+
+### Operating-discipline carry
+
+- Additive-only: zero existing files modified beyond the live
+  plan tracker. New `docs/security/` directory + new script + new
+  test file. The threat model is descriptive of code that
+  already exists — it makes implicit mitigations explicit, not
+  the other way around.
+- The threat model intentionally points at file:line for
+  mitigations so it stays honest. Rows where no mitigation
+  exists are listed in §7 ("Known limitations") rather than
+  silently omitted.
+
+### Next: slice 19.6
+
+Compatibility policy doc — `docs/compatibility_policy.md`
+covering Python version support window, OS support window
+(matches CI matrix from 19.3), API/CLI stability promise,
+deprecation cadence, and SemVer interpretation. Pure-doc slice;
+no code changes.
+
+`STATUS: OPEN — PHASE 19.5 CLOSED — IN PROGRESS: 19.6`
