@@ -1711,3 +1711,85 @@ missing acceptance criteria, unclear test strategy, ambiguous
 task wording (heuristic), insufficient architectural anchors.
 
 `STATUS: OPEN — SLICE 20.0 CLOSED — IN PROGRESS: 20.1`
+
+## ADDITIVE UPDATE — 2026-05-02 (slice 20.1 closeout)
+
+**HEAD:** `4b42d71` (post-20.0) → next commit will land 20.1.
+
+### What shipped — slice 20.1 (`packet lint`)
+
+- **`mythic_vibe_cli/packet_lint.py`** (NEW, ~330 lines) —
+  pure-stdlib heuristic linter. Seven rules:
+
+  | Rule | Severity | Catches |
+  |---|---|---|
+  | PKL-001 | error | missing required section (Role / Intent / Architecture Context / Files In Scope / Verification Commands) |
+  | PKL-002 | warning | Intent body < `MIN_INTENT_CHARS` (20) |
+  | PKL-003 | warning | Architecture Context body < `MIN_ARCH_CHARS` (50) |
+  | PKL-004 | warning | Verification Commands has zero enumerated items |
+  | PKL-005 | warning | Files In Scope has zero enumerated items |
+  | PKL-006 | info | Intent contains hedging tokens (etc., stuff, ..., TODO, TBD) |
+  | PKL-007 | info | no `## Acceptance` heading AND no test/assert/verify keyword in Verification |
+
+  Findings sorted by severity → rule_id for stable output.
+  `LintReport.ok` is True iff zero error-severity findings.
+
+- **`mythic_vibe_cli/commands.py:cmd_packet_lint`** — CLI
+  handler. Resolves source via `--file PATH` (ad-hoc) OR
+  `--packet-id PKT-NNNNNN` (defaults to LATEST). Emits text or
+  `--json` output. Exit code is `OPERATIONAL_FAILURE` on any
+  error finding, `SUCCESS` otherwise. Wired into
+  `cmd_packet_dispatch` additively.
+
+- **`mythic_vibe_cli/app.py`** — `packet lint` parser entry
+  with examples + `--path` / `--packet-id` / `--file` /
+  `--json` flags.
+
+### Tests — `tests/test_packet_lint.py` (20 tests)
+
+- **Baseline (1):** the reference good packet must lint clean
+  (no errors, no warnings) — guards against the rules drifting
+  from the canonical packet template.
+- **Per-rule (10):** each of the 7 rules has a focused test
+  showing it fires on a triggering input, plus negative cases
+  for PKL-006 / PKL-007 to prevent false positives.
+- **Ordering (1):** findings sorted by severity then rule_id.
+- **Serialization (2):** `LintReport.to_dict` is JSON-clean;
+  `LintFinding.to_dict` returns the documented shape.
+- **CLI integration (4):** clean file → SUCCESS;
+  error-finding file → OPERATIONAL_FAILURE; missing file →
+  USER_INPUT_ERROR; `--json` returns parseable payload with
+  `findings`/`counts`/`source`.
+
+### Verification
+
+- `python -m pytest tests/test_packet_lint.py -q` → 20 passed
+  in ~0.4s.
+- Full suite: `python -m pytest -q` → **2026 passed, 1
+  skipped, 54 subtests passed** (+20 from 2006).
+- `ruff check mythic_vibe_cli tests scripts tools` → clean
+  (one F401 fixed mid-slice — unused `LintReport` import in
+  test).
+- `mypy mythic_vibe_cli` → no issues found in **142** source
+  files (+1 — `packet_lint.py`).
+
+### Operating-discipline carry
+
+- Strict additive: new module, new test file, new CLI
+  subcommand. Existing `packet create/show/list/ingest/diff`
+  behavior unchanged. Dispatcher gains one new branch.
+- Per compatibility-policy §3, the new subcommand and its JSON
+  output schema are MINOR additions on a stable surface.
+- `lint_packet_text` is pure (no I/O, no env reads), so the
+  lint logic is trivially testable and reusable from future
+  TUI / CI integrations.
+
+### Next: slice 20.2 — `doctor --fix`
+
+Tightly scoped auto-remediation: missing `mythic/`
+subdirectories, stale `mythic/method_manifest.json`, missing
+CHANGELOG `[Unreleased]` section. **Hard-rule:** never auto-fix
+anything that touches user-authored content (constraints,
+oaths, ADRs, packets, decisions).
+
+`STATUS: OPEN — SLICE 20.1 CLOSED — IN PROGRESS: 20.2`

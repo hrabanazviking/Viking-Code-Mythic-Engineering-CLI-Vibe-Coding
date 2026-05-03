@@ -801,6 +801,94 @@ def cmd_packet_diff(args: argparse.Namespace) -> int:
     return SUCCESS
 
 
+def cmd_packet_lint(args: argparse.Namespace) -> int:
+    """Phase 20.1 — heuristic packet quality lint. Loads a
+    packet (default: latest) and runs the rules in
+    ``mythic_vibe_cli/packet_lint.py``. Exit code is SUCCESS
+    when no error-severity findings fired (warnings + infos
+    are advisory)."""
+    from .packet_lint import lint_packet_text
+
+    root = Path(args.path).resolve()
+
+    # Resolve the packet source. Operators can pass either an
+    # explicit --file PATH (for ad-hoc lint of a not-yet-stored
+    # packet) or --packet-id PKT-NNNNNN, defaulting to "latest".
+    file_arg = getattr(args, "file", "") or ""
+    packet_id = getattr(args, "packet_id", "") or ""
+    if file_arg:
+        text_path = Path(file_arg)
+        if not text_path.is_absolute():
+            text_path = (root / text_path).resolve()
+        if not text_path.is_file():
+            write_error(f"Packet file not found: {text_path}")
+            return USER_INPUT_ERROR
+        try:
+            text = text_path.read_text(encoding="utf-8")
+        except OSError as exc:
+            write_error(f"Cannot read {text_path}: {exc}")
+            return OPERATIONAL_FAILURE
+        source_label = str(text_path)
+    else:
+        bridge = CodexBridge(root)
+        resolved_id, error = _resolve_packet_ref(
+            bridge,
+            packet_id or "LATEST",
+            latest_workflow_id=None,
+            root=root,
+        )
+        if error or resolved_id is None:
+            write_error(
+                error or "Could not resolve a packet to lint."
+            )
+            return USER_INPUT_ERROR
+        # Locate the packet on disk via the bridge's directory.
+        packet_path = bridge.packet_dir / f"{resolved_id}.md"
+        if not packet_path.is_file():
+            # JSON-format packets don't go through the markdown
+            # linter — surface a clear message rather than failing
+            # silently with no findings.
+            write_error(
+                f"Packet markdown not found at {packet_path} — "
+                "packet lint requires markdown packets"
+            )
+            return USER_INPUT_ERROR
+        try:
+            text = packet_path.read_text(encoding="utf-8")
+        except OSError as exc:
+            write_error(f"Cannot read {packet_path}: {exc}")
+            return OPERATIONAL_FAILURE
+        source_label = str(packet_path)
+
+    report = lint_packet_text(text)
+
+    if _flag(args, "json"):
+        payload = {
+            "command": _command_name(args, "packet lint"),
+            "path": str(root),
+            "source": source_label,
+            **report.to_dict(),
+        }
+        write_json(payload)
+        return SUCCESS if report.ok else OPERATIONAL_FAILURE
+
+    write_line(f"Packet lint: {source_label}")
+    write_key_value("Errors", len(report.errors))
+    write_key_value("Warnings", len(report.warnings))
+    write_key_value("Infos", len(report.infos))
+    if report.findings:
+        write_line("Findings:")
+        for finding in report.findings:
+            write_bullet(
+                f"[{finding.severity}] {finding.rule_id}: "
+                f"{finding.message}",
+                indent=2,
+            )
+    else:
+        write_line("- No findings.")
+    return SUCCESS if report.ok else OPERATIONAL_FAILURE
+
+
 def cmd_workflow_plan(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
     role_sequence = tuple(getattr(args, "role", []) or DEFAULT_ROLE_SEQUENCE)
@@ -5112,6 +5200,9 @@ def cmd_packet_dispatch(args: argparse.Namespace) -> int:
         return cmd_packet_ingest(args)
     if args.packet_command == "diff":
         return cmd_packet_diff(args)
+    # Phase 20.1 (additive): packet lint subcommand.
+    if args.packet_command == "lint":
+        return cmd_packet_lint(args)
     return USER_INPUT_ERROR
 
 
