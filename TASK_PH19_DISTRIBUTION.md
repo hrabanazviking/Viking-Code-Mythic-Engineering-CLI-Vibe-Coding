@@ -1993,3 +1993,62 @@ the documented signatures and that errors / timeouts fall into
 declared exit-code classes.
 
 `STATUS: OPEN — SLICE 20.4 CLOSED — IN PROGRESS: 20.5`
+
+## ADDITIVE UPDATE — 2026-05-03 (slice 20.5 closeout)
+
+**HEAD:** `d69f24b` (post-20.4) → next commit will land 20.5.
+
+### What shipped — slice 20.5 (Provider conformance test suite)
+
+- **`tests/test_provider_contract_conformance.py`** (NEW) —
+  asserts every provider in `ProviderRegistry` honors the
+  documented `AIProvider` Protocol. Tests are **shape-checks**
+  (no remote calls). Generated dynamically from
+  `ProviderRegistry().providers()` so adding a provider
+  automatically extends coverage.
+
+  Per-provider battery:
+  - `name` class attribute present and non-empty.
+  - `validate_config()` returns a `ProviderStatus`.
+  - `estimate(packet)` returns an `Estimate` with non-negative
+    integer token counts and non-negative cost.
+  - `run(packet, dry_run=True)` returns a `ProviderResponse`
+    with `dry_run=True`, the original `packet_id`, and a
+    populated `provider` field.
+  - `run_stream(...)` (when present) yields `StreamChunk` items
+    terminating with `done=True`.
+  - All three required methods (`validate_config`, `estimate`,
+    `run`) are callable.
+  - **No-network guard:** `urllib.request.urlopen` is
+    sentinel-patched and the dry-run battery re-runs against
+    every provider; an `AssertionError` would fire if any
+    provider's dry-run accidentally hit the network.
+
+  Plus two registry-shape tests (non-empty registry, lowercase
+  string keys).
+
+### Verification
+
+- `python -m pytest tests/test_provider_contract_conformance.py -v` → 9 tests + 55 subtests passed in ~1s (one subtest per provider × 6 batteries that use subTest).
+- Full suite: `python -m pytest -q` → **2102 passed, 1 skipped, 109 subtests passed** (+9 tests, +55 subtests from 2093/54).
+- `ruff check mythic_vibe_cli tests scripts tools` → clean.
+- `mypy mythic_vibe_cli` → no issues found in 146 source files (no production source change in this slice).
+
+### Operating-discipline carry
+
+- Test-only slice: zero production changes. The conformance
+  suite is purely additive coverage that catches the class of
+  regression where a new provider lands without an `estimate`
+  method (or returns the wrong dataclass type).
+- Per compatibility-policy §3, this hardens the "stable
+  surface" promise without altering it.
+- Conformance tests use `subTest` so a failure cleanly
+  identifies WHICH provider broke (e.g. `subTest(provider='openai')`).
+
+### Next: slice 20.6 — `provenance verify`
+
+Verifies plunder-imported file checksums match recorded
+provenance. Signed artifacts with GPG / Sigstore are deferred
+to v1.x (PH-21.5).
+
+`STATUS: OPEN — SLICE 20.5 CLOSED — IN PROGRESS: 20.6`
