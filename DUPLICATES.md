@@ -1,9 +1,11 @@
 # DUPLICATES.md — Definitive Register of Duplicated Files and Directories
 
-**Last updated:** 2026-04-23
-**Author:** Védis Eikleið (Cartographer)
+**Last updated:** 2026-04-23 (v1.0 callout added 2026-05-03)
+**Author:** Védis Eikleið (Cartographer); v1.0 callout by Runa Gridweaver
 **Scope:** Every duplicate pair or set I could verify in `Viking-Code-Mythic-Engineering-CLI-Vibe-Coding` on branch `development`.
 **Companion scrolls:** `MAP.md`, `ARCHITECTURE.md`, `DEPENDENCIES.md`, `YGGDRASIL_COMPARISON.md`, `IMPACT_integration.md`.
+
+> **v1.0.0 callout (2026-05-03).** This survey catalogs duplications across the **whole monorepo**, including vendor mirrors and dormant islands. The active product (`mythic_vibe_cli/`) does NOT carry the duplicates listed here — they live in dormant islands. The boundary law in `REPO_BOUNDARY.md` ensures these duplications cannot leak into the v1.0 product surface. For the active-product-only architecture record, see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Symbol legend (recommendation labels)
 

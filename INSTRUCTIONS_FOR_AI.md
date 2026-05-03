@@ -1,3 +1,30 @@
+> **⚠ Scope note (v1.0.0 / 2026-05-03).** This file is the
+> **Yggdrasil Architecture Manifesto** for a *different project*
+> (NorseSagaEngine / Yggdrasil). It references `yggdrasil_core.py`,
+> `config.yaml`, OpenRouter direct calls, etc. — **none of which
+> apply to the Mythic Vibe CLI v1.0.0**.
+>
+> If you are an AI working on Mythic Vibe CLI, **do NOT apply
+> these instructions**. The Mythic Vibe CLI uses:
+>
+> - `mythic_vibe_cli/` package layout (not `yggdrasil_core.py`).
+> - `pyproject.toml` for config (not `config.yaml`).
+> - Provider abstraction via `mythic_vibe_cli/ai/providers/` (not
+>   direct OpenRouter calls).
+>
+> The active-product instructions for AI working on Mythic Vibe
+> CLI are in [`CONTRIBUTING.md`](CONTRIBUTING.md), [`RULES.AI.md`](RULES.AI.md)
+> (when present in your global rules), and the Six Laws documented
+> in [`MYTHIC_ENGINEERING.md`](MYTHIC_ENGINEERING.md).
+>
+> See [`ROOT_DOC_INDEX.md`](ROOT_DOC_INDEX.md) Tier 5 for the broader
+> auxiliary-content classification this file falls under.
+>
+> The original Yggdrasil manifesto follows below for continuity
+> with NorseSagaEngine.
+
+---
+
 This is the "Great Refactor." By moving to this architecture, you are essentially creating a **Standardized Interface** (the Trunk) and **Modular Plugins** (the Leaves).
 
 When you give this guide to Roo or any AI, it provides them with a rigid blueprint that prevents "hallucination" and path errors. It forces the AI to stop acting like a confused architect and start acting like a builder following a master plan.
