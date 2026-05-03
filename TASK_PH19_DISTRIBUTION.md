@@ -1472,3 +1472,129 @@ estimates rot). Doctor surfaces a warning when the catalog
 hasn't been refreshed in N days.
 
 `STATUS: OPEN — PHASE 19.7 CLOSED — IN PROGRESS: 19.8`
+
+---
+
+## ADDITIVE UPDATE — 2026-05-02 (slice 19.8 closeout)
+
+**HEAD:** `086308c` (post-19.7) → next commit will land 19.8.
+
+### What shipped — slice 19.8 (Stale-catalog watchdog)
+
+Operator-facing visibility on AI provider model-catalog drift.
+The static catalog at
+`mythic_vibe_cli/ai/providers/model_catalog.py:_STATIC_LAST_UPDATED`
+gets stale fast (providers ship new models monthly); without a
+signal, `mythic-vibe ai models` returns plausible-but-stale
+answers without warning. The doctor command now surfaces the
+gap on every run.
+
+#### `mythic_vibe_cli/ai/providers/model_catalog.py` — additive
+- `STATIC_LAST_UPDATED` — public re-export of the curator-edited
+  cutoff date constant (the underscore-prefixed
+  `_STATIC_LAST_UPDATED` stays internal as before).
+- `DEFAULT_CATALOG_STALENESS_DAYS = 90` — one-quarter window.
+- `CatalogFreshness` frozen dataclass — `last_updated`,
+  `threshold_days`, `days_since_update`, `is_stale`,
+  `parse_error`. Serializes via `to_dict`.
+- `evaluate_catalog_freshness(*, threshold_days, today,
+  last_updated)` — pure function with `today` injection point
+  for tests. Malformed `last_updated` is treated as **stale**
+  with the parse error surfaced (defensive — corrupt metadata
+  errs on the side of warning, not silently passing).
+
+#### `mythic_vibe_cli/commands.py` — additive wiring
+- `cmd_doctor` imports `evaluate_catalog_freshness` at function
+  scope (preserves existing import order at module top).
+- JSON output gets a new `model_catalog` block alongside the
+  existing `drift` block. **Non-breaking MINOR addition** per
+  the compatibility policy §3 ("Field additions are
+  non-breaking").
+- Text output gets a new `- Model catalog: …` line in three
+  branches: `fresh`, `STALE` (uppercase to draw the eye), and
+  `malformed`. Inserted just before `return`; existing branches
+  untouched.
+- Exit code is **not** changed by stale catalogs — pure
+  warning. Existing CI / scripted callers see identical exit
+  codes.
+
+#### `tests/test_model_catalog_freshness.py` — 11 tests
+- **Pure-function (6):** fresh, exactly-at-threshold (= 90 is
+  still fresh — boundary is `>`, not `>=`), one-day past
+  (stale), malformed input (stale + parse_error surfaced),
+  default threshold = 90 (compat-policy guard), default
+  last_updated = `STATIC_LAST_UPDATED` (no silent rebind).
+- **Doctor JSON integration (2):** `--json` payload contains a
+  `model_catalog` block with all five expected keys; text
+  output contains a "Model catalog" line.
+- **Doctor text branches (3):** patches
+  `evaluate_catalog_freshness` to return controlled
+  `CatalogFreshness` fixtures, asserts each text branch
+  (fresh / STALE / malformed) renders the expected substring.
+  Avoids depending on wall-clock date for branch coverage.
+
+### Verification
+
+- `python -m pytest tests/test_model_catalog_freshness.py -v`
+  → 11 passed.
+- `python -m pytest tests/test_json_snapshots.py -q` → 9
+  passed (no `doctor --json` snapshot existed; new field is
+  additive so nothing to update).
+- Full suite: `python -m pytest -q` → **1987 passed, 1
+  skipped, 54 subtests passed** in ~97s.
+- `ruff check mythic_vibe_cli tests scripts tools` → clean.
+- `mypy mythic_vibe_cli` → no issues found in 140 source
+  files.
+
+### Operating-discipline carry
+
+- Additive-only: no existing function signature changed; no
+  existing branch deleted. JSON gets one new key; text output
+  gets one new line. Existing callers see strictly the same
+  bytes plus the new fields.
+- Per compat-policy §3, this is a MINOR addition (new field on
+  a stable surface). When the next release ships, the
+  CHANGELOG should note it under "Added" — not "Changed".
+- The 90-day threshold is documented in
+  `DEFAULT_CATALOG_STALENESS_DAYS`'s docstring + a guard test.
+  If we change the default, the threat-model and
+  compatibility-policy docs need a follow-up.
+
+### PHASE 19 — STATUS
+
+All eight slices closed in this session:
+
+- **19.0** — pre-flight bug sweep (10 fixes including the BS-6
+  cross-process lock).
+- **19.1** — JSON snapshot tests + bootstrap helper.
+- **19.2** — `tools/contract_audit.py` docs-↔-code drift
+  detector with baseline ratchet.
+- **19.3** — CI matrix expanded to 3 OS × 3 Python + arm64
+  Linux row + smoke step + long-path test.
+- **19.4** — hypothesis property tests for
+  `migrate_project_state` (6 invariants).
+- **19.5** — `docs/security/threat_model.md` + CycloneDX
+  v1.6 SBOM + `scripts/regenerate_sbom.py` + 5 SBOM sanity
+  tests.
+- **19.6** — `docs/compatibility_policy.md` v1.0.
+- **19.7** — `.github/workflows/release.yml` (PyPI OIDC +
+  Homebrew tap + Scoop bucket + offline wheelhouse) +
+  packaging templates + 12 template sanity tests.
+- **19.8** — stale-catalog watchdog wired into `cmd_doctor`
+  with 11 tests.
+
+Aggregate: **+311 tests** added across 19.0-19.8 (1665 → 1987
+in the suite); CI matrix went from 1 row to 10; new directories
+`docs/security/`, `packaging/`, `tests/property/`,
+`tests/snapshots/`, `runtime/`; new tooling
+`tools/contract_audit.py`, `scripts/regenerate_sbom.py`.
+
+### Next up (PH-20)
+
+PH-20 (v1.0.0 launch) is the only remaining roadmap phase. With
+PH-19 closed, the v1.0 launch checklist is now mechanically
+executable: tag `v1.0.0`, push, and the workflow handles
+distribution. The pre-tag manual gates are listed in
+`docs/RELEASE_CHECKLIST.md` (Tag-driven distribution section).
+
+`STATUS: OPEN — PHASE 19 (ALL 9 SLICES) CLOSED — READY FOR PH-20`

@@ -2566,6 +2566,12 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     once it's wired through there.
     """
     from .drift import scan_for_drift
+    # Phase 19.8 (audit remediation 2026-05-02): stale-catalog
+    # watchdog. Surfaced as a doctor warning (text + JSON) so
+    # operators / CI see catalog drift before users do. Pure
+    # additive — does NOT promote doctor exit code; existing
+    # callers see the same return value.
+    from .ai.providers.model_catalog import evaluate_catalog_freshness
 
     root = Path(args.path).resolve()
     workflow = MythicWorkflow(root)
@@ -2576,6 +2582,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     )
     drift_findings = scan_for_drift(root)
     drift_payload = [f.to_dict() for f in drift_findings]
+    catalog_freshness = evaluate_catalog_freshness()
     if _flag(args, "json"):
         write_json(
             {
@@ -2586,6 +2593,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
                 "warnings": list(report["warnings"]),
                 "sections": report["sections"],
                 "drift": drift_payload,
+                "model_catalog": catalog_freshness.to_dict(),
             }
         )
         return OPERATIONAL_FAILURE if report["errors"] else SUCCESS
@@ -2618,6 +2626,26 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             )
     else:
         write_line("- Drift findings: none")
+
+    # Phase 19.8 (additive 2026-05-02): catalog freshness line.
+    if catalog_freshness.parse_error is not None:
+        write_line(
+            f"- Model catalog: malformed last_updated "
+            f"({catalog_freshness.parse_error!r}) — treating as stale"
+        )
+    elif catalog_freshness.is_stale:
+        write_line(
+            f"- Model catalog: STALE — last_updated "
+            f"{catalog_freshness.last_updated} "
+            f"({catalog_freshness.days_since_update} days ago, "
+            f"threshold {catalog_freshness.threshold_days})"
+        )
+    else:
+        write_line(
+            f"- Model catalog: fresh — last_updated "
+            f"{catalog_freshness.last_updated} "
+            f"({catalog_freshness.days_since_update} days ago)"
+        )
 
     return OPERATIONAL_FAILURE if report["errors"] else SUCCESS
 
