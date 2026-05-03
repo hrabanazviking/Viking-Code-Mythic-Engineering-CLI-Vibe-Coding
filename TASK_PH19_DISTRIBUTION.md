@@ -1598,3 +1598,116 @@ distribution. The pre-tag manual gates are listed in
 `docs/RELEASE_CHECKLIST.md` (Tag-driven distribution section).
 
 `STATUS: OPEN — PHASE 19 (ALL 9 SLICES) CLOSED — READY FOR PH-20`
+
+---
+
+# PHASE 20 — POLISH + V1.0.0 LAUNCH (kickoff 2026-05-02)
+
+Volmarr's directive: "go for phase 20." Slice queue (17 total)
+in numeric/alpha order: **20.0 → 20.1 → 20.2 → 20.3 → 20.4 →
+20.5 → 20.6 → 20.A → 20.B → 20.C → 20.D → 20.E → 20.F → 20.G
+→ 20.H → 20.I → 20.7** (the actual v1.0.0 release tag lands
+last). Operating discipline carries over from PH-19: additive-
+only edits, ruff + mypy + pytest gating each commit, one slice
+per commit, dated update notices appended to this file.
+
+## ADDITIVE UPDATE — 2026-05-02 (slice 20.0 closeout)
+
+**HEAD:** `5dd7a0b` (post-19.8) → next commit will land 20.0.
+
+### What shipped — slice 20.0 (`init --interactive` opt-in wizard)
+
+- **`mythic_vibe_cli/init_wizard.py`** (NEW, ~310 lines)
+  - `WizardAnswers` frozen-style dataclass (project_name, goal,
+    provider, operator, scaffold_samples, schema_version=1).
+  - `WizardConfig` (root, initial_goal, default_provider,
+    default_operator) — pre-resolved defaults; tests mutate
+    fields without touching real env.
+  - `SUPPORTED_PROVIDERS` constant matching `ProviderRegistry`
+    exactly (parity test guards drift).
+  - `run_wizard(config, *, reader, writer)` — pure
+    orchestration. Reader/writer injected; default to `input` /
+    `sys.stdout.write`. EOFError on a required field raises
+    `WizardAbortedError`; defaulted prompts accept ENTER as
+    "use default."
+  - `_prompt` helper handles defaults + choices + invalid-input
+    re-prompt loop. `_prompt_yes_no` thin wrapper.
+  - `write_project_settings(root, answers, *, force=False)` —
+    refuses to overwrite existing `project_settings.json`
+    without `force=True`. Atomic write via PH-19 helper.
+  - `scaffold_sample_artifacts(root, answers)` — writes three
+    sample files (ADR / oath / constraint) under
+    `docs/ADRS/`, `mythic/oaths/`, `mythic/constraints/`.
+    Skips any that already exist (NEVER overwrites operator
+    content). Returns the list of paths actually created.
+
+- **`mythic_vibe_cli/app.py`** — additive parser changes:
+  - `--goal` no longer `required=True` (validated post-parse so
+    callers without `--goal` AND without `--interactive` get a
+    clear error).
+  - New `--interactive` flag on `init` and `start` aliases.
+  - New `--force` flag (only meaningful with `--interactive`;
+    enables `project_settings.json` overwrite).
+
+- **`mythic_vibe_cli/commands.py:cmd_init`** — additive branch:
+  - Validates "must have --goal OR --interactive" up-front
+    with `USER_INPUT_ERROR` exit. No NoneType crashes possible.
+  - When `--interactive`, runs the wizard, writes
+    `project_settings.json`, scaffolds samples, then assigns
+    `args.goal = answers.goal` and falls through to the
+    existing init pipeline (zero behavior change for the
+    non-interactive path).
+  - Output adds two new lines (Project settings + Sample
+    artefacts) only when the wizard actually ran.
+
+### Tests — `tests/test_init_wizard.py` (19 tests)
+
+- **Provider parity (1):** SUPPORTED_PROVIDERS == ProviderRegistry keys.
+- **Wizard happy path (5):** answers collected; --goal carries
+  forward; defaults apply on empty input; invalid provider
+  re-prompts; EOF on required field raises
+  `WizardAbortedError`.
+- **`write_project_settings` (3):** round-trip; refuses
+  overwrite without force; force overwrites.
+- **`scaffold_sample_artifacts` (3):** creates 3 files when
+  enabled; empty list when disabled; skips pre-existing files
+  (verified preexisting content unchanged).
+- **`cmd_init` integration (4):** no-goal-no-interactive →
+  USER_INPUT_ERROR; default `--goal X` flow unchanged (no
+  settings file, no samples); `--interactive` writes settings
+  + samples; `--interactive` refuses to overwrite without
+  `--force`.
+- **Operator default resolution (3):** $USER wins; $USERNAME
+  fallback; "unknown" when neither set.
+
+### Verification
+
+- `python -m pytest tests/test_init_wizard.py -q` →
+  19 passed in ~0.5s.
+- Full suite: `python -m pytest -q` → **2006 passed, 1
+  skipped, 54 subtests passed** (+19 from 1987).
+- `ruff check mythic_vibe_cli tests scripts tools` → clean.
+- `mypy mythic_vibe_cli` → no issues found in **141** source
+  files (+1 — `init_wizard.py`).
+
+### Operating-discipline carry
+
+- Strict additive: zero existing test or production behavior
+  changed. The only modification to `cmd_init`'s prior contract
+  is a new validation gate that USED TO be enforced by argparse
+  (`required=True` on `--goal`); now enforced by an explicit
+  check that surfaces a better error. Net behavior identical
+  for callers passing `--goal`.
+- Two new files; one existing file gained additive parser
+  flags + an additive code branch. No deletions, no renames.
+- Per compatibility-policy §3, the new `--interactive` and
+  `--force` flags are MINOR additions (new optional flags on a
+  stable surface).
+
+### Next: slice 20.1 — `packet lint`
+
+Heuristic packet-quality lint with per-rule severity. Rules:
+missing acceptance criteria, unclear test strategy, ambiguous
+task wording (heuristic), insufficient architectural anchors.
+
+`STATUS: OPEN — SLICE 20.0 CLOSED — IN PROGRESS: 20.1`
