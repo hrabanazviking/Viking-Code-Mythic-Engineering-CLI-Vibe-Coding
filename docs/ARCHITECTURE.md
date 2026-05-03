@@ -1,9 +1,11 @@
 # Architecture
 
-**Status:** Active architecture record  
-**Last updated:** 2026-04-29
-**Owner:** Architecture + Documentation maintainers  
+**Status:** Active architecture record (v1.0.0)
+**Last updated:** 2026-05-03
+**Owner:** Architecture + Documentation maintainers
 **Scope:** Active product runtime (`mythic_vibe_cli/`) and its governance boundaries in this monorepo.
+
+> **v1.0 note.** Compatibility-policy v1.0 (`docs/compatibility_policy.md`) is now binding. The "Stable" tier in §3 of that doc is the authoritative answer to which surfaces here may change without a major version bump.
 
 This document is the architecture contract for contributors. It defines where runtime behavior lives, how dependencies may flow, and how to avoid accidental coupling to dormant islands.
 
@@ -260,3 +262,43 @@ Companion updates usually required:
 - `docs/INDEX.md`
 - root `ARCHITECTURE.md`
 - root `DATA_FLOW.md`
+
+---
+
+## 11) v1.0 module additions (PH-19 + PH-20, 2026-05-03)
+
+The v1.0 launch added the following modules under the active runtime path. Each is independently tested under `tests/` and re-exported through its parent package where appropriate. The dependency direction stays the same — these are additive at the leaf, not new boundary crossings.
+
+### Runtime layer (`mythic_vibe_cli/runtime/`)
+
+- `cross_process_lock.py` — POSIX `fcntl.flock` + Windows `msvcrt.locking` with auto-release on process death. Wired into `forge_ledger.py` and `json_store.py:FileLock` (opt-in `cross_process=True`).
+- `atomic_write.py` — write-tmp + `os.replace` with Windows `PermissionError` retry; `BaseException`-cleanup so `KeyboardInterrupt`/`SystemExit` don't leave orphan tmp files.
+
+### Plugin layer (`mythic_vibe_cli/plugins/`)
+
+- `capabilities.py` — declared-capability vocabulary (`read` / `network` / `subprocess` / `file-write`) + `audit_capabilities`. Default-deny.
+- `circuit_breaker.py` — thread-safe per-plugin failure tracker with configurable threshold (`MYTHIC_PLUGIN_BREAKER_THRESHOLD`).
+- `sandbox.py` — `safe_call` gained an additive `breaker=` kwarg; `breaker=None` default preserves pre-20.3 behavior.
+
+### Top-level command modules
+
+- `init_wizard.py` — opt-in `init --interactive` Q&A wizard.
+- `packet_lint.py` — 7-rule heuristic packet quality linter.
+- `doctor_fix.py` — tightly-scoped auto-remediation (mythic/ subdirs + CHANGELOG `[Unreleased]`); hard-rule guarded.
+- `personas.py` — opt-in operator presets (`solo` / `team-lead` / `auditor`).
+- `architecture_review.py` — pure-read quarterly review walker.
+- `tui_panels.py` — opt-in TUI heatmap + plugin-risk panel data builders.
+- `workflow_lineage.py` — Mermaid + JSON workflow lineage viewer.
+- `ai/recommend.py` — pure-policy DSL scoring static-catalog models.
+- `plunder/verify.py` — SHA-256 provenance verification.
+- `plunder/attestation.py` — per-line modification attestation.
+
+### Tooling
+
+- `tools/contract_audit.py` — docs↔code drift detector with baseline-ratchet allowlist. CI-gated.
+- `scripts/regenerate_sbom.py` — reproducible CycloneDX SBOM rebuild from a clean isolated venv.
+
+### Workflows
+
+- `.github/workflows/release.yml` — tag-driven distribution pipeline (PyPI OIDC + Homebrew tap + Scoop bucket + offline wheelhouse + GitHub Release).
+- `.github/workflows/ci.yml` — expanded matrix (3 OS × 3 Python + Linux aarch64) with cross-platform smoke step + contract-audit gate.

@@ -10,7 +10,7 @@
 
 # Mythic Vibe CLI
 
-**Version:** `0.1.0` · **Python:** `>=3.10` · **License:** `Apache-2.0` · **Tests:** `270 passing` · **Status:** Active development on `development`
+**Version:** `1.0.0` · **Python:** `>=3.10` (CI: 3.10 / 3.11 / 3.12 on Linux / macOS / Windows + Linux aarch64) · **License:** `Apache-2.0` · **Tests:** `2224 passing + 109 subtests` · **Status:** Stable — v1.0.0 launch
 
 Mythic Vibe CLI is an open-source, method-first command-line tool for builders who want to **ship software with continuity, architecture, and recoverable memory** — not just momentum.
 
@@ -51,23 +51,21 @@ Dormant runtime islands, vendor mirrors, and research corpora are source materia
 
 ---
 
-## What changed in the most recent passes
+## What's new in v1.0.0 (2026-05-03)
 
-The scrolls have been deepened. This repository now carries a fuller documentation suite *and* a real, tested runtime layer that supports operator workflows end-to-end:
+The first stable release. Compatibility-policy v1.0 (`docs/compatibility_policy.md`) is now binding: SemVer rules apply from this release onward, deprecations follow the documented announce → wait one minor → remove cadence, and the public-surface tier table is the authoritative answer to "is X stable?"
 
-- **A modular runtime layer** under `mythic_vibe_cli/runtime/` provides eight composable primitives (file mutation queue, output guard, event bus, timings, slash command catalog, source-info provenance, exec, event log). Each is tested directly and re-exported from `mythic_vibe_cli.runtime`. Several are adapted from `badlogic/pi-mono` (MIT) — see **Acknowledgements** below.
-- **A plugin system** with eight life-cycle hooks (`before_/after_` × `scan/packet/verify/reflect`) wired through `PluginHookDispatcher`. Plugins can also contribute slash commands. See `docs/plugins.md`.
-- **A bounded event log** at `mythic/events.jsonl` (last 200 entries, atomic rotation). Every dispatcher emit appends one line; the TUI reads it for the Recent Events panel.
-- **`mythic-vibe shell`** — a minimal interactive REPL that dispatches each line back through `app.main(argv)` so the full argparse + handler stack runs per command.
-- **`mythic-vibe tui`** — a Textual-based TUI showing project status in a four-panel grid plus a Recent Events feed, with `/` opening a slash-command picker → preview → live command runner with elapsed-time tick.
-- **`verify`** runs durable verification gates (commands, changed files, docs, invariants) and writes a permanent record under `mythic/verifications/`. Optional `--record` promotes the artifact to `latest.json` and updates project state.
-- **`workflow plan`** orchestrates Mythic's six roles (Skald, Architect, Forge, Auditor, Cartographer, Scribe), checks packet readiness, and emits a durable `mythic/workflow_plan.json`.
-- **`plunder`** — lawful single-file reuse from Apache-2.0/MIT upstream repositories with provenance manifests under `mythic/imports/`.
-- **AI providers**: `copy-paste`, `local`, `openai`, `anthropic`, `gemini`, `openrouter` adapters live under `mythic_vibe_cli/ai/providers/`. Optional dependencies; the `copy-paste` provider always works.
-- Expanded operator-facing docs (`docs/runtime.md`, `docs/plugins.md`, `docs/COMMAND_CONTRACTS.md`).
-- A durable `CHANGELOG.md` with semantic structure and release-note discipline.
-- `docs/INDEX.md` as a stable navigation hub for docs consumers and contributors.
-- `DEVLOG.md` updated entry-by-entry so future sessions inherit context instead of guesswork.
+Highlights of the v1.0 launch (full detail in `CHANGELOG.md`):
+
+- **Runtime layer (`mythic_vibe_cli/runtime/`)** — ten composable primitives: file mutation queue, output guard, event bus, timings, slash-command catalog, source-info provenance, exec, event log, plus the v1.0 additions **cross-process lock** (POSIX `fcntl.flock` + Windows `msvcrt.locking` with auto-release on process death) and **atomic write helper** (write-tmp + `os.replace` + Windows PermissionError retry).
+- **Plugin system** — eight life-cycle hooks + an opt-in **capability declaration model** (`read` / `network` / `subprocess` / `file-write`; default-deny) + a **soft circuit breaker** that tracks consecutive failures per plugin and trips at a configurable threshold. `mythic-vibe plugin doctor` audits both.
+- **AI providers** — nine adapters: `copy-paste`, `local`, `openai`, `anthropic`, `gemini`, `openrouter`, `ollama`, `yggdrasil`, `mindspark`. The `copy-paste` provider always works.
+- **Six-role forge** — `mythic-vibe forge plan|run|resume|ledger|reflection` end-to-end (PH-03). `mythic-vibe verify --replay` is a one-flag shortcut to `forge resume`. `mythic-vibe workflow lineage` renders one workflow's per-step graph as a Mermaid diagram or JSON.
+- **Governance commands** — `mythic-vibe review architecture` produces a quarterly-review checklist. `mythic-vibe drift dashboard` rolls up scan findings as a category × severity scorecard. `mythic-vibe doctor --fix` auto-remediates safe scaffolding gaps (mythic/ subdirs, missing CHANGELOG `[Unreleased]`) and never touches user-authored content.
+- **Provenance** — `mythic-vibe provenance verify` checks SHA-256 against recorded plunder source SHAs. `mythic-vibe provenance attest` computes per-line attestation between a local file and an explicit upstream original.
+- **Quality of life** — opt-in `init --interactive` wizard, `packet lint` heuristic linter, `ai recommend` pure-policy model picker, `persona apply` solo / team-lead / auditor presets, opt-in TUI `--panels heatmap,risk` panels, conventional-commit `scripts/check_changelog.py --classify`.
+- **Distribution** — three channels via `.github/workflows/release.yml`: PyPI (OIDC trusted publishing), Homebrew tap, Scoop bucket, plus an offline-install wheelhouse for air-gapped operators.
+- **Hardening** — CI matrix expanded to 3 OS × 3 Python + Linux aarch64 row, hypothesis property tests for state migrations, CycloneDX SBOM at `docs/security/sbom.json`, threat model at `docs/security/threat_model.md`.
 
 If you are returning after a break, light your fire at **`docs/INDEX.md`** first — the threads are waiting there.
 
@@ -163,41 +161,58 @@ The package name is **`mythic-vibe-cli`**. Once installed, two console entrypoin
 - `mythic-vibe` — the canonical command
 - `mythic` — short alias
 
-> **PyPI status (2026-04):** the project is in active alpha development on the `development` branch and is **not yet published to PyPI**. Until the first PyPI release, install from GitHub or from a local clone using one of the patterns below. Once published, `pip install mythic-vibe-cli` will become the canonical form.
+Three official distribution channels for v1.0.0 (see `packaging/README.md` for the full release pipeline):
 
-### Recommended — isolated install via `pipx` (for end users)
+### PyPI — recommended (`pipx` for end users)
 
-`pipx` puts the CLI in its own isolated environment so it never collides with your project's Python packages. This is the cleanest install for someone who just wants to *use* Mythic Vibe CLI.
+`pipx` puts the CLI in its own isolated environment so it never collides with your project's Python packages.
+
+```bash
+pipx install mythic-vibe-cli
+mythic-vibe --version
+```
+
+Upgrade later with `pipx upgrade mythic-vibe-cli`. With extras:
+
+```bash
+pipx install "mythic-vibe-cli[tui,ai,ux]"
+```
+
+### PyPI via plain `pip`
+
+```bash
+python -m pip install mythic-vibe-cli
+# or with extras:
+python -m pip install "mythic-vibe-cli[tui,ai]"
+mythic-vibe --version
+```
+
+### Homebrew (macOS / Linux)
+
+```bash
+brew install hrabanazviking/mythic/mythic-vibe
+```
+
+### Scoop (Windows)
+
+```powershell
+scoop bucket add mythic https://github.com/hrabanazviking/scoop-mythic
+scoop install mythic-vibe
+```
+
+### Offline / air-gapped — wheelhouse
+
+Every release attaches a `mythic-vibe-cli-<VERSION>-wheelhouse.tar.gz` to the GitHub Release page. See [`packaging/WHEELHOUSE.md`](packaging/WHEELHOUSE.md) for the verified-extract-install recipe (recommended for Pi / Termux and CI runners with blocked egress).
+
+### Pre-release / `development` branch (advanced)
+
+If you want to track unreleased work between tagged versions, install from the `development` branch:
 
 ```bash
 pipx install "git+https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding.git@development"
-mythic-vibe --version
 ```
 
-To upgrade later:
-
-```bash
-pipx upgrade mythic-vibe-cli
-```
-
-To pull in optional extras at install time (Textual TUI, AI providers, rich UI), use the PEP 508 direct-URL form so `pipx` resolves the extras correctly:
-
-```bash
-pipx install "mythic-vibe-cli[tui,ai,ux] @ git+https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding.git@development"
-```
-
-### Plain `pip` from GitHub (into the active environment)
-
-```bash
-python -m pip install "git+https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding.git@development"
-mythic-vibe --version
-```
-
-With extras:
-
-```bash
-python -m pip install "mythic-vibe-cli[tui] @ git+https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding.git@development"
-```
+Pre-release builds may break SemVer guarantees that v1.0.0 enforces.
 
 ### Editable install from a local clone (for contributors)
 
@@ -229,31 +244,39 @@ mythic-vibe --version
 
 ### Optional extras
 
-The CLI ships with a small core and several opt-in extras. Add them after the package spec in square brackets — works with all install styles above:
+The CLI ships with a **stdlib-only runtime base** (no required third-party packages) and several opt-in extras. Add them after the package spec in square brackets — works with all install styles above:
 
 | Extra | Adds | Wheels installed |
 |---|---|---|
 | `tui` | Textual TUI (`mythic-vibe tui`) | `textual>=0.80` |
 | `ai` | AI provider adapters | `anthropic>=0.34`, `google-genai>=1.0`, `openai>=1.40` |
 | `ux` | Optional rich-text UI polish (set `MYTHIC_RICH=1` to enable) | `rich>=13.0` |
-| `dev` | Full development stack (tests, lint, type, build, plus all of the above) | adds `pytest`, `pytest-cov`, `ruff`, `mypy`, `build`, `twine`, `mkdocs` |
+| `otel` | OpenTelemetry export — gated by `MYTHIC_OTEL_ENABLED=1` | `opentelemetry-api/-sdk/-exporter-otlp-proto-http >= 1.20` |
+| `mindspark`, `wyrd`, `yggdrasil` | Island adapters — each gated by its own `MYTHIC_ISLAND_<NAME>_ENABLED` env var | `thoughtforge`, `wyrd-protocol`, `yggdrasil` (separate optional packages) |
+| `test` | Test stack (also installs `hypothesis>=6.0` for property tests) | `pytest>=8.0`, `pytest-cov>=5.0`, `hypothesis>=6.0` |
+| `lint`, `type`, `build`, `docs` | Tool-specific extras for contributors | `ruff>=0.8`, `mypy>=1.10`, `build>=1.2`+`twine>=5.0`, `mkdocs>=1.6` |
+| `dev` | Full development stack — combines `test`, `lint`, `type`, `build`, `docs`, `ai`, `ux`, `tui` | all of the above |
 
-Examples (note the **PEP 508 direct-URL form** — `package[extras] @ git+URL@branch` — which is what `pip` and `pipx` both expect for VCS installs with extras):
+Examples:
 
 ```bash
-# pipx with extras
-pipx install "mythic-vibe-cli[tui] @ git+https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding.git@development"
-
-# pip with extras
-python -m pip install "mythic-vibe-cli[tui,ai] @ git+https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding.git@development"
+# PyPI with extras (preferred)
+pipx install "mythic-vibe-cli[tui,ai]"
+python -m pip install "mythic-vibe-cli[ai,otel]"
 
 # Editable from a local clone with everything (contributors)
 python -m pip install -e ".[dev]"
 ```
 
+For VCS installs with extras (pre-release tracking), use the **PEP 508 direct-URL form** `package[extras] @ git+URL@branch`:
+
+```bash
+pipx install "mythic-vibe-cli[tui] @ git+https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding.git@development"
+```
+
 ### Prerequisites
 
-- Python 3.10+ (also tested on 3.11 / 3.12 / 3.13)
+- Python 3.10, 3.11, or 3.12 (CI tests all three on Linux + macOS + Windows + Linux aarch64; Python 3.13 is on the targeted-but-untested tier — see `docs/compatibility_policy.md` §1)
 - Git
 - A shell environment — bash, zsh, fish, PowerShell, or similar
 
@@ -503,32 +526,40 @@ For complete onboarding with deeper examples and edge cases, read `docs/quicksta
 
 ---
 
-## ChatGPT Plus / Codex bridge workflow
+## ChatGPT / Codex / Claude bridge workflow
 
-When the work ahead calls for a sharper blade than local tooling alone provides, this is how you cross the bridge cleanly.
+When the work ahead calls for a sharper blade than local tooling alone provides, this is how you cross the bridge cleanly. Two equivalent paths — pick the one that fits your style.
 
-1) Generate a context packet from what is already known locally:
+### Modern path — `packet create` (recommended)
 
 ```bash
-mythic-vibe codex-pack \
-  --phase plan \
+# Generate a packet for any role + phase
+mythic-vibe packet create \
   --task "Implement the CLI command parser and file templates" \
-  --audience beginner
+  --phase plan \
+  --role "Forge Worker" \
+  --audience advanced
+
+# Lint the packet before sending (catches vague intent, weak architecture anchors, etc.)
+mythic-vibe packet lint
 ```
 
-2) Open `mythic/codex_prompt.md` and paste the `Prompt To Paste` section into ChatGPT/Codex.
+The packet lands as Markdown + JSON under `mythic/packets/`. Open it, paste into the assistant of your choice, do the work, then log the outcome.
 
-3) When the assistant returns, log its outcome so the reasoning does not vanish:
+### Legacy aliases — `codex-pack` / `codex-log`
 
-```bash
-mythic-vibe codex-log --phase build --response "Implemented parser with subcommands and docs updates"
-```
-
-4) Inspect where the work stands:
+These remain supported for backwards compatibility:
 
 ```bash
+mythic-vibe codex-pack --phase plan --task "..." --audience beginner
+# (open mythic/codex_prompt.md, paste into the assistant)
+mythic-vibe codex-log --phase build --response "Implemented parser with subcommands"
 mythic-vibe status
 ```
+
+### End-to-end forge orchestration
+
+For a full six-role pass (Skald → Architect → Cartographer → Forge Worker → Auditor → Scribe), see `mythic-vibe forge --help`. `forge run --provider <name>` executes against a configured AI provider; `forge resume` (or the `verify --replay` shortcut) picks up from the first non-succeeded step.
 
 ---
 
@@ -552,6 +583,16 @@ These environment variables override any file-based value at runtime:
 - `MYTHIC_AUTO_COMPACT`
 - `MYTHIC_METHOD_SOURCE`
 - `MYTHIC_TIMING` — when set to `1` / `true` / `yes` / `on`, prints a startup-and-command profile to stderr (`argparse`, `configure_output`, `handler:<command>`, `TOTAL`)
+- `MYTHIC_RICH` — opt-in rich-text rendering when the `[ux]` extra is installed
+- `MYTHIC_EVENT_LOG_LIMIT` — positive int overrides the 200-entry event-log default
+- `MYTHIC_PLUGIN_TIMEOUT_SEC` — soft per-plugin invocation timeout
+- `MYTHIC_PLUGIN_BREAKER_THRESHOLD` — consecutive-failure count that trips the plugin circuit breaker (default 3)
+- `MYTHIC_OTEL_ENABLED` — gate the OpenTelemetry exporter (`[otel]` extra)
+- `MYTHIC_CHAT_BRIDGE_ENABLED` — master gate for the Matrix / Telegram chat-bridge surfaces
+- `MYTHIC_VOICE_TTS_ENABLED` — gate the Chatterbox TTS adapter
+- `MYTHIC_ISLAND_<NAME>_ENABLED` — gate the Yggdrasil / MindSpark / WYRD island adapters
+- `MYTHIC_TUI_PANELS` — comma-separated opt-in TUI panel selection (also accepts the `--panels` flag)
+- `MYTHIC_SNAPSHOT_UPDATE` — set to `1` to regenerate test JSON snapshots
 
 To see what the tool is actually reading in your current project:
 
@@ -593,13 +634,14 @@ When you change behavior, update the docs in the same commit or PR. Treat docume
 Mythic Vibe CLI exposes the following command families. Run `mythic-vibe <command> --help` for full options on each.
 
 ### Project lifecycle
-- `init` / `start` / `imbue` — initialize Mythic scaffolding
+- `init` / `start` / `imbue` — initialize Mythic scaffolding (PH-20: opt-in `--interactive` Q&A wizard with optional sample-artefact scaffolds)
 - `status` — show current Mythic progress summary
 - `state` — inspect and validate Mythic project state
-- `doctor` / `scry` — validate project structure and run diagnostics
+- `doctor` / `scry` — validate project structure, run diagnostics, surface drift findings + AI-catalog freshness; PH-20 `--fix` / `--fix-dry-run` auto-remediates safe scaffolding gaps without touching user-authored content
 
 ### Authoring loop
 - `checkin` — log a Mythic phase update and advance tracking
+- `intent` / `constraints` / `architecture` / `plan` / `build` — workflow-phase capture commands (each writes a Mythic Phase Record under `mythic/checkins/`)
 - `reflect` — create a reflection handoff for the current session
 - `resume` — summarize the latest handoff and suggest the next step
 - `handoff` — create, inspect, or list session handoff records
@@ -610,23 +652,30 @@ Mythic Vibe CLI exposes the following command families. Run `mythic-vibe <comman
 ### Context + packets
 - `scan` — build a local project index for AI context
 - `import-md` — import all Markdown files from the Mythic Engineering repo
-- `codex-pack` / `evoke` — generate a copy-paste-ready prompt packet
+- `codex-pack` / `evoke` — legacy aliases for prompt-packet generation
 - `codex-log` — record a check-in update after receiving an AI response
-- `packet` — create, show, or list reusable packet artifacts
-- `workflow` — plan role-based Mythic workflow orchestration (six-role plans, packet readiness)
+- `packet create|show|list|ingest|diff|lint` — packet artifacts (PH-20: `lint` runs a 7-rule heuristic quality check)
+- `workflow plan|run|packets|history|lineage` — six-role orchestration (PH-20: `lineage` renders a Mermaid graph of one workflow's per-step ledger)
+
+### Six-role forge (PH-03)
+- `forge plan|run|resume|ledger|reflection` — multi-agent forge cycle. `forge run --provider <name>` executes end-to-end; `forge resume` (or `verify --replay`) picks up from the first non-succeeded step
 
 ### Verification + governance
-- `verify` — run verification gates (commands, changed files, docs, invariants) and write a durable record
+- `verify` — run verification gates (commands, changed files, docs, invariants) and write a durable record. PH-20: `--replay` shortcut delegates to `forge resume`
+- `drift` — scan for docs↔code drift. PH-20: `drift dashboard` rolls up findings as a category × severity scorecard
+- `provenance verify|attest` — PH-20: SHA-256 verification + per-line modification attestation against an explicit upstream original
+- `review architecture` — PH-20: quarterly governance-review checklist (cadence in `docs/governance/quarterly_review.md`)
 - `oath` — display the responsible AI usage oath
 - `method` — inspect and sync the active Mythic Engineering method profile
 - `sync` — sync Mythic Engineering method notes from GitHub
 
 ### Extensibility
 - `grimoire add|list` — manage plugins (registration)
-- `plugin list|inspect|disable` — health, hook declarations, and pause control
-- `plunder plan|fetch|apply|record` — lawful single-file reuse from open-source upstreams
-- `ai` — manage optional AI provider integrations
-- `slash list` — inspect the slash command catalog (built-in + plugin-contributed)
+- `plugin list|inspect|disable|doctor` — PH-20: `doctor` audits declared capabilities + circuit-breaker state
+- `plunder inspect|plan|fetch|apply|record` — lawful single-file reuse from open-source upstreams
+- `ai providers|test|run|stream|ingest-response|models|telemetry|route|recommend` — optional AI provider integrations. PH-20: `recommend` is a pure-policy model picker against the static catalog
+- `persona apply|show` — PH-20: opt-in operator presets (`solo` / `team-lead` / `auditor`) writing `mythic/persona.json`
+- `slash list|inspect` — inspect + introspect the slash-command catalog (built-in + plugin-contributed)
 
 ### Operator helpers
 - `examples` — copy-paste command examples
@@ -637,10 +686,15 @@ Mythic Vibe CLI exposes the following command families. Run `mythic-vibe <comman
 - `completion` — print shell completion script
 - `config set` — show or manage configuration values
 - `db migrate` — database maintenance tasks
+- `voice transcribe|say` — local-first speech transcription + TTS (opt-in via `--engine` and the `MYTHIC_VOICE_TTS_ENABLED` env var)
+- `surface chat|web-terminal|ssh-doctor` — alternate access surfaces (chat-bridge, browser, SSH)
+
+### Dev-tool wrappers (PH-02 slice 2.2)
+- `test` / `lint` / `typecheck` / `scaffold` / `changelog` / `version` / `ci` / `docker` — convenience wrappers around `pytest` / `ruff` / `mypy` and project-tooling tasks
 
 ### Interactive surfaces
 - `shell` — open the minimal REPL
-- `tui` — open the Textual TUI (requires the `[tui]` extra)
+- `tui` — open the Textual TUI (requires the `[tui]` extra). PH-20: `--panels heatmap,risk` opts into the new diagnostic panels
 
 For full command behavior and contracts, see `docs/api.md` and `docs/COMMAND_CONTRACTS.md`.
 
@@ -648,7 +702,7 @@ For full command behavior and contracts, see `docs/api.md` and `docs/COMMAND_CON
 
 ## Runtime primitives
 
-`mythic_vibe_cli/runtime/` holds eight small, single-purpose primitives that the rest of the CLI builds on. Each is self-contained, tested directly under `tests/`, and re-exported from `mythic_vibe_cli.runtime`.
+`mythic_vibe_cli/runtime/` holds ten small, single-purpose primitives that the rest of the CLI builds on. Each is self-contained, tested directly under `tests/`, and re-exported from `mythic_vibe_cli.runtime`.
 
 | Primitive | Purpose | Wired today |
 |---|---|---|
@@ -660,6 +714,8 @@ For full command behavior and contracts, see `docs/api.md` and `docs/COMMAND_CON
 | `source_info` | Provenance dataclass for extension/plugin/skill/prompt-contributed artifacts | `SlashCommandInfo`; `slash list` |
 | `exec` | Subprocess execution with timeout and cancel-event (cross-platform; missing binaries return `code=127` instead of raising) | `verify/test_runner.py`, `verify/git_diff.py`, `handoff.py`, `context/scanner.py` |
 | `event_log` | Bounded JSONL append-and-tail at `mythic/events.jsonl` (last 200 entries; atomic rotation) | `PluginHookDispatcher.emit()`; TUI Recent Events panel |
+| `cross_process_lock` (PH-19) | OS-level cross-process lock — `fcntl.flock` on POSIX, `msvcrt.locking` on Windows. Auto-releases when the holding process dies (no stale-lockfile blocking) | `forge_ledger.py`, `json_store.py:FileLock` opt-in |
+| `atomic_write` (PH-19) | Write-tmp + `os.replace` helper with Windows `PermissionError` retry. Catches `BaseException` so `KeyboardInterrupt`/`SystemExit` don't leave orphan tmp files | `verify/__init__.py`, `handoff.py`, `forge_reflection.py`, the doctor-fix + persona helpers |
 
 For deeper coverage and composition patterns, read `docs/runtime.md`.
 
@@ -691,15 +747,23 @@ If you do not know where to stand, begin here and follow the stones in order:
 
 1. `docs/INDEX.md` — canonical docs navigator
 2. `docs/quickstart.md` — setup + first loop
-3. `docs/ARCHITECTURE.md` — active runtime architecture
-4. `docs/DOMAIN_MAP.md` — ownership + boundaries
-5. `docs/api.md` — integration contracts
-6. `docs/COMMAND_CONTRACTS.md` — durable contract surface for every command
-7. `docs/runtime.md` — runtime primitives guide
-8. `docs/plugins.md` — plugin authoring + dispatcher contract
-9. `docs/SYSTEM_VISION.md` — product north star
-10. `DEVLOG.md` — chronological continuity record
-11. `CHANGELOG.md` — release-facing change history
+3. `docs/INSTALL.md` — install paths (PyPI, Homebrew, Scoop, wheelhouse)
+4. `docs/ARCHITECTURE.md` — active runtime architecture
+5. `docs/DOMAIN_MAP.md` — ownership + boundaries
+6. `docs/api.md` — integration contracts
+7. `docs/COMMAND_CONTRACTS.md` — durable contract surface for every command
+8. `docs/runtime.md` — runtime primitives guide
+9. `docs/plugins.md` — plugin authoring + dispatcher contract
+10. `docs/SYSTEM_VISION.md` — product north star
+11. `docs/compatibility_policy.md` — v1.0 binding contract: SemVer, support window, deprecation cadence
+12. `docs/security/threat_model.md` — assets, attackers, mitigations (with file:line anchors)
+13. `docs/security/sbom.json` — CycloneDX v1.6 dependency manifest
+14. `docs/governance/quarterly_review.md` — architecture-review cadence + agenda
+15. `docs/RELEASE_CHECKLIST.md` — pre-tag manual gates + tag-driven distribution flow
+16. `packaging/README.md` — PyPI / Homebrew / Scoop / wheelhouse channel inventory
+17. `packaging/WHEELHOUSE.md` — offline-install recipe
+18. `DEVLOG.md` — chronological continuity record
+19. `CHANGELOG.md` — release-facing change history
 
 ---
 
@@ -709,13 +773,14 @@ Before you offer your work to the hall, run the standard checks:
 
 ```bash
 pytest -q
-python -m ruff check mythic_vibe_cli tests
+python -m ruff check mythic_vibe_cli tests scripts tools
 python -m mypy mythic_vibe_cli
+python tools/contract_audit.py --strict
 python -m mythic_vibe_cli --help
 mythic-vibe doctor
 ```
 
-The full test suite lives under `tests/` (currently 270 tests + 14 subtests). CI runs the same gates in `.github/workflows/ci.yml`.
+The full test suite lives under `tests/` (v1.0.0: **2224 tests + 109 subtests**, 1 skipped legitimate POSIX-only). CI runs the same gates in `.github/workflows/ci.yml` across **3 OS × 3 Python + Linux aarch64** rows. The release pipeline at `.github/workflows/release.yml` (PH-19.7) is tag-driven (`git push origin v<X.Y.Z>`).
 
 ---
 

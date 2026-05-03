@@ -104,12 +104,10 @@ Depending on implementation state, additional commands may be exposed:
 - `weave`
 - `prune`
 - `heal`
-- `workflow plan`
-- `workflow run`
-- `workflow packets`
+- `workflow plan|run|packets|history|lineage` (PH-20.C: `lineage` renders one workflow's per-step graph as Mermaid markdown or JSON)
 - `oath`
 - `grimoire add|list`
-- `plugin list|inspect|disable`
+- `plugin list|inspect|disable|doctor` (PH-20.3: `doctor` audits declared capabilities + circuit-breaker state)
 - `examples`
 - `guide`
 - `next`
@@ -121,6 +119,32 @@ Depending on implementation state, additional commands may be exposed:
 - `plunder inspect|plan|fetch|apply|record`
 
 Use `--help` for current option details and defaults.
+
+### v1.0 command surface (PH-19 + PH-20)
+
+The v1.0 launch added the following operator-facing commands and flags. Each preserves prior behavior — every flag is opt-in and every subcommand is additive on a stable parent.
+
+| Command | Subcommand / flag | What it does |
+|---|---|---|
+| `init` | `--interactive` | Opt-in stdin Q&A wizard (project name / goal / default AI provider / operator / sample-artefact scaffolds). Persists to `mythic/project_settings.json`. |
+| `init` | `--force` | With `--interactive`, allows overwriting an existing `project_settings.json`. |
+| `doctor` | `--fix` / `--fix-dry-run` | Auto-remediates safe scaffolding gaps (missing `mythic/` subdirs, missing CHANGELOG `[Unreleased]` section). **Hard rule:** never touches user-authored content (constraints, oaths, ADRs, packets, decisions). |
+| `doctor` | (always) | Adds `model_catalog` block (PH-19.8 stale-catalog watchdog). |
+| `packet` | `lint` | 7-rule heuristic linter (missing required sections, vague intent, weak architecture anchors, empty verification block, missing acceptance criteria). Per-rule severity. |
+| `verify` | `--replay` | Delegates to `forge resume` for the most recent (or `--workflow ID`) workflow. Forwards `--provider`, `--strict`, `--json`. Default provider is `copy-paste`. |
+| `workflow` | `lineage [--workflow ID]` | Reads `forge_ledger.json` and emits a Mermaid `flowchart LR` (status-coloured) plus a non-Mermaid caption table. JSON output for downstream tooling. |
+| `drift` | `dashboard` | Aggregates findings as a category × severity scorecard. Markdown by default; `--json` for tooling. |
+| `plugin` | `doctor` | Audits each registered plugin: declared capabilities (`read` / `network` / `subprocess` / `file-write`), unknown-capability warnings, breaker threshold (env-overridable). Read-only. |
+| `ai` | `recommend` | Pure-policy DSL scoring static-catalog models against `--task` / `--max-context` / `--vision` / `--cost-class` / `--family` / `--top`. Zero provider calls. |
+| `provenance` | `verify` | Walks `mythic/imports/plunder_manifest.json`; reports per-entry `match` / `drift` / `missing` against recorded `source_sha`. |
+| `provenance` | `attest --destination PATH --original PATH` | Per-line attestation between a local file and an explicit upstream original. Streams SHA-256 per line; classifies added / removed / unchanged. |
+| `persona` | `apply --preset solo\|team-lead\|auditor [--force]` | Writes opt-in persona defaults to `mythic/persona.json` (atomic; refuses overwrite without `--force`). |
+| `persona` | `show` | Shows the active persona (or `none`). |
+| `review` | `architecture` | Read-only quarterly governance checklist. Cadence + agenda live in `docs/governance/quarterly_review.md`. |
+| `tui` | `--panels heatmap,risk` | Opt-in TUI panels (heatmap = drift findings as category × severity, risk = plugin classification by capability surface). Default behavior unchanged. |
+| `scripts/check_changelog.py` | `--classify [--json]` | Bucket `[Unreleased]` entries by conventional-commit-style prefix (`feat` → Added, `fix` → Fixed, etc.). Original release-gate behavior preserved when no flag is passed. |
+| `tools/contract_audit.py` | `--strict` | Fails CI when an argparse handler is missing from any markdown doc reference. PH-19.2 docs↔code drift detector. |
+| `scripts/regenerate_sbom.py` | (script) | Rebuilds `docs/security/sbom.json` from a clean isolated venv. |
 
 `db migrate` upgrades legacy `mythic/status.json` files into the current schema-versioned `ProjectState` format, preserving the previous file under `mythic/backups/` before rewriting it. It also keeps the existing local `weave.db` migration behavior.
 
@@ -142,7 +166,7 @@ The active command surface now supports shared runtime controls where useful:
 
 | Option | Use |
 |---|---|
-| `--json` | Return structured machine-readable output. Supported by reporting/structured commands including `status`, `state show`, `state validate`, `doctor`, `examples`, `guide`, `next`, `explain`, `tutorial`, `completion`, `config`, `codex-pack`, `method`, `grimoire`, `plugin`, `db migrate`, and `plunder`. |
+| `--json` | Return structured machine-readable output. Supported by reporting/structured commands including `status`, `state show`, `state validate`, `doctor`, `examples`, `guide`, `next`, `explain`, `tutorial`, `completion`, `config`, `codex-pack`, `method`, `grimoire`, `plugin`, `plugin doctor`, `db migrate`, `plunder`, `provenance verify`, `provenance attest`, `persona apply`, `persona show`, `review architecture`, `packet lint`, `workflow lineage`, `drift`, `drift dashboard`, and `ai recommend`. |
 | `--quiet` | Suppress non-error human text output. |
 | `--verbose` | Show additional operational detail when the command provides it. |
 | `--dry-run` | Preview write/sync operations without changing files, registries, databases, or remote state. |

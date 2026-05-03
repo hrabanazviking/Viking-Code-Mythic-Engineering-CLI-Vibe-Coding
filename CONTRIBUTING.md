@@ -4,6 +4,8 @@ Thank you for your interest in contributing. This document explains how to file 
 
 The Mythic Vibe CLI is built under the **Mythic Engineering** methodology — see [`MYTHIC_ENGINEERING.md`](MYTHIC_ENGINEERING.md) for the philosophy and the **Six Laws** every contribution must satisfy.
 
+**Since v1.0.0**, all contributions also operate under the binding [`docs/compatibility_policy.md`](docs/compatibility_policy.md) — SemVer rules apply, deprecations follow the documented announce → wait one minor → remove cadence, and the public-surface tier table is the authoritative answer to "is X stable?". Changes that break a Stable surface require a major-version bump.
+
 ---
 
 ## Quick reference
@@ -43,8 +45,9 @@ The longer form lives in [`MYTHIC_ENGINEERING.md`](MYTHIC_ENGINEERING.md).
 
    ```bash
    python -m pytest tests/
-   python -m ruff check mythic_vibe_cli tests
+   python -m ruff check mythic_vibe_cli tests scripts tools
    python -m mypy mythic_vibe_cli
+   python tools/contract_audit.py --strict
    ```
 
 5. **Open a PR against `development`**. PR description should include:
@@ -52,8 +55,9 @@ The longer form lives in [`MYTHIC_ENGINEERING.md`](MYTHIC_ENGINEERING.md).
    - Test count delta.
    - Any new env vars / CLI flags / config keys.
    - ADR reference if the change crosses a boundary.
+   - Compatibility-policy assessment (PATCH / MINOR / MAJOR per §4 of `docs/compatibility_policy.md`).
 
-6. **CI** runs the same gates. Land only when green.
+6. **CI** runs the same gates across **3 OS × 3 Python + Linux aarch64**. Land only when green.
 
 7. **Merge to `main`** is the maintainer's call — typically batched at phase boundaries.
 
@@ -152,15 +156,28 @@ Optional body explaining the context, the fix, the trade-offs.
 Wrap at ~72 chars. Mention test deltas at the end.
 ```
 
-For non-slice work:
+For non-slice work, use **conventional-commit prefixes** so `python scripts/check_changelog.py --classify` (PH-20.F) can bucket entries automatically:
 
 ```
-fix(plugins): one-line summary
-docs: one-line summary
-chore(deps): one-line summary
+feat(api): one-line summary           # → CHANGELOG "Added"
+fix(plugins): one-line summary        # → CHANGELOG "Fixed"
+docs: one-line summary                # → CHANGELOG "Documentation"
+refactor(state): one-line summary     # → CHANGELOG "Changed"
+test(property): one-line summary      # → CHANGELOG "Tests"
+chore(deps): one-line summary         # → CHANGELOG "Chore"
+build(release): one-line summary      # → CHANGELOG "Build"
+ci: one-line summary                  # → CHANGELOG "CI"
+perf(packet): one-line summary        # → CHANGELOG "Changed"
+revert: one-line summary              # → CHANGELOG "Removed"
 ```
+
+The full mapping table is in `scripts/check_changelog.py:LABEL_TO_BUCKET`. Unknown labels surface in the classifier output (so typos don't disappear silently) but bucket as `Unclassified`.
 
 We never sign commits with anyone's name other than the actual author + the AI co-author when applicable.
+
+## 7a. Quarterly architecture review
+
+Maintainers run `mythic-vibe review architecture` once per quarter (Jan / Apr / Jul / Oct). Each review's output gets captured under `mythic/governance/review-<YYYY-MM-DD>.md`. The cadence + agenda are in [`docs/governance/quarterly_review.md`](docs/governance/quarterly_review.md). Contributors don't need to run this directly, but ADR-touching PRs should expect the next review pass to revisit any decisions in flight.
 
 ---
 
