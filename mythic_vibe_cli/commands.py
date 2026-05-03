@@ -5705,11 +5705,83 @@ def cmd_ai_dispatch(args: argparse.Namespace) -> int:
         return cmd_ai_telemetry(args)
     if args.ai_command == "route":
         return cmd_ai_route(args)
+    # Phase 20.4 (additive 2026-05-03): ai recommend — pure-policy
+    # model recommendation against the static catalog.
+    if args.ai_command == "recommend":
+        return cmd_ai_recommend(args)
     write_error(
         f"Unknown ai subcommand: {args.ai_command!r}. "
-        "Valid: providers | test | run | stream | ingest-response | models | telemetry | route."
+        "Valid: providers | test | run | stream | ingest-response | models | telemetry | route | recommend."
     )
     return USER_INPUT_ERROR
+
+
+def cmd_ai_recommend(args: argparse.Namespace) -> int:
+    """Phase 20.4 — score models from the static catalog
+    against operator-supplied criteria. Zero provider calls;
+    deterministic for the same inputs."""
+    from .ai.recommend import (
+        COST_CLASSES,
+        RecommendationCriteria,
+        recommend_models,
+    )
+
+    cost_class = getattr(args, "cost_class", None)
+    if cost_class and cost_class not in COST_CLASSES:
+        write_error(
+            f"--cost-class must be one of {COST_CLASSES} "
+            f"(got {cost_class!r})"
+        )
+        return USER_INPUT_ERROR
+
+    family = getattr(args, "family", None) or None
+    top_n = int(getattr(args, "top", 0) or 3)
+    if top_n < 0:
+        write_error("--top must be a non-negative integer")
+        return USER_INPUT_ERROR
+
+    criteria = RecommendationCriteria(
+        task=str(getattr(args, "task", "") or ""),
+        max_context=int(getattr(args, "max_context", 0) or 0),
+        vision_required=bool(getattr(args, "vision", False)),
+        cost_class=cost_class,
+        family=family,
+    )
+    recommendations = recommend_models(criteria, top_n=top_n)
+
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "ai recommend",
+                "criteria": criteria.to_dict(),
+                "top_n": top_n,
+                "recommendations": [r.to_dict() for r in recommendations],
+            }
+        )
+        return SUCCESS
+
+    write_line("Model recommendations")
+    write_key_value("Task", criteria.task or "(none)")
+    write_key_value("Max context", criteria.max_context or "(any)")
+    write_key_value("Vision required", criteria.vision_required)
+    write_key_value("Cost class", criteria.cost_class or "(any)")
+    write_key_value("Family", criteria.family or "(all)")
+    write_key_value("Top N", top_n)
+
+    if not recommendations:
+        write_line("- No matching models in the static catalog.")
+        return SUCCESS
+
+    write_line("Top picks:")
+    for rec in recommendations:
+        write_bullet(
+            f"{rec.model.id} ({rec.model.family}) "
+            f"score={rec.score} ctx={rec.model.context_window:,}",
+            indent=2,
+        )
+        for reason in rec.reasons:
+            write_bullet(reason, indent=4)
+    return SUCCESS
 
 
 def cmd_ai_route(args: argparse.Namespace) -> int:

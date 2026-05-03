@@ -1946,3 +1946,50 @@ against task constraints (`--task`, `--max-context`,
 provider call needed.
 
 `STATUS: OPEN — SLICE 20.3 CLOSED — IN PROGRESS: 20.4`
+
+## ADDITIVE UPDATE — 2026-05-03 (slice 20.4 closeout)
+
+**HEAD:** `0ed2383` (post-20.3) → next commit will land 20.4.
+
+### What shipped — slice 20.4 (`ai recommend`)
+
+- **`mythic_vibe_cli/ai/recommend.py`** (NEW, ~210 lines) — pure-policy DSL. Zero provider calls; deterministic output.
+  - `RecommendationCriteria` (task / max_context / vision_required / cost_class / family) — every field defaults so partial criteria still produce output.
+  - `score_model(model, criteria) -> (score, reasons)` — additive integer scoring with human-readable reason strings.
+  - Scoring rules: context-window match (+30 / -100 hard penalty); vision-required + capability match (+25 / -50); cost-class match (+20 / -5); family match (+10); capability richness tiebreaker (+1 per cap).
+  - Vision can be **explicit** (`--vision`) or **inferred** from task keywords (image, screenshot, vision, photo, ocr, diagram, chart, video frame).
+  - Cost class derived from model id substrings (`_COST_CLASS_HEURISTICS`); defaults to "standard".
+  - `recommend_models(criteria, *, top_n=3, candidates=None)` returns sorted `ModelRecommendation` list. `top_n=0` returns all candidates (test convenience).
+- **`mythic_vibe_cli/commands.py:cmd_ai_recommend`** — CLI handler. Validates `--cost-class` (rejects unknown values); validates `--top` (rejects negative). Emits text or `--json`.
+- **`mythic_vibe_cli/commands.py:cmd_ai_dispatch`** — additive `recommend` route.
+- **`mythic_vibe_cli/app.py`** — `ai recommend` parser entry with examples + 6 flags (`--task`, `--max-context`, `--vision`, `--cost-class`, `--family`, `--top`).
+
+### Tests — `tests/test_ai_recommend.py` (22 tests)
+
+- **Pure scoring (10):** empty-criteria baseline; context satisfied / hard-penalty; explicit-vision present / absent; inferred-vision from task keyword; cost-class match / mismatch; family match; family-all-no-bonus.
+- **`recommend_models` (5):** `top_n` limit; `top_n=0` returns all; sort descending by score then ascending by id; smoke test against real catalog (non-empty); family filter restricts pool.
+- **Serialization (1):** `ModelRecommendation.to_dict` JSON-clean.
+- **Constants (2):** `SUPPORTED_FAMILIES` matches catalog; `COST_CLASSES` locked.
+- **CLI integration (4):** default invocation renders text; `--json` payload shape; invalid `--cost-class` → USER_INPUT_ERROR; negative `--top` → USER_INPUT_ERROR.
+
+### Verification
+
+- `python -m pytest tests/test_ai_recommend.py -v` → 22 passed in ~0.4s.
+- Full suite: `python -m pytest -q` → **2093 passed, 1 skipped, 54 subtests passed** (+22 from 2071).
+- `ruff check mythic_vibe_cli tests scripts tools` → clean (one F401 fixed mid-slice — unused `re` import).
+- `mypy mythic_vibe_cli` → no issues found in **146** source files (+1 — `recommend.py`).
+
+### Operating-discipline carry
+
+- Strict additive: new module, new test file, one new ai subcommand. Existing `ai` dispatcher gains one branch; `cmd_ai_dispatch` error message updated to list the new verb.
+- Per compatibility-policy §3, the new subcommand and its JSON output schema are MINOR additions on a stable surface.
+- `recommend_models` is pure — no I/O, no env reads. Reusable from future TUI / CI / automated workflow integrations.
+
+### Next: slice 20.5 — Provider conformance test suite
+
+Contract assertions across every provider in `ProviderRegistry`.
+Asserts each implements `validate_config / estimate / run` with
+the documented signatures and that errors / timeouts fall into
+declared exit-code classes.
+
+`STATUS: OPEN — SLICE 20.4 CLOSED — IN PROGRESS: 20.5`

@@ -1092,6 +1092,53 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     add_runtime_options(ai_models, json_output=True)
+    # Phase 20.4 (audit remediation 2026-05-03): ai recommend —
+    # pure-policy DSL scoring static-catalog models against
+    # operator-supplied criteria. Zero provider calls.
+    ai_recommend = ai_sub.add_parser(
+        "recommend",
+        help="Score and rank models from the static catalog against task constraints.",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe ai recommend --task "Build a calm CLI" --top 3
+              mythic-vibe ai recommend --max-context 100000 --vision --json
+              mythic-vibe ai recommend --cost-class cheap --family openai
+            """
+        ),
+    )
+    ai_recommend.add_argument(
+        "--task", default="", help="Task description (free text; used for keyword heuristics)."
+    )
+    ai_recommend.add_argument(
+        "--max-context",
+        type=int,
+        default=0,
+        help="Minimum acceptable context window in tokens (0 = any).",
+    )
+    ai_recommend.add_argument(
+        "--vision",
+        action="store_true",
+        help="Require vision capability (multimodal image input).",
+    )
+    ai_recommend.add_argument(
+        "--cost-class",
+        default=None,
+        choices=["cheap", "standard", "premium"],
+        help="Filter by cost class (heuristic from model id).",
+    )
+    ai_recommend.add_argument(
+        "--family",
+        default=None,
+        help='Restrict to one family (e.g. "anthropic"). Default: all supported families.',
+    )
+    ai_recommend.add_argument(
+        "--top",
+        type=int,
+        default=3,
+        help="How many top picks to return (default: 3; 0 = all candidates).",
+    )
+    add_runtime_options(ai_recommend, json_output=True)
     ai_ingest = ai_sub.add_parser("ingest-response", help="Record a provider response as metadata only")
     ai_ingest.add_argument("--path", default=".", help="Project directory (default: current directory)")
     ai_ingest.add_argument("--provider", required=True, help="Provider name")
