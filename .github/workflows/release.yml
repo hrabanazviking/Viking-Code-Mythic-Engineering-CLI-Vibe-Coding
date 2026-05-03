@@ -1,0 +1,270 @@
+name: Release
+
+# Phase 19.7 (audit remediation 2026-05-02) — distribution
+# pipeline. Triggered by pushing a git tag matching v*.*.* (the
+# release semantics in docs/RELEASE_CHECKLIST.md). The workflow:
+#
+#   1. Builds the wheel + sdist with python -m build.
+#   2. Runs `twine check` against the dist/ artifacts so malformed
+#      metadata fails the release before anything is published.
+#   3. Regenerates the SBOM via scripts/regenerate_sbom.py from
+#      a clean isolated venv. Diff vs the committed SBOM is
+#      surfaced in the workflow log; the release artifact uses
+#      the freshly-regenerated copy.
+#   4. Builds an offline-install wheelhouse (project + the
+#      [ai,otel,ux,tui] extras' wheels) and tar-gzips it.
+#   5. Generates SHA256 + SHA512 checksums for every artifact.
+#   6. Publishes the wheel + sdist to PyPI via OIDC trusted
+#      publishing (no long-lived API token in repo secrets).
+#   7. Creates a GitHub Release attaching the wheel, sdist,
+#      wheelhouse tarball, SBOM, and the checksum file.
+#   8. Opens auto-update PRs to the Homebrew tap and Scoop bucket
+#      repos with the new version + sha256 substituted into the
+#      formula / manifest templates.
+#
+# Steps 6/7/8 run only on tag pushes; step 1-5 also run on the
+# manual workflow_dispatch trigger so we can rehearse the build
+# without publishing anything.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write       # for creating GitHub Releases
+  id-token: write       # for PyPI OIDC trusted publishing
+
+jobs:
+  build:
+    name: Build wheel + sdist + wheelhouse + SBOM
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      sha256_wheel: ${{ steps.checksums.outputs.sha256_wheel }}
+      sha256_sdist: ${{ steps.checksums.outputs.sha256_sdist }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build twine cyclonedx-bom
+
+      - name: Resolve version from pyproject
+        id: version
+        run: |
+          VERSION=$(python -c "import tomllib, pathlib; \
+            print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: $VERSION"
+
+      - name: Build wheel + sdist
+        run: python -m build
+
+      - name: Validate distributions
+        run: twine check dist/*
+
+      - name: Regenerate SBOM (sanity vs committed copy)
+        run: |
+          python scripts/regenerate_sbom.py --output dist/sbom.json
+          # Show diff vs committed SBOM. Non-fatal — the committed
+          # copy is the documentation reference; the dist/ copy is
+          # what ships with the release.
+          if ! diff -q docs/security/sbom.json dist/sbom.json >/dev/null; then
+            echo "::warning::SBOM drift detected — committed docs/security/sbom.json differs from fresh build."
+            echo "Operators should run scripts/regenerate_sbom.py and commit the result."
+          fi
+
+      - name: Build offline-install wheelhouse
+        run: |
+          mkdir -p dist/wheelhouse
+          # Pip downloads the project (source-tree install) +
+          # extras + their transitives as wheels. --no-binary :none:
+          # is intentionally NOT passed — we want pre-built wheels
+          # so offline install works without a compiler.
+          python -m pip wheel \
+            --wheel-dir dist/wheelhouse \
+            ".[ai,otel,ux,tui]"
+          tar -czf "dist/mythic-vibe-cli-${{ steps.version.outputs.version }}-wheelhouse.tar.gz" \
+            -C dist wheelhouse
+          rm -rf dist/wheelhouse
+          ls -la dist/
+
+      - name: Compute checksums
+        id: checksums
+        run: |
+          cd dist
+          # Robust against missing tools — sha256sum is GNU
+          # coreutils on Ubuntu, present by default.
+          sha256sum *.whl *.tar.gz *.json > SHA256SUMS
+          sha512sum *.whl *.tar.gz *.json > SHA512SUMS
+          # Surface the wheel + sdist sha256 individually so the
+          # Homebrew / Scoop update jobs can read them without
+          # re-parsing the SUMS file.
+          WHEEL_SHA=$(sha256sum *.whl | awk '{print $1}')
+          SDIST_SHA=$(sha256sum *.tar.gz | grep -v wheelhouse | awk '{print $1}')
+          echo "sha256_wheel=$WHEEL_SHA" >> "$GITHUB_OUTPUT"
+          echo "sha256_sdist=$SDIST_SHA" >> "$GITHUB_OUTPUT"
+          echo "Wheel SHA256:  $WHEEL_SHA"
+          echo "Sdist SHA256:  $SDIST_SHA"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  publish-pypi:
+    name: Publish to PyPI (OIDC trusted publishing)
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment:
+      # Configure this environment in repo settings with the PyPI
+      # trusted publisher binding for the project.
+      name: pypi
+      url: https://pypi.org/p/mythic-vibe-cli
+    permissions:
+      id-token: write
+    steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: Drop non-PyPI artifacts before upload
+        run: |
+          # PyPI accepts wheel + sdist only. Move the wheelhouse,
+          # SBOM, and checksum files out of dist/ before twine
+          # uploads.
+          mkdir -p extra-dist
+          mv dist/*-wheelhouse.tar.gz extra-dist/ || true
+          mv dist/sbom.json extra-dist/ || true
+          mv dist/SHA256SUMS extra-dist/ || true
+          mv dist/SHA512SUMS extra-dist/ || true
+          ls -la dist/
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  github-release:
+    name: GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: mythic-vibe-cli ${{ needs.build.outputs.version }}
+          generate_release_notes: true
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+            dist/sbom.json
+            dist/SHA256SUMS
+            dist/SHA512SUMS
+
+  update-homebrew:
+    name: Open Homebrew tap update PR
+    needs: [build, github-release]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Check out tap repo
+        uses: actions/checkout@v4
+        with:
+          repository: hrabanazviking/homebrew-mythic
+          token: ${{ secrets.TAP_BUMP_TOKEN }}
+          path: tap
+      - name: Render formula from template
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+          SDIST_SHA: ${{ needs.build.outputs.sha256_sdist }}
+        run: |
+          mkdir -p tap/Formula
+          # The template lives in this repo — fetch the version
+          # captured at the release tag (avoids races against
+          # post-tag template edits).
+          curl -fsSL \
+            "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/packaging/homebrew/mythic-vibe.rb.template" \
+            -o template.rb
+          sed \
+            -e "s|__VERSION__|${VERSION}|g" \
+            -e "s|__SDIST_SHA256__|${SDIST_SHA}|g" \
+            template.rb > tap/Formula/mythic-vibe.rb
+      - name: Commit + open PR
+        env:
+          GH_TOKEN: ${{ secrets.TAP_BUMP_TOKEN }}
+        working-directory: tap
+        run: |
+          git config user.name "mythic-vibe-bot"
+          git config user.email "noreply@mythic-vibe.dev"
+          BRANCH="bump/mythic-vibe-${{ needs.build.outputs.version }}"
+          git checkout -b "$BRANCH"
+          git add Formula/mythic-vibe.rb
+          git commit -m "mythic-vibe ${{ needs.build.outputs.version }}"
+          git push origin "$BRANCH"
+          gh pr create \
+            --title "mythic-vibe ${{ needs.build.outputs.version }}" \
+            --body "Automated bump from upstream tag ${{ github.ref_name }}." \
+            --head "$BRANCH" \
+            --base main
+
+  update-scoop:
+    name: Open Scoop bucket update PR
+    needs: [build, github-release]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Check out bucket repo
+        uses: actions/checkout@v4
+        with:
+          repository: hrabanazviking/scoop-mythic
+          token: ${{ secrets.BUCKET_BUMP_TOKEN }}
+          path: bucket
+      - name: Render manifest from template
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+          WHEEL_SHA: ${{ needs.build.outputs.sha256_wheel }}
+        run: |
+          mkdir -p bucket/bucket
+          curl -fsSL \
+            "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/packaging/scoop/mythic-vibe.json.template" \
+            -o template.json
+          sed \
+            -e "s|__VERSION__|${VERSION}|g" \
+            -e "s|__WHEEL_SHA256__|${WHEEL_SHA}|g" \
+            template.json > bucket/bucket/mythic-vibe.json
+      - name: Commit + open PR
+        env:
+          GH_TOKEN: ${{ secrets.BUCKET_BUMP_TOKEN }}
+        working-directory: bucket
+        run: |
+          git config user.name "mythic-vibe-bot"
+          git config user.email "noreply@mythic-vibe.dev"
+          BRANCH="bump/mythic-vibe-${{ needs.build.outputs.version }}"
+          git checkout -b "$BRANCH"
+          git add bucket/mythic-vibe.json
+          git commit -m "mythic-vibe ${{ needs.build.outputs.version }}"
+          git push origin "$BRANCH"
+          gh pr create \
+            --title "mythic-vibe ${{ needs.build.outputs.version }}" \
+            --body "Automated bump from upstream tag ${{ github.ref_name }}." \
+            --head "$BRANCH" \
+            --base main

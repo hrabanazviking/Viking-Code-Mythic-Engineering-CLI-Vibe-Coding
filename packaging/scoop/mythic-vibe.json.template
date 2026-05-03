@@ -1,0 +1,33 @@
+{
+  "_comment": "Scoop manifest template for mythic-vibe-cli (PH-19.7). The release workflow substitutes __VERSION__ + __WHEEL_SHA256__ with the values from the just-built wheel and opens a PR against the scoop-mythic bucket. Scoop installs the wheel into a managed Python interpreter — operators get a clean uninstall by removing the scoop entry.",
+  "version": "__VERSION__",
+  "description": "Beginner-friendly CLI that enforces Mythic Engineering vibe-coding workflow",
+  "homepage": "https://github.com/hrabanazviking/Mythic-Engineering",
+  "license": "Apache-2.0",
+  "depends": "python",
+  "url": "https://files.pythonhosted.org/packages/py3/m/mythic-vibe-cli/mythic_vibe_cli-__VERSION__-py3-none-any.whl",
+  "hash": "sha256:__WHEEL_SHA256__",
+  "installer": {
+    "script": [
+      "Push-Location $dir",
+      "python -m pip install --target=\"$dir\\site-packages\" \"mythic_vibe_cli-__VERSION__-py3-none-any.whl\"",
+      "Pop-Location"
+    ]
+  },
+  "bin": [
+    [
+      "site-packages\\bin\\mythic-vibe.exe",
+      "mythic-vibe"
+    ],
+    [
+      "site-packages\\bin\\mythic.exe",
+      "mythic"
+    ]
+  ],
+  "checkver": {
+    "github": "https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding"
+  },
+  "autoupdate": {
+    "url": "https://files.pythonhosted.org/packages/py3/m/mythic-vibe-cli/mythic_vibe_cli-$version-py3-none-any.whl"
+  }
+}
