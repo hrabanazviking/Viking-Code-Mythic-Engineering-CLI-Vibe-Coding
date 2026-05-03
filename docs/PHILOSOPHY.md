@@ -38,6 +38,8 @@ Naming and mythology are not decoration; they are mnemonic scaffolding. A shared
 - Boring infrastructure is a feature.
 - Security and permissions are first-class design concerns.
 - Documentation is part of the product.
+- **Promises are binding.** Since v1.0.0, [`docs/compatibility_policy.md`](compatibility_policy.md) is the contract: anything in the Stable tier is governed by SemVer, and deprecations follow announce → wait one minor → remove. Don't promise stability you aren't willing to honor.
+- **Additive over subtractive.** New flags, new fields, new subcommands extend the surface; renames and removals require a deprecation cycle. The PH-19/20 cycle proved out a "never delete or overwrite operator content" discipline that v1.x carries forward.
 
 ## Collaboration values
 - Assume good intent; insist on rigor.

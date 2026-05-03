@@ -107,25 +107,33 @@ High-quality Mythic Vibe CLI behavior is:
 
 ## Evolution path
 
-### Near-term priorities
+### v1.0.0 — current state (2026-05-03)
 
-1. Sharper phase guidance and error remediation messaging.
-2. Better diagnostics with concrete fix recommendations.
-3. Higher-signal context packet composition controls.
-4. Stronger contributor onboarding and governance records.
-5. Consistent release history discipline via changelog practices.
+The first stable release closed the original near-term + mid-term lists from this document's earlier revisions. What landed:
 
-### Mid-term opportunities
+- **Sharper phase guidance** — `mythic-vibe next` prioritizes failed/blocked verifications over plain phase advice; high-traffic command help carries concrete examples.
+- **Diagnostics with fix recommendations** — `mythic-vibe doctor --fix` (PH-20.2) auto-remediates safe scaffolding gaps; `drift dashboard` (PH-20.E) rolls findings up by category × severity.
+- **Higher-signal context packets** — `packet lint` (PH-20.1) catches vague intent / weak architecture anchors; per-role budget multipliers (PH-20.D) right-size context for each agent role.
+- **Contributor onboarding + governance** — `docs/compatibility_policy.md` (PH-19.6), `docs/governance/quarterly_review.md` (PH-20.H), the audit-cadence command `mythic-vibe review architecture`.
+- **Release-history discipline** — `scripts/check_changelog.py --classify` (PH-20.F) buckets entries by conventional-commit prefix; the PH-19.7 release pipeline ships PyPI + Homebrew + Scoop + offline wheelhouse from a single tag.
+- **Multi-agent coordination** — `mythic-vibe forge plan|run|resume` (PH-03) ships a six-role end-to-end pipeline with verifier gates and resumable state. `workflow lineage` (PH-20.C) renders the resulting graph.
+- **Memory + retrieval with guardrails** — `mythic-vibe scan` builds a project index; `mythic/forge_ledger.json` + reflection artefacts preserve per-step state; `provenance verify` / `attest` (PH-20.6 / 20.G) keep imported material auditable.
 
-- richer state introspection tooling,
-- stronger template systems for planning docs,
-- improved integration surfaces for external tooling.
+### v1.x opportunities (PH-21 — stretch)
 
-### Long-term opportunities
+- Single-file binaries via PyInstaller / Nuitka (replaces the current Python-runtime requirement on the operator's machine).
+- Sigstore-signed artefacts (replaces the current SHA256-only checksum gate).
+- Container / OCI image for hermetic deployment.
+- AUR + winget packaging (extends the current PyPI / Homebrew / Scoop trio).
+- Termux formal support + reproducible-build attestations.
 
-- multi-agent coordination patterns,
-- memory/retrieval extensions with explicit guardrails,
-- broader ritual command ecosystem with maintainable contracts.
+### v2.0 strategic stretch (PH-22)
+
+- Rust / Go launcher shim — single static binary with no Python runtime dependency.
+- Native Android wrapper app (Kotlin/Java embedding the Python runtime).
+- WASI experimental runtime — Mythic Vibe CLI compiled to WebAssembly for browser / sandbox use.
+
+These are post-v1.0 work and do **not** weaken the v1.0.0 compatibility-policy promises.
 
 ---
 

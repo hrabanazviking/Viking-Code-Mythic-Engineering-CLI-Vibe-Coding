@@ -1,7 +1,7 @@
 # DATA_FLOW
 
-**Last updated:** 2026-04-23  
-**Owner:** Architecture / Docs  
+**Last updated:** 2026-05-03 (v1.0.0)
+**Owner:** Architecture / Docs
 **Scope:** Practical data movement across the active product path (`mythic_vibe_cli/`) plus boundaries to dormant islands.
 
 ---
@@ -28,10 +28,15 @@ Dormant runtime clusters (`ai/`, `core/`, `systems/`, `yggdrasil/`, `imports/nor
 
 | Ingress | Path | Type | Notes |
 |---|---|---|---|
-| CLI commands and flags | `mythic_vibe_cli/cli.py` | Human input | Primary runtime trigger surface (`imbue`, `checkin`, `status`, `doctor`, `codex-pack`, etc.). |
+| CLI commands and flags | `mythic_vibe_cli/cli.py` | Human input | Primary runtime trigger surface (`imbue`, `checkin`, `status`, `doctor`, `codex-pack`, `forge`, `provenance`, `persona`, `review`, etc.). |
 | Config files | `~/.mythic-vibe.json`, `$XDG_CONFIG_HOME/mythic-vibe/config.json`, `<project>/.mythic-vibe.json` | Disk JSON | Loaded and merged by `mythic_vibe_cli/config.py`. |
-| Env overrides | `MYTHIC_EXCERPT_LIMIT`, `MYTHIC_PACKET_CHAR_BUDGET`, `MYTHIC_AUTO_COMPACT` | Process env | Highest-precedence config overrides. |
+| Env overrides | `MYTHIC_EXCERPT_LIMIT`, `MYTHIC_PACKET_CHAR_BUDGET`, `MYTHIC_AUTO_COMPACT`, `MYTHIC_RICH`, `MYTHIC_TIMING`, `MYTHIC_EVENT_LOG_LIMIT`, `MYTHIC_PLUGIN_TIMEOUT_SEC`, `MYTHIC_PLUGIN_BREAKER_THRESHOLD`, `MYTHIC_OTEL_ENABLED`, `MYTHIC_CHAT_BRIDGE_ENABLED`, `MYTHIC_VOICE_TTS_ENABLED`, `MYTHIC_ISLAND_<NAME>_ENABLED`, `MYTHIC_TUI_PANELS`, `MYTHIC_SNAPSHOT_UPDATE` | Process env | Highest-precedence config overrides. |
 | Optional remote method source | GitHub raw/API endpoints | Network | Used by `mythic_vibe_cli/mythic_data.py` sync/import flows. |
+| AI provider endpoints | Anthropic / OpenAI / Gemini / OpenRouter / Ollama HTTPS endpoints | Network | Used only when an `[ai]`-extra provider is selected and credentials are present. `copy-paste` provider uses no network. |
+| Plugin manifest (read) | `mythic/plugins.json` | Disk JSON | Loaded by `PluginRegistry`. v1.0: includes optional `capabilities` array. |
+| Persona file (read) | `mythic/persona.json` | Disk JSON | v1.0 / PH-20.A. Read-only when present; absent file == use built-in defaults. |
+| Stdin (interactive surfaces) | `init --interactive`, `forge plan --interactive`, `mythic-vibe shell` | Process stdin | Wizard / approval-gate / REPL inputs. |
+| Network surface inbound | `surfaces/web_terminal.py` (loopback default), `surfaces/chat_bridge.py` (Matrix / Telegram, gated by `MYTHIC_CHAT_BRIDGE_ENABLED`) | HTTP(S) / long-poll | Token-protected; see `docs/security/threat_model.md` §A4 / §A5. |
 
 ---
 
@@ -68,14 +73,32 @@ Dormant runtime clusters (`ai/`, `core/`, `systems/`, `yggdrasil/`, `imports/nor
 
 | Store | Path | Owner | Lifecycle |
 |---|---|---|---|
-| Project status | `mythic/status.json` | Workflow/check-in commands | Mutable state over project life. |
+| Project status | `mythic/status.json` | Workflow/check-in commands | Mutable state over project life. Schema-versioned via `core/state.py:CURRENT_STATE_SCHEMA_VERSION`; migrations in `persistence/migrations.py` (PH-19.4 hypothesis property tests cover the invariants). All writes via `runtime/atomic_write.py` + optional `runtime/cross_process_lock.py`. |
 | Project devlog | `docs/DEVLOG.md` | Check-in/log commands | Append-only chronological log. |
 | Codex packet output | `mythic/codex_prompt.md` | `codex-pack` / `evoke` | Regenerated per request. |
+| Reusable packets | `mythic/packets/PKT-NNNNNN.{md,json}` + `.meta.json` | `packet create/ingest`, `workflow plan --packets` | Append-only artifact store. v1.0: `packet lint` audits without mutating. |
 | Initial project docs | `docs/*.md`, `tasks/current_GOALS.md`, `mythic/*.md` | `init/imbue` flow | Seeded once; then edited iteratively. |
-| Plugin registry | `mythic/plugins.json` | Grimoire/plugin commands | Versioned local registry for plugin entrypoints, hooks, enabled state, and sandbox warnings. |
+| **Project settings** (v1.0 / PH-20.0) | `mythic/project_settings.json` | `init --interactive` wizard | Operator-facing defaults from the wizard (project name, default provider, operator, scaffold preference). |
+| **Persona file** (v1.0 / PH-20.A) | `mythic/persona.json` | `persona apply` | Opt-in operator preset (`solo` / `team-lead` / `auditor`). Refuses overwrite without `--force`. |
+| **Forge ledger** (PH-03) | `mythic/forge/ledger.jsonl` | `forge run`, `forge resume` | Append-only per-step JSONL. Atomic-write + cross-process-lock protected. |
+| **Forge reflections** (PH-03) | `mythic/reflections/REF-*.md` + `.json` | `forge run`, `forge resume` (auto), `forge reflection` | Per-workflow reflection artifact. |
+| Verification artefacts | `mythic/verifications/VER-*.json` + `latest.json` | `verify --record` | Append-only per-run record; `latest.json` is a stable pointer. |
+| Handoff artefacts | `mythic/handoffs/HND-*.{md,json}` | `handoff create`, `reflect` | Session-bridge records. |
+| Check-in records (v1.0 / PH-02 slice 2.3) | `mythic/checkins/<iso-ts>-<phase>.md` | `intent`/`constraints`/`architecture`/`plan`/`build` capture commands | Phase-record artefacts. |
+| **Governance review logs** (v1.0 / PH-20.H) | `mythic/governance/review-<YYYY-MM-DD>.md` | Operator (after running `review architecture`) | Operator-curated; `doctor --fix` will NEVER touch this directory. |
+| **Status backups** | `mythic/backups/status.json.<stamp>.bak` | `migrate_project_state` (corrupt-recovery branch) | Auto-snapshot before fresh-state bootstrap when the migration encounters corrupt JSON. |
+| Plunder manifest | `mythic/imports/plunder_manifest.json` | `plunder apply/record`; v1.0: `provenance verify`/`attest` reads it | Append-only; SHA + license + modifications per imported file. |
+| Plugin registry | `mythic/plugins.json` | Grimoire/plugin commands | Versioned local registry for plugin entrypoints, hooks, enabled state, sandbox warnings. v1.0: optional `capabilities` array per record. |
 | Local config | `mythic/config.toml` | Config commands | Per-project tool settings. |
 | Local DB seed | `mythic/weave.db` | DB migration path | Local SQLite ritual store scaffold. |
 | Method cache | `~/.mythic-vibe/method_cache.json` | Method sync layer | Cross-project user cache. |
+| Method import corpus | `docs/mythic_source/*.md` + `mythic/method_manifest.json` | `import-md` | Cached upstream method markdown with SHA-256 manifest. |
+| Bounded event log | `mythic/events.jsonl` | `runtime/event_log.py` (PluginHookDispatcher emits) | Capped at 200 entries; rotates by rewriting tail. TUI reads it for the Recent Events panel. |
+| Knowledge graph | `mythic/graph.sqlite3` | `mythic-vibe scan`, `cmd_checkin` autopopulate | PH-05 SQLite memory; queried via `graph` subcommands. |
+| AI provider call log | `mythic/ai/provider_calls.jsonl` | AI provider adapters | Append-only telemetry; `ai telemetry` reads it. |
+| Conversation logs | `mythic/ai/conversations/CV-*.jsonl` | `ai run`, `ai ingest-response` | Per-conversation transcript. |
+| **CycloneDX SBOM** (v1.0 / PH-19.5) | `docs/security/sbom.json` | Release pipeline (re-run `python scripts/regenerate_sbom.py`) | Source-controlled. Regenerated each release. Sanity-tested by `tests/test_sbom_committed.py`. |
+| **JSON snapshot fixtures** (v1.0 / PH-19.1) | `tests/snapshots/*.json` | Bootstrap-on-first-run helper at `tests/_snapshot.py`; updated via `MYTHIC_SNAPSHOT_UPDATE=1` | Regression-fixed JSON contracts for high-value commands (e.g. `ai models`). |
 
 ---
 
@@ -83,9 +106,14 @@ Dormant runtime clusters (`ai/`, `core/`, `systems/`, `yggdrasil/`, `imports/nor
 
 | Egress | Channel | Producer | Purpose |
 |---|---|---|---|
-| Terminal summaries | stdout/stderr | CLI + workflow | Human operational visibility. |
+| Terminal summaries | stdout/stderr | CLI + workflow | Human operational visibility. `--json` reroutes via `runtime/output_guard.py` so accidental `print()` lands on stderr. |
 | LLM prompt handoff | Human copy/paste | Codex packet | Bridges local context to external assistant. |
+| Provider API calls (outbound) | HTTPS | `ai/providers/*.py` adapters; `forge run --provider <name>` | Only when an `[ai]`-extra provider is selected. Credentials redacted from logs via `security/redaction.py`. |
 | Remote fetches | HTTPS (GitHub) | Method sync/import/plunder | Pulls upstream markdown/files into local workspace. |
+| OpenTelemetry spans (v1.0 / opt-in) | OTLP HTTP | `protocols/` (PH-16); `MYTHIC_OTEL_ENABLED=1` gate | Optional structured-trace export. |
+| Web terminal responses | HTTP (loopback by default) | `surfaces/web_terminal.py` | Token-protected; see `docs/security/threat_model.md` §A4. |
+| Chat bridge messages | Matrix `/sync` / Telegram `getUpdates` long-poll | `surfaces/chat_bridge_loop.py` | Gated by `MYTHIC_CHAT_BRIDGE_ENABLED`; allowlist-filtered. |
+| Release artefacts (v1.0 / PH-19.7) | GitHub Release attachments + PyPI uploads + auto-bump PRs | `.github/workflows/release.yml` | Triggered by `git push origin v*.*.*`. PyPI publish uses OIDC trusted publishing. |
 
 ---
 
