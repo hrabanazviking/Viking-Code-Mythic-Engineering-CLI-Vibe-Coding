@@ -8,7 +8,7 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ### Added
 
-- (no entries yet — clean slate after v1.0.0)
+- chore: clean slate after v1.0.0 — first entry will land as `feat:` / `fix:` / `docs:` / etc. (run `python scripts/check_changelog.py --classify` to bucket entries)
 
 ## [1.0.0] — 2026-05-03
 

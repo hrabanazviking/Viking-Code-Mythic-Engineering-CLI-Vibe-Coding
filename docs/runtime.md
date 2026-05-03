@@ -1,16 +1,16 @@
 # Runtime Primitives
 
-`mythic_vibe_cli/runtime/` holds six small, single-purpose primitives that the rest of the CLI builds on. Each is self-contained, well-tested, and composable. Most are ports of equivalent primitives from [pi-coding-agent](https://github.com/badlogic/pi-mono) (MIT, Copyright (c) 2025 Mario Zechner) — see `THIRD_PARTY_NOTICES.md` for full attribution.
+`mythic_vibe_cli/runtime/` holds **ten** small, single-purpose primitives that the rest of the CLI builds on. Each is self-contained, well-tested, and composable. Most originate as ports of equivalent primitives from [pi-coding-agent](https://github.com/badlogic/pi-mono) (MIT, Copyright (c) 2025 Mario Zechner) — see `THIRD_PARTY_NOTICES.md` for full attribution. The two v1.0 additions (`cross_process_lock` and `atomic_write`) are original to this project.
 
 This guide is for developers writing CLI features, plugins, or extensions who want to know what's already available before reaching for `print()`, an ad-hoc lock, or `time.perf_counter()`.
 
 ---
 
-## 1) The seven primitives at a glance
+## 1) The ten primitives at a glance
 
 | Primitive | One-liner | Wired today |
 |---|---|---|
-| `file_mutation_queue` | Per-resolved-path serialization for mutation operations | Packet write paths |
+| `file_mutation_queue` | Per-resolved-path serialization for mutation operations (intra-process) | Packet write paths |
 | `output_guard` | Reroute `sys.stdout` writes to `sys.stderr` while preserving a "real stdout" path | Every `--json` command |
 | `event_bus` | Synchronous publish/subscribe with exception-isolated handlers | `PluginHookDispatcher` |
 | `timings` | Lightweight elapsed-time profiling, env-gated | `app.main()` startup boundaries |
@@ -18,8 +18,12 @@ This guide is for developers writing CLI features, plugins, or extensions who wa
 | `source_info` | Provenance dataclass for extension/plugin/skill/prompt-contributed artifacts | Used by `SlashCommandInfo`; surfaced via `mythic-vibe slash list` |
 | `exec` | Subprocess execution with timeout and cancel-event | Wired across `verify/test_runner.py`, `verify/git_diff.py`, `handoff.py`, `context/scanner.py` |
 | `event_log` | Bounded JSONL append-and-tail at `mythic/events.jsonl` (last 200 entries) | `PluginHookDispatcher.emit()` writes here; TUI's "Recent Events" panel reads it |
+| **`cross_process_lock`** (v1.0 / PH-19) | OS-level cross-process lock — `fcntl.flock` on POSIX, `msvcrt.locking` on Windows. Auto-releases when the holding process dies | `forge_ledger.py`; `json_store.py:FileLock` opt-in (`cross_process=True`) |
+| **`atomic_write`** (v1.0 / PH-19) | Write-tmp + `os.replace` helper with Windows `PermissionError` retry; catches `BaseException` so signals don't leave orphan tmp files | `verify/__init__.py`, `handoff.py`, `forge_reflection.py`, `init_wizard`, `personas`, `doctor_fix` |
 
-All seven are re-exported from `mythic_vibe_cli.runtime` so callers can `from mythic_vibe_cli.runtime import ...` without thinking about submodule paths.
+All ten are re-exported from `mythic_vibe_cli.runtime` so callers can `from mythic_vibe_cli.runtime import ...` without thinking about submodule paths.
+
+> **Two-tier locking** (v1.0). For new code: use `file_mutation_queue` for intra-process serialization (cheap, in-memory `threading.Lock` per realpath) AND opt into `cross_process_lock` (or `FileLock(cross_process=True)`) when concurrent CLI processes might race the same file. Pre-v1.0 code that only used the in-memory queue keeps working — it's safe under single-process concurrency, just not protected against a parallel `mythic-vibe` invocation.
 
 ---
 
@@ -353,6 +357,61 @@ The bus is local to the command — no global state, no leakage across invocatio
 
 ---
 
+## 9a) `cross_process_lock` (v1.0 / PH-19)
+
+**Purpose.** When two `mythic-vibe` processes might write the same file at the same time, the in-process `file_mutation_queue` is not enough — those processes have separate `threading.Lock` instances. `cross_process_lock` is an **OS-level** advisory lock (POSIX `fcntl.flock` / Windows `msvcrt.locking`) that the kernel auto-releases when the holding process dies, even via `kill -9`. No stale lockfiles ever block subsequent invocations.
+
+**Public surface.**
+
+- `cross_process_lock(lock_path, *, deadline, poll_interval)` — context manager
+- `CrossProcessLockTimeoutError(TimeoutError)` — raised when the deadline expires
+
+**Usage.**
+
+```python
+from mythic_vibe_cli.runtime import cross_process_lock
+from pathlib import Path
+
+lock = Path("mythic/forge/ledger.json.lock")
+with cross_process_lock(lock, deadline=5.0):
+    # … perform the cross-process-critical write here
+    pass
+```
+
+The `JsonStateStore.FileLock` class accepts `cross_process=True` to delegate to this primitive transparently — most callers should reach for `FileLock(..., cross_process=True)` rather than calling `cross_process_lock` directly.
+
+**When to reach for it.** Any time you write a file that might be touched by a parallel CLI invocation: `mythic/status.json`, `mythic/forge/ledger.jsonl`, the verification artifact promotion path, the handoff registry. The legacy `O_EXCL` lockfile mode (still the `FileLock` default for backwards compatibility) does NOT auto-recover from a crashed holder; OS-lock mode does.
+
+**Source:** `mythic_vibe_cli/runtime/cross_process_lock.py`
+
+---
+
+## 9b) `atomic_write` (v1.0 / PH-19)
+
+**Purpose.** Power loss, `Ctrl-C`, `SystemExit`, antivirus open-handle races — every reason a write can be interrupted. `atomic_write_text` writes to a unique tmp filename in the same directory (so `os.replace` is atomic on every supported filesystem), then renames into place. On Windows it retries the rename with exponential backoff to absorb transient `PermissionError` from antivirus / search-indexer scans. The cleanup catches `BaseException` so `KeyboardInterrupt` and `SystemExit` don't leave orphan tmp files.
+
+**Public surface.**
+
+- `atomic_write_text(path, text, *, encoding='utf-8', retries=5, base_delay=0.05)` — function
+
+**Usage.**
+
+```python
+from mythic_vibe_cli.runtime import atomic_write_text
+from pathlib import Path
+
+target = Path("mythic/handoffs/HND-XXX.md")
+atomic_write_text(target, "## Handoff\n\n…")
+```
+
+Parent directories are auto-created. The function is **synchronous and blocking**; use it for short writes (status files, manifests, packets). For huge artifacts, stream into a tmp file directly and call `os.replace` yourself.
+
+**When to reach for it.** Any user-facing artifact write that should never appear half-written on disk: status, packets, handoffs, reflections, project_settings, persona, plunder manifests. Pre-v1.0 code that did `path.write_text(...)` directly is being migrated incrementally; new code should default to `atomic_write_text`.
+
+**Source:** `mythic_vibe_cli/runtime/atomic_write.py`
+
+---
+
 ## 10) Constraints and contracts
 
 These rules apply across all primitives:
@@ -381,6 +440,9 @@ These rules apply across all primitives:
   - `mythic_vibe_cli/runtime/slash_commands.py`
   - `mythic_vibe_cli/runtime/source_info.py`
   - `mythic_vibe_cli/runtime/exec.py`
+  - `mythic_vibe_cli/runtime/event_log.py`
+  - `mythic_vibe_cli/runtime/cross_process_lock.py` (v1.0 / PH-19; original to this project)
+  - `mythic_vibe_cli/runtime/atomic_write.py` (v1.0 / PH-19; original to this project)
 - Tests as runnable specification:
   - `tests/test_file_mutation_queue.py`
   - `tests/test_output_guard.py`
@@ -389,5 +451,8 @@ These rules apply across all primitives:
   - `tests/test_slash_commands.py`
   - `tests/test_source_info.py`
   - `tests/test_exec.py`
+  - `tests/test_event_log.py`
+  - `tests/test_cross_process_lock.py`
+  - `tests/test_atomic_write.py`
 
 The runtime layer is intentionally minimal. Seven primitives, seven docstrings, seven test files. Anything more complex than these primitives belongs in a feature module that *uses* the runtime, not in the runtime itself.

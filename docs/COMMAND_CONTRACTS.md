@@ -130,6 +130,44 @@ Current compatibility aliases:
 | `evoke` | `codex-pack` |
 | `scry` | `doctor` |
 
+## v1.0 surface additions (PH-19 + PH-20, 2026-05-03)
+
+The v1.0 launch added the following commands and flags. Each is additive — every prior surface keeps its pre-v1.0 contract. Per `docs/compatibility_policy.md` §3, the additions land in the **Stable** tier and are governed by SemVer from this release onward.
+
+### New top-level commands
+
+| Command | Subcommands | Contract |
+|---|---|---|
+| `provenance` | `verify`, `attest --destination PATH --original PATH` | Read-only. `verify` walks `mythic/imports/plunder_manifest.json` and reports per-entry `match` / `drift` / `missing`. `attest` computes per-line attestation between local and original via `difflib.SequenceMatcher`; per-line SHA-256 is line-end normalised so platform line endings don't shift hashes. |
+| `persona` | `apply --preset solo\|team-lead\|auditor [--force]`, `show` | Opt-in operator presets. `apply` writes `mythic/persona.json` (atomic; refuses overwrite without `--force`). `show` reports the active persona or `none`. No existing command reads the persona file yet — that wiring is future-touch. |
+| `review` | `architecture` | Read-only. Walks `docs/ADRS/`, `docs/ARCHITECTURE.md`, `docs/DOMAIN_MAP.md`, `docs/DATA_FLOW.md`, `docs/ACTIVE_PRODUCT_BOUNDARY.md`, `docs/PHILOSOPHY.md`, plus PH-13 drift output. Auto-derives open-questions list. Cadence is documented in `docs/governance/quarterly_review.md`. |
+
+### New subcommands on existing parents
+
+| Parent | New subcommand | Contract |
+|---|---|---|
+| `packet` | `lint [--file PATH \| --packet-id PKT-NNNNNN]` | 7-rule heuristic linter. Findings sort by severity then rule id. Exit code `OPERATIONAL_FAILURE` on any error-severity finding; `SUCCESS` otherwise (warnings + info are advisory). |
+| `workflow` | `lineage [--workflow ID]` | Reads `mythic/forge_ledger.json` and emits a Mermaid `flowchart LR` (status-coloured) plus a non-Mermaid caption table. Empty/unknown workflow → `SUCCESS` with `found: false` (informational, not error). |
+| `drift` | `dashboard` | Aggregates findings as category × severity scorecard. Markdown by default; `--json` for tooling. Exit code unchanged from flat `drift`. |
+| `plugin` | `doctor` | Read-only audit. Lists declared capabilities (`KNOWN_CAPABILITIES = ("read", "network", "subprocess", "file-write")`); flags unknown capability tokens; surfaces breaker threshold (env-overridable via `MYTHIC_PLUGIN_BREAKER_THRESHOLD`, default 3). |
+| `ai` | `recommend` | Pure-policy DSL. Zero provider calls. Scoring weights: context match +30 / hard-penalty -100; vision required +25 / -50; cost class match +20 / mismatch -5; family match +10; capability-richness +1 per cap. |
+
+### New flags on existing commands
+
+| Command | Flag | Contract |
+|---|---|---|
+| `init`, `start` | `--interactive`, `--force` | Opt-in stdin Q&A wizard. `--goal` becomes argparse-non-required; explicit post-parse check rejects "neither --goal nor --interactive supplied" with `USER_INPUT_ERROR`. |
+| `doctor` | `--fix`, `--fix-dry-run` | Auto-remediates safe scaffolding gaps (missing `mythic/` subdirs, missing CHANGELOG `[Unreleased]` section). **Hard rule:** never touches user-authored content. JSON output gains a `fixes` block ONLY when one of the flags is set (backwards-compat for callers that don't expect it). |
+| `verify` | `--replay`, `--provider`, `--workflow`, `--strict` | When `--replay` is set, verify delegates to `cmd_forge_resume`. Default provider is `copy-paste`. Forwards `--workflow`, `--strict`, `--json`. Exit code passes through verbatim from forge resume. Other flags are inert when `--replay` is unset. |
+| `tui` | `--panels heatmap,risk` | Opt-in TUI panels. Comma-separated, lowercase, dedupe, drop-unknown. Default empty preserves the existing TUI shape byte-identically. Selection forwards via kwarg or `MYTHIC_TUI_PANELS` env-var fallback. |
+
+### v1.0 invariants (binding under SemVer)
+
+- Every PH-20 command's `--json` output is a JSON object (not array) so future schema additions can be made non-breaking.
+- The `dry_run`, `fix_dry_run`, `replay`, `interactive`, `force`, `panels` flag namespaces are owned by their respective parsers; new parents adopting these names should preserve the documented semantics.
+- Plugin capability vocabulary (`KNOWN_CAPABILITIES`) is coordinated with the JSON schema enum at `mythic_vibe_cli/resources/schemas/plugin_manifest.schema.json`. Vocabulary changes require updating both, plus the lock-test in `tests/test_plugin_capabilities_and_breaker.py`.
+- The PH-19.7 release pipeline at `.github/workflows/release.yml` is the canonical publishing path; manual `pip publish` from a contributor venv is not supported (and would bypass the OIDC trusted-publishing identity).
+
 ## Exit-Code Policy
 
 Exit codes are defined in `mythic_vibe_cli.exit_codes`.
@@ -150,7 +188,7 @@ Commands may expose shared runtime options where the behavior is meaningful:
 
 | Option | Contract |
 |---|---|
-| `--json` | Emits a machine-readable JSON payload with no human preface text. Supported by structured reporting commands such as `status`, `doctor`, `examples`, `guide`, `next`, `explain`, `tutorial`, `completion`, `reflect`, `handoff`, `resume`, `config`, `codex-pack`, `method`, `grimoire`, `plugin`, `db migrate`, and `plunder`. |
+| `--json` | Emits a machine-readable JSON payload with no human preface text. Supported by structured reporting commands such as `status`, `doctor` (incl. `--fix`), `examples`, `guide`, `next`, `explain`, `tutorial`, `completion`, `reflect`, `handoff`, `resume`, `config`, `codex-pack`, `method`, `grimoire`, `plugin`, `plugin doctor`, `db migrate`, `plunder`, plus the v1.0 additions `provenance verify`, `provenance attest`, `persona apply`, `persona show`, `review architecture`, `packet lint`, `workflow lineage`, `drift dashboard`, and `ai recommend`. |
 | `--quiet` | Suppresses non-error human text output. JSON output remains emitted because it is the primary result. |
 | `--verbose` | Emits additional operational detail when a command has meaningful extra detail. |
 | `--dry-run` | Previews write/sync operations without writing files, modifying registries, creating databases, or fetching remote files. |

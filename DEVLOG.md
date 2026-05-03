@@ -1,9 +1,73 @@
 # DEVLOG — The Living Chronicle
 
-**Last updated:** 2026-04-29
+**Last updated:** 2026-05-03
 **Branch:** development
 **Scope:** An ongoing, dated chronicle of meaningful work performed in this repository. Each entry preserves *what happened* and *why it mattered*, so that later sessions can resume with understanding rather than guesswork.
 **Purpose:** Continuity of record. The project's memory, kept outside anyone's head.
+
+---
+
+## 2026-05-03 — v1.0.0 launch (PH-19 + PH-20, 26 slices)
+
+**Sessions:** Two consecutive working days, chained through Volmarr's "go for all the rest of 19" then "go for phase 20" then "do a complete look over the README.md and all other project documents" directives.
+**Status:** **v1.0.0 ready to tag.** Version bumped in `pyproject.toml` + `mythic_vibe_cli/__init__.py`; classifier `Development Status :: 3 - Alpha` → `5 - Production/Stable`. CHANGELOG `[1.0.0] — 2026-05-03` entry written; fresh empty `[Unreleased]` block prepended. Closeout memo at `RELEASE_v1_0_0_2026-05-03.md`. The tag itself is operator-gated (triggers PyPI publish + Homebrew/Scoop auto-bump PRs).
+
+**Aggregate:** Tests 1665 → **2224** (+559) plus **109 subtests**. Source files ~135 → **152** (+17). Coverage steady ≥ 82%. CI matrix 1 row → **10** (3 OS × 3 Python + Linux aarch64).
+
+### What shipped — PH-19 (Distribution + Hardening, 9 slices, 1665 → 1987)
+
+- **19.0** — Pre-launch bug sweep (10 fixes inc. cross-process locking + atomic write helpers).
+- **19.1** — JSON snapshot tests (`tests/snapshots/`) + bootstrap helper.
+- **19.2** — `tools/contract_audit.py` docs↔code drift detector with 20-handler baseline ratchet.
+- **19.3** — CI matrix expansion (3 OS × 3 Python + Linux aarch64) + smoke step + long-path test.
+- **19.4** — Hypothesis property tests for `migrate_project_state` (6 invariants).
+- **19.5** — `docs/security/threat_model.md` + CycloneDX v1.6 SBOM + `scripts/regenerate_sbom.py` + 5 SBOM sanity tests.
+- **19.6** — `docs/compatibility_policy.md` v1.0 (binding from this release: SemVer, support window, deprecation cadence).
+- **19.7** — `.github/workflows/release.yml` tag-driven distribution pipeline (PyPI OIDC + Homebrew tap + Scoop bucket + offline wheelhouse) + packaging templates + 12 template sanity tests.
+- **19.8** — Stale-catalog watchdog: `evaluate_catalog_freshness` + `cmd_doctor` integration + 11 tests.
+
+### What shipped — PH-20 (Polish + v1.0.0 Launch, 17 slices, 1987 → 2224)
+
+- **20.0** — `init --interactive` opt-in wizard + sample artefact scaffolds.
+- **20.1** — `packet lint` 7-rule heuristic linter.
+- **20.2** — `doctor --fix` (mythic/ subdirs + CHANGELOG `[Unreleased]`); hard-rule guarded.
+- **20.3** — Plugin capability model + soft circuit breaker + `plugin doctor` (largest slice; 32 tests).
+- **20.4** — `ai recommend` pure-policy DSL.
+- **20.5** — Provider conformance test suite (9 providers × 6 batteries).
+- **20.6** — `provenance verify` SHA-256 check.
+- **20.A** — Persona presets (`solo` / `team-lead` / `auditor`) opt-in.
+- **20.B** — `verify --replay` shortcut → forge resume.
+- **20.C** — `workflow lineage` Mermaid graph viewer.
+- **20.D** — Per-role packet budget multipliers (`ROLE_BUDGET_MULTIPLIERS`).
+- **20.E** — `drift dashboard` rollup scorecard.
+- **20.F** — Conventional-commit changelog classification (`scripts/check_changelog.py --classify`).
+- **20.G** — `provenance attest` per-line modification attestation.
+- **20.H** — `review architecture` + `docs/governance/quarterly_review.md` cadence doc.
+- **20.I** — Opt-in TUI heatmap + plugin risk panel data builders.
+- **20.7** — v1.0.0 version bump + CHANGELOG entry + closeout memo.
+
+### Operating-discipline carry
+
+Every commit followed the durable additive-only rule (`feedback_additive_only.md`): TASK file → commit + push → implement → ruff/mypy/pytest gate → dated update notice in the live plan tracker (`TASK_PH19_DISTRIBUTION.md`). One slice per commit; no batching. Every commit independently green: ruff + mypy + pytest gating each one. The contract auditor (`tools/contract_audit.py`) was kept clean by adding new commands to both the runtime allowlist AND the test baseline together.
+
+### Documentation refresh (2026-05-03, post-PH-20)
+
+Volmarr's "do a complete look over the README.md and all other project documents" directive triggered a coordinated refresh of every operator-facing doc:
+
+- **README.md** — version + test count + install paths + extras table + env vars + command overview (PH-20 surfaces) + runtime primitives 8 → 10 + doc map.
+- **docs/INDEX.md** — compatibility policy as Start Here; all 10 ADRs; new sections for Security, Distribution, Governance.
+- **docs/INSTALL.md** — complete rewrite (PyPI / Homebrew / Scoop / wheelhouse / contributor / pre-release / extras / verification / troubleshooting).
+- **docs/quickstart.md** — 16-step end-to-end walkthrough including `init --interactive`, `doctor --fix`, `packet lint`, `verify --replay`, `provenance verify`/`attest`.
+- **docs/api.md** — new "v1.0 command surface" table covering every PH-20 command + flag.
+- **docs/COMMAND_CONTRACTS.md** — new "v1.0 surface additions" section with binding contracts.
+- **docs/runtime.md** — count seven → ten; new sections 9a (`cross_process_lock`) + 9b (`atomic_write`).
+- **docs/plugins.md** — new sections 9a (capabilities) + 9b (circuit breaker) + 9c (`plugin doctor`).
+- **CONTRIBUTING.md** — references compatibility policy as binding; conventional-commit prefix table; quarterly-review section.
+- **docs/ARCHITECTURE.md** — header refreshed; new section 11 listing every PH-19+20 module addition.
+
+### Project state post-launch
+
+**20 of 20 master-roadmap phases CLOSED.** PH-21 (v1.x distribution expansion: OCI / PyInstaller / Nuitka / macOS notarization / Sigstore / AUR / winget / Termux) and PH-22 (v2.0 strategic stretch: Rust/Go launcher shim / native Android / WASI) remain in the plan but are post-v1.0 work. Once Volmarr approves the tag push, v1.0.0 ships through the PH-19.7 release pipeline.
 
 ---
 

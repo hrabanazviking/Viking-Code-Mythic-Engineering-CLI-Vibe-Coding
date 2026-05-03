@@ -267,6 +267,109 @@ The discovery contract:
 
 `SlashCommandInfo` carries the command's `name`, `source` (`extension` / `prompt` / `skill` / `plugin`), structured provenance via `SourceInfo`, and an optional `description`. See [`docs/runtime.md`](runtime.md) §6 and §7 for the full type details.
 
+## 9a) Declared capabilities (v1.0 / PH-20.3)
+
+A plugin's manifest entry under `mythic/plugins.json` may declare a `capabilities` array — operator-visible documentation of what runtime permissions the plugin needs. The vocabulary is fixed in `mythic_vibe_cli.plugins.capabilities.KNOWN_CAPABILITIES`:
+
+| Capability | Meaning |
+|---|---|
+| `read` | Read project files inside the operator's repo |
+| `network` | Outbound HTTP / TCP / etc. |
+| `subprocess` | Spawn child processes |
+| `file-write` | Write files outside the plugin's own context dir |
+
+**Default-deny.** A plugin with no `capabilities` field — or an explicitly empty list — is treated as **read-own-context only**. The CLI does NOT enforce capabilities at the OS level today (Python lacks portable in-process sandboxing — see `docs/security/threat_model.md` §7.1), but the declarations serve three roles:
+
+1. **Operator-visible audit trail.** `mythic-vibe plugin doctor` surfaces declared vs. expected capabilities so operators can spot a plugin asking for more than it should need.
+2. **Future-enforcement hook.** When a real subprocess sandbox lands (PH-21+ stretch), the declarations become the policy input.
+3. **Discipline signal.** Authors who declare narrowly communicate intent to reviewers and to themselves.
+
+Manifest example:
+
+```json
+{
+  "schema_version": 2,
+  "plugin_records": [
+    {
+      "entrypoint": "myorg.plugins.AuditPlugin",
+      "enabled": true,
+      "hooks": ["before_scan", "after_scan"],
+      "version": "1.2.0",
+      "added_at": "2026-05-03T12:00:00Z",
+      "capabilities": ["read", "file-write"]
+    }
+  ]
+}
+```
+
+Unknown capability tokens (typos, `moonshine`, etc.) surface in `plugin doctor` output as warnings — both the bad token AND the plugin name are reported, so typos don't disappear silently.
+
+## 9b) Circuit breaker (v1.0 / PH-20.3)
+
+The CLI tracks consecutive failures (timeout or exception) per plugin. When a plugin trips the threshold, the breaker flips to `tripped` state — the next `safe_call` for that plugin can be short-circuited by the caller (saving the cost of running the timing-out / crashing plugin yet again).
+
+The breaker is **soft**: it does not modify the registry (disabling is the operator's call via `mythic-vibe plugin disable`). It surfaces state so:
+
+- `mythic-vibe plugin doctor` reports tripped plugins clearly.
+- The plugin-hook dispatcher can skip tripped plugins on the next event so a hung plugin doesn't slow every event by `MYTHIC_PLUGIN_TIMEOUT_SEC`.
+
+**Threshold resolution order:**
+
+1. Constructor argument (programmatic — for tests / explicit wiring).
+2. `MYTHIC_PLUGIN_BREAKER_THRESHOLD` env var (operator override).
+3. Built-in default: **3** consecutive failures (short enough to catch a runaway, long enough to absorb transient blips).
+
+Example operator override:
+
+```bash
+# Be more permissive — wait for 10 consecutive failures before surfacing.
+MYTHIC_PLUGIN_BREAKER_THRESHOLD=10 mythic-vibe scan
+```
+
+Reset state by removing the lock file (none exists — the breaker is in-process state) or by re-running successfully (success resets the consecutive-failure counter).
+
+## 9c) `mythic-vibe plugin doctor` (v1.0 / PH-20.3)
+
+Read-only audit command:
+
+```bash
+mythic-vibe plugin doctor
+mythic-vibe plugin doctor --json
+```
+
+Reports per plugin:
+
+- declared capabilities (from the manifest);
+- unknown capability warnings (typos);
+- the active breaker threshold (env-overridable).
+
+JSON shape:
+
+```json
+{
+  "command": "plugin doctor",
+  "registry": "/path/to/mythic/plugins.json",
+  "default_capabilities": [],
+  "breaker_threshold": "3",
+  "warnings": ["plugin foo: unknown capability 'moonshine' (typo? …)"],
+  "plugins": [
+    {
+      "entrypoint": "myorg.AuditPlugin",
+      "enabled": true,
+      "version": "1.2.0",
+      "hooks": ["before_scan"],
+      "capabilities": {
+        "declared": ["read", "file-write"],
+        "unknown": [],
+        "is_default_deny": false
+      }
+    }
+  ]
+}
+```
+
+Use this as a CI step (`mythic-vibe plugin doctor --json | jq …`) to enforce a tighter capability discipline than the default-deny baseline — e.g., reject any plugin in your tree that declares `subprocess` without an accompanying ADR.
+
 ## 10) Profiling slow commands (`MYTHIC_TIMING`)
 
 Set `MYTHIC_TIMING=1` in the environment to print a startup-and-command profile to stderr after every CLI invocation:
