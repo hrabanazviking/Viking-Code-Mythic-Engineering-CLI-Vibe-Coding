@@ -5536,7 +5536,57 @@ def cmd_workflow_dispatch(args: argparse.Namespace) -> int:
         return cmd_workflow_packets(args)
     if args.workflow_command == "history":
         return cmd_workflow_history(args)
+    # Phase 20.C (additive 2026-05-03): workflow lineage viewer.
+    if args.workflow_command == "lineage":
+        return cmd_workflow_lineage(args)
     return USER_INPUT_ERROR
+
+
+def cmd_workflow_lineage(args: argparse.Namespace) -> int:
+    """Phase 20.C — emit a lineage view of one workflow.
+    Reads forge_ledger entries (and resolves duplicates via
+    most-recent-per-step). Renders Mermaid markdown by default;
+    ``--json`` returns the structured payload."""
+    from .workflow_lineage import build_lineage, render_markdown
+
+    root = Path(args.path).resolve()
+    workflow_id = (getattr(args, "workflow", "") or "").strip() or None
+    graph = build_lineage(root, workflow_id)
+
+    if graph is None:
+        if _flag(args, "json"):
+            write_json(
+                {
+                    "command": "workflow lineage",
+                    "path": str(root),
+                    "workflow_id": workflow_id or "",
+                    "found": False,
+                    "error": "no workflows in ledger or unknown workflow id",
+                }
+            )
+            return SUCCESS
+        write_line("Workflow lineage")
+        write_key_value("Path", root)
+        write_key_value("Workflow", workflow_id or "(latest)")
+        write_line(
+            "- No workflows found in mythic/forge_ledger.json "
+            "or the supplied --workflow id is not in the ledger."
+        )
+        return SUCCESS
+
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "workflow lineage",
+                "path": str(root),
+                "found": True,
+                **graph.to_dict(),
+            }
+        )
+        return SUCCESS
+
+    write_line(render_markdown(graph))
+    return SUCCESS
 
 
 def cmd_slash_list(args: argparse.Namespace) -> int:
