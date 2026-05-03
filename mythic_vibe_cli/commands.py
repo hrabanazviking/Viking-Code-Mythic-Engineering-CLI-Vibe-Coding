@@ -2714,6 +2714,12 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     # additive — does NOT promote doctor exit code; existing
     # callers see the same return value.
     from .ai.providers.model_catalog import evaluate_catalog_freshness
+    # Phase 20.2 (additive 2026-05-02): doctor --fix runs two
+    # tightly-scoped auto-remediations (mythic/ subdirs +
+    # CHANGELOG [Unreleased]). --fix-dry-run previews. Hard-rule:
+    # never edits user-authored content (constraints/oaths/ADRs/
+    # packets/decisions).
+    from .doctor_fix import FixReport, run_doctor_fix
 
     root = Path(args.path).resolve()
     workflow = MythicWorkflow(root)
@@ -2725,19 +2731,27 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     drift_findings = scan_for_drift(root)
     drift_payload = [f.to_dict() for f in drift_findings]
     catalog_freshness = evaluate_catalog_freshness()
+
+    fix_report: FixReport | None = None
+    fix_requested = _flag(args, "fix")
+    fix_dry_run = _flag(args, "fix_dry_run")
+    if fix_requested or fix_dry_run:
+        fix_report = run_doctor_fix(root, dry_run=fix_dry_run)
+
     if _flag(args, "json"):
-        write_json(
-            {
-                "path": str(root),
-                "repo_boundary": repo_boundary,
-                "ok": bool(report["ok"]),
-                "errors": list(report["errors"]),
-                "warnings": list(report["warnings"]),
-                "sections": report["sections"],
-                "drift": drift_payload,
-                "model_catalog": catalog_freshness.to_dict(),
-            }
-        )
+        json_payload: dict[str, object] = {
+            "path": str(root),
+            "repo_boundary": repo_boundary,
+            "ok": bool(report["ok"]),
+            "errors": list(report["errors"]),
+            "warnings": list(report["warnings"]),
+            "sections": report["sections"],
+            "drift": drift_payload,
+            "model_catalog": catalog_freshness.to_dict(),
+        }
+        if fix_report is not None:
+            json_payload["fixes"] = fix_report.to_dict()
+        write_json(json_payload)
         return OPERATIONAL_FAILURE if report["errors"] else SUCCESS
 
     write_line("Mythic project diagnostics")
@@ -2788,6 +2802,22 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             f"{catalog_freshness.last_updated} "
             f"({catalog_freshness.days_since_update} days ago)"
         )
+
+    # Phase 20.2 (additive 2026-05-02): fix report.
+    if fix_report is not None:
+        mode_label = "dry-run" if fix_report.dry_run else "applied"
+        write_line(
+            f"- Auto-fix ({mode_label}): "
+            f"{len(fix_report.fixed)} fixed, "
+            f"{len(fix_report.would_fix)} would-fix, "
+            f"{len(fix_report.skipped)} skipped"
+        )
+        for action in fix_report.actions:
+            write_bullet(
+                f"[{action.status}] {action.rule_id}: "
+                f"{action.message} ({action.target})",
+                indent=2,
+            )
 
     return OPERATIONAL_FAILURE if report["errors"] else SUCCESS
 

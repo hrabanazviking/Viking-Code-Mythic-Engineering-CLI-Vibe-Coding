@@ -1793,3 +1793,94 @@ anything that touches user-authored content (constraints,
 oaths, ADRs, packets, decisions).
 
 `STATUS: OPEN — SLICE 20.1 CLOSED — IN PROGRESS: 20.2`
+
+## ADDITIVE UPDATE — 2026-05-02 (slice 20.2 closeout)
+
+**HEAD:** `d4f04b4` (post-20.1) → next commit will land 20.2.
+
+### What shipped — slice 20.2 (`doctor --fix` tightly scoped)
+
+- **`mythic_vibe_cli/doctor_fix.py`** (NEW, ~210 lines) —
+  pure-stdlib auto-remediation with two safe rules:
+
+  | Rule | Auto-fixable | Action |
+  |---|---|---|
+  | MFX-001 | Yes | Create any missing standard `mythic/` subdirectory (`packets/`, `verifications/`, `handoffs/`, `checkins/`, `forge/`, `reflections/`, `backups/`). Reversible by `rmdir` on empty dirs. |
+  | MFX-002 | Yes (when CHANGELOG.md exists) | Insert `## [Unreleased]` block after the H1 title and BEFORE the first version section. Skipped (NOT auto-created) when CHANGELOG.md is absent — file creation is an operator decision. |
+
+  Both rules use the PH-19 `atomic_write_text` helper for any
+  filesystem write so partial-write under power loss / signal
+  is impossible.
+
+- **`mythic_vibe_cli/commands.py:cmd_doctor`** — additive
+  branch: `--fix` runs the rules; `--fix-dry-run` previews
+  without writing. JSON output gains a `fixes` block ONLY when
+  one of the flags is set (zero-impact for callers that didn't
+  ask). Text output adds an `Auto-fix (applied|dry-run): N
+  fixed, N would-fix, N skipped` line plus per-action bullet
+  list.
+
+- **`mythic_vibe_cli/app.py`** — `--fix` and `--fix-dry-run`
+  flags added to the doctor parser.
+
+### Hard-rule guard
+
+The PH-20 plan was explicit: ``doctor --fix`` MUST NOT touch
+user-authored content (constraints, oaths, ADRs, packets,
+decisions). A dedicated test
+(`HardRuleProtectionTests.test_user_authored_files_untouched`)
+plants real fixtures of all five types and asserts every byte
+is preserved verbatim after a fix run.
+
+### Tests — `tests/test_doctor_fix.py` (13 tests)
+
+- **MFX-001 (3):** creates all missing subdirs; dry-run does
+  not create; existing subdirs are no-ops.
+- **MFX-002 (4):** inserts block before first version section
+  while preserving H1; no-op when block already present;
+  skipped when CHANGELOG absent (NOT auto-created); dry-run
+  does not modify file.
+- **Hard-rule protection (1):** user content (5 fixture
+  files) bytes-identical after fix.
+- **Serialization (1):** `FixReport.to_dict` JSON-clean.
+- **CLI integration (4):** `--fix` text output + applied
+  label; `--fix-dry-run` doesn't create files; `--fix --json`
+  includes `fixes` block; default doctor (no flag) omits
+  `fixes` key (backwards-compat guard).
+
+### Verification
+
+- `python -m pytest tests/test_doctor_fix.py -q` → 13 passed
+  in ~0.4s.
+- Full suite: `python -m pytest -q` → **2039 passed, 1
+  skipped, 54 subtests passed** (+13 from 2026).
+- `ruff check mythic_vibe_cli tests scripts tools` → clean.
+- `mypy mythic_vibe_cli` → no issues found in **143** source
+  files (+1 — `doctor_fix.py`).
+
+### Operating-discipline carry
+
+- Strict additive: new module, new test file, two new flags +
+  one branch in `cmd_doctor`. The default doctor JSON payload
+  is byte-identical when neither `--fix` nor `--fix-dry-run`
+  is passed (verified by
+  `test_no_fix_flag_means_no_fixes_key`).
+- Per compatibility-policy §3, the new flags + the conditional
+  `fixes` JSON block are MINOR additions on a stable surface.
+- `run_doctor_fix` is pure orchestration; the per-rule
+  helpers (`_ensure_mythic_subdirs`, `_ensure_changelog_unreleased`)
+  are individually testable and reusable from future TUI or
+  CI integrations.
+
+### Next: slice 20.3
+
+Plugin capability model + `plugin doctor` + circuit breaker.
+Largest PH-20 item:
+- Capability declarations in `mythic/plugins.json` schema.
+- `plugin doctor` command auditing installed plugins against
+  declared capabilities + runtime health.
+- Configurable circuit breaker on `safe_call` — auto-disable
+  after N consecutive timeouts (env var > config > built-in
+  default).
+
+`STATUS: OPEN — SLICE 20.2 CLOSED — IN PROGRESS: 20.3`
