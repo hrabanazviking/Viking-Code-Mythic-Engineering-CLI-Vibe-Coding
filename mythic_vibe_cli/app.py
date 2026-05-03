@@ -1244,6 +1244,33 @@ def build_parser() -> argparse.ArgumentParser:
     verify.add_argument("--docs", action="store_true", help="Check active documentation files")
     verify.add_argument("--invariants", action="store_true", help="Check project invariants and boundaries")
     verify.add_argument("--record", action="store_true", help="Promote the verification artifact to latest and update state")
+    # Phase 20.B (audit remediation 2026-05-03): replay shortcut.
+    # When --replay is passed, verify delegates to forge resume
+    # (PH-03 slice 3.8) — re-runs the last forge workflow from
+    # its first non-succeeded step. Useful when an Auditor gate
+    # failure was the last verify outcome and the operator
+    # wants to re-execute the same workflow without re-typing
+    # the original `forge run` command.
+    verify.add_argument(
+        "--replay",
+        action="store_true",
+        help="Delegate to `forge resume` for the most recent (or specified) workflow.",
+    )
+    verify.add_argument(
+        "--provider",
+        default="",
+        help="(--replay only) Provider to use when re-executing the workflow. Defaults to copy-paste.",
+    )
+    verify.add_argument(
+        "--workflow",
+        default="",
+        help="(--replay only) Workflow id to resume; default is the most recent one.",
+    )
+    verify.add_argument(
+        "--strict",
+        action="store_true",
+        help="(--replay only) Abort on Auditor gate failure (forwarded to forge resume).",
+    )
     add_runtime_options(verify, json_output=True)
 
     slash = sub.add_parser(
