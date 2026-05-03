@@ -1279,3 +1279,72 @@ deprecation cadence, and SemVer interpretation. Pure-doc slice;
 no code changes.
 
 `STATUS: OPEN — PHASE 19.5 CLOSED — IN PROGRESS: 19.6`
+
+---
+
+## ADDITIVE UPDATE — 2026-05-02 (slice 19.6 closeout)
+
+**HEAD:** `17c6df4` (post-19.5) → next commit will land 19.6.
+
+### What shipped — slice 19.6 (Compatibility policy)
+
+- **`docs/compatibility_policy.md`** — 10-section operator
+  contract effective from v1.0.0:
+  - **§1 Python version support:** Tested (3.10/3.11/3.12),
+    Targeted (3.13), Best-effort (3.14+), Unsupported (<3.10).
+    Add/drop cadence tied to upstream EOL.
+  - **§2 OS support:** Linux x86_64 + aarch64, macOS, Windows
+    — exact match to the CI matrix from PH-19.3. Out-of-band
+    platforms (BSD, Alpine/musl, WSL1, Windows ARM) explicitly
+    listed as best-effort.
+  - **§3 Public surface:** stability tier per surface
+    (CLI verbs, argparse flags, --json schemas, exit codes,
+    status.json schema, plugin extension points, mythic/
+    layout = stable; Python module imports = internal).
+  - **§4 SemVer interpretation:** explicit MAJOR / MINOR /
+    PATCH definitions + 0.x freedom note.
+  - **§5 Deprecation cadence:** announce → wait one minor →
+    remove. Never remove in a patch. Never remove without prior
+    DeprecationWarning.
+  - **§6 Dependency policy:** runtime base = zero non-stdlib
+    deps. Extras opt-in with pinned floors, unpinned ceilings.
+    SBOM is authoritative inventory.
+  - **§7 Config / env-var compatibility:** `MYTHIC_*` env vars
+    are stable surface. Project-local TOML files follow same
+    rules as JSON schemas.
+  - **§8 Verification table:** every promise tied back to the
+    test / tool that enforces it (CI matrix, snapshots from
+    19.1, contract audit from 19.2, property tests from 19.4,
+    SBOM tests from 19.5).
+  - **§9 Update procedure:** additive-only edits; revision
+    history under §10 instead of silent rewrites.
+
+### Verification
+
+- Pure-doc slice — no code or tests added. Existing suite
+  unchanged.
+- `python -m pytest -q` → still **1964 passed, 1 skipped, 54
+  subtests passed** (no regressions from the `.md` add).
+- `ruff check mythic_vibe_cli tests scripts tools` → still
+  clean.
+- `mypy mythic_vibe_cli` → no issues.
+
+### Operating-discipline carry
+
+- Additive-only: this is a brand-new file. Existing docs are
+  untouched.
+- Every "stable" promise in §3 points to a real enforcement
+  mechanism in §8 — no aspirational claims. If we can't point
+  to a test or workflow that catches violations of the rule, it
+  doesn't go in this doc.
+
+### Next: slice 19.7
+
+Distribution. Three channels: PyPI (OIDC trusted publishing
+from a release.yml workflow), Homebrew tap (separate
+`homebrew-mythic` repo with auto-update PR on tag push), Scoop
+bucket (separate `scoop-mythic` repo with auto-update PR on tag
+push). Wheelhouse for offline installs is bundled into the
+release artifact.
+
+`STATUS: OPEN — PHASE 19.6 CLOSED — IN PROGRESS: 19.7`
