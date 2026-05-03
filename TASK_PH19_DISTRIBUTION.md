@@ -2052,3 +2052,49 @@ provenance. Signed artifacts with GPG / Sigstore are deferred
 to v1.x (PH-21.5).
 
 `STATUS: OPEN — SLICE 20.5 CLOSED — IN PROGRESS: 20.6`
+
+## ADDITIVE UPDATE — 2026-05-03 (slice 20.6 closeout)
+
+**HEAD:** `9caf8d4` (post-20.5) → next commit will land 20.6.
+
+### What shipped — slice 20.6 (`provenance verify`)
+
+- **`mythic_vibe_cli/plunder/verify.py`** (NEW) — pure SHA-256 verification of plunder-imported files.
+  - `VerificationEntry` (destination / repo / source_file / source_sha / actual_sha / status).
+  - Three statuses: `match` (recorded SHA == local file SHA), `drift` (file exists but SHA differs), `missing` (destination not on disk).
+  - `_hash_file` streams 64 KiB chunks for big-file safety.
+  - `VerificationReport.ok` is permissive — drift is informational, not error. Operators wanting strict-clean can require `len(drifts) == 0 and len(missing) == 0` themselves.
+
+- **`mythic_vibe_cli/commands.py`** — new top-level `cmd_provenance` dispatcher + `cmd_provenance_verify` handler. Surfaces text + `--json`. Wired into `COMMAND_HANDLERS`.
+
+- **`mythic_vibe_cli/app.py`** — top-level `provenance` parser with `verify` subcommand.
+
+- **`mythic_vibe_cli/runtime/slash_commands.py`** — `BUILTIN_SLASH_COMMANDS` gains `/provenance` entry to satisfy the parity invariant.
+
+- **`tests/test_cli_kernel.py`** — additive: the registry-snapshot test's expected set gains `"provenance"`.
+
+### Tests — `tests/test_provenance_verify.py` (9 tests)
+
+- **`verify_provenance` (5):** match when SHA aligns; drift when local modified; missing when destination deleted; empty manifest yields empty report; drift does not flip `ok` to False.
+- **Serialization (1):** `VerificationReport.to_dict` shape.
+- **CLI integration (3):** text output; JSON output; unknown subcommand → USER_INPUT_ERROR.
+
+### Verification
+
+- `python -m pytest tests/test_provenance_verify.py -q` → 9 passed in ~0.3s.
+- Full suite: `python -m pytest -q` → **2111 passed, 1 skipped, 109 subtests passed** (+9 from 2102; included +2 fixed regression tests for the new top-level command).
+- `python tools/contract_audit.py` → clean (the contract auditor finds the new command in `provenance` slash entry's loose-backtick scan).
+- `ruff check mythic_vibe_cli tests scripts tools` → clean.
+- `mypy mythic_vibe_cli` → no issues found in **147** source files (+1 — `verify.py`).
+
+### Operating-discipline carry
+
+- Two related regression tests caught the new top-level command immediately and were updated additively (no deletion). The slash-catalog parity test + the registry-snapshot test continue to enforce the "every argparse handler has a slash entry" invariant.
+- Cross-platform write subtlety (Windows `\r\n` translation) surfaced once in test fixtures and was fixed by switching to `write_bytes()` — captured in a docstring on `_seed_file` so future contributors don't reintroduce it.
+- Per compatibility-policy §3, the new top-level command + JSON schema are MINOR additions. Sigstore signed-artifact verification stays deferred to PH-21.5.
+
+### Next: slice 20.A — persona presets
+
+Opt-in `--preset solo|team-lead|auditor` flag. Default behavior preserved.
+
+`STATUS: OPEN — SLICE 20.6 CLOSED — IN PROGRESS: 20.A`

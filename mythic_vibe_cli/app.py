@@ -951,6 +951,33 @@ def build_parser() -> argparse.ArgumentParser:
     plunder_record.add_argument("--notice", action="store_true", help="Append a NOTICE entry")
     add_runtime_options(plunder_record, json_output=True, dry_run=True)
 
+    # Phase 20.6 (audit remediation 2026-05-03): top-level
+    # provenance command. Currently one subcommand: verify.
+    # Future v1.x slices may add sign / attest once Sigstore
+    # lands (PH-21.5).
+    provenance_cmd = sub.add_parser(
+        "provenance",
+        help="Verify checksums of plunder-imported files against recorded provenance.",
+    )
+    provenance_sub = provenance_cmd.add_subparsers(
+        dest="provenance_command", required=True
+    )
+    provenance_verify = provenance_sub.add_parser(
+        "verify",
+        help="Verify each manifest entry's local file SHA against the recorded source SHA.",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe provenance verify
+              mythic-vibe provenance verify --json
+            """
+        ),
+    )
+    provenance_verify.add_argument(
+        "--path", default=".", help="Project directory (default: current directory)"
+    )
+    add_runtime_options(provenance_verify, json_output=True)
+
     ai = sub.add_parser("ai", help="Manage optional AI provider integrations")
     add_runtime_options(ai, json_output=True, dry_run=True)
     ai_sub = ai.add_subparsers(dest="ai_command", required=True)
