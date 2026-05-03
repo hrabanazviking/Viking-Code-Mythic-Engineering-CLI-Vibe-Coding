@@ -4949,6 +4949,98 @@ def cmd_provenance(args: argparse.Namespace) -> int:
     return USER_INPUT_ERROR
 
 
+def cmd_persona(args: argparse.Namespace) -> int:
+    """Phase 20.A — opt-in persona presets. Two subcommands:
+    ``apply`` (writes mythic/persona.json) and ``show`` (prints
+    the active persona, if any). Default behavior across the
+    rest of the CLI is preserved when no persona is applied."""
+    command = getattr(args, "persona_command", None)
+    if command == "apply":
+        return cmd_persona_apply(args)
+    if command == "show":
+        return cmd_persona_show(args)
+    write_error(
+        f"Unknown persona subcommand: {command!r}. Valid: apply | show."
+    )
+    return USER_INPUT_ERROR
+
+
+def cmd_persona_apply(args: argparse.Namespace) -> int:
+    from .personas import PRESET_NAMES, apply_preset
+
+    preset_name = getattr(args, "preset", None) or ""
+    if preset_name not in PRESET_NAMES:
+        write_error(
+            f"--preset must be one of {PRESET_NAMES} "
+            f"(got {preset_name!r})"
+        )
+        return USER_INPUT_ERROR
+    root = Path(args.path).resolve()
+    force = _flag(args, "force")
+    try:
+        applied = apply_preset(root, preset_name, force=force)
+    except FileExistsError as exc:
+        write_error(str(exc))
+        return USER_INPUT_ERROR
+
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "persona apply",
+                "path": str(root),
+                **applied.to_dict(),
+            }
+        )
+        return SUCCESS
+
+    write_line(f"Applied persona preset: {applied.preset.name}")
+    write_key_value("Description", applied.preset.description)
+    write_key_value("Approval mode", applied.preset.approval_mode)
+    write_key_value("Audience", applied.preset.audience)
+    write_key_value("Audit cadence (days)", applied.preset.audit_cadence_days)
+    write_key_value(
+        "Plugin review required", applied.preset.require_plugin_review
+    )
+    write_key_value("Path", applied.path)
+    return SUCCESS
+
+
+def cmd_persona_show(args: argparse.Namespace) -> int:
+    from .personas import load_active_persona
+
+    root = Path(args.path).resolve()
+    state = load_active_persona(root)
+
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "persona show",
+                "path": str(root),
+                **state.to_dict(),
+            }
+        )
+        return SUCCESS
+
+    write_line("Active persona")
+    write_key_value("Path", state.path)
+    if state.preset is None:
+        if state.error:
+            write_key_value("Status", f"error — {state.error}")
+        else:
+            write_key_value("Status", "none (no persona file present)")
+        return SUCCESS
+
+    write_key_value("Preset", state.preset.name)
+    write_key_value("Description", state.preset.description)
+    write_key_value("Approval mode", state.preset.approval_mode)
+    write_key_value("Audience", state.preset.audience)
+    write_key_value("Audit cadence (days)", state.preset.audit_cadence_days)
+    write_key_value(
+        "Plugin review required", state.preset.require_plugin_review
+    )
+    return SUCCESS
+
+
 def cmd_provenance_verify(args: argparse.Namespace) -> int:
     """Verify checksums of every plunder-imported file against
     the recorded ``source_sha`` in
@@ -6873,6 +6965,8 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "plunder": cmd_plunder,
     # Phase 20.6 (additive 2026-05-03): provenance verify.
     "provenance": cmd_provenance,
+    # Phase 20.A (additive 2026-05-03): persona presets.
+    "persona": cmd_persona,
     "ai": cmd_ai_dispatch,
     "verify": cmd_verify_dispatch,
     "slash": cmd_slash_dispatch,
