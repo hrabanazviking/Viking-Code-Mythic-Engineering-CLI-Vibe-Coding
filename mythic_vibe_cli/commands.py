@@ -4937,16 +4937,89 @@ def cmd_plunder(args: argparse.Namespace) -> int:
 
 
 def cmd_provenance(args: argparse.Namespace) -> int:
-    """Phase 20.6 — top-level provenance commands. Currently
-    one subcommand: ``verify``. Future v1.x slices may extend
-    with ``sign`` / ``attest`` once Sigstore lands."""
+    """Phase 20.6 — top-level provenance commands. Currently two
+    subcommands: ``verify`` (PH-20.6) and ``attest`` (PH-20.G)."""
     command = getattr(args, "provenance_command", None)
     if command == "verify":
         return cmd_provenance_verify(args)
+    # Phase 20.G (additive 2026-05-03): per-line modification
+    # attestation against an explicit original.
+    if command == "attest":
+        return cmd_provenance_attest(args)
     write_error(
-        f"Unknown provenance subcommand: {command!r}. Valid: verify."
+        f"Unknown provenance subcommand: {command!r}. Valid: verify | attest."
     )
     return USER_INPUT_ERROR
+
+
+def cmd_provenance_attest(args: argparse.Namespace) -> int:
+    """Phase 20.G — compute per-line modification attestation
+    between a local file and an explicit original. The original
+    is read from ``--original PATH``; the operator supplies it
+    (e.g. by checking out an upstream ref into a separate
+    location, or pointing at a cached plunder import)."""
+    from .plunder.attestation import attest_file
+
+    root = Path(args.path).resolve()
+    destination = getattr(args, "destination", "") or ""
+    original_path = getattr(args, "original", "") or ""
+    if not destination:
+        write_error("--destination is required")
+        return USER_INPUT_ERROR
+    if not original_path:
+        write_error("--original is required")
+        return USER_INPUT_ERROR
+
+    original = Path(original_path)
+    if not original.is_absolute():
+        original = (root / original).resolve()
+    if not original.is_file():
+        write_error(f"Original file not found: {original}")
+        return USER_INPUT_ERROR
+    try:
+        original_text = original.read_text(encoding="utf-8")
+    except OSError as exc:
+        write_error(f"Cannot read original {original}: {exc}")
+        return OPERATIONAL_FAILURE
+
+    dest_path = Path(destination)
+    if not dest_path.is_absolute():
+        dest_path = (root / dest_path).resolve()
+    if not dest_path.is_file():
+        write_error(f"Destination file not found: {dest_path}")
+        return USER_INPUT_ERROR
+
+    try:
+        attestation = attest_file(
+            destination=Path(destination),
+            original_text=original_text,
+            project_root=root,
+        )
+    except OSError as exc:
+        write_error(f"Cannot read destination {dest_path}: {exc}")
+        return OPERATIONAL_FAILURE
+
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "provenance attest",
+                "path": str(root),
+                "destination": destination,
+                "original": str(original),
+                **attestation.to_dict(),
+            }
+        )
+        return SUCCESS
+
+    write_line("Provenance modification attestation")
+    write_key_value("Destination", attestation.destination)
+    write_key_value("Original SHA-256", attestation.original_sha256)
+    write_key_value("Local SHA-256", attestation.local_sha256)
+    write_key_value("Modified", attestation.modified)
+    write_key_value("Added lines", attestation.added)
+    write_key_value("Removed lines", attestation.removed)
+    write_key_value("Unchanged lines", attestation.unchanged)
+    return SUCCESS
 
 
 def cmd_persona(args: argparse.Namespace) -> int:

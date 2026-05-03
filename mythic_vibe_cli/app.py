@@ -996,6 +996,30 @@ def build_parser() -> argparse.ArgumentParser:
         "--path", default=".", help="Project directory (default: current directory)"
     )
     add_runtime_options(provenance_verify, json_output=True)
+    # Phase 20.G (audit remediation 2026-05-03): per-line
+    # modification attestation. Pairs with verify (binary equality)
+    # by saying WHICH lines drifted when the SHAs differ.
+    provenance_attest = provenance_sub.add_parser(
+        "attest",
+        help="Compute per-line attestation between a local file and an explicit upstream original.",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe provenance attest --destination src/a.py --original cache/a.py
+              mythic-vibe provenance attest --destination src/a.py --original cache/a.py --json
+            """
+        ),
+    )
+    provenance_attest.add_argument(
+        "--path", default=".", help="Project directory (default: current directory)"
+    )
+    provenance_attest.add_argument(
+        "--destination", required=True, help="Project-relative path of the local file to attest."
+    )
+    provenance_attest.add_argument(
+        "--original", required=True, help="Path to the upstream original (project-relative or absolute)."
+    )
+    add_runtime_options(provenance_attest, json_output=True)
 
     # Phase 20.A (audit remediation 2026-05-03): persona
     # presets — opt-in bundles of defaults. Default behavior
