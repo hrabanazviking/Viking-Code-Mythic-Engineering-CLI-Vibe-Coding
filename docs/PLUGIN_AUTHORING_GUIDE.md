@@ -179,6 +179,53 @@ your `my_plugin/__init__.py` must define a top-level
 `plugin = MyPlugin()` (or a class/module the CLI can dispatch
 against).
 
+### 4.1 Declaring capabilities (v1.0)
+
+When your plugin is registered in a project's
+`mythic/plugins.json`, you can declare which runtime capabilities
+your code uses. This is **operator-visible documentation** that
+shows up in `mythic-vibe plugin doctor` — operators can spot
+plugins asking for more than they should need before enabling
+them.
+
+```json
+{
+  "schema_version": 2,
+  "plugin_records": [
+    {
+      "entrypoint": "my_pkg.MyPlugin",
+      "enabled": true,
+      "hooks": ["before_scan", "after_scan"],
+      "version": "1.0.0",
+      "added_at": "2026-05-03T12:00:00Z",
+      "capabilities": ["read", "file-write"]
+    }
+  ]
+}
+```
+
+The fixed vocabulary is in
+`mythic_vibe_cli/plugins/capabilities.py:KNOWN_CAPABILITIES`:
+
+| Capability | Meaning |
+|---|---|
+| `read` | Read project files inside the operator's repo |
+| `network` | Outbound HTTP / TCP / etc. |
+| `subprocess` | Spawn child processes |
+| `file-write` | Write files outside the plugin's own context dir |
+
+**Default-deny.** A plugin with no `capabilities` field — or an
+explicitly empty list — is treated as **read-own-context only**.
+The CLI does NOT enforce capabilities at the OS level today (no
+portable in-process Python sandbox exists), but declaring narrowly
+communicates intent to reviewers and gives the future enforcement
+layer something to build on.
+
+If your plugin name shows up in `plugin doctor` output with an
+**unknown capability** warning, you have a typo (e.g. `subproccess`
+instead of `subprocess`). Fix the manifest entry, not the plugin
+code.
+
 ---
 
 ## 5. Sandbox contract
@@ -196,31 +243,64 @@ provides:
   killed**; respect the budget voluntarily.
 - **Resource probe** (POSIX only): operators can read process
   rusage via `probe_resource_caps()` to spot misbehaving plugins.
+- **Soft circuit breaker (v1.0)**: when the dispatcher passes a
+  `breaker=` argument to `safe_call`, every result is recorded
+  per `plugin_id`. After `MYTHIC_PLUGIN_BREAKER_THRESHOLD`
+  consecutive failures (default **3**), the breaker trips and
+  the dispatcher can skip your plugin proactively on subsequent
+  invocations. The breaker is **soft** — it does not modify the
+  registry or disable your plugin; that decision stays with the
+  operator via `mythic-vibe plugin disable`. Surfaces in
+  `mythic-vibe plugin doctor`.
 
 Best practices:
 
 - Keep hook handlers fast. The bus is synchronous — slow plugins
   slow the CLI.
-- No network calls in hooks unless explicitly opted in. Write
-  any I/O to the project's `mythic/` directory (`payload["path"]`)
-  rather than the operator's home.
+- No network calls in hooks unless explicitly opted in **and
+  declared in your `capabilities` array**. Operators reading
+  `plugin doctor` should see what they're consenting to.
+- Write any I/O to the project's `mythic/` directory
+  (`payload["path"]`) rather than the operator's home.
 - Catch your own exceptions and report via the payload or your
   own log file in `mythic/plugins/<name>/`.
+- **A successful invocation resets the breaker counter.** If your
+  plugin can fail transiently, recover on the next call rather
+  than entering a permanent error state.
 
 ---
 
 ## 6. Testing your plugin
 
-Pytest works out of the box. Use the slice-10.2 sandbox to
-confirm your hook is well-behaved:
+Pytest works out of the box. Use the sandbox helper to confirm
+your hook is well-behaved:
 
 ```python
 from mythic_vibe_cli.plugins.sandbox import safe_call
+from mythic_vibe_cli.plugins.circuit_breaker import CircuitBreaker
 
 def test_my_hook_is_fast():
-    result = safe_call(my_plugin.before_scan, {"path": "."}, timeout_sec=0.5)
+    result = safe_call(
+        my_plugin.before_scan,
+        {"path": "."},
+        timeout_sec=0.5,
+        plugin_id="my_pkg.MyPlugin",
+    )
     assert result.ok
     assert result.elapsed_ms < 100
+
+
+def test_my_hook_does_not_trip_breaker(tmp_path):
+    """v1.0: ensure repeated normal invocations stay closed."""
+    breaker = CircuitBreaker(threshold=3)
+    for _ in range(10):
+        safe_call(
+            my_plugin.before_scan,
+            {"path": str(tmp_path)},
+            plugin_id="my_pkg.MyPlugin",
+            breaker=breaker,
+        )
+    assert not breaker.is_tripped("my_pkg.MyPlugin")
 ```
 
 For end-to-end validation, install your package in editable mode
@@ -231,6 +311,8 @@ pip install -e .
 mythic-vibe plugin discover
 mythic-vibe plugin install my_plugin
 mythic-vibe plugin inspect my_plugin
+mythic-vibe plugin doctor          # v1.0: capability + breaker audit
+mythic-vibe plugin doctor --json   # CI-friendly
 ```
 
 ---
@@ -260,6 +342,11 @@ The registry's inclusion criteria:
 - **Protocols**: `mythic_vibe_cli/plugins/extension_points.py`
 - **Hooks**: `mythic_vibe_cli/plugins/api.py:PLUGIN_HOOKS`
 - **Sandbox**: `mythic_vibe_cli/plugins/sandbox.py`
+- **Capabilities** (v1.0): `mythic_vibe_cli/plugins/capabilities.py:KNOWN_CAPABILITIES`
+- **Circuit breaker** (v1.0): `mythic_vibe_cli/plugins/circuit_breaker.py:CircuitBreaker`
+- **Manifest schema**: `mythic_vibe_cli/resources/schemas/plugin_manifest.schema.json` (capability vocabulary is coordinated with `KNOWN_CAPABILITIES`)
+- **Operator audit command** (v1.0): `mythic-vibe plugin doctor`
 - **Registry**: `mythic/plugins.json` per project
 - **Example**: `examples/plugins/mythic_vibe_example_plugin/`
 - **Mythic Engineering laws**: `MYTHIC_ENGINEERING.md`
+- **Operator-facing companion guide**: [`docs/plugins.md`](plugins.md) (sections 9a / 9b / 9c cover the v1.0 capability + breaker + doctor surfaces from the operator's angle)

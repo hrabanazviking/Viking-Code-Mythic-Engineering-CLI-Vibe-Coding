@@ -2,6 +2,8 @@
 
 Use this template at the end of substantial work sessions to preserve continuity for the next contributor.
 
+> **Tip.** `mythic-vibe reflect --summary "..." --next-step "..." --note "..."` writes a structured handoff record under `mythic/handoffs/` (Markdown + JSON) that follows the same contract this template encodes. The template is for the cases where you want to draft the handoff in your editor first, or when you're recording session continuity outside a Mythic-scaffolded project. Either path is fine.
+
 ---
 
 ## Session metadata
@@ -46,10 +48,13 @@ Capture rationale, tradeoffs, and constraints.
 
 List checks with pass/fail status and key output.
 
-- [ ] Unit tests
-- [ ] Linting/formatting
+- [ ] `pytest -q` (unit + integration + property + snapshot tests)
+- [ ] `ruff check mythic_vibe_cli tests scripts tools` (linting)
+- [ ] `mypy mythic_vibe_cli` (type checking)
+- [ ] `python tools/contract_audit.py --strict` (docs↔code drift gate, v1.0)
 - [ ] Smoke run of changed commands
 - [ ] Documentation synchronization
+- [ ] (When changing CHANGELOG) `python scripts/check_changelog.py` (release gate) + `--classify` (Unclassified count = 0)
 
 Notes:
 
@@ -70,10 +75,12 @@ Record unresolved questions as explicit prompts.
 Before closing:
 
 - [ ] `DEVLOG.md` updated with date and rationale
-- [ ] `CHANGELOG.md` updated if user-facing behavior shifted
+- [ ] `CHANGELOG.md` updated if user-facing behavior shifted (use a conventional-commit prefix so the PH-20.F classifier buckets it cleanly)
 - [ ] `docs/INDEX.md` updated for new/moved docs
 - [ ] Cross-links checked
 - [ ] Deprecated claims removed or marked historical
+- [ ] (v1.0+) `docs/security/threat_model.md` updated if a new attack surface was added (per its §8 update procedure)
+- [ ] (v1.0+) `docs/compatibility_policy.md` updated if a Stable-tier surface changed
 
 ---
 
