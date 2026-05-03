@@ -2182,3 +2182,42 @@ Thin shortcut that delegates to `forge resume` machinery. Probably ~1h.
 Reads existing `forge_reflection` + `forge_ledger` data and emits a graph view (markdown + JSON).
 
 `STATUS: OPEN — SLICE 20.B CLOSED — IN PROGRESS: 20.C`
+
+## ADDITIVE UPDATE — 2026-05-03 (slice 20.C closeout)
+
+**HEAD:** `6c44691` (post-20.B) → next commit will land 20.C.
+
+### What shipped — slice 20.C (workflow lineage viewer)
+
+- **`mythic_vibe_cli/workflow_lineage.py`** (NEW) — pure read of `mythic/forge_ledger.json`. Builds a `LineageGraph` of one workflow's most-recent-per-step ledger entries. Markdown rendering produces a Mermaid `flowchart LR` plus a non-Mermaid caption table (so operators reading raw markdown still get full information).
+- **Status-coloured Mermaid styling:** distinct fill colours per ledger status (succeeded / failed / blocked / pending / running). Style rules emitted as `style STEP_xx fill:#…` lines — accessible to any Mermaid-capable renderer.
+- **`mythic_vibe_cli/commands.py:cmd_workflow_lineage`** — CLI handler. Resolves to most-recent workflow when `--workflow` is omitted. Empty ledger / unknown workflow → `SUCCESS` with a helpful `found: false` payload (no error — empty/missing is informational).
+- **`mythic_vibe_cli/commands.py:cmd_workflow_dispatch`** — additive `lineage` route.
+- **`mythic_vibe_cli/app.py`** — `workflow lineage` parser entry with examples + `--workflow` flag.
+
+### Tests — `tests/test_workflow_lineage.py` (13 tests)
+
+- **Build (5):** None for empty ledger; None for unknown workflow; resolves latest when id omitted; steps sorted by step_id; terminal status comes from last step.
+- **Summary extraction (1):** AgentOutput summary surfaces correctly.
+- **Rendering (2):** Mermaid block + caption table present; status-styling lines emitted for known statuses.
+- **Serialization (1):** `to_dict` includes correct edge count.
+- **CLI integration (4):** text output contains Mermaid; JSON output shape; empty ledger returns SUCCESS with message; unknown workflow → `found: false`.
+
+### Verification
+
+- `python -m pytest tests/test_workflow_lineage.py -q` → 13 passed in ~0.5s.
+- Full suite: `python -m pytest -q` → **2150 passed, 1 skipped, 109 subtests passed** (+13 from 2137).
+- `ruff check mythic_vibe_cli tests scripts tools` → clean (one F401 fixed mid-slice).
+- `mypy mythic_vibe_cli` → no issues found in **149** source files (+1 — `workflow_lineage.py`).
+
+### Operating-discipline carry
+
+- Strict additive: read-only against existing PH-03 artifacts. Zero changes to `forge.py`, `forge_ledger.py`, `forge_reflection.py`. The lineage viewer is a sibling, not a replacement.
+- Per compatibility-policy §3, the new subcommand + JSON shape are MINOR additions on a stable surface.
+- Mermaid renders cleanly in GitHub markdown, VS Code preview, and most major static-site generators. The caption table below the diagram covers all other readers (terminal, plain editor).
+
+### Next: slice 20.D — context budget optimizer
+
+Per-role token-aware packet trimming in `codex_bridge:PacketBuilder`.
+
+`STATUS: OPEN — SLICE 20.C CLOSED — IN PROGRESS: 20.D`

@@ -498,6 +498,25 @@ def build_parser() -> argparse.ArgumentParser:
     workflow_history.add_argument("--limit", type=int, default=0, help="Show only the first N entries (newest first)")
     add_runtime_options(workflow_history, json_output=True)
 
+    # Phase 20.C (audit remediation 2026-05-03): workflow lineage
+    # viewer. Reads forge_ledger entries; emits Mermaid markdown
+    # or structured JSON.
+    workflow_lineage = workflow_sub.add_parser(
+        "lineage",
+        help="Render a workflow's per-step graph from the forge ledger.",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe workflow lineage
+              mythic-vibe workflow lineage --workflow WF-000123
+              mythic-vibe workflow lineage --json
+            """
+        ),
+    )
+    workflow_lineage.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    workflow_lineage.add_argument("--workflow", default="", help="Workflow id to render (default: most recent in ledger).")
+    add_runtime_options(workflow_lineage, json_output=True)
+
     handoff = sub.add_parser("handoff", help="Create, inspect, or list session handoff records")
     add_runtime_options(handoff, json_output=True, dry_run=True)
     handoff_sub = handoff.add_subparsers(dest="handoff_command", required=True)
