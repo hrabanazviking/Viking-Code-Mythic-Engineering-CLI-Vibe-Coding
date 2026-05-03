@@ -712,6 +712,68 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_runtime_options(surface_chat, json_output=True)
 
+    # v1.0 / Hermes (2026-05-03): agent control-plane HTTP server.
+    surface_hermes = surface_sub.add_parser(
+        "hermes",
+        help=(
+            "Launch the Hermes agent control-plane HTTP server "
+            "(token-protected JSON API)"
+        ),
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe surface hermes
+              mythic-vibe surface hermes --bind 127.0.0.1 --port 8770 --token "$TOKEN"
+              mythic-vibe surface hermes --json    # prints token + URL, then exits before serving (rehearsal mode is below)
+            """
+        ),
+    )
+    surface_hermes.add_argument(
+        "--path", default=".", help="Project directory (default: current directory)"
+    )
+    surface_hermes.add_argument(
+        "--bind", default="127.0.0.1",
+        help="Bind address (default: 127.0.0.1 — loopback only)",
+    )
+    surface_hermes.add_argument(
+        "--port", type=int, default=8770,
+        help="TCP port (default: 8770; distinct from web terminal's 8765)",
+    )
+    surface_hermes.add_argument(
+        "--token", default="",
+        help="Auth token (32-byte URL-safe). Auto-generated when omitted.",
+    )
+    add_runtime_options(surface_hermes, json_output=True)
+
+    # v1.0 / Hermes (2026-05-03): top-level introspection command.
+    hermes_cmd = sub.add_parser(
+        "hermes",
+        help="Inspect Hermes agent tools / invoke tools directly from the CLI.",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe hermes tools
+              mythic-vibe hermes tools --json
+              mythic-vibe hermes inspect --tool packet_create
+              mythic-vibe hermes invoke --tool status
+              mythic-vibe hermes invoke --tool checkin --args '{"phase":"build","update":"..."}'
+            """
+        ),
+    )
+    hermes_sub = hermes_cmd.add_subparsers(dest="hermes_command", required=True)
+    hermes_tools = hermes_sub.add_parser("tools", help="List registered tools.")
+    hermes_tools.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    add_runtime_options(hermes_tools, json_output=True)
+    hermes_inspect = hermes_sub.add_parser("inspect", help="Show one tool's full spec.")
+    hermes_inspect.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    hermes_inspect.add_argument("--tool", required=True, help="Tool name to inspect.")
+    add_runtime_options(hermes_inspect, json_output=True)
+    hermes_invoke = hermes_sub.add_parser("invoke", help="Invoke a tool directly from the CLI (without HTTP).")
+    hermes_invoke.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    hermes_invoke.add_argument("--tool", required=True, help="Tool name to invoke.")
+    hermes_invoke.add_argument("--args", default="", help="JSON-object string of arguments (default: empty).")
+    add_runtime_options(hermes_invoke, json_output=True)
+
     grimoire = sub.add_parser("grimoire", help="Manage plugins")
     add_runtime_options(grimoire)
     grimoire_sub = grimoire.add_subparsers(dest="grimoire_command", required=True)

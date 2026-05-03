@@ -3657,11 +3657,202 @@ def cmd_surface_dispatch(args: argparse.Namespace) -> int:
         return cmd_surface_ssh_doctor(args)
     if sub == "chat":
         return cmd_surface_chat(args)
+    # v1.0 / Hermes: agent control plane HTTP server.
+    if sub == "hermes":
+        return cmd_surface_hermes(args)
     write_error(
         f"Unknown surface subcommand: {sub!r}. "
-        "Try `mythic-vibe surface web | ssh-doctor | chat --help`."
+        "Try `mythic-vibe surface web | ssh-doctor | chat | hermes --help`."
     )
     return USER_INPUT_ERROR
+
+
+def cmd_surface_hermes(args: argparse.Namespace) -> int:
+    """v1.0 / Hermes — launch the agent control-plane HTTP server.
+
+    Token-protected JSON API exposing the curated tool registry.
+    Default bind ``127.0.0.1``; external exposure requires
+    explicit ``--bind 0.0.0.0`` + (responsibly) a TLS reverse proxy.
+    """
+    import secrets as _secrets
+    from .agent_api.http_api import (
+        DEFAULT_HOST as HERMES_DEFAULT_HOST,
+        DEFAULT_PORT as HERMES_DEFAULT_PORT,
+        HermesHttpConfig,
+        HermesHttpServer,
+    )
+    from .agent_api.tcl import build_default_agent
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    host = str(getattr(args, "bind", "") or HERMES_DEFAULT_HOST)
+    port = int(getattr(args, "port", 0) or HERMES_DEFAULT_PORT)
+    token = str(getattr(args, "token", "") or "").strip()
+    if not token:
+        token = _secrets.token_urlsafe(32)
+
+    agent = build_default_agent(root=root)
+    config = HermesHttpConfig(core=agent.core, host=host, port=port, token=token)
+
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "surface hermes",
+                "host": config.host,
+                "port": config.port,
+                "token": config.token,
+                "url": f"http://{config.host}:{config.port}/api/health",
+                "tool_count": len(agent.list_tools()),
+            }
+        )
+        return SUCCESS
+
+    write_line("Mythic Vibe CLI - Hermes Agent surface launching")
+    write_key_value("URL", f"http://{config.host}:{config.port}/api/health")
+    write_key_value("Token", config.token)
+    write_key_value("Tool count", len(agent.list_tools()))
+    write_line(
+        "  Pass the token in the X-Hermes-Token header OR as a 'token' "
+        "field in POST bodies. Press Ctrl-C to stop."
+    )
+    server = HermesHttpServer(config=config)
+    try:
+        server.start()
+    except KeyboardInterrupt:
+        write_line("Hermes surface stopped.")
+        server.stop()
+    return SUCCESS
+
+
+def cmd_hermes(args: argparse.Namespace) -> int:
+    """v1.0 / Hermes — top-level introspection command. Three
+    subcommands:
+
+    - ``hermes tools`` — list registered tools (text or JSON)
+    - ``hermes invoke --tool NAME [--args JSON]`` — invoke one tool
+      directly from the CLI without spinning up the HTTP server
+    - ``hermes inspect --tool NAME`` — show one tool's full spec
+    """
+    sub = getattr(args, "hermes_command", "") or ""
+    if sub == "tools":
+        return cmd_hermes_tools(args)
+    if sub == "invoke":
+        return cmd_hermes_invoke(args)
+    if sub == "inspect":
+        return cmd_hermes_inspect(args)
+    write_error(
+        f"Unknown hermes subcommand: {sub!r}. "
+        "Try `mythic-vibe hermes tools | invoke | inspect --help`."
+    )
+    return USER_INPUT_ERROR
+
+
+def cmd_hermes_tools(args: argparse.Namespace) -> int:
+    from .agent_api.tcl import build_default_agent
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    agent = build_default_agent(root=root)
+    tools = agent.list_tools()
+    if _flag(args, "json"):
+        write_json({"command": "hermes tools", "path": str(root), "tools": tools})
+        return SUCCESS
+    write_line("Hermes registered tools")
+    write_key_value("Path", root)
+    write_key_value("Total", len(tools))
+    for tool in tools:
+        write_bullet(
+            f"{tool['name']} — {tool['description']}",
+            indent=2,
+        )
+        if tool.get("capabilities"):
+            write_bullet(
+                f"capabilities: {', '.join(tool['capabilities'])}",
+                indent=4,
+            )
+        if tool.get("side_effects"):
+            for se in tool["side_effects"]:
+                write_bullet(f"side-effect: {se}", indent=4)
+    return SUCCESS
+
+
+def cmd_hermes_invoke(args: argparse.Namespace) -> int:
+    import json as _json
+    from .agent_api import Invocation
+    from .agent_api.tcl import build_default_agent
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    tool = (getattr(args, "tool", "") or "").strip()
+    if not tool:
+        write_error("--tool is required")
+        return USER_INPUT_ERROR
+    raw_args = (getattr(args, "args", "") or "").strip()
+    parsed_args: dict[str, object] = {}
+    if raw_args:
+        try:
+            parsed_args = _json.loads(raw_args)
+            if not isinstance(parsed_args, dict):
+                raise ValueError("--args must decode to a JSON object")
+        except (ValueError, _json.JSONDecodeError) as exc:
+            write_error(f"--args is not valid JSON object: {exc}")
+            return USER_INPUT_ERROR
+
+    agent = build_default_agent(root=root)
+    result = agent.core.invoke(Invocation(tool=tool, args=parsed_args))
+
+    if _flag(args, "json"):
+        write_json({
+            "command": "hermes invoke",
+            "path": str(root),
+            **result.to_dict(),
+        })
+        return SUCCESS if result.ok else OPERATIONAL_FAILURE
+
+    write_line("Hermes invoke")
+    write_key_value("Path", root)
+    write_key_value("Tool", tool)
+    write_key_value("Status", result.status)
+    write_key_value("Elapsed (ms)", round(result.elapsed_ms, 2))
+    if result.error:
+        write_key_value("Error", result.error)
+    if result.ok:
+        write_line("Result:")
+        write_line(_json.dumps(result.value, indent=2, default=str))
+    return SUCCESS if result.ok else OPERATIONAL_FAILURE
+
+
+def cmd_hermes_inspect(args: argparse.Namespace) -> int:
+    from .agent_api.tcl import build_default_agent
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    tool = (getattr(args, "tool", "") or "").strip()
+    if not tool:
+        write_error("--tool is required")
+        return USER_INPUT_ERROR
+    agent = build_default_agent(root=root)
+    matches = [t for t in agent.list_tools() if t["name"] == tool]
+    if not matches:
+        write_error(
+            f"Unknown tool: {tool!r}. "
+            f"Available: {sorted(t['name'] for t in agent.list_tools())}"
+        )
+        return USER_INPUT_ERROR
+    spec = matches[0]
+    if _flag(args, "json"):
+        write_json({"command": "hermes inspect", "tool": spec})
+        return SUCCESS
+    import json as _json
+    write_line(f"Tool: {spec['name']}")
+    write_key_value("Description", spec["description"])
+    write_key_value(
+        "Capabilities",
+        ", ".join(spec["capabilities"]) or "(none — read-own-context only)",
+    )
+    if spec.get("side_effects"):
+        write_line("Side effects:")
+        for se in spec["side_effects"]:
+            write_bullet(se, indent=2)
+    write_line("Input schema:")
+    write_line(_json.dumps(spec["input_schema"], indent=2))
+    return SUCCESS
 
 
 def cmd_simulate(args: argparse.Namespace) -> int:
@@ -7188,6 +7379,8 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "persona": cmd_persona,
     # Phase 20.H (additive 2026-05-03): architecture review.
     "review": cmd_review,
+    # v1.0 / Hermes (2026-05-03): top-level agent introspection.
+    "hermes": cmd_hermes,
     "ai": cmd_ai_dispatch,
     "verify": cmd_verify_dispatch,
     "slash": cmd_slash_dispatch,
