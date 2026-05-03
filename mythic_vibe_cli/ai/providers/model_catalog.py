@@ -630,9 +630,12 @@ def list_models(
 
 
 __all__ = [
+    "CatalogFreshness",
     "ModelInfo",
     "ModelListing",
     "ProviderListingError",
+    "STATIC_LAST_UPDATED",
+    "evaluate_catalog_freshness",
     "fetch_anthropic_models_remote",
     "fetch_gemini_models_remote",
     "fetch_openai_models_remote",
@@ -640,3 +643,99 @@ __all__ = [
     "list_models",
     "list_models_static",
 ]
+
+
+# ---------------------------------------------------------------------------
+# Phase 19.8 (audit remediation 2026-05-02) — stale-catalog watchdog.
+#
+# AI providers ship new models monthly; an out-of-date static catalog
+# means ``mythic-vibe ai models`` returns plausible-but-stale answers
+# without any signal that they are stale. The doctor command surfaces
+# the catalog age as a warning so operators (and CI) can spot drift
+# before users do.
+#
+# Public surface:
+#   - ``STATIC_LAST_UPDATED`` — re-export of the curator-edited cutoff
+#     date for callers that want a stable name (the underscore-prefixed
+#     ``_STATIC_LAST_UPDATED`` above is treated as internal).
+#   - ``CatalogFreshness`` — dataclass with the three pieces a doctor
+#     check needs (last_updated, days_since_update, is_stale) plus a
+#     ``to_dict`` for JSON output.
+#   - ``evaluate_catalog_freshness`` — pure function: takes the
+#     staleness threshold + an optional ``today`` injection point
+#     (for tests) and returns a CatalogFreshness.
+# ---------------------------------------------------------------------------
+
+from datetime import date as _date_type, datetime as _datetime  # noqa: E402
+
+STATIC_LAST_UPDATED = _STATIC_LAST_UPDATED
+
+# 90 days = roughly one release cycle for the major model providers.
+# Long enough that small refresh windows don't false-positive; short
+# enough that a forgotten quarter shows up clearly.
+DEFAULT_CATALOG_STALENESS_DAYS = 90
+
+
+@dataclass(frozen=True)
+class CatalogFreshness:
+    """Result of a single freshness evaluation. ``last_updated`` is
+    the ISO date pinned in the static catalog. ``days_since_update``
+    is computed against ``today`` (today := UTC current date by
+    default). ``is_stale`` is True iff that gap exceeds the
+    threshold. ``parse_error`` carries the message when
+    ``last_updated`` cannot be parsed (defensive — the catalog string
+    has been ISO since slice D, but operators sometimes hand-edit
+    forks)."""
+
+    last_updated: str
+    threshold_days: int
+    days_since_update: int
+    is_stale: bool
+    parse_error: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "last_updated": self.last_updated,
+            "threshold_days": self.threshold_days,
+            "days_since_update": self.days_since_update,
+            "is_stale": self.is_stale,
+            "parse_error": self.parse_error,
+        }
+
+
+def evaluate_catalog_freshness(
+    *,
+    threshold_days: int = DEFAULT_CATALOG_STALENESS_DAYS,
+    today: _date_type | None = None,
+    last_updated: str = STATIC_LAST_UPDATED,
+) -> CatalogFreshness:
+    """Compare ``last_updated`` (ISO YYYY-MM-DD) against ``today``.
+    Returns a :class:`CatalogFreshness` with the boolean ``is_stale``
+    flag set when the gap exceeds ``threshold_days``.
+
+    A malformed ``last_updated`` string is treated as **stale** and
+    surfaces the parse error in ``parse_error`` — corrupt metadata
+    should err on the side of warning the operator, not silently
+    passing.
+    """
+    if today is None:
+        today = _datetime.utcnow().date()
+
+    try:
+        parsed = _datetime.strptime(last_updated, "%Y-%m-%d").date()
+    except (TypeError, ValueError) as exc:
+        return CatalogFreshness(
+            last_updated=str(last_updated),
+            threshold_days=threshold_days,
+            days_since_update=-1,
+            is_stale=True,
+            parse_error=str(exc) or "invalid date",
+        )
+
+    delta = (today - parsed).days
+    return CatalogFreshness(
+        last_updated=last_updated,
+        threshold_days=threshold_days,
+        days_since_update=delta,
+        is_stale=delta > threshold_days,
+    )
