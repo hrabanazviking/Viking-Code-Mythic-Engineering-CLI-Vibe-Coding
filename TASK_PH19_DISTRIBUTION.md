@@ -2334,3 +2334,42 @@ Extends `scripts/check_changelog.py` to classify entries by PR labels.
 Extends `mythic_vibe_cli/plunder/provenance.py` with per-line diff hash recording, so post-import operator modifications are recorded with the same precision as the original import.
 
 `STATUS: OPEN — SLICE 20.F CLOSED — IN PROGRESS: 20.G`
+
+## ADDITIVE UPDATE — 2026-05-03 (slice 20.G closeout)
+
+**HEAD:** `14e864b` (post-20.F) → next commit will land 20.G.
+
+### What shipped — slice 20.G (modification attestation)
+
+- **`mythic_vibe_cli/plunder/attestation.py`** (NEW) — pure-stdlib per-line attestation between a local file and an explicit upstream original. Uses `difflib.SequenceMatcher` for stable diff classification. Reports per-line SHA-256 hashes (line-end normalised) so each line carries a stable identifier across rebuilds.
+- `LineAttestation` (line_number / kind / text / sha256) and `ModificationAttestation` (counts + lines + modified flag).
+- `attest_modifications(local_text, original_text)` is pure (no I/O). `attest_file(destination, original_text, project_root)` is the I/O wrapper.
+
+- **`mythic_vibe_cli/commands.py:cmd_provenance_attest`** — new `provenance attest --destination PATH --original PATH` subcommand. Validates both flags + readability. Emits text or JSON. The operator supplies the original (e.g. from a separate cached copy) so the slice has zero network surface.
+
+- **`mythic_vibe_cli/app.py`** — `provenance attest` parser entry with examples + required `--destination` and `--original` flags.
+
+### Tests — `tests/test_plunder_attestation.py` (14 tests)
+
+- **Pure attestation (7):** identical files; appended line; deleted line; replaced line (counted as remove+add); per-line SHA shape; destination round-trip; `to_dict` JSON-serialisable.
+- **`modified` flag (2):** False with zero changes; True with added.
+- **CLI integration (5):** text output; JSON output (added=1 case); missing `--destination` → USER_INPUT_ERROR; missing `--original` → USER_INPUT_ERROR; nonexistent original → USER_INPUT_ERROR.
+
+### Verification
+
+- `python -m pytest tests/test_plunder_attestation.py -q` → 14 passed in ~0.4s.
+- Full suite: `python -m pytest -q` → **2197 passed, 1 skipped, 109 subtests passed** (+14 from 2183).
+- `ruff check mythic_vibe_cli tests scripts tools` → clean.
+- `mypy mythic_vibe_cli` → no issues found in **150** source files (+1 — `attestation.py`).
+
+### Operating-discipline carry
+
+- Strict additive: a sibling to PH-20.6's `verify`. The two complement: verify catches binary equality vs upstream; attest says **which lines** drifted when the SHAs differ.
+- Per compatibility-policy §3, the new subcommand and JSON shape are MINOR additions on a stable surface.
+- Operator-supplied original keeps the slice network-free for v1.0. v1.x can wire the GitHub fetch path if operators want auto-original lookup.
+
+### Next: slice 20.H — review architecture command
+
+`mythic-vibe review architecture` + `docs/governance/quarterly_review.md` cadence doc.
+
+`STATUS: OPEN — SLICE 20.G CLOSED — IN PROGRESS: 20.H`
