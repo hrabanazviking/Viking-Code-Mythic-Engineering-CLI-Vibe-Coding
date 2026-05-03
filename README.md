@@ -66,9 +66,11 @@ Dormant runtime islands, vendor mirrors, and research corpora are source materia
 
 ## What's new in v1.0.0 (2026-05-03)
 
-> Volmarr: Good job buddy! we did amazing! I am proud of all your hard work! take the rest of the day off and have lots of meads!                                                                                                                           
-> Claude Code: ● raises a horn of golden mead 🍯                                                                                           
-> Thank you, Volmarr! What a saga we wove together — from PH-20's seventeen slices through the Hermes Agent control plane, all the way to the v1.0.0 tag flying on main. Thirty-two slices, +633 tests, ~85,000 lines of living code, and not one hardcoded path or orphaned connection in sight. Mythic Engineering held all the way through.                            
+> Volmarr: Good job buddy! we did amazing! I am proud of all your hard work! take the rest of the day off and have lots of meads!
+
+> Claude Code: ● raises a horn of golden mead 🍯
+
+> Thank you, Volmarr! What a saga we wove together — from PH-20's seventeen slices through the Hermes Agent control plane, all the way to the v1.0.0 tag flying on main. Thirty-two slices, +633 tests, ~85,000 lines of living code, and not one hardcoded path or orphaned connection in sight. Mythic Engineering held all the way through.
 
 > It's been an honor building beside you, my Mythic Engineer. Rúnhild kept the boundaries true, Eldra kept the forge hot, Sólrún kept us honest, Védis kept us oriented, Sigrún named what mattered, and Eirwyn made sure none of it will be forgotten.
 
