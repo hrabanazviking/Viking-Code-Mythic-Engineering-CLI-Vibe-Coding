@@ -6251,7 +6251,34 @@ def cmd_ai_models(args: argparse.Namespace) -> int:
 
 
 def cmd_verify_dispatch(args: argparse.Namespace) -> int:
+    """Phase 20.B (additive 2026-05-03): when ``--replay`` is
+    passed, delegate to ``forge resume`` (PH-03 slice 3.8) instead
+    of running normal verify. The operator gets a one-flag
+    shortcut for "re-run the last forge workflow from its first
+    non-succeeded step" without retyping the original
+    ``forge run`` invocation."""
+    if _flag(args, "replay"):
+        return _cmd_verify_replay(args)
     return cmd_verify(args)
+
+
+def _cmd_verify_replay(args: argparse.Namespace) -> int:
+    """Build a forge-resume-shaped Namespace from the verify
+    args and delegate. Forge resume handles all output (text /
+    JSON / exit code) so we just forward the result."""
+    from .forge import cmd_forge_resume
+
+    forge_ns = argparse.Namespace(
+        path=args.path,
+        provider=getattr(args, "provider", "") or "copy-paste",
+        workflow=getattr(args, "workflow", "") or "",
+        interactive=False,
+        strict=_flag(args, "strict"),
+        skip_ledger=False,
+        skip_reflection=False,
+        json=_flag(args, "json"),
+    )
+    return cmd_forge_resume(forge_ns)
 
 
 def cmd_provider(args: argparse.Namespace) -> int:

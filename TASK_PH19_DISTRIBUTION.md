@@ -2145,3 +2145,40 @@ Opt-in `--preset solo|team-lead|auditor` flag. Default behavior preserved.
 Thin shortcut that delegates to `forge resume` machinery. Probably ~1h.
 
 `STATUS: OPEN — SLICE 20.A CLOSED — IN PROGRESS: 20.B`
+
+## ADDITIVE UPDATE — 2026-05-03 (slice 20.B closeout)
+
+**HEAD:** `f05a43a` (post-20.A) → next commit will land 20.B.
+
+### What shipped — slice 20.B (`verify --replay` shortcut)
+
+- **`mythic_vibe_cli/app.py`** — `verify` parser gains four new flags: `--replay`, `--provider`, `--workflow`, `--strict`. The flags only matter when `--replay` is set; existing flat verify invocations are byte-identical.
+- **`mythic_vibe_cli/commands.py:cmd_verify_dispatch`** — new branch: if `--replay` is set, build a forge-resume-shaped Namespace and delegate to `cmd_forge_resume` (PH-03 slice 3.8). Default provider is `copy-paste` when unspecified. Forwards `--workflow`, `--strict`, and `--json`. Exit code passes through verbatim.
+
+### Tests — `tests/test_verify_replay.py` (6 tests, all mocking)
+
+- **No-replay path unchanged:** `cmd_verify_dispatch(ns)` still calls `cmd_verify(ns)` exactly when `--replay` is absent (regression guard).
+- **Replay → forge resume:** `cmd_forge_resume` is invoked with a Namespace whose fields match the forge-resume contract.
+- **Default provider:** `copy-paste` when `--provider` is omitted.
+- **`--strict` forwards.**
+- **`--workflow ID` forwards.**
+- **Exit code passes through.**
+
+### Verification
+
+- `python -m pytest tests/test_verify_replay.py -q` → 6 passed in ~0.3s.
+- Full suite: `python -m pytest -q` → **2137 passed, 1 skipped, 109 subtests passed** (+6 from 2131).
+- `ruff check mythic_vibe_cli tests scripts tools` → clean.
+- `mypy mythic_vibe_cli` → no issues found in 148 source files (no new source files in this slice).
+
+### Operating-discipline carry
+
+- Strict additive: zero behavioral change to the existing flat `verify` command. The four new flags are inert when `--replay` is unset — no JSON shape change either.
+- Per compatibility-policy §3, the new flags are MINOR additions on a stable surface.
+- Per the plan ("verify replay command — thin shortcut that delegates to forge resume"), the entire shortcut lives in ~20 lines plus argparse plumbing. No duplication of the resume machinery.
+
+### Next: slice 20.C — workflow lineage viewer
+
+Reads existing `forge_reflection` + `forge_ledger` data and emits a graph view (markdown + JSON).
+
+`STATUS: OPEN — SLICE 20.B CLOSED — IN PROGRESS: 20.C`
