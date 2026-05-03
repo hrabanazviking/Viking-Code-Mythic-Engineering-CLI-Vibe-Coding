@@ -2221,3 +2221,45 @@ Reads existing `forge_reflection` + `forge_ledger` data and emits a graph view (
 Per-role token-aware packet trimming in `codex_bridge:PacketBuilder`.
 
 `STATUS: OPEN — SLICE 20.C CLOSED — IN PROGRESS: 20.D`
+
+## ADDITIVE UPDATE — 2026-05-03 (slice 20.D closeout)
+
+**HEAD:** `4c210cb` (post-20.C) → next commit will land 20.D.
+
+### What shipped — slice 20.D (per-role context budget optimizer)
+
+- **`mythic_vibe_cli/codex_bridge.py`** — additive `ROLE_BUDGET_MULTIPLIERS` + `MIN_PACKET_BUDGET` constants:
+  - Skald 0.7x (framing role; less code context)
+  - Architect 1.2x
+  - Cartographer 1.0x
+  - Forge Worker 1.5x (most code context needed)
+  - Auditor 1.3x
+  - Scribe 0.8x
+  - Debugger 1.5x
+  - Refactorer 1.5x
+  - Unknown role: 1.0x (no change — backwards-compat)
+- `_compact_sections` now accepts `role: str | None = None`. When `role` is None or unknown, behavior is byte-identical to pre-20.D. Known roles trigger the multiplier; result floored at `MIN_PACKET_BUDGET = 400` so an absurdly small base budget still produces usable packets.
+- The single existing call site in `_render_packet` now passes `role=request.role`.
+
+### Tests — `tests/test_packet_budget_per_role.py` (9 tests)
+
+- **Multiplier table (4):** all six canonical roles present; Skald < 1.0; Forge Worker > 1.0; `MIN_PACKET_BUDGET > 0`.
+- **`_compact_sections` (5):** `role=None` preserves pre-20.D behavior; Skald budget shrinks effective budget so compaction triggers earlier; Forge Worker budget grows so compaction skips; unknown role == baseline; floor prevents pathological compaction at tiny base budget.
+
+### Verification
+
+- `python -m pytest tests/test_packet_budget_per_role.py -q` → 9 passed in ~0.3s.
+- Full suite: `python -m pytest -q` → **2159 passed, 1 skipped, 109 subtests passed** (+9 from 2150).
+- `ruff check mythic_vibe_cli tests scripts tools` → clean.
+- `mypy mythic_vibe_cli` → no issues found in 149 source files (no new file in this slice).
+
+### Operating-discipline carry
+
+- Strict additive: `_compact_sections` gained an optional kwarg with a default that preserves old behavior. The internal call site updates pass the role. Existing callers (test fixtures, etc.) that use the function with positional args continue to work.
+- Per compatibility-policy §3, this is an internal implementation detail (no public API change). The packet output may shrink/grow by ~10-30% per role at the same `packet_char_budget` setting — operators sensitive to that can pin the multiplier table or set `auto_compact = false`.
+
+### Next: slice 20.E — drift dashboard
+
+Wraps existing `drift.py` with `mythic-vibe drift dashboard` emitting markdown + JSON scorecard.
+
+`STATUS: OPEN — SLICE 20.D CLOSED — IN PROGRESS: 20.E`
