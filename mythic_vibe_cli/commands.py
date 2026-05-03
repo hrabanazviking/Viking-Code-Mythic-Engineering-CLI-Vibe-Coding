@@ -5881,6 +5881,11 @@ def cmd_shell(args: argparse.Namespace) -> int:
 def cmd_tui(args: argparse.Namespace) -> int:
     project_root = Path(getattr(args, "path", ".")).resolve()
     theme = getattr(args, "theme", None)
+    # Phase 20.I (additive 2026-05-03): parse opt-in panels.
+    # Pre-resolved here so the textual code path stays as
+    # narrow as possible.
+    from .tui_panels import parse_panels
+    panels = parse_panels(getattr(args, "panels", "") or "")
     try:
         from .tui.app import run_tui
     except ImportError as exc:
@@ -5890,7 +5895,18 @@ def cmd_tui(args: argparse.Namespace) -> int:
         )
         write_error(f"Underlying import error: {exc}")
         return OPERATIONAL_FAILURE
-    return run_tui(project_root, theme=theme)
+    # Forward the panels selection to run_tui via a kwarg if it
+    # accepts one; otherwise stash on os.environ so widget code
+    # can pick it up at render time without changing function
+    # signatures across the TUI module boundary.
+    try:
+        return run_tui(project_root, theme=theme, panels=panels)  # type: ignore[call-arg]
+    except TypeError:
+        # run_tui hasn't grown the panels kwarg yet — fall back
+        # to env var. Non-blocking; TUI still renders.
+        if panels:
+            os.environ["MYTHIC_TUI_PANELS"] = ",".join(panels)
+        return run_tui(project_root, theme=theme)
 
 
 def cmd_ai_stream(args: argparse.Namespace) -> int:

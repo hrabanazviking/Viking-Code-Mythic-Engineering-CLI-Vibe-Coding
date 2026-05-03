@@ -1430,6 +1430,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="Override the initial Textual theme (default: textual-dark). "
         "Use 't' inside the TUI to cycle through a curated subset.",
     )
+    # Phase 20.I (audit remediation 2026-05-03): opt-in panels.
+    # Comma-separated list. Recognised values: heatmap, risk.
+    # Default empty preserves the existing TUI shape.
+    tui.add_argument(
+        "--panels",
+        default="",
+        metavar="LIST",
+        help="Opt-in TUI panels (comma-separated). Recognised: heatmap, risk. Default: none.",
+    )
     add_runtime_options(tui)
 
     # --- PH-02 slice 2.2: developer-tool shortcuts ---
