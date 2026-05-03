@@ -2,6 +2,14 @@
 
 How to run the Mythic Vibe CLI under an SSH session — both interactive and scripted.
 
+> **v1.0 threat-model context.** The web-terminal surface (asset
+> **A4** in [`docs/security/threat_model.md`](security/threat_model.md))
+> binds to `127.0.0.1` by default; SSH forwarding is the supported
+> remote-access path. The PH-19.0 hardening sweep added explicit
+> request-body caps + per-connection socket timeouts (BS-1) — the
+> bridge no longer hangs on a misbehaving client that advertises a
+> huge `Content-Length`.
+
 ## Interactive SSH
 
 The default config works out of the box. SSH inherits a TTY, so:
@@ -49,7 +57,12 @@ The web terminal binds to `127.0.0.1` only by default — SSH forwarding is the 
 
 ## Multi-user SSH
 
-The CLI keeps per-project state in `mythic/`. If multiple operators SSH into the same machine and run commands against the same project root, race conditions are bounded by the slice-2 file mutation queue, but operator-level concurrency (two operators running `mythic-vibe ai run` simultaneously) is not coordinated.
+The CLI keeps per-project state in `mythic/`. If multiple operators SSH into the same machine and run commands against the same project root, the v1.0 hardening covers:
+
+- **Intra-process** writes serialize via `runtime/file_mutation_queue.py` (per-realpath `threading.Lock`).
+- **Cross-process** writes can serialize via `runtime/cross_process_lock.py` (POSIX `fcntl.flock` / Windows `msvcrt.locking`) — opt-in for callers, wired into `forge_ledger.py` and into `JsonStateStore.FileLock(cross_process=True)`.
+
+These cover concurrent-write races on shared files. Operator-level concurrency at the workflow layer (two operators running `mythic-vibe ai run` simultaneously against the same packet) is still not coordinated above the file-lock layer.
 
 For multi-operator setups, one of:
 

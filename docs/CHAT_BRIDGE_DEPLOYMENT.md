@@ -1,9 +1,16 @@
 # Chat Bridge Deployment Guide
 
 **Phase E** of the 2026-05-02 audit remediation shipped a real,
-runnable Matrix + Telegram chat bridge. This guide tells operators
+runnable Matrix + Telegram chat bridge — bound into the v1.0.0
+release as the canonical chat surface. This guide tells operators
 how to deploy it safely on Linux (systemd), Windows (NSSM), and
 macOS (launchd), with the security caveats they need to honour.
+
+> **Threat-model context.** The bridge is asset **A5** in
+> [`docs/security/threat_model.md`](security/threat_model.md). The
+> attacker profile, threat rows (A5.1 / A5.2 / A5.3), and explicit
+> mitigations are all documented there. Read both this guide AND
+> the threat model before running the bridge in production.
 
 ---
 

@@ -34,3 +34,15 @@ Run:
 mythic-vibe doctor --repo-boundary --path .
 pytest -q
 ```
+
+### v1.0 verification additions (2026-05-03)
+
+Subsequent slices added mechanical drift gates that further protect this boundary. They are advisory-via-CI today; the decision text above is unchanged:
+
+```bash
+python tools/contract_audit.py --strict   # PH-19.2 — every argparse handler must be documented
+ruff check mythic_vibe_cli tests scripts tools
+mypy mythic_vibe_cli
+```
+
+The compatibility-policy contract in [`docs/compatibility_policy.md`](../compatibility_policy.md) (PH-19.6) became binding at v1.0.0; it complements (does not supersede) this ADR.
