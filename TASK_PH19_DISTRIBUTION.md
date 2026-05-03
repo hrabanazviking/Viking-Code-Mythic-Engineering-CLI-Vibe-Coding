@@ -2373,3 +2373,50 @@ Extends `mythic_vibe_cli/plunder/provenance.py` with per-line diff hash recordin
 `mythic-vibe review architecture` + `docs/governance/quarterly_review.md` cadence doc.
 
 `STATUS: OPEN — SLICE 20.G CLOSED — IN PROGRESS: 20.H`
+
+## ADDITIVE UPDATE — 2026-05-03 (slice 20.H closeout)
+
+**HEAD:** `13adc5d` (post-20.G) → next commit will land 20.H.
+
+### What shipped — slice 20.H (review architecture + cadence)
+
+- **`mythic_vibe_cli/architecture_review.py`** (NEW) — pure read-only review pass:
+  - Walks the canonical governance docs (`ARCHITECTURE.md`, `DOMAIN_MAP.md`, `DATA_FLOW.md`, `ACTIVE_PRODUCT_BOUNDARY.md`, `PHILOSOPHY.md`).
+  - Counts ADRs in `docs/ADRS/`.
+  - Reuses PH-13's `drift.scan_for_drift` + summary helpers.
+  - Auto-derives **open questions** from missing artefacts + drift severity.
+  - `render_review_markdown` produces a paste-ready agenda + 5-item reviewer checklist.
+
+- **`mythic_vibe_cli/commands.py:cmd_review` + `cmd_review_architecture`** — top-level `review` dispatcher with `architecture` subcommand. Wired into `COMMAND_HANDLERS`.
+- **`mythic_vibe_cli/app.py`** — `review architecture` parser entry.
+- **`mythic_vibe_cli/runtime/slash_commands.py`** — `/review` entry to satisfy the slash-catalog parity invariant.
+- **`tests/test_cli_kernel.py`** + **contract-audit baselines (test + tools)** — `review` added to all three.
+
+- **`docs/governance/quarterly_review.md`** (NEW) — cadence + agenda + scope-out doc. Covers quarterly trigger, the 5-step review walk, what's explicitly NOT in scope (hot-fixes, feature scoping, personnel), and how operators capture review logs under `mythic/governance/review-<YYYY-MM-DD>.md`.
+
+### Tests — `tests/test_architecture_review.py` (10 tests)
+
+- **Constants (1):** GOVERNANCE_DOCS lists expected files.
+- **`build_review_report` (3):** empty project flags missing artefacts; full project all-present + ADR count; ADR count excludes README, includes ADR-template (intentional — only `ADR-*.md` glob).
+- **`render_review_markdown` (2):** required sections present; `(none)` rendered when no open questions.
+- **CLI integration (3):** text output; JSON output; unknown subcommand → USER_INPUT_ERROR.
+- **Cadence doc (1):** `docs/governance/quarterly_review.md` exists with the right header + command reference (regression guard against accidental removal).
+
+### Verification
+
+- `python -m pytest tests/test_architecture_review.py -q` → 10 passed in ~0.4s.
+- Full suite: `python -m pytest -q` → **2207 passed, 1 skipped, 109 subtests passed** (+10 from 2197).
+- `ruff check mythic_vibe_cli tests scripts tools` → clean.
+- `mypy mythic_vibe_cli` → no issues found in **151** source files (+1 — `architecture_review.py`).
+
+### Operating-discipline carry
+
+- Strict additive: read-only command + new module + new doc + slash entry + 3-place baseline update. Existing surface byte-identical for callers that don't use `review`.
+- Per compatibility-policy §3, the new top-level command + subcommand + JSON shape are MINOR additions on a stable surface.
+- The cadence doc explicitly says no hard CI enforcement — that would be process bloat. Operators self-audit by file presence under `mythic/governance/`.
+
+### Next: slice 20.I — TUI heatmap + plugin risk panels
+
+Opt-in `--panels` flag on TUI. Default TUI stays unchanged.
+
+`STATUS: OPEN — SLICE 20.H CLOSED — IN PROGRESS: 20.I`

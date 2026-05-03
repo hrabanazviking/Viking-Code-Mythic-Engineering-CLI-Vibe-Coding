@@ -218,6 +218,10 @@ class LiveContractAuditTests(unittest.TestCase):
         # PH-20.A (additive 2026-05-03): persona presets — new
         # surface, doc page coming in 20.7 launch checklist.
         "persona",
+        # PH-20.H (additive 2026-05-03): architecture review
+        # command — doc page lands with the v1.0 launch
+        # checklist in 20.7.
+        "review",
     })
 
     def test_repo_contract_audit_clean_with_baseline(self) -> None:
