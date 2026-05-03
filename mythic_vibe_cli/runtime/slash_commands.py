@@ -153,6 +153,8 @@ BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
     BuiltinSlashCommand(name="persona", description="Apply or inspect operator persona presets (solo / team-lead / auditor)"),
     # Phase 20.H (additive 2026-05-03): architecture review.
     BuiltinSlashCommand(name="review", description="Generate governance review checklists (quarterly architecture review)"),
+    # v1.0 / Hermes (2026-05-03): agent control plane.
+    BuiltinSlashCommand(name="hermes", description="Hermes agent control plane — list / inspect / invoke tools (TCL + HTTP API)"),
 
     # --- Developer-tool shortcuts (PH-02 slice 2.2) ---
     BuiltinSlashCommand(name="test", description="Run the project's test suite (pytest by default; --command to override)"),

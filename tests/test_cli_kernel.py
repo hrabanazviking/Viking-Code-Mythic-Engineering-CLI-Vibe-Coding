@@ -78,6 +78,8 @@ class CliKernelTests(unittest.TestCase):
             "persona",
             # PH-20.H (audit remediation 2026-05-03)
             "review",
+            # v1.0 / Hermes (2026-05-03)
+            "hermes",
             "verify",
             "slash",
             "shell",
