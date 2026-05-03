@@ -149,6 +149,8 @@ BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
     BuiltinSlashCommand(name="plunder", description="Lawful single-file reuse from upstream Apache/MIT/BSD repositories"),
     # Phase 20.6 (additive 2026-05-03): provenance verification.
     BuiltinSlashCommand(name="provenance", description="Verify checksums of plunder-imported files against the recorded source SHA"),
+    # Phase 20.A (additive 2026-05-03): persona presets.
+    BuiltinSlashCommand(name="persona", description="Apply or inspect operator persona presets (solo / team-lead / auditor)"),
 
     # --- Developer-tool shortcuts (PH-02 slice 2.2) ---
     BuiltinSlashCommand(name="test", description="Run the project's test suite (pytest by default; --command to override)"),

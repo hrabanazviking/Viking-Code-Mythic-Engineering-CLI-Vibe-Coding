@@ -191,6 +191,9 @@ def main(argv: list[str] | None = None) -> int:
         "lint",
         "test",
         "typecheck",
+        # PH-20.A (additive 2026-05-03): persona presets — new
+        # surface, doc page coming in 20.7 launch checklist.
+        "persona",
     })
 
     code_only = audit(

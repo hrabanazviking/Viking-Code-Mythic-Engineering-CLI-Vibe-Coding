@@ -978,6 +978,48 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_runtime_options(provenance_verify, json_output=True)
 
+    # Phase 20.A (audit remediation 2026-05-03): persona
+    # presets — opt-in bundles of defaults. Default behavior
+    # across the rest of the CLI is preserved when no persona
+    # is applied.
+    persona_cmd = sub.add_parser(
+        "persona",
+        help="Apply or inspect operator persona presets (solo / team-lead / auditor).",
+    )
+    persona_sub = persona_cmd.add_subparsers(
+        dest="persona_command", required=True
+    )
+    persona_apply = persona_sub.add_parser(
+        "apply",
+        help="Write a preset to mythic/persona.json.",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe persona apply --preset solo
+              mythic-vibe persona apply --preset auditor --force
+            """
+        ),
+    )
+    persona_apply.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    persona_apply.add_argument(
+        "--preset",
+        required=True,
+        choices=["solo", "team-lead", "auditor"],
+        help="Persona preset to apply.",
+    )
+    persona_apply.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite an existing mythic/persona.json.",
+    )
+    add_runtime_options(persona_apply, json_output=True)
+    persona_show = persona_sub.add_parser(
+        "show",
+        help="Show the active persona (or 'none' when no preset is applied).",
+    )
+    persona_show.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    add_runtime_options(persona_show, json_output=True)
+
     ai = sub.add_parser("ai", help="Manage optional AI provider integrations")
     add_runtime_options(ai, json_output=True, dry_run=True)
     ai_sub = ai.add_subparsers(dest="ai_command", required=True)

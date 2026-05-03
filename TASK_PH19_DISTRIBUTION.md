@@ -2098,3 +2098,50 @@ to v1.x (PH-21.5).
 Opt-in `--preset solo|team-lead|auditor` flag. Default behavior preserved.
 
 `STATUS: OPEN — SLICE 20.6 CLOSED — IN PROGRESS: 20.A`
+
+## ADDITIVE UPDATE — 2026-05-03 (slice 20.A closeout)
+
+**HEAD:** `3010157` (post-20.6) → next commit will land 20.A.
+
+### What shipped — slice 20.A (persona presets, opt-in)
+
+- **`mythic_vibe_cli/personas.py`** (NEW) — three named bundles of defaults: `solo`, `team-lead`, `auditor`.
+  - `PersonaPreset` frozen dataclass (name, description, approval_mode, audience, audit_cadence_days, require_plugin_review).
+  - `apply_preset(root, name, *, force=False)` writes `mythic/persona.json` (atomic write); refuses to overwrite without `force=True`.
+  - `load_active_persona(root)` is **defensive** — never raises. Malformed file / unknown preset name → `state.error` set, `state.preset = None`. Callers fall through to their own defaults cleanly.
+
+- **`mythic_vibe_cli/commands.py`** — new `cmd_persona` dispatcher with `apply` and `show` subcommands. Wired into `COMMAND_HANDLERS`.
+
+- **`mythic_vibe_cli/app.py`** — `persona apply --preset NAME [--force]` + `persona show` parsers with examples.
+
+- **`mythic_vibe_cli/runtime/slash_commands.py`** — `/persona` entry to satisfy the slash-catalog parity invariant.
+
+- **`tests/test_cli_kernel.py`** + **`tests/test_contract_audit.py`** + **`tools/contract_audit.py`** — additive: `persona` added to the registry-snapshot expected set, the live contract-audit baseline, AND the `tools/contract_audit.py` runtime allowlist (so CI's strict-mode contract gate stays clean). All three places carry the same dated comment for traceability.
+
+### Tests — `tests/test_personas.py` (20 tests)
+
+- **Catalog (3):** three presets present; vocabulary locked; required fields populated.
+- **`get_preset` (3):** known name, case insensitive, unknown raises ValueError.
+- **`apply_preset` (3):** writes file, refuses overwrite, force overwrites.
+- **`load_active_persona` (4):** none when no file, loads applied preset, malformed JSON → error not raise, unknown preset name → error.
+- **CLI integration (7):** apply text output, apply invalid preset → USER_INPUT_ERROR, apply refuses overwrite → USER_INPUT_ERROR, apply --json shape, show when no persona, show after apply, unknown subcommand → USER_INPUT_ERROR.
+
+### Verification
+
+- `python -m pytest tests/test_personas.py -q` → 20 passed in ~0.4s.
+- Full suite: `python -m pytest -q` → **2131 passed, 1 skipped, 109 subtests passed** (+20 from 2111).
+- `python tools/contract_audit.py` → clean (allowlist updated).
+- `ruff check mythic_vibe_cli tests scripts tools` → clean (one F401 fixed mid-slice).
+- `mypy mythic_vibe_cli` → no issues found in **148** source files (+1 — `personas.py`).
+
+### Operating-discipline carry
+
+- **Default behavior preserved.** No existing command reads `mythic/persona.json` yet — that wiring is future-touch (operators apply a preset today; commands consume it in v1.x slices). The persona file's existence is itself opt-in.
+- Two places now hold the contract-audit baseline (the live test + the tools runtime). Both updated with the same dated comment so the next contributor sees the pattern.
+- Per compatibility-policy §3, the new top-level command + JSON schema are MINOR additions on a stable surface.
+
+### Next: slice 20.B — verify replay shortcut
+
+Thin shortcut that delegates to `forge resume` machinery. Probably ~1h.
+
+`STATUS: OPEN — SLICE 20.A CLOSED — IN PROGRESS: 20.B`

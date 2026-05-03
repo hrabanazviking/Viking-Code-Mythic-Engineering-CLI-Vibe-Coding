@@ -215,6 +215,9 @@ class LiveContractAuditTests(unittest.TestCase):
         "constraints", "docker", "drift", "graph", "hardware",
         "lint", "policy", "protocols", "provider", "release",
         "rollback", "scaffold", "security", "test", "typecheck",
+        # PH-20.A (additive 2026-05-03): persona presets — new
+        # surface, doc page coming in 20.7 launch checklist.
+        "persona",
     })
 
     def test_repo_contract_audit_clean_with_baseline(self) -> None:
