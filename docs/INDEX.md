@@ -43,6 +43,7 @@ This hub orients contributors to the active Mythic Vibe CLI product (v1.0.0) and
 - `docs/RELEASE_CHECKLIST.md` — release and packaging verification checklist + PH-19.7 tag-driven distribution flow.
 - `docs/CHAT_BRIDGE_DEPLOYMENT.md` — Matrix / Telegram bridge deployment (systemd / NSSM / launchd).
 - `docs/SSH_DEPLOYMENT.md` — SSH-surface deployment notes.
+- `docs/HERMES_AGENT.md` — **v1.0 agent control plane** — TCL (Python in-process) + HTTP API, 18 curated tools, security model.
 - `docs/INSTALL.md` — install matrix (also linked under "Start Here").
 - `docs/quickstart.md` — first workflow walkthrough (also linked under "Start Here").
 - `docs/SESSION_HANDOFF.md` — latest generated session handoff summary.
