@@ -116,6 +116,25 @@ jobs:
           echo "Wheel SHA256:  $WHEEL_SHA"
           echo "Sdist SHA256:  $SDIST_SHA"
 
+      # Phase 21.5 — Sigstore keyless signatures over the wheel +
+      # sdist + wheelhouse + SBOM. Uses GitHub Actions OIDC to
+      # request a short-lived certificate from Fulcio; signs the
+      # artifact; logs the signature in Rekor. Operators verify
+      # later with `python -m sigstore verify ...` (see
+      # docs/security/verifying_artifacts.md).
+      #
+      # The bundle output (.sigstore) wraps signature + certificate
+      # + transparency log entry in one JSON file, which is the
+      # operator-friendly verification path.
+      - name: Sign artifacts with Sigstore (keyless)
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        uses: sigstore/gh-action-sigstore-python@v3.0.0
+        with:
+          inputs: |
+            dist/*.whl
+            dist/*.tar.gz
+            dist/sbom.json
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -173,12 +192,17 @@ jobs:
         with:
           name: mythic-vibe-cli ${{ needs.build.outputs.version }}
           generate_release_notes: true
+          # Phase 21.5 — attach Sigstore .sigstore bundles next to
+          # the artifacts they sign so operators have a one-stop
+          # verification path. The bundle includes signature +
+          # certificate + Rekor transparency log entry.
           files: |
             dist/*.whl
             dist/*.tar.gz
             dist/sbom.json
             dist/SHA256SUMS
             dist/SHA512SUMS
+            dist/*.sigstore
 
   update-homebrew:
     name: Open Homebrew tap update PR

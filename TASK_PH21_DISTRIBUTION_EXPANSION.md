@@ -56,7 +56,7 @@ earlier slices produce.
 | 5 | **21.2** | Single-file executables via PyInstaller (Linux + Windows + macOS) | ~6-8h | [x] |
 | 6 | **21.3** | Single-file executables via Nuitka (alternative; faster startup) | ~6-8h | [x] |
 | 7 | **21.4** | macOS Gatekeeper override docs (rescoped — not full notarization) | ~30min | [x] |
-| 8 | **21.5** | GPG / Sigstore signed artifacts (replaces 20.6 checksums-only) | ~6-8h | [ ] |
+| 8 | **21.5** | GPG / Sigstore signed artifacts (replaces 20.6 checksums-only) | ~6-8h | [x] |
 | 9 | **21.6** | Reproducible build attestations + tag signing | ~4-6h | [ ] |
 
 **PH-21 cumulative effort:** ~32-43h (per locked plan in TASK_PH19_DISTRIBUTION.md).
@@ -604,6 +604,77 @@ script CI pipelines around the binary's exit codes / argv
 parsing get identical behavior either way.
 
 Beginning slice 21.5 (Sigstore signed artifacts) next.
+
+### 2026-05-05 — Slice 21.5 closed (Sigstore keyless signing)
+**Shipped:**
+- `.github/workflows/release.yml` — new `Sign artifacts with
+  Sigstore (keyless)` step uses
+  `sigstore/gh-action-sigstore-python@v3.0.0` to sign the wheel
+  + sdist + SBOM. The action requests a short-lived Fulcio cert
+  via the workflow's OIDC `id-token`, signs each input, and
+  emits `.sigstore` bundle files (signature + cert + Rekor entry)
+  next to the artifacts. The github-release step now uploads
+  `dist/*.sigstore` alongside the existing checksums + SBOM so
+  operators can fetch a single bundle and verify offline-friendly.
+- `.github/workflows/release-oci.yml` — new `Install cosign` +
+  `Sign image with cosign (keyless)` steps. Uses
+  `sigstore/cosign-installer@v3` (cosign v2.4.0) and
+  `cosign sign --yes` against the manifest digest of both the
+  versioned (`:VERSION`) and floating (`:latest`) tags. Signing
+  the digest (not the tag) keeps the signature valid even if
+  `:latest` is later repointed.
+- `.github/workflows/release-binaries.yml` — new Sigstore signing
+  steps in both the `build` (PyInstaller) and `build-nuitka`
+  jobs. Same `sigstore/gh-action-sigstore-python@v3.0.0` pattern
+  as release.yml, scoped to each row's binary path
+  (`dist/mythic-vibe-*` for PyInstaller; `dist-nuitka/mythic-
+  vibe-nuitka-*` for Nuitka). Bundles ship as workflow artifacts
+  alongside the binaries; the github-release flatten step
+  picks them up automatically.
+- `docs/security/verifying_artifacts.md` — new comprehensive
+  verification guide (~250 lines) covering:
+  - Quick reference table mapping channel → tool → expected
+    cert identity.
+  - PyPI artifact verification recipe with explicit
+    `python -m sigstore verify identity` invocations for both
+    wheel + sdist.
+  - Standalone binary verification (PyInstaller + Nuitka) with
+    the per-channel cert identity (different workflow file →
+    different identity URL).
+  - OCI image verification via `cosign verify`, including the
+    pin-to-digest pattern for operators who want to anchor
+    against a specific manifest.
+  - "Why keyless?" rationale section: no long-lived signing key,
+    public Rekor transparency log, no registration required.
+  - Forward-pointer to PH-21.6 reproducible build attestations
+    that close the "from what" supply-chain gap (signatures
+    prove who; attestations prove from what).
+  - Troubleshooting: tag mismatch, old tooling, asset/bundle
+    mismatch.
+- `tests/test_packaging_templates.py` — 2 new tests on
+  ReleaseWorkflowTests (test_signs_artifacts_with_sigstore +
+  test_uploads_sigstore_bundles_to_release).
+- `tests/test_dockerfile_lint.py` — 1 new test on
+  ReleaseOciWorkflowTests (test_signs_image_with_cosign_keyless).
+- `tests/test_packaging_pyinstaller.py` — 2 new tests on
+  ReleaseBinariesWorkflowTests (test_signs_pyinstaller_binary +
+  test_signs_nuitka_binary).
+
+**Gates green:** 2398 passed / 1 skipped / 109 subtests (+5 from
+this slice); ruff clean; mypy clean (156 source files); contract
+audit clean.
+
+**Compatibility surface:** new cryptographic provenance over
+existing publication channels. Operators who don't verify see
+no behavior change (signatures are additive); operators who
+adopt verification get an offline-friendly verify path with a
+public-good trust root. Replaces (does not remove) the PH-20.6
+checksums-only approach — checksums still ship as the fast-path
+pre-flight check, but the cryptographic root of trust now sits
+with Sigstore.
+
+Beginning slice 21.6 (reproducible build attestations + tag
+signing) next — the final PH-21 slice.
 
 ---
 

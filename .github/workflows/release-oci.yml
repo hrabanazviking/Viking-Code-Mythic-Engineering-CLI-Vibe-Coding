@@ -172,3 +172,31 @@ jobs:
           docker run --rm --platform linux/amd64 "$IMAGE" --version
           docker run --rm --platform linux/amd64 "$IMAGE" --help
           docker run --rm --platform linux/amd64 "$IMAGE" doctor --json
+
+      # Phase 21.5 — cosign keyless signing over the multi-arch
+      # OCI manifest. Uses GitHub Actions OIDC to request a
+      # short-lived certificate from Fulcio; signs the digest;
+      # logs the signature in Rekor. Operators verify later via
+      # `cosign verify ghcr.io/<owner>/mythic-vibe-cli:<VERSION>
+      # --certificate-identity-regexp ... --certificate-oidc-
+      # issuer https://token.actions.githubusercontent.com`.
+      # Signing the manifest digest (not the tag) means the
+      # signature stays valid even if :latest is later
+      # repointed.
+      - name: Install cosign
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: v2.4.0
+      - name: Sign image with cosign (keyless)
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        env:
+          IMAGE: ${{ steps.tags.outputs.ghcr_versioned }}
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          # cosign sign --yes attaches the signature to the same
+          # manifest under the .sig tag. Verify with cosign verify.
+          cosign sign --yes "$IMAGE"
+          # Sign :latest separately so operators pulling :latest
+          # also get a verifiable signature path.
+          cosign sign --yes "${{ steps.tags.outputs.ghcr_latest }}"
