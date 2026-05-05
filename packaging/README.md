@@ -1,7 +1,14 @@
 # Packaging
 
 This directory holds everything the release pipeline needs to
-publish Mythic Vibe CLI to its three distribution channels:
+publish Mythic Vibe CLI to its **eleven distribution channels**.
+Three v1.0 launch channels (PyPI / Homebrew / Scoop), six v1.x
+expansion channels (PH-21: AUR / winget / OCI / PyInstaller /
+Nuitka / launcher binaries), three v2.0 foundation channels
+(PH-22: Rust launcher / Android APK / WASI .wasm + .pyz). All
+artifacts ship Sigstore-signed + SLSA-attested.
+
+Per-channel layout:
 
 | Channel | Files | Workflow integration |
 |---------|-------|---------------------|
@@ -14,7 +21,7 @@ publish Mythic Vibe CLI to its three distribution channels:
 | GitHub Release binaries (Nuitka) | [`nuitka/build.py`](nuitka/build.py) | `release-binaries.yml` `build-nuitka` job runs the same 4-row OS matrix in parallel to the PyInstaller build, invokes `python packaging/nuitka/build.py`, smoke-tests each binary; assets named `mythic-vibe-nuitka-<VERSION>-<os>-<arch>` so operators distinguish the two binary flavors on the Release page (PH-21.3) |
 | GitHub Release launcher (Rust) | [`launcher/Cargo.toml`](launcher/Cargo.toml), [`launcher/src/main.rs`](launcher/src/main.rs), [`launcher/README.md`](launcher/README.md) | `release-launcher.yml` workflow runs a 5-row arch matrix (Linux x86_64 + Linux aarch64 + macOS arm64 + macOS x86_64 + Windows x86_64), builds the Rust launcher with `cargo build --release`, runs `cargo test`, applies Sigstore + SLSA attestations, attaches binaries to the GitHub Release. The launcher is a small (~3-5 MB) shim that downloads python-build-standalone + the wheel on first run; subsequent runs short-circuit to the cached venv (PH-22.1, foundation level) |
 | Android APK (Chaquopy) | [`android/`](android/) Gradle project + [`android/app/src/main/python/mythic_vibe_cli_android_runner.py`](android/app/src/main/python/mythic_vibe_cli_android_runner.py) | `release-android.yml` workflow runs `./gradlew assembleRelease` to produce an APK with CPython 3.12 + the mythic-vibe-cli wheel baked in via Chaquopy's `pip install` at build time. Compose-based single-activity UI invokes the CLI via JNI on Dispatchers.IO. Sigstore + SLSA attestation applied; min-SDK 26 (Android 8.0+); 4 ABIs covered (PH-22.2, foundation level) |
-| WebAssembly (WASI) | [`wasi/build.py`](wasi/build.py), [`wasi/README.md`](wasi/README.md) | `release-wasi.yml` workflow runs `python packaging/wasi/build.py` to produce a `.wasm` artifact (foundation-level: emits a placeholder until the wasi-sdk + CPython WASI cross-build is wired in a future session); applies Sigstore + SLSA attestation; attaches to the GitHub Release. Reduced functional scope (subprocess-based commands disabled) documented in `wasi/README.md` (PH-22.3, foundation level) |
+| WebAssembly (WASI) | [`wasi/build.py`](wasi/build.py), [`wasi/README.md`](wasi/README.md), [`wasi/playground/`](wasi/playground/) | `release-wasi.yml` workflow runs `python packaging/wasi/build.py --really-build` on tag push to drive the actual CPython WASI cross-build (PH-23.7), then `_build_zipapp_sidecar` produces a `.pyz` containing the CLI source (PH-23.11). Both `.wasm` + `.pyz` ship Sigstore-signed + SLSA-attested. Wasi-sdk + CPython source are cached between runs via `actions/cache@v4` (PH-23.9). Reduced functional scope (subprocess-based commands don't work in WASI) documented in `wasi/README.md`. The `wasi/playground/` directory hosts a static HTML+JS UI preview (PH-23.16, foundation — JS stub runner today; real WASI shim integration deferred) |
 | winget maintainer repo (`winget-mythic`) | [`winget/mythic-vibe.installer.yaml.template`](winget/mythic-vibe.installer.yaml.template), [`winget/mythic-vibe.locale.en-US.yaml.template`](winget/mythic-vibe.locale.en-US.yaml.template), [`winget/mythic-vibe.yaml.template`](winget/mythic-vibe.yaml.template) | `update-winget` job resolves the PH-21.2 Windows binary URL + sha256 from the GitHub Release, renders the three winget v1.6 manifests with `__VERSION__` / `__WINDOWS_BINARY_URL__` / `__WINDOWS_BINARY_SHA256__` / `__RELEASE_DATE__` / `__RELEASE_NOTES_URL__` substituted, opens a PR against the maintainer repo; a human syncs to `microsoft/winget-pkgs` via wingetcreate or a manual fork PR (PH-21.8) |
 
 Plus an **offline-install wheelhouse** built into every release
