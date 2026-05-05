@@ -51,7 +51,7 @@ earlier slices produce.
 |---|---|---|---|---|
 | 1 | **21.7** | AUR `mythic-vibe-cli` package + maintainer-repo workflow | ~2h | [x] |
 | 2 | **21.8** | winget manifest PR to `winget-pkgs` | ~2h | [ ] |
-| 3 | **21.9** | Android / Termux formal support (docs + platform detection) | ~3-4h | [ ] |
+| 3 | **21.9** | Android / Termux formal support (docs + platform detection) | ~3-4h | [x] |
 | 4 | **21.1** | Container / OCI image (multi-arch buildx → GHCR + Docker Hub) | ~3-4h | [ ] |
 | 5 | **21.2** | Single-file executables via PyInstaller (Linux + Windows + macOS) | ~6-8h | [ ] |
 | 6 | **21.3** | Single-file executables via Nuitka (alternative; faster startup) | ~6-8h | [ ] |
@@ -237,6 +237,75 @@ policy unaffected (new channel adds publication surface, doesn't
 mutate any existing stable surface).
 
 Beginning slice 21.8 (winget manifest) next.
+
+### 2026-05-05 — Execution order revised (additive)
+Realized while planning slice 21.8 that the winget manifest needs a
+Windows binary URL to reference, and PyInstaller (slice 21.2) is the
+producer of that binary. Moving 21.8 after 21.2 so the manifest can
+point at a real artifact instead of a placeholder URL. New
+dependency-respecting order:
+
+  1. ✅ 21.7 AUR
+  2. 21.9 Termux        (next — independent, small)
+  3. 21.1 OCI image     (independent, own artifact pipeline)
+  4. 21.2 PyInstaller   (produces Win/macOS/Linux binaries)
+  5. 21.4 Gatekeeper    (references 21.2 macOS binary)
+  6. 21.8 winget        (references 21.2 Windows binary)
+  7. 21.3 Nuitka        (alternative binaries; can run after 21.2)
+  8. 21.5 Sigstore      (signs all artifacts from 21.1 + 21.2 + 21.3)
+  9. 21.6 Attestations  (final cap)
+
+The original "Order" column in the slice table is preserved as the
+plan-at-kickoff record; this dated entry documents the actual
+execution path.
+
+### 2026-05-05 — Slice 21.9 closed (Termux / WSL platform tags)
+**Shipped:**
+- `mythic_vibe_cli/hardware.py` — three new pure-stdlib detectors
+  plus a composite:
+  - `is_termux()` — checks `TERMUX_VERSION` env var or
+    `/data/data/com.termux/files/usr` filesystem prefix.
+  - `is_wsl()` — substring match on `platform.uname().release`
+    against "microsoft" (handles WSL1 + WSL2).
+  - `is_raspberry_pi()` — reads `/proc/device-tree/model` and
+    matches "raspberry pi" (case-insensitive).
+  - `detect_platform_tags()` — composite returning a deterministic
+    ordered list (`termux`, `wsl`, `raspberry_pi`, `arm64`).
+- `HardwareProfile` — additive `platform_tags: list[str]` field.
+  `to_dict()` serializes it; `__all__` exports the new helpers.
+- `render_profile_text()` — new "Platform tags:" line; empty case
+  shows `(none)` so the field is always visible.
+- `render_profile_markdown()` — new `| Platform tags |` row
+  matching the existing table style.
+- `tests/test_hardware.py` — 18 new tests across 5 classes:
+  IsTermuxTests (3), IsWslTests (4), IsRaspberryPiTests (3),
+  DetectPlatformTagsTests (3), HardwareProfileTagsIntegrationTests
+  (5). Covers env-only, filesystem-only, mixed, and missing
+  signals; arm64-via-aarch64 normalization; empty + populated tag
+  rendering in both text + markdown.
+- `docs/INSTALL.md` — new "Termux (Android)" section with the
+  full install recipe (`pkg install python rust` + `pip install
+  mythic-vibe-cli`), a note that Termux already exports
+  XDG_CONFIG_HOME so no path tweaks are needed, and a pointer to
+  the new platform_tags surface for operator-side gating. New
+  "WSL (Windows Subsystem for Linux)" section that documents the
+  `wsl` tag emission. Termux troubleshooting bullet added to the
+  existing Troubleshooting list.
+
+**Gates green:** 2319 passed / 1 skipped / 109 subtests; ruff clean;
+mypy clean (156 source files); contract audit clean (no new
+commands, only an additive field on the existing hardware command's
+JSON envelope).
+
+**Compatibility surface:** the hardware command's JSON output is
+Stable per `docs/compatibility_policy.md` §1. Adding a new key
+(`platform_tags`) is additive and does not break existing
+consumers; the empty-list default means callers that ignore the
+key see no behavior change. New consumers gating on tags should
+treat absence-of-tag as "not detected" rather than "definitely
+not that platform" (read-only signals, never raise).
+
+Beginning slice 21.1 (OCI multi-arch image) next.
 
 ---
 
