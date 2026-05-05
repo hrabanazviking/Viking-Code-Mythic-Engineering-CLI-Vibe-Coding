@@ -86,6 +86,33 @@ makepkg -si
 
 After install, both `mythic-vibe` and the `mythic` short alias land on `PATH`. Optional extras (`tui`, `ai`, `ux`, `otel`) install with the standard `pip` flow into a venv after the AUR base package — AUR ships only the runtime base.
 
+### Android (native app)
+
+A native Android app wraps `mythic-vibe-cli` via [Chaquopy](https://chaquo.com/chaquopy/), embedding CPython 3.12 + the wheel into the APK at build time. Single-tap install + Material 3 UI for the convenience-first Android operator who doesn't want to set up Termux.
+
+```bash
+VERSION=1.0.0
+gh release download "v${VERSION}" \
+    --repo hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding \
+    --pattern "mythic-vibe-${VERSION}-android.apk*"
+
+sha256sum --check "mythic-vibe-${VERSION}-android.apk.sha256"
+
+# Side-load via adb (developer mode):
+adb install "mythic-vibe-${VERSION}-android.apk"
+
+# Or transfer the APK to the device and tap to install (requires
+# enabling "Install unknown apps" for whichever installer you use).
+```
+
+The app shows a single text-input field; type any CLI command (e.g. `--version`, `doctor --json`, `status`) and tap **Run**. Output streams into a scrollable Text panel.
+
+Permissions: **INTERNET only**, used solely when an operator configures an AI-provider API key. The app does not record audio, read contacts, access location, or write to external storage.
+
+The app is **complementary, not competing** with the [Termux install path](#termux-android) — Termux gives you a full Linux shell + pip flexibility; the native app gives you a one-tap install + Material UI.
+
+For full design rationale (why Chaquopy over BeeWare, the deferred-work list, future Play Store / F-Droid distribution path), see [`packaging/android/README.md`](../packaging/android/README.md).
+
 ### Termux (Android)
 
 Termux turns an Android phone or tablet into a real Linux userland. The CLI installs from PyPI exactly the same way as on a desktop, plus a one-time apt prep:
