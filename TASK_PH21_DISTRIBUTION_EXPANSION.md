@@ -49,7 +49,7 @@ earlier slices produce.
 
 | Order | Slice | What | Est. effort | Status |
 |---|---|---|---|---|
-| 1 | **21.7** | AUR `mythic-vibe-cli-bin` package + maintainer scripts | ~2h | [ ] |
+| 1 | **21.7** | AUR `mythic-vibe-cli` package + maintainer-repo workflow | ~2h | [x] |
 | 2 | **21.8** | winget manifest PR to `winget-pkgs` | ~2h | [ ] |
 | 3 | **21.9** | Android / Termux formal support (docs + platform detection) | ~3-4h | [ ] |
 | 4 | **21.1** | Container / OCI image (multi-arch buildx → GHCR + Docker Hub) | ~3-4h | [ ] |
@@ -201,6 +201,42 @@ prior entries are never mutated.
 TASK file written, plan locked, gitignore amended for the stray
 `Users/` test-debris path. Beginning slice 21.7 (AUR) on commit `+1`
 from this kickoff commit.
+
+### 2026-05-05 — Slice 21.7 closed (AUR maintainer-repo channel)
+**Shipped:**
+- `packaging/aur/PKGBUILD.template` — standard AUR Python source
+  PKGBUILD; `arch=('any')`, builds from PyPI sdist, uses
+  `python-build` + `python-installer`. Apache-2.0 license declared
+  via SPDX (modern AUR convention).
+- `packaging/aur/.SRCINFO.template` — line-based AUR machine
+  summary; placeholders match the PKGBUILD so they stay in sync.
+- `.github/workflows/release.yml` — new `update-aur` job mirrors
+  the `update-homebrew` + `update-scoop` pattern: render templates,
+  push branch, open PR against `hrabanazviking/aur-mythic` using
+  `AUR_BUMP_TOKEN` secret. Human maintainer syncs PR to AUR proper
+  via `git push aur master` (recipe lives in the maintainer-repo
+  README).
+- `tests/test_packaging_templates.py` — 9 new tests covering
+  PKGBUILD render-time placeholder safety, required AUR fields
+  (pkgname/pkgver/pkgrel/arch/license/depends/sha256sums/build()/
+  package()), .SRCINFO render-time safety, and release-workflow
+  references to both templates + AUR_BUMP_TOKEN secret.
+- `docs/INSTALL.md` — new "Arch Linux (AUR)" section between Scoop
+  and the offline install path. Covers `yay -S` and manual makepkg.
+- `packaging/README.md` — channel table extended to include AUR;
+  defer-section re-shaped (AUR removed; OCI / PyInstaller / Nuitka
+  / winget / Termux now flagged as in-flight PH-21 slices);
+  maintainer-repo sync recipes section added.
+
+**Gates green:** 2301 passed / 1 skipped / 109 subtests; ruff clean;
+mypy clean; contract audit clean.
+
+**Did not change:** no production runtime code — this slice is
+release-pipeline + docs only. Threat model unaffected. Compatibility
+policy unaffected (new channel adds publication surface, doesn't
+mutate any existing stable surface).
+
+Beginning slice 21.8 (winget manifest) next.
 
 ---
 
