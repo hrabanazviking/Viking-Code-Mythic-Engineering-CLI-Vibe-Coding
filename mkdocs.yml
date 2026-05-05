@@ -1,0 +1,146 @@
+# mkdocs-material site config for mythic-vibe-cli (PH-23.1).
+#
+# Build:    mkdocs build --strict
+# Serve:    mkdocs serve
+#
+# The strict flag fails the build on broken links, missing nav
+# entries, or unrecognized warnings — surfaced in CI as a PR
+# gate so doc rot is caught at PR time, not at deploy time.
+
+site_name: Mythic Vibe CLI
+site_description: Beginner-friendly CLI that enforces Mythic Engineering vibe-coding workflow
+site_url: https://hrabanazviking.github.io/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/
+site_author: Mythic Vibe Contributors
+
+repo_name: hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding
+repo_url: https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding
+edit_uri: edit/development/docs/
+
+theme:
+  name: material
+  palette:
+    # Light mode (default).
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode.
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+    - content.action.edit
+    - toc.follow
+  font:
+    text: Inter
+    code: JetBrains Mono
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+plugins:
+  - search
+
+# Navigation hierarchy. Every entry must point at an existing
+# file under docs/ — `mkdocs build --strict` fails the build
+# otherwise. New documents added under docs/ should land in the
+# matching nav section so search picks them up.
+nav:
+  - Home: INDEX.md
+
+  - Getting Started:
+      - Quickstart: quickstart.md
+      - Install Guide: INSTALL.md
+
+  - Operator Guides:
+      - Hermes Agent: HERMES_AGENT.md
+      - Chat Bridge Deployment: CHAT_BRIDGE_DEPLOYMENT.md
+      - SSH Deployment: SSH_DEPLOYMENT.md
+      - Plugins: plugins.md
+      - Plugin Authoring: PLUGIN_AUTHORING_GUIDE.md
+
+  - Reference:
+      - Command Contracts: COMMAND_CONTRACTS.md
+      - API: api.md
+      - Runtime: runtime.md
+      - Compatibility Policy: compatibility_policy.md
+      - Hardware Profiles: hardware_profiles.md
+
+  - Architecture:
+      - Architecture: ARCHITECTURE.md
+      - Domain Map: DOMAIN_MAP.md
+      - Data Flow: DATA_FLOW.md
+      - Active Product Boundary: ACTIVE_PRODUCT_BOUNDARY.md
+      - Dormant Islands: DORMANT_ISLANDS.md
+      - Philosophy: PHILOSOPHY.md
+      - System Vision: SYSTEM_VISION.md
+
+  - Security:
+      - Threat Model: security/threat_model.md
+      - Verifying Artifacts: security/verifying_artifacts.md
+      - Tag Signing (maintainer): security/tag_signing.md
+
+  - Governance:
+      - Release Checklist: RELEASE_CHECKLIST.md
+      - Quarterly Review: governance/quarterly_review.md
+      - Documentation Standards: DOCUMENTATION_STANDARDS.md
+      - Session Handoff Template: SESSION_HANDOFF_TEMPLATE.md
+      - Contributor Index: contributor_index.md
+
+  - Decision Records:
+      - ADR Index: ADRS/ADR_SANITY_SWEEP_2026-05-03.md
+      - ADR-0001 — Active Runtime Boundary: ADRS/ADR-0001-active-runtime-boundary.md
+      - ADR-0002 — No Direct Vendor Imports: ADRS/ADR-0002-no-direct-vendor-imports.md
+      - ADR-0003 — Verification Gates: ADRS/ADR-0003-verification-gates.md
+      - ADR-0004 — Doctor Diagnostics: ADRS/ADR-0004-doctor-diagnostics.md
+      - ADR-0005 — Yggdrasil Adapter: ADRS/ADR-0005-island-b-yggdrasil-adapter.md
+      - ADR-0006 — MindSpark Adapter: ADRS/ADR-0006-island-c-mindspark-adapter.md
+      - ADR-0007 — WYRD Adapter: ADRS/ADR-0007-island-d-wyrd-adapter.md
+      - ADR-0008 — Chatterbox Adapter: ADRS/ADR-0008-island-e-chatterbox-adapter.md
+      - ADR-0009 — Internal API Surfaces: ADRS/ADR-0009-internal-api-surfaces.md
+      - ADR-0010 — AI Model Listing Policy: ADRS/ADR-0010-ai-model-listing-policy.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding
+  generator: false      # remove "Made with Material for MkDocs" footer
+
+# Strict mode is enforced via the CLI flag in CI rather than
+# this config file so local `mkdocs serve` stays forgiving while
+# the build gate stays strict.
