@@ -18,10 +18,13 @@
 //! cache pre-population (see packaging/launcher/README.md).
 
 use std::env;
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use std::time::Duration;
 
 use anyhow::{anyhow, Context, Result};
+use indicatif::{ProgressBar, ProgressStyle};
 use sha2::{Digest, Sha256};
 
 /// Default Python version embedded in the launcher. The version
@@ -78,6 +81,29 @@ pub const PBS_EXPECTED_SHA256: &[(&str, Option<&str>)] = &[
 /// env var (set to `1`) flips this on for operators who want
 /// the strict posture today.
 pub const REQUIRE_VERIFIED_CHECKSUMS: bool = false;
+
+/// PH-23.6 — retries/backoff policy for HTTP downloads. The
+/// `download` function attempts each URL up to `MAX_DOWNLOAD_ATTEMPTS`
+/// times, waiting `RETRY_BACKOFF_BASE_SECS` × 2^attempt between
+/// tries (so 1 → 2 → 4 → 8 seconds with the default of 4
+/// attempts). After exhausting attempts on the first URL, the
+/// launcher falls through to the next mirror in
+/// `download_mirrors()`.
+pub const MAX_DOWNLOAD_ATTEMPTS: u32 = 4;
+pub const RETRY_BACKOFF_BASE_SECS: u64 = 1;
+
+/// HTTP timeout per individual GET attempt. Generous enough that
+/// a 30-MB python-build-standalone archive completes on a slow
+/// connection without false-positive timeouts; short enough that
+/// a stalled connection fails over to the next mirror within a
+/// few minutes rather than minutes-per-mirror × N-mirrors.
+pub const HTTP_TIMEOUT_SECS: u64 = 600;
+
+/// Chunk size for streaming download reads. 64 KiB is the
+/// stdlib's default `io::copy` buffer — small enough that the
+/// progress bar updates feel smooth, large enough that the
+/// per-chunk overhead doesn't dominate.
+pub const DOWNLOAD_CHUNK_SIZE: usize = 64 * 1024;
 
 /// Top-level entrypoint. Resolves the cache, ensures the
 /// interpreter + wheel are installed, then execs the CLI with
@@ -141,11 +167,15 @@ pub fn ensure_interpreter(cache_root: &Path) -> Result<PathBuf> {
     if exe.exists() {
         return Ok(exe);
     }
-    let url = pbs_download_url()?;
-    eprintln!("[launcher] fetching interpreter from {url}");
-    let bytes = download(&url)?;
+    let urls = pbs_download_urls()?;
+    eprintln!(
+        "[launcher] fetching interpreter (will try {} mirror{} with retries)",
+        urls.len(),
+        if urls.len() == 1 { "" } else { "s" },
+    );
+    let (bytes, used_url) = download_with_failover(&urls)?;
     verify_archive_sha256(&bytes)?;
-    extract_archive(&bytes, &interpreter_dir, &url)?;
+    extract_archive(&bytes, &interpreter_dir, &used_url)?;
     let exe = python_executable_in(&interpreter_dir);
     if !exe.exists() {
         return Err(anyhow!(
@@ -246,10 +276,10 @@ pub fn compute_sha256_hex(bytes: &[u8]) -> String {
     hex::encode(hasher.finalize())
 }
 
-/// Compute the python-build-standalone download URL for the
-/// running host arch + OS. Foundation-level: returns a
-/// deterministic URL pattern the future session will extend
-/// with per-arch SHA256 verification.
+/// Compute the canonical python-build-standalone download URL
+/// for the running host arch + OS. Kept as a separate function
+/// from `pbs_download_urls` so callers that only want the
+/// primary URL (e.g. logging, tests) don't have to filter.
 pub fn pbs_download_url() -> Result<String> {
     let triple = host_target_triple()?;
     Ok(format!(
@@ -258,6 +288,46 @@ pub fn pbs_download_url() -> Result<String> {
         ver = PYTHON_VERSION,
         triple = triple,
     ))
+}
+
+/// PH-23.6 — return the ordered list of download URLs the
+/// launcher tries, in priority order. The first URL is the
+/// canonical GitHub Releases URL; subsequent URLs come from the
+/// `MYTHIC_LAUNCHER_MIRRORS` env var (comma-separated), each
+/// with `__VERSION__`, `__TAG__`, and `__TRIPLE__` placeholders
+/// substituted in.
+///
+/// Operators with internal artifactory mirrors set this env var
+/// at job startup; the public default is the GitHub URL alone.
+/// Mirror entries that fail to substitute (missing placeholder,
+/// malformed URL) are skipped with a warning so a misconfigured
+/// mirror entry doesn't sink the whole flow.
+pub fn pbs_download_urls() -> Result<Vec<String>> {
+    let triple = host_target_triple()?;
+    let mut urls = vec![pbs_download_url()?];
+
+    if let Ok(extras) = env::var("MYTHIC_LAUNCHER_MIRRORS") {
+        for raw in extras.split(',') {
+            let raw = raw.trim();
+            if raw.is_empty() {
+                continue;
+            }
+            let rendered = raw
+                .replace("__VERSION__", PYTHON_VERSION)
+                .replace("__TAG__", PBS_RELEASE_TAG)
+                .replace("__TRIPLE__", triple);
+            if !rendered.starts_with("http://") && !rendered.starts_with("https://") {
+                eprintln!(
+                    "[launcher] WARNING: skipping mirror entry that doesn't \
+                     start with http:// or https://: {rendered}"
+                );
+                continue;
+            }
+            urls.push(rendered);
+        }
+    }
+
+    Ok(urls)
 }
 
 /// Best-effort host triple resolution for python-build-standalone
@@ -289,21 +359,136 @@ pub fn python_executable_in(interpreter_dir: &Path) -> PathBuf {
     }
 }
 
-/// Download bytes from `url`. Foundation-level: synchronous
-/// blocking ureq call with a 5-minute timeout. Future session:
-/// add retries, mirror fallback, and progress reporting.
-pub fn download(url: &str) -> Result<Vec<u8>> {
+/// PH-23.6 — try each URL in `urls` with retries + exponential
+/// backoff. Returns the (bytes, url_used) tuple from the first
+/// successful download. Bails out only if every URL fails after
+/// exhausting `MAX_DOWNLOAD_ATTEMPTS` per URL.
+pub fn download_with_failover(urls: &[String]) -> Result<(Vec<u8>, String)> {
+    if urls.is_empty() {
+        return Err(anyhow!("download_with_failover called with empty url list"));
+    }
+
+    let mut last_error: Option<anyhow::Error> = None;
+    for (idx, url) in urls.iter().enumerate() {
+        match download_with_retries(url) {
+            Ok(bytes) => return Ok((bytes, url.clone())),
+            Err(err) => {
+                eprintln!(
+                    "[launcher] mirror {} failed after {MAX_DOWNLOAD_ATTEMPTS} attempts: {err:#}",
+                    idx + 1,
+                );
+                if idx + 1 < urls.len() {
+                    eprintln!(
+                        "[launcher] failing over to next mirror ({} of {})",
+                        idx + 2,
+                        urls.len(),
+                    );
+                }
+                last_error = Some(err);
+            }
+        }
+    }
+
+    Err(last_error.unwrap_or_else(|| anyhow!("all mirrors failed without recording an error")))
+}
+
+/// PH-23.6 — single-URL download with exponential-backoff retry
+/// loop. Pulled out so unit tests can exercise the retry
+/// behavior without involving the mirror-failover layer above.
+pub fn download_with_retries(url: &str) -> Result<Vec<u8>> {
+    let mut last_err: Option<anyhow::Error> = None;
+    for attempt in 1..=MAX_DOWNLOAD_ATTEMPTS {
+        match download_streaming(url) {
+            Ok(bytes) => return Ok(bytes),
+            Err(err) => {
+                if attempt < MAX_DOWNLOAD_ATTEMPTS {
+                    let delay_secs =
+                        RETRY_BACKOFF_BASE_SECS * (1u64 << (attempt - 1));
+                    eprintln!(
+                        "[launcher] download attempt {attempt}/{MAX_DOWNLOAD_ATTEMPTS} \
+                         failed: {err:#}; retrying in {delay_secs}s"
+                    );
+                    std::thread::sleep(Duration::from_secs(delay_secs));
+                }
+                last_err = Some(err);
+            }
+        }
+    }
+    Err(last_err.unwrap_or_else(|| anyhow!("download_with_retries exhausted retries silently")))
+}
+
+/// PH-23.6 — single-URL download with a streaming progress bar.
+/// Reads the body in chunks of `DOWNLOAD_CHUNK_SIZE` and updates
+/// an `indicatif::ProgressBar` keyed off the response's
+/// `Content-Length` header. If `Content-Length` is missing the
+/// bar shows bytes-read without a fixed total.
+pub fn download_streaming(url: &str) -> Result<Vec<u8>> {
     let resp = ureq::AgentBuilder::new()
-        .timeout(std::time::Duration::from_secs(300))
+        .timeout(Duration::from_secs(HTTP_TIMEOUT_SECS))
         .build()
         .get(url)
         .call()
         .with_context(|| format!("HTTP GET {url}"))?;
-    let mut bytes: Vec<u8> = Vec::new();
-    resp.into_reader()
-        .read_to_end(&mut bytes)
-        .with_context(|| format!("read body for {url}"))?;
+
+    let total = resp
+        .header("Content-Length")
+        .and_then(|s| s.parse::<u64>().ok());
+
+    let bar = make_download_progress_bar(total, url);
+
+    let mut reader = resp.into_reader();
+    let initial_capacity =
+        total.map(|n| n as usize).unwrap_or(0).min(64 * 1024 * 1024);
+    let mut bytes: Vec<u8> = Vec::with_capacity(initial_capacity);
+    let mut buf = vec![0u8; DOWNLOAD_CHUNK_SIZE];
+
+    loop {
+        match reader.read(&mut buf) {
+            Ok(0) => break,
+            Ok(n) => {
+                bytes.extend_from_slice(&buf[..n]);
+                bar.inc(n as u64);
+            }
+            Err(err) => {
+                bar.abandon_with_message(format!("download failed: {err}"));
+                return Err(anyhow::Error::new(err)
+                    .context(format!("read body for {url}")));
+            }
+        }
+    }
+
+    bar.finish_with_message(format!("downloaded {} bytes", bytes.len()));
     Ok(bytes)
+}
+
+/// Build the indicatif ProgressBar used during a download.
+/// Pulled out so tests can verify the styling without
+/// triggering an actual download.
+pub fn make_download_progress_bar(total_bytes: Option<u64>, url: &str) -> ProgressBar {
+    let bar = match total_bytes {
+        Some(total) => ProgressBar::new(total).with_style(
+            ProgressStyle::with_template(
+                "[launcher] {msg} {bar:40.cyan/blue} {bytes}/{total_bytes} ({eta})"
+            )
+            .unwrap_or_else(|_| ProgressStyle::default_bar())
+            .progress_chars("=>-"),
+        ),
+        None => ProgressBar::new_spinner().with_style(
+            ProgressStyle::with_template("[launcher] {msg} {spinner} {bytes}")
+                .unwrap_or_else(|_| ProgressStyle::default_spinner()),
+        ),
+    };
+    let host = url.split('/').nth(2).unwrap_or(url);
+    bar.set_message(format!("downloading from {host}"));
+    bar
+}
+
+/// Backwards-compatible single-shot `download` retained for any
+/// caller that needs the old non-progress API. New code should
+/// prefer `download_with_failover` for mirror support, or
+/// `download_with_retries` for retry-only.
+pub fn download(url: &str) -> Result<Vec<u8>> {
+    download_with_retries(url)
 }
 
 /// Extract an archive into `dest`. Picks the decoder by the
@@ -373,7 +558,15 @@ pub fn create_venv(interpreter: &Path, venv: &Path) -> Result<()> {
 }
 
 /// Run `<venv>/bin/pip install mythic-vibe-cli`.
+///
+/// PH-23.6: the user-visible status line printed before the
+/// subprocess starts so operators see something happening even
+/// during pip's silent network resolution. pip's own progress
+/// output streams through this process's stdio normally; we
+/// don't capture it because pip already produces decent
+/// progress info on slower connections.
 pub fn pip_install_cli(venv: &Path) -> Result<()> {
+    eprintln!("[launcher] installing mythic-vibe-cli into the cached venv (this is the first-run pip install — subsequent runs skip this step)");
     let pip = if cfg!(windows) {
         venv.join("Scripts").join("pip.exe")
     } else {
@@ -388,6 +581,7 @@ pub fn pip_install_cli(venv: &Path) -> Result<()> {
     if !status.success() {
         return Err(anyhow!("pip install failed with status {status}"));
     }
+    eprintln!("[launcher] mythic-vibe-cli installed");
     Ok(())
 }
 
@@ -539,5 +733,98 @@ mod tests {
                 "missing entry for triple {triple} in PBS_EXPECTED_SHA256"
             );
         }
+    }
+
+    #[test]
+    fn pbs_download_urls_default_is_just_the_canonical_url() {
+        let prior = env::var("MYTHIC_LAUNCHER_MIRRORS").ok();
+        env::remove_var("MYTHIC_LAUNCHER_MIRRORS");
+        let urls = pbs_download_urls().expect("supported test host");
+        if let Some(v) = prior {
+            env::set_var("MYTHIC_LAUNCHER_MIRRORS", v);
+        }
+        assert_eq!(urls.len(), 1, "default mirror list should have exactly one URL");
+        assert_eq!(urls[0], pbs_download_url().unwrap());
+    }
+
+    #[test]
+    fn pbs_download_urls_appends_env_mirrors_with_substitution() {
+        let prior = env::var("MYTHIC_LAUNCHER_MIRRORS").ok();
+        env::set_var(
+            "MYTHIC_LAUNCHER_MIRRORS",
+            "https://mirror.example.com/cpython-__VERSION__-__TRIPLE__.tar.gz,\
+             https://other.example.org/pbs/__TAG__/cpython-__VERSION__.tar.gz",
+        );
+        let urls = pbs_download_urls().expect("supported test host");
+        match prior {
+            Some(v) => env::set_var("MYTHIC_LAUNCHER_MIRRORS", v),
+            None => env::remove_var("MYTHIC_LAUNCHER_MIRRORS"),
+        }
+        assert_eq!(urls.len(), 3);
+        assert!(urls[1].contains(PYTHON_VERSION));
+        assert!(urls[1].contains("mirror.example.com"));
+        assert!(urls[2].contains(PBS_RELEASE_TAG));
+    }
+
+    #[test]
+    fn pbs_download_urls_skips_malformed_mirror_entries() {
+        let prior = env::var("MYTHIC_LAUNCHER_MIRRORS").ok();
+        // First entry is not http/https — must be skipped with a
+        // warning, not propagated. Second entry is good.
+        env::set_var(
+            "MYTHIC_LAUNCHER_MIRRORS",
+            "ftp://wrong.example.com/file.tar.gz,\
+             https://ok.example.com/__VERSION__-__TRIPLE__.tar.gz",
+        );
+        let urls = pbs_download_urls().expect("supported test host");
+        match prior {
+            Some(v) => env::set_var("MYTHIC_LAUNCHER_MIRRORS", v),
+            None => env::remove_var("MYTHIC_LAUNCHER_MIRRORS"),
+        }
+        assert_eq!(urls.len(), 2, "malformed mirror should be skipped");
+        assert!(urls[1].starts_with("https://ok.example.com"));
+    }
+
+    #[test]
+    fn download_with_failover_errors_on_empty_list() {
+        let result = download_with_failover(&[]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn make_download_progress_bar_handles_known_total() {
+        let bar = make_download_progress_bar(Some(1024 * 1024), "https://example.com/foo");
+        assert_eq!(bar.length(), Some(1024 * 1024));
+        assert!(!bar.is_finished());
+        bar.finish();
+    }
+
+    #[test]
+    fn make_download_progress_bar_handles_unknown_total() {
+        let bar = make_download_progress_bar(None, "https://example.com/foo");
+        // Spinner length is None (no fixed total).
+        assert_eq!(bar.length(), None);
+        bar.finish();
+    }
+
+    #[test]
+    fn retry_constants_form_a_reasonable_total() {
+        // Total worst-case wait across all retries: base * (2^0 + 2^1 + ... + 2^(N-2))
+        // because the last attempt doesn't sleep after itself.
+        // For 4 attempts at base=1: 1 + 2 + 4 = 7 seconds total backoff.
+        // Anchor that behavior so a future tweak that expands the
+        // table to 10 attempts doesn't accidentally produce a
+        // 17-minute wait.
+        let mut total: u64 = 0;
+        for attempt in 1..MAX_DOWNLOAD_ATTEMPTS {
+            total += RETRY_BACKOFF_BASE_SECS * (1u64 << (attempt - 1));
+        }
+        // Sanity bound: total backoff stays under 60 seconds at
+        // current settings. Adjust this assertion deliberately if
+        // the constants change.
+        assert!(
+            total < 60,
+            "total backoff {total}s is unreasonably high for a launcher first-run"
+        );
     }
 }

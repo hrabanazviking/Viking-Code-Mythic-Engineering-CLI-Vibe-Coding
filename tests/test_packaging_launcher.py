@@ -54,10 +54,11 @@ class LauncherCargoManifestTests(unittest.TestCase):
 
     def test_declares_required_runtime_deps(self) -> None:
         # The launcher's MVP needs HTTP + archive extraction +
-        # cache-dir + JSON + sha256 + error handling. Each must
-        # appear at top level of [dependencies].
+        # cache-dir + JSON + sha256 + error handling + progress
+        # bars. Each must appear at top level of [dependencies].
         for dep in ("ureq", "flate2", "tar", "zstd", "dirs",
-                    "serde", "serde_json", "sha2", "hex", "anyhow"):
+                    "serde", "serde_json", "sha2", "hex", "anyhow",
+                    "indicatif"):
             self.assertTrue(
                 re.search(rf'^\s*{dep}\s*=', self.raw, re.MULTILINE),
                 f"missing runtime dep: {dep}",
@@ -199,24 +200,31 @@ class LauncherMainRsTests(unittest.TestCase):
         self.assertIn("fn verify_archive_sha256(", self.raw)
 
     def test_wires_verification_into_ensure_interpreter(self) -> None:
-        # ensure_interpreter must call verify_archive_sha256
-        # between download() and extract_archive(). Catching
-        # the order here prevents a regression where someone
-        # extracts before verifying.
+        # ensure_interpreter must download, verify SHA256, then
+        # extract — in that order. Verifying after extract would
+        # let a tampered archive land on disk before detection.
+        # The download call may use the failover variant
+        # (PH-23.6) instead of the bare `download()`; either is
+        # acceptable here.
         ensure_idx = self.raw.find("fn ensure_interpreter(")
         self.assertGreater(ensure_idx, 0)
-        # Look at the ~1500 chars after the function start
-        # for the verification call.
+        # Look at the ~2000 chars after the function start
+        # for the call ordering.
         body = self.raw[ensure_idx: ensure_idx + 2000]
-        download_idx = body.find("download(")
+        download_idx = max(
+            body.find("download_with_failover("),
+            body.find("download_with_retries("),
+            body.find("download("),
+        )
         verify_idx = body.find("verify_archive_sha256(")
         extract_idx = body.find("extract_archive(")
         self.assertGreater(
-            download_idx, 0, "download() not in ensure_interpreter",
+            download_idx, 0,
+            "no download function call found in ensure_interpreter",
         )
         self.assertGreater(
             verify_idx, download_idx,
-            "verify_archive_sha256() must come after download()",
+            "verify_archive_sha256() must come after the download call",
         )
         self.assertGreater(
             extract_idx, verify_idx,
@@ -228,6 +236,74 @@ class LauncherMainRsTests(unittest.TestCase):
         # source must `use` them.
         self.assertIn("use sha2::{Digest, Sha256}", self.raw)
         self.assertIn("hex::encode", self.raw)
+
+    def test_declares_retry_and_backoff_constants(self) -> None:
+        """PH-23.6 — first-run UX polish. The retry policy must
+        be exposed as named constants so a future tuning session
+        knows where to edit + tests can anchor the worst-case
+        total backoff."""
+        for const in (
+            "MAX_DOWNLOAD_ATTEMPTS",
+            "RETRY_BACKOFF_BASE_SECS",
+            "HTTP_TIMEOUT_SECS",
+            "DOWNLOAD_CHUNK_SIZE",
+        ):
+            self.assertIn(
+                f"pub const {const}", self.raw,
+                f"missing first-run UX constant: {const}",
+            )
+
+    def test_declares_mirror_failover_function(self) -> None:
+        """PH-23.6 — the launcher must support fail-over across a
+        list of mirrors, not just a single URL."""
+        self.assertIn("fn download_with_failover(", self.raw)
+        # The function loops through urls and returns on first success.
+        # Smoke-check the body references the urls slice.
+        self.assertIn("for (idx, url) in urls.iter().enumerate()", self.raw)
+
+    def test_declares_retry_function(self) -> None:
+        """PH-23.6 — single-URL retry loop. Pulled out so unit
+        tests can drive retry behavior without involving the
+        mirror layer."""
+        self.assertIn("fn download_with_retries(", self.raw)
+        self.assertIn("MAX_DOWNLOAD_ATTEMPTS", self.raw)
+
+    def test_declares_streaming_download_function(self) -> None:
+        """PH-23.6 — the per-URL download must stream the body
+        in chunks while updating a progress bar; loading the
+        whole body into memory before showing progress
+        defeats the UX purpose."""
+        self.assertIn("fn download_streaming(", self.raw)
+        # Streaming pattern: read_into chunk loop + extend_from_slice.
+        self.assertIn("DOWNLOAD_CHUNK_SIZE", self.raw)
+        self.assertIn("extend_from_slice", self.raw)
+
+    def test_uses_indicatif_progress_bar(self) -> None:
+        """PH-23.6 — indicatif is the canonical progress-bar
+        crate. Must be imported + used in the download path."""
+        self.assertIn("use indicatif::{ProgressBar, ProgressStyle}", self.raw)
+        self.assertIn("fn make_download_progress_bar(", self.raw)
+
+    def test_supports_mirror_env_override(self) -> None:
+        """Operators with internal artifactory mirrors can append
+        URLs via the MYTHIC_LAUNCHER_MIRRORS env var. The list
+        is comma-separated; each entry supports __VERSION__,
+        __TAG__, __TRIPLE__ placeholder substitution."""
+        self.assertIn("MYTHIC_LAUNCHER_MIRRORS", self.raw)
+        for placeholder in ("__VERSION__", "__TAG__", "__TRIPLE__"):
+            self.assertIn(placeholder, self.raw)
+
+    def test_pip_install_step_emits_progress_messages(self) -> None:
+        """The pip install step must print user-visible status
+        before + after so the operator sees something during
+        what would otherwise look like a hang."""
+        # Find the pip_install_cli function body.
+        idx = self.raw.find("fn pip_install_cli(")
+        self.assertGreater(idx, 0)
+        body = self.raw[idx: idx + 1200]
+        # The status messages must mention "installing" + "installed".
+        self.assertIn("installing mythic-vibe-cli", body)
+        self.assertIn("mythic-vibe-cli installed", body)
 
 
 class LauncherReadmeTests(unittest.TestCase):

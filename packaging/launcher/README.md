@@ -40,6 +40,14 @@ The launcher's strength is **flexibility**: operators can `pip install mythic-vi
 
 Operators can redirect via the `MYTHIC_LAUNCHER_CACHE` env var (useful for CI runners that want a workspace-local cache, or sandboxed environments where the platform cache dir isn't writable).
 
+## Operator env vars
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `MYTHIC_LAUNCHER_CACHE` | platform-default | Redirect the cache root (CI / sandboxed installs / shared caches) |
+| `MYTHIC_LAUNCHER_REQUIRE_SHA` | unset (lenient) | Set to `1` to require an entry in `PBS_EXPECTED_SHA256` for the host triple — refuses to extract any unverified archive |
+| `MYTHIC_LAUNCHER_MIRRORS` | unset | Comma-separated additional download URLs tried after the canonical GitHub URL. Supports `__VERSION__`, `__TAG__`, `__TRIPLE__` placeholders. Example: `https://artifacts.example.com/pbs/__TAG__/cpython-__VERSION__-__TRIPLE__-install_only.tar.gz` |
+
 ## Building locally
 
 ```bash
@@ -81,11 +89,14 @@ What works today:
 What was shipped after the foundation level:
 
 - ✅ **SHA256 verification of downloaded archives** (PH-23.4, 2026-05-05). The `verify_archive_sha256` function in `src/main.rs` hashes the downloaded archive bytes and compares against the per-arch table at `PBS_EXPECTED_SHA256`. Three branches: matching expected SHA → ok; mismatch → hard error; no expected SHA in table → log a warning + continue (lenient default), unless `REQUIRE_VERIFIED_CHECKSUMS = true` or `MYTHIC_LAUNCHER_REQUIRE_SHA=1` flips strict mode. The table starts with `None` for every arch — populate it by running `python tools/fetch_pbs_checksums.py` and pasting the rendered table into `src/main.rs`. Each PBS release tag bump invalidates the table; re-run the script.
+- ✅ **First-run UX polish** (PH-23.6, 2026-05-05). Three subcomponents:
+  - **Streaming progress bar** via the `indicatif` crate. The download reads in 64 KiB chunks; the bar shows `bytes/total_bytes (eta)` when `Content-Length` is present, or a bytes-read spinner when it isn't. Operators no longer see a 30-60 s "hang" — they see continuous progress.
+  - **Retry with exponential backoff.** Each URL is attempted up to `MAX_DOWNLOAD_ATTEMPTS` (4) times, with `RETRY_BACKOFF_BASE_SECS × 2^attempt` between tries (1 s → 2 s → 4 s = 7 s total worst-case for a single mirror). Transient network errors recover automatically.
+  - **Mirror fail-over.** The launcher tries the canonical GitHub Releases URL first, then any URLs from the comma-separated `MYTHIC_LAUNCHER_MIRRORS` env var. Each mirror entry supports `__VERSION__`, `__TAG__`, and `__TRIPLE__` placeholders for substitution. Operators with internal artifactory mirrors set the env var at job startup; the public default is GitHub-only.
 
 What's deferred to a future session:
 
 - ⚠️ **Populate the `PBS_EXPECTED_SHA256` table with real SHA values** (~5 min, requires network reach). The verification path exists; the SHAs are the missing piece. Run `python tools/fetch_pbs_checksums.py` and paste the output. Once every arch has a real SHA, flip `REQUIRE_VERIFIED_CHECKSUMS` to `true` so a missing row is a hard error instead of a warning.
-- ⚠️ **First-run UX polish.** Today the launcher prints status to stderr; a future session adds progress bars (indicatif crate), retries with backoff, and mirror-fallback when the GitHub release host is rate-limiting.
 - ⚠️ **Wheel version pinning.** Today `pip install mythic-vibe-cli` resolves the latest version on PyPI. A future session adds `--upgrade-strategy only-if-needed` defaulting + `MYTHIC_LAUNCHER_CLI_VERSION` env override for operators who want a pinned version.
 - ⚠️ **Sigstore verification of the downloaded wheel.** PH-21.5 publishes Sigstore signatures for every PyPI artifact; the launcher could verify them at install time. Adds the sigstore-rs dep + ~50 lines of verification code.
 - ⚠️ **Offline cache pre-population.** A `mythic-vibe-launcher --pre-populate` flag that downloads the interpreter + wheel without execing the CLI. Lets ops bake a cache into a base image.
