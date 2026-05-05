@@ -78,9 +78,13 @@ What works today:
 - ✅ tar.gz + tar.zst archive extraction.
 - ✅ Unix `execv` so signals + ttys + exit codes pass through cleanly.
 
+What was shipped after the foundation level:
+
+- ✅ **SHA256 verification of downloaded archives** (PH-23.4, 2026-05-05). The `verify_archive_sha256` function in `src/main.rs` hashes the downloaded archive bytes and compares against the per-arch table at `PBS_EXPECTED_SHA256`. Three branches: matching expected SHA → ok; mismatch → hard error; no expected SHA in table → log a warning + continue (lenient default), unless `REQUIRE_VERIFIED_CHECKSUMS = true` or `MYTHIC_LAUNCHER_REQUIRE_SHA=1` flips strict mode. The table starts with `None` for every arch — populate it by running `python tools/fetch_pbs_checksums.py` and pasting the rendered table into `src/main.rs`. Each PBS release tag bump invalidates the table; re-run the script.
+
 What's deferred to a future session:
 
-- ⚠️ **SHA256 verification of downloaded archives.** The `sha2` + `hex` deps are pinned in Cargo.toml so the verification path is one function away; the per-arch SHA256 expectations table is the missing piece (one row per (PYTHON_VERSION, PBS_RELEASE_TAG, target-triple) tuple, regenerated when either is bumped).
+- ⚠️ **Populate the `PBS_EXPECTED_SHA256` table with real SHA values** (~5 min, requires network reach). The verification path exists; the SHAs are the missing piece. Run `python tools/fetch_pbs_checksums.py` and paste the output. Once every arch has a real SHA, flip `REQUIRE_VERIFIED_CHECKSUMS` to `true` so a missing row is a hard error instead of a warning.
 - ⚠️ **First-run UX polish.** Today the launcher prints status to stderr; a future session adds progress bars (indicatif crate), retries with backoff, and mirror-fallback when the GitHub release host is rate-limiting.
 - ⚠️ **Wheel version pinning.** Today `pip install mythic-vibe-cli` resolves the latest version on PyPI. A future session adds `--upgrade-strategy only-if-needed` defaulting + `MYTHIC_LAUNCHER_CLI_VERSION` env override for operators who want a pinned version.
 - ⚠️ **Sigstore verification of the downloaded wheel.** PH-21.5 publishes Sigstore signatures for every PyPI artifact; the launcher could verify them at install time. Adds the sigstore-rs dep + ~50 lines of verification code.

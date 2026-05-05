@@ -22,6 +22,7 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use anyhow::{anyhow, Context, Result};
+use sha2::{Digest, Sha256};
 
 /// Default Python version embedded in the launcher. The version
 /// is chosen to match pyproject.toml's `requires-python` floor
@@ -45,6 +46,38 @@ pub const WHEEL_PYPI_INDEX: &str = "https://pypi.org/pypi/mythic-vibe-cli/json";
 ///   macOS:   ~/Library/Caches/mythic-vibe-launcher/
 ///   Windows: %LOCALAPPDATA%\mythic-vibe-launcher\Cache\
 pub const CACHE_SUBDIR: &str = "mythic-vibe-launcher";
+
+/// Per-target SHA256 expected hashes for the python-build-
+/// standalone archive at the pinned `PBS_RELEASE_TAG +
+/// PYTHON_VERSION` combo. Bumping either constant invalidates
+/// every entry below — operators populate the table by running
+/// `tools/fetch_pbs_checksums.py` and pasting the result here.
+///
+/// Each tuple is `(host_target_triple, sha256_lowercase_hex)`.
+/// A target whose SHA is `None` falls into the "verification
+/// skipped — log a warning" branch so a launcher built before
+/// the table is populated still works (downgraded security
+/// posture; explicitly logged so operators see it).
+///
+/// Future session policy: once every arch row has a populated
+/// SHA, flip `REQUIRE_VERIFIED_CHECKSUMS` to `true` so a missing
+/// row is a hard error rather than a warning. The flag stays
+/// `false` today during the PH-22.1 → PH-23.4 transition.
+pub const PBS_EXPECTED_SHA256: &[(&str, Option<&str>)] = &[
+    ("x86_64-unknown-linux-gnu", None),
+    ("aarch64-unknown-linux-gnu", None),
+    ("x86_64-apple-darwin", None),
+    ("aarch64-apple-darwin", None),
+    ("x86_64-pc-windows-msvc", None),
+];
+
+/// When `true`, a missing SHA in `PBS_EXPECTED_SHA256` for the
+/// running host triple aborts the launcher rather than logging
+/// a warning. Defaults to `false` until a future session
+/// populates every arch row. The `MYTHIC_LAUNCHER_REQUIRE_SHA`
+/// env var (set to `1`) flips this on for operators who want
+/// the strict posture today.
+pub const REQUIRE_VERIFIED_CHECKSUMS: bool = false;
 
 /// Top-level entrypoint. Resolves the cache, ensures the
 /// interpreter + wheel are installed, then execs the CLI with
@@ -111,6 +144,7 @@ pub fn ensure_interpreter(cache_root: &Path) -> Result<PathBuf> {
     let url = pbs_download_url()?;
     eprintln!("[launcher] fetching interpreter from {url}");
     let bytes = download(&url)?;
+    verify_archive_sha256(&bytes)?;
     extract_archive(&bytes, &interpreter_dir, &url)?;
     let exe = python_executable_in(&interpreter_dir);
     if !exe.exists() {
@@ -120,6 +154,96 @@ pub fn ensure_interpreter(cache_root: &Path) -> Result<PathBuf> {
         ));
     }
     Ok(exe)
+}
+
+/// SHA256-verify the downloaded archive bytes against the
+/// expected hash for the running host triple. Three branches:
+///
+/// 1. **Expected SHA present in the table.** Compute the
+///    archive's SHA256 and compare; mismatch is a hard error.
+/// 2. **No expected SHA + strict mode.** Hard error: refuse to
+///    extract an unverified archive. Strict mode is enabled
+///    when `REQUIRE_VERIFIED_CHECKSUMS = true` OR the
+///    `MYTHIC_LAUNCHER_REQUIRE_SHA=1` env var is set.
+/// 3. **No expected SHA + lenient mode (today's default).**
+///    Log a warning to stderr but continue. The warning includes
+///    the actual computed SHA256 so an operator can populate the
+///    table on a future PBS bump.
+///
+/// Foundation-level note: `PBS_EXPECTED_SHA256` ships with
+/// every entry as `None` until a future session runs
+/// `tools/fetch_pbs_checksums.py` and pastes the values in.
+/// Until then this function is the warning-logging branch
+/// for every download.
+pub fn verify_archive_sha256(bytes: &[u8]) -> Result<()> {
+    let triple = host_target_triple()?;
+    let expected = PBS_EXPECTED_SHA256
+        .iter()
+        .find(|(t, _)| *t == triple)
+        .and_then(|(_, sha)| *sha);
+
+    let actual = compute_sha256_hex(bytes);
+
+    let strict = REQUIRE_VERIFIED_CHECKSUMS
+        || env::var("MYTHIC_LAUNCHER_REQUIRE_SHA")
+            .map(|v| v == "1")
+            .unwrap_or(false);
+
+    match expected {
+        Some(expected_sha) => {
+            // Branch 1: compare and bail on mismatch.
+            if actual.eq_ignore_ascii_case(expected_sha) {
+                eprintln!(
+                    "[launcher] sha256 verified ({} bytes match expected hash)",
+                    bytes.len()
+                );
+                Ok(())
+            } else {
+                Err(anyhow!(
+                    "SHA256 mismatch for python-build-standalone archive\n  \
+                     triple:   {triple}\n  \
+                     expected: {expected_sha}\n  \
+                     actual:   {actual}\n\n\
+                     Either the upstream archive was tampered with, the network \
+                     served a corrupted body, or the table in PBS_EXPECTED_SHA256 \
+                     is stale relative to PBS_RELEASE_TAG. Refusing to extract."
+                ))
+            }
+        }
+        None if strict => {
+            // Branch 2: strict mode + no expected hash = hard fail.
+            Err(anyhow!(
+                "no expected SHA256 in PBS_EXPECTED_SHA256 for triple {triple}, \
+                 and strict checksum mode is enabled \
+                 (REQUIRE_VERIFIED_CHECKSUMS=true or MYTHIC_LAUNCHER_REQUIRE_SHA=1). \
+                 Refusing to extract unverified archive. Either populate the \
+                 table by running tools/fetch_pbs_checksums.py or unset the strict \
+                 flag.\n\n\
+                 actual archive sha256: {actual}"
+            ))
+        }
+        None => {
+            // Branch 3: lenient default. Log + continue.
+            eprintln!(
+                "[launcher] WARNING: no expected SHA256 for triple {triple}; \
+                 skipping integrity check. Computed SHA256: {actual}"
+            );
+            eprintln!(
+                "[launcher] To enable strict verification, populate \
+                 PBS_EXPECTED_SHA256 in src/main.rs (run tools/fetch_pbs_checksums.py)"
+            );
+            Ok(())
+        }
+    }
+}
+
+/// Compute lowercase-hex SHA256 of `bytes`. Pulled out so
+/// tests can drive the verification path with deterministic
+/// fixtures.
+pub fn compute_sha256_hex(bytes: &[u8]) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(bytes);
+    hex::encode(hasher.finalize())
 }
 
 /// Compute the python-build-standalone download URL for the
@@ -339,6 +463,81 @@ mod tests {
             assert!(exe.ends_with("python.exe"));
         } else {
             assert!(exe.ends_with("python3"));
+        }
+    }
+
+    #[test]
+    fn sha256_of_empty_input_is_known() {
+        // SHA256("") = e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+        // Anchors compute_sha256_hex behavior to a well-known
+        // reference vector.
+        assert_eq!(
+            compute_sha256_hex(&[]),
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        );
+    }
+
+    #[test]
+    fn sha256_of_abc_is_known() {
+        // SHA256("abc") is one of the most-cited test vectors.
+        assert_eq!(
+            compute_sha256_hex(b"abc"),
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        );
+    }
+
+    #[test]
+    fn verify_archive_lenient_passes_with_no_expected_sha() {
+        // With the table empty (foundation-level state) +
+        // strict mode off, verification logs a warning + returns Ok.
+        // Save + restore the env var so the test doesn't leak
+        // state into other tests.
+        let prior = env::var("MYTHIC_LAUNCHER_REQUIRE_SHA").ok();
+        env::remove_var("MYTHIC_LAUNCHER_REQUIRE_SHA");
+        let result = verify_archive_sha256(b"any bytes");
+        if let Some(v) = prior {
+            env::set_var("MYTHIC_LAUNCHER_REQUIRE_SHA", v);
+        }
+        assert!(
+            result.is_ok(),
+            "lenient mode should accept absent expected SHA: {result:?}"
+        );
+    }
+
+    #[test]
+    fn verify_archive_strict_rejects_when_no_expected_sha() {
+        // With strict mode on (env var) + table empty, refuse to
+        // proceed. Save + restore env state.
+        let prior = env::var("MYTHIC_LAUNCHER_REQUIRE_SHA").ok();
+        env::set_var("MYTHIC_LAUNCHER_REQUIRE_SHA", "1");
+        let result = verify_archive_sha256(b"any bytes");
+        match prior {
+            Some(v) => env::set_var("MYTHIC_LAUNCHER_REQUIRE_SHA", v),
+            None => env::remove_var("MYTHIC_LAUNCHER_REQUIRE_SHA"),
+        }
+        assert!(
+            result.is_err(),
+            "strict mode should reject absent expected SHA"
+        );
+    }
+
+    #[test]
+    fn pbs_expected_sha256_table_covers_every_supported_triple() {
+        // Every triple in host_target_triple()'s match arms must
+        // have a row in PBS_EXPECTED_SHA256, even if the SHA is
+        // None today. Missing triples would silently bypass
+        // verification once strict mode is enabled.
+        for triple in [
+            "x86_64-unknown-linux-gnu",
+            "aarch64-unknown-linux-gnu",
+            "x86_64-apple-darwin",
+            "aarch64-apple-darwin",
+            "x86_64-pc-windows-msvc",
+        ] {
+            assert!(
+                PBS_EXPECTED_SHA256.iter().any(|(t, _)| *t == triple),
+                "missing entry for triple {triple} in PBS_EXPECTED_SHA256"
+            );
         }
     }
 }
