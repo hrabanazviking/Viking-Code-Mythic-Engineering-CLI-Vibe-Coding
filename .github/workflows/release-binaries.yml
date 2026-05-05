@@ -1,0 +1,166 @@
+name: Release Binaries
+
+# Phase 21.2 — single-file standalone executables via PyInstaller.
+# Triggered by pushing a v*.*.* tag (mirrors release.yml +
+# release-oci.yml) plus workflow_dispatch for build-only rehearsal.
+#
+# Per-OS matrix produces:
+#   ubuntu-latest  -> mythic-vibe-${VERSION}-linux-x86_64
+#   macos-latest   -> mythic-vibe-${VERSION}-macos-arm64 (Apple Silicon)
+#   macos-13       -> mythic-vibe-${VERSION}-macos-x86_64 (Intel)
+#   windows-latest -> mythic-vibe-${VERSION}-windows-x86_64.exe
+#
+# The macOS Intel row pins macos-13 because GitHub deprecated the
+# x86_64-only macos-12 image; macos-13 is the last image with the
+# x86_64 toolchain available alongside arm64.
+#
+# The base CLI is stdlib-only, so the binary is small (~15-25 MB)
+# and starts in <500ms on a warm filesystem. Optional extras
+# (anthropic / openai / google-genai / textual / rich /
+# opentelemetry-*) are deliberately excluded — operators who need
+# those install via pip into a venv.
+#
+# Each binary lands as a GitHub Release asset on tag push and as a
+# workflow artifact on workflow_dispatch (rehearsal mode). PH-21.5
+# adds Sigstore keyless signatures on top of these artifacts.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write       # GitHub Release uploads
+  id-token: write       # reserved for Sigstore (PH-21.5)
+
+jobs:
+  build:
+    name: PyInstaller / ${{ matrix.os }} / ${{ matrix.arch_label }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: linux
+            runner: ubuntu-latest
+            arch_label: x86_64
+            binary_suffix: ""
+            asset_suffix: linux-x86_64
+          - os: macos
+            runner: macos-latest
+            arch_label: arm64
+            binary_suffix: ""
+            asset_suffix: macos-arm64
+          - os: macos
+            runner: macos-13
+            arch_label: x86_64
+            binary_suffix: ""
+            asset_suffix: macos-x86_64
+          - os: windows
+            runner: windows-latest
+            arch_label: x86_64
+            binary_suffix: ".exe"
+            asset_suffix: windows-x86_64.exe
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install project + PyInstaller
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install "pyinstaller>=6.0"
+
+      - name: Resolve version from pyproject
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(python -c "import tomllib, pathlib; \
+            print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: $VERSION"
+
+      - name: Build binary
+        shell: bash
+        run: |
+          pyinstaller packaging/pyinstaller/mythic-vibe.spec --clean --noconfirm
+          ls -la dist/
+
+      - name: Smoke test binary
+        shell: bash
+        env:
+          BINARY: dist/mythic-vibe${{ matrix.binary_suffix }}
+        run: |
+          # The freshly-built binary should pass the same smoke
+          # commands as a pip-installed CLI. Anything that fails
+          # here (missing schema file, missing module, broken
+          # entrypoint) means the spec needs an adjustment.
+          "$BINARY" --version
+          "$BINARY" --help
+          "$BINARY" doctor --json
+
+      - name: Rename binary with OS + arch suffix
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          ASSET_SUFFIX: ${{ matrix.asset_suffix }}
+          BINARY: dist/mythic-vibe${{ matrix.binary_suffix }}
+        run: |
+          ASSET_NAME="mythic-vibe-${VERSION}-${ASSET_SUFFIX}"
+          mv "$BINARY" "dist/${ASSET_NAME}"
+          # Compute SHA256 next to the binary so operators can verify
+          # the download out of band.
+          cd dist
+          if command -v sha256sum >/dev/null 2>&1; then
+            sha256sum "${ASSET_NAME}" > "${ASSET_NAME}.sha256"
+          else
+            shasum -a 256 "${ASSET_NAME}" > "${ASSET_NAME}.sha256"
+          fi
+          ls -la
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.asset_suffix }}
+          path: |
+            dist/mythic-vibe-*
+          if-no-files-found: error
+
+  github-release:
+    name: Attach binaries to GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - name: Download every binary artifact
+        uses: actions/download-artifact@v4
+        with:
+          # No name= filter -> downloads every artifact emitted by
+          # the build matrix. actions/download-artifact@v4 lays
+          # them out under separate per-artifact directories.
+          path: artifacts
+      - name: Flatten artifact directories
+        run: |
+          mkdir -p release
+          # Each matrix row uploaded under its own subdir; copy
+          # all binaries + sha files to one flat dir for the
+          # softprops upload step.
+          find artifacts -type f -exec cp {} release/ \;
+          ls -la release/
+      - name: Upload to existing GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          # The release.yml job already created the release for
+          # this tag; we attach binaries to that same release.
+          # softprops/action-gh-release is idempotent for additional
+          # files on an existing release.
+          files: |
+            release/mythic-vibe-*
