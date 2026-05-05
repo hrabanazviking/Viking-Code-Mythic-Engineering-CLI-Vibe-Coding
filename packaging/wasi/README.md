@@ -141,9 +141,13 @@ What's shipped:
 
   Reduced-scope contract carries forward: only the stdlib-only base ships in the zipapp; subprocess-based commands still don't work under WASI.
 
+What was shipped after the foundation level:
+
+- ✅ **Stdlib usage audit** (PH-23.15, 2026-05-05). New `tools/wasi_stdlib_audit.py` walks the runtime AST + reports the stdlib modules the CLI actually uses (~44 of 213), which are always-prunable in WASI regardless of usage (~72), which are unused-and-prunable (~103), plus any dynamic `importlib.import_module` call sites flagged for operator review. Output is human-readable (default) or JSON (`--json`). Run `python tools/wasi_stdlib_audit.py` to regenerate the analysis on every runtime change. Pruning impact estimate: ~175 stdlib modules can be dropped from the CPython WASI freeze list, shrinking python.wasm by ~30-40%. The analysis is the contract; the actual freeze-list patch on the CPython source tree is a separate slice (requires CPython source modification, deferred to a focused future session that owns the upstream-build-patching workflow).
+
 What's still deferred:
 
-- ⚠️ **Stdlib freezing customization.** CPython's WASI build path freezes the stdlib into the binary. Today the build accepts the upstream-default freeze list; a future session can prune unused stdlib modules to shrink the artifact.
+- ⚠️ **CPython freeze-list patch.** The audit identifies prunable modules; a future session writes the patch to CPython's `Tools/wasm/wasi.py` orchestrator (or `Modules/Setup` / `freeze.py` config) that drops the listed modules from the embedded stdlib. Estimated ~30-40% size reduction on python.wasm.
 - ⚠️ **Browser playground.** A `<wasm-host>` HTML page that loads the `.wasm` and exposes `mythic-vibe doctor --json` as a JS API.
 - ⚠️ **Subprocess fallback.** Commands that shell out to git could be rewritten to use `dulwich` (pure-Python git) for WASI compatibility — opens the door to `mythic-vibe doctor` working under WASI without functionality loss. Multi-week refactor; out of v2.0 scope.
 
