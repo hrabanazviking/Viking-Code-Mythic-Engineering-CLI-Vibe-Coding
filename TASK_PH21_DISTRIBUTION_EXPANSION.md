@@ -55,7 +55,7 @@ earlier slices produce.
 | 4 | **21.1** | Container / OCI image (multi-arch buildx → GHCR + Docker Hub) | ~3-4h | [x] |
 | 5 | **21.2** | Single-file executables via PyInstaller (Linux + Windows + macOS) | ~6-8h | [x] |
 | 6 | **21.3** | Single-file executables via Nuitka (alternative; faster startup) | ~6-8h | [ ] |
-| 7 | **21.4** | macOS Gatekeeper override docs (rescoped — not full notarization) | ~30min | [ ] |
+| 7 | **21.4** | macOS Gatekeeper override docs (rescoped — not full notarization) | ~30min | [x] |
 | 8 | **21.5** | GPG / Sigstore signed artifacts (replaces 20.6 checksums-only) | ~6-8h | [ ] |
 | 9 | **21.6** | Reproducible build attestations + tag signing | ~4-6h | [ ] |
 
@@ -436,6 +436,34 @@ as separate assets rather than mutating the base binary's
 contract.
 
 Beginning slice 21.4 (macOS Gatekeeper override docs) next.
+
+### 2026-05-05 — Slice 21.4 closed (macOS Gatekeeper override docs)
+**Shipped:**
+- `docs/INSTALL.md` — new `#### macOS first-launch (Gatekeeper
+  override)` subsection inside the "Standalone binaries
+  (PyInstaller)" section. Covers:
+  - The exact Gatekeeper dialog operators will see.
+  - Option A: right-click → Open (the operator-friendly path).
+  - Option B: `xattr -d com.apple.quarantine /path/to/binary`
+    (the CLI path).
+  - A "Why we ship un-notarized" rationale subsection covering
+    operator sovereignty, no-upstream-gatekeeper, open-source
+    philosophy alignment, and the explicit "one-time prompt"
+    trade-off.
+  - A reversibility note: adding notarization later doesn't
+    break any existing binary; it just adds a new code path.
+
+**Gates green:** 2359 passed / 1 skipped / 109 subtests; ruff clean.
+Docs-only slice — no production runtime change, no new tests
+required (the existing PH-21.2 troubleshooting bullets already
+forward to this section).
+
+**Compatibility surface:** unchanged. Distribution semantics
+documented but not modified.
+
+Beginning slice 21.8 (winget manifest) next. With PH-21.2's
+Windows binary now in the release pipeline, the winget portable
+manifest can reference the actual asset URL.
 
 ---
 
