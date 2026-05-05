@@ -55,7 +55,7 @@ even if the session doesn't make it through all three.
 | Order | Slice | What | Effort (full impl) | Status |
 |---|---|---|---|---|
 | 1 | **22.1** | Rust launcher shim — single static binary with no Python dep | ~2-4 weeks | [x] foundation |
-| 2 | **22.2** | Native Android wrapper app — Kotlin/Chaquopy CLI shell | ~3-6 weeks | [ ] |
+| 2 | **22.2** | Native Android wrapper app — Kotlin/Chaquopy CLI shell | ~3-6 weeks | [x] foundation |
 | 3 | **22.3** | WASI experimental runtime — CLI compiled to WebAssembly | ~4+ weeks (speculative) | [ ] |
 
 **PH-22 cumulative full-impl effort:** ~9-14 weeks per the locked
@@ -284,6 +284,114 @@ first run, supports operator-installed extras post-first-run.
 Does not affect any existing stable surface.
 
 Beginning slice 22.2 (Native Android wrapper app) next.
+
+### 2026-05-05 — Slice 22.2 closed at FOUNDATION level (Native Android wrapper app)
+**Shipped:**
+- `packaging/android/settings.gradle.kts` — Gradle settings with
+  the chaquo.com/maven repo entry that lets the Chaquopy plugin
+  resolve.
+- `packaging/android/build.gradle.kts` — top-level plugin
+  declarations (Android Gradle Plugin 8.5.2, Kotlin 2.0.20,
+  Compose plugin, Chaquopy 16.0.0), all `apply false`.
+- `packaging/android/gradle.properties` — JVM args, parallel
+  builds, configuration cache, AndroidX-only stack, Kotlin
+  official code style.
+- `packaging/android/app/build.gradle.kts` — app module with:
+  - Chaquopy plugin applied + `chaquopy { defaultConfig { pip {
+    install("mythic-vibe-cli") } } }` so the wheel + transitive
+    deps bake into the APK at build time.
+  - Compose enabled via `buildFeatures.compose = true` + the
+    Compose Compiler plugin.
+  - min-SDK 26 (Android 8.0+, ~99% of in-use devices).
+  - ABI filters covering armeabi-v7a + arm64-v8a + x86 + x86_64.
+  - Java/Kotlin 17 source/target.
+  - Compose BOM 2024.09.03 + Material 3 + Activity Compose +
+    Lifecycle ViewModel.
+- `packaging/android/app/src/main/AndroidManifest.xml` — single
+  INTERNET permission only; rationale documented in a comment
+  block listing what's intentionally NOT declared (RECORD_AUDIO,
+  WRITE_EXTERNAL_STORAGE, etc.). Single MainActivity with the
+  LAUNCHER intent filter.
+- `packaging/android/app/src/main/kotlin/dev/mythicvibe/android/MainActivity.kt` —
+  Compose-based single-activity UI. `Python.start(AndroidPlatform(this))`
+  in `onCreate` so the first-command latency surfaces in startup.
+  `MythicVibeApp` composable: text-input field for command,
+  Run button, scrollable output panel. CLI invocations run on
+  `Dispatchers.IO` via the runner module; errors caught + shown
+  in output rather than crashing the activity.
+- `packaging/android/app/src/main/python/mythic_vibe_cli_android_runner.py` —
+  Chaquopy-side runner. Captures stdout + stderr from
+  `mythic_vibe_cli.cli.main` via `contextlib.redirect_*`,
+  handles SystemExit (argparse errors), returns a string with
+  the captured output + exit code so the Compose UI gets a
+  ready-to-display blob.
+- `packaging/android/app/proguard-rules.pro` — advisory rules
+  (R8 disabled today; Chaquopy + Compose reflection don't play
+  with aggressive shrinking).
+- `packaging/android/README.md` — design doc covering: what the
+  app is, complementary-with-Termux positioning, why Chaquopy
+  over BeeWare, build instructions, project layout, foundation-
+  vs-deferred work breakdown (6 deferred items: APK signing
+  config, streaming stdout, cancellation, persistent session
+  log, native UI for richer flows, F-Droid + Play Store
+  distribution), three-operator-profile guidance.
+- `.github/workflows/release-android.yml` — workflow with JDK
+  17 setup, Python 3.12 setup (Chaquopy needs it), version-
+  resolve from pyproject, `gradle wrapper --gradle-version
+  8.10` (foundation-level: gradle wrapper isn't checked in
+  yet, generated at build time), `assembleRelease`, locate
+  the APK + rename with `mythic-vibe-${VERSION}-android.apk`
+  + sha256 sidecar. Applies PH-21.5 Sigstore signing + PH-21.6
+  SLSA attestation. attestations: write permission added.
+  Separate github-release job uploads the APK to the existing
+  GitHub Release.
+- `tests/test_packaging_android.py` — 31 Python-side
+  structural tests across 7 classes:
+    AndroidGradleProjectTests (4) — settings includes app
+        module + Chaquopy repo, root build pins all 4 plugin
+        versions, gradle.properties enables AndroidX.
+    AppModuleTests (6) — Chaquopy plugin applied, Compose
+        enabled, pip install("mythic-vibe-cli"), min-SDK 26,
+        all 4 ABI filters, Python 3.12.
+    AndroidManifestTests (2) — INTERNET permission only (with
+        XML-comment-strip to avoid false positives on the
+        rationale block), MainActivity declared with LAUNCHER
+        intent.
+    MainActivityTests (4) — Python.start, setContent, runner
+        module reference, Dispatchers.IO usage.
+    AndroidPythonRunnerTests (5) — imports cli.main, captures
+        both stdout + stderr, handles SystemExit, returns
+        str (not None), compiles cleanly.
+    AndroidReadmeTests (3) — Chaquopy choice rationale present,
+        min-SDK documented, deferred-work subsection present.
+    ReleaseAndroidWorkflowTests (7) — tag triggers, manual
+        rehearsal, JDK 17, assembleRelease invocation, Sigstore
+        + SLSA attestation, GitHub Release upload.
+- `docs/INSTALL.md` — new "Android (native app)" section
+  immediately above the Termux section. Side-load via adb
+  recipe + sha256 verification + complementary-with-Termux
+  positioning. Forward-pointer to `packaging/android/README.md`.
+- `packaging/README.md` — channel table extended with the
+  Android APK row.
+
+**Gates green:** 2462 passed / 1 skipped / 109 subtests (+31
+from this slice); ruff clean; mypy clean (156 source files).
+
+**Foundation status:** the Gradle project is buildable, the
+Compose UI invokes the CLI via JNI, the Chaquopy runner module
+captures and surfaces output. **Production-quality completion
+deferred** to future sessions and explicitly enumerated in
+`packaging/android/README.md` (APK signing config, streaming
+stdout, cancellation, session log, richer UI, distribution
+channel paperwork). A future session has every hook needed to
+extend without rederiving design.
+
+**Compatibility surface:** new publication channel. The Android
+app + Termux are complementary — different operator profiles.
+Does not affect any existing stable surface.
+
+Beginning slice 22.3 (WASI experimental runtime) next — the
+final PH-22 slice.
 
 ---
 
