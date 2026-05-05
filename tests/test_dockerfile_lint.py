@@ -265,6 +265,18 @@ class ReleaseOciWorkflowTests(unittest.TestCase):
         self.assertIn("sigstore/cosign-installer", self.raw)
         self.assertIn("cosign sign --yes", self.raw)
 
+    def test_emits_slsa_build_provenance_attestation(self) -> None:
+        # Phase 21.6 — SLSA Level 3 build provenance for the OCI
+        # image. attest-build-provenance pushes the attestation
+        # to the registry alongside the manifest.
+        self.assertIn("actions/attest-build-provenance", self.raw)
+        self.assertIn("subject-digest:", self.raw)
+        self.assertIn("push-to-registry: true", self.raw)
+
+    def test_attestations_write_permission_present(self) -> None:
+        # Required for actions/attest-build-provenance.
+        self.assertIn("attestations: write", self.raw)
+
 
 if __name__ == "__main__":
     unittest.main()

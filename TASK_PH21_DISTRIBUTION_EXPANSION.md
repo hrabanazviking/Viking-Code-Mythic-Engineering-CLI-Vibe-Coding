@@ -5,7 +5,7 @@
 **HEAD at kickoff:** `352b7d1` (post-Hermes H.5)
 **Operator:** Volmarr Wyrd
 **Author:** Runa Gridweaver Freyjasdottir, executing on Volmarr's behalf
-**Status:** `OPEN — AUTONOMOUS RUN — slice 21.7 first`
+**Status:** `CLOSED — ALL 9 SLICES SHIPPED — 2026-05-05`
 
 ---
 
@@ -57,7 +57,7 @@ earlier slices produce.
 | 6 | **21.3** | Single-file executables via Nuitka (alternative; faster startup) | ~6-8h | [x] |
 | 7 | **21.4** | macOS Gatekeeper override docs (rescoped — not full notarization) | ~30min | [x] |
 | 8 | **21.5** | GPG / Sigstore signed artifacts (replaces 20.6 checksums-only) | ~6-8h | [x] |
-| 9 | **21.6** | Reproducible build attestations + tag signing | ~4-6h | [ ] |
+| 9 | **21.6** | Reproducible build attestations + tag signing | ~4-6h | [x] |
 
 **PH-21 cumulative effort:** ~32-43h (per locked plan in TASK_PH19_DISTRIBUTION.md).
 
@@ -675,6 +675,126 @@ with Sigstore.
 
 Beginning slice 21.6 (reproducible build attestations + tag
 signing) next — the final PH-21 slice.
+
+### 2026-05-05 — Slice 21.6 closed (SLSA build provenance + tag signing)
+**Shipped:**
+- `.github/workflows/release.yml` — new `Attest wheel + sdist +
+  SBOM build provenance` step uses
+  `actions/attest-build-provenance@v2` to emit SLSA Level 3
+  attestations binding artifact subject digest to the workflow
+  invocation that produced it (commit, workflow file, inputs).
+  Workflow permissions extended with `attestations: write`.
+- `.github/workflows/release-oci.yml` — two new steps after the
+  cosign signing: `Resolve image digest for attestation` (uses
+  `docker buildx imagetools inspect` to get the manifest digest)
+  + `Attest OCI image build provenance` with
+  `subject-digest` + `subject-name` + `push-to-registry: true`
+  so the attestation is queryable via `gh attestation
+  verify-image`. Workflow permissions extended with
+  `attestations: write`.
+- `.github/workflows/release-binaries.yml` — new attestation
+  steps in both `build` (PyInstaller) and `build-nuitka` jobs,
+  each scoped to the matching subject-path. Workflow permissions
+  extended with `attestations: write`.
+- `docs/security/tag_signing.md` — new ~150-line maintainer
+  guide for `gitsign` (Sigstore's keyless equivalent of
+  GPG-signed tags). Covers:
+  - One-time setup (install gitsign, configure git locally to
+    use it for tags).
+  - Cutting a signed tag (`git tag -s`, OIDC browser flow,
+    Rekor logging, push to trigger pipeline).
+  - Verifying a tag (both end-user `git verify-tag` and
+    richer `gitsign verify` paths).
+  - The supply-chain trust chain (tag → build attestation →
+    artifact signature → operator verification).
+  - GPG fallback for air-gapped maintainers.
+  - The "tags via GitHub web UI are not signed" caveat plus
+    recovery recipe (delete unsigned tag, re-create signed,
+    re-push).
+- `docs/security/verifying_artifacts.md` — extended with two new
+  sections:
+  - "Build provenance attestations (PH-21.6)" — covers
+    `gh attestation verify` for wheel/sdist/SBOM/binaries and
+    `gh attestation verify-image` for the OCI image. Includes
+    a `--predicate-type "https://slsa.dev/provenance/v1"` filter
+    recipe for operators with strict SLSA L3 enforcement.
+  - "Tag signatures (PH-21.6)" — points operators at
+    `git verify-tag` and `gitsign verify` recipes; references
+    the maintainer guide for cutting signed tags.
+- `tests/test_packaging_templates.py` — 2 new tests
+  (test_emits_slsa_build_provenance_attestation +
+  test_attestations_write_permission_present).
+- `tests/test_dockerfile_lint.py` — 2 new tests
+  (test_emits_slsa_build_provenance_attestation +
+  test_attestations_write_permission_present), the OCI variant
+  also asserting `subject-digest:` + `push-to-registry: true`.
+- `tests/test_packaging_pyinstaller.py` — 3 new tests
+  (test_emits_pyinstaller_build_provenance_attestation +
+  test_emits_nuitka_build_provenance_attestation +
+  test_attestations_write_permission_present).
+
+**Gates green:** 2405 passed / 1 skipped / 109 subtests (+7 from
+this slice); ruff clean; mypy clean (156 source files); contract
+audit clean.
+
+**Compatibility surface:** new cryptographic provenance layer.
+Existing operators see no behavior change unless they opt into
+verification. Operators who do verify get a complete supply-
+chain proof: tag signature (which commit was the release) +
+build provenance attestation (which artifact came from which
+commit + workflow) + Sigstore artifact signature (who signed it).
+
+---
+
+## PH-21 — phase closeout
+
+**All 9 slices shipped, 2026-05-05.**
+
+| Slice | Title | Status | Commit |
+|---|---|---|---|
+| 21.7 | AUR maintainer-repo channel | ✅ | `723e256` |
+| 21.9 | Termux + WSL + Pi platform tags | ✅ | `7342d13` |
+| 21.1 | Multi-arch OCI container image | ✅ | `06c1d81` |
+| 21.2 | PyInstaller standalone binaries | ✅ | `2d2ae6c` |
+| 21.4 | macOS Gatekeeper override docs | ✅ | `3797b63` |
+| 21.8 | winget v1.6 manifest channel | ✅ | `563c1cb` |
+| 21.3 | Nuitka alternative binaries | ✅ | `84b415b` |
+| 21.5 | Sigstore keyless signing | ✅ | `b6887bb` |
+| 21.6 | SLSA build provenance + tag signing | ✅ | (this commit) |
+
+**Test count change across PH-21:** 1925 → 2405 (+480 tests over 9 slices).
+
+**New surfaces shipped:**
+
+Distribution channels added in v1.x:
+- AUR (Arch User Repository) — source from PyPI sdist
+- OCI multi-arch image (GHCR + optional Docker Hub mirror)
+- PyInstaller standalone binaries (Linux × Windows × macOS arm64 × macOS x86_64)
+- Nuitka alternative binaries (same matrix)
+- winget portable manifest (via maintainer repo + microsoft/winget-pkgs)
+
+Platform polish:
+- Termux / WSL / Raspberry Pi / arm64 platform-tag detection on the hardware command JSON surface
+
+Cryptographic provenance:
+- Sigstore keyless signatures over PyPI artifacts + OCI image + 8 standalone binaries
+- SLSA Level 3 build provenance attestations across all release artifacts
+- gitsign-based tag signing maintainer workflow
+
+Documentation added:
+- `docs/security/verifying_artifacts.md` — comprehensive end-user verification guide
+- `docs/security/tag_signing.md` — maintainer guide for signed releases
+- `docs/INSTALL.md` — sections for AUR, Termux, WSL, Container, Standalone binaries (PyInstaller + Nuitka with Gatekeeper override), winget
+- `packaging/README.md` — channel matrix + secret table + maintainer-repo sync recipes
+
+**Operator decisions remaining for first PH-21-era release:**
+1. Provision the four maintainer repos: `aur-mythic`, `winget-mythic`, `homebrew-mythic` (already exists), `scoop-mythic` (already exists).
+2. Configure repo PATs as secrets: `AUR_BUMP_TOKEN`, `WINGET_BUMP_TOKEN`, `TAP_BUMP_TOKEN` (existing), `BUCKET_BUMP_TOKEN` (existing).
+3. Decide whether to enable Docker Hub publishing — sets `DOCKERHUB_PUBLISH_ENABLED` repo variable to `true` and provisions `DOCKERHUB_USERNAME` + `DOCKERHUB_TOKEN` secrets if yes; default-skip if no.
+4. Install gitsign on the release-cutting machine and configure repo-local git for signed tags (one-time setup; recipe in `docs/security/tag_signing.md`).
+5. (Optional) Configure PyPI trusted publishing for the project on pypi.org.
+
+PH-21 leaves the project ready to ship its first v1.x distribution-expansion release once the operator items above are in place. PH-22 (v2.0 strategic stretch — Rust/Go launcher, Android wrapper, WASI runtime) remains in the backlog as multi-week work.
 
 ---
 

@@ -221,6 +221,21 @@ class ReleaseBinariesWorkflowTests(unittest.TestCase):
         # outputs distinct.
         self.assertIn("inputs: dist-nuitka/mythic-vibe-nuitka-*", self.raw)
 
+    def test_emits_pyinstaller_build_provenance_attestation(self) -> None:
+        # Phase 21.6 — attest the PyInstaller binary path.
+        self.assertIn("actions/attest-build-provenance", self.raw)
+        self.assertIn("subject-path: dist/mythic-vibe-*", self.raw)
+
+    def test_emits_nuitka_build_provenance_attestation(self) -> None:
+        # Phase 21.6 — attest the Nuitka binary path.
+        self.assertIn(
+            "subject-path: dist-nuitka/mythic-vibe-nuitka-*", self.raw
+        )
+
+    def test_attestations_write_permission_present(self) -> None:
+        # Required for actions/attest-build-provenance.
+        self.assertIn("attestations: write", self.raw)
+
 
 if __name__ == "__main__":
     unittest.main()
