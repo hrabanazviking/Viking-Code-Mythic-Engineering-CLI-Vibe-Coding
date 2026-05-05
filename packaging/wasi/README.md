@@ -148,8 +148,16 @@ What was shipped after the foundation level:
 What's still deferred:
 
 - ⚠️ **CPython freeze-list patch.** The audit identifies prunable modules; a future session writes the patch to CPython's `Tools/wasm/wasi.py` orchestrator (or `Modules/Setup` / `freeze.py` config) that drops the listed modules from the embedded stdlib. Estimated ~30-40% size reduction on python.wasm.
-- ⚠️ **Browser playground.** A `<wasm-host>` HTML page that loads the `.wasm` and exposes `mythic-vibe doctor --json` as a JS API.
 - ⚠️ **Subprocess fallback.** Commands that shell out to git could be rewritten to use `dulwich` (pure-Python git) for WASI compatibility — opens the door to `mythic-vibe doctor` working under WASI without functionality loss. Multi-week refactor; out of v2.0 scope.
+
+What was shipped after the foundation level:
+
+- ✅ **Browser playground foundation** (PH-23.16, 2026-05-05). New `packaging/wasi/playground/` directory containing `index.html` (page shell + CSS), `playground.js` (UI wiring + stub command runner), `README.md` (host-locally + GitHub Pages integration recipes). The page covers the v2.0 WASI command surface (`--version`, `--help`, `doctor --json`, `status --json`, `packet list --json`) with quick-pick buttons + a free-form text input. The runtime is a JS stub today — produces JSON-shaped output so operators preview the UX before the real WASI shim integration lands. A future slice replaces `stub_run()` in `playground.js` with `@bjorn3/browser_wasi_shim` (or equivalent) to load + execute the actual `.wasm + .pyz`.
+
+What's still deferred for the playground:
+
+- ⚠️ **Real WASI execution.** The page shell + UI exist; replacing the JS stub with a real WASI shim is the production-completion step. Estimated 4-6 hours of focused JS work.
+- ⚠️ **Download wiring.** The `.wasm` / `.pyz` download anchors are hash-only stubs today; a future build hook generates per-version URLs pointing at GitHub Release assets via templated `data-version` attributes.
 
 ---
 
