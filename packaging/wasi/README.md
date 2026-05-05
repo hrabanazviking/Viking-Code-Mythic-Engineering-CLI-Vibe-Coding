@@ -130,10 +130,20 @@ What's shipped:
 
 - ✅ **CI cross-build cache** (PH-23.9, 2026-05-05). The release workflow now uses `actions/cache@v4` to persist `~/.cache/mythic-vibe-wasi-build/` between tag-push runs. Cache key is `wasi-{WASI_SDK_RELEASE}-cpython-{CPYTHON_VERSION}-v1` — bumping either pinned constant invalidates the cache so a stale toolchain never gets reused against a new source tree. Restore-key fallback matches just the SDK release, so a CPython-only bump still benefits from the already-downloaded wasi-sdk tree (~250 MB savings). Cache-hot tag pushes complete in ~5-8 min vs ~15-20 min cold.
 
+- ✅ **mythic-vibe-cli zipapp sidecar** (PH-23.11, 2026-05-05). The build now produces a `.pyz` zipapp containing the `mythic_vibe_cli/` source tree alongside the `.wasm`. The release attaches both files; operators run the CLI under WASI via:
+
+  ```bash
+  wasmtime --dir=. mythic-vibe-1.0.0-wasi-experimental.wasm \
+      -- mythic-vibe-1.0.0-wasi-experimental.pyz doctor --json
+  ```
+
+  The zipapp is built via stdlib `zipapp.create_archive` with the source-tree-only path (no pip metadata), so it lands at ~50-150 KB vs ~1-2 MB for a pip-installed tree. Compression is on. The `--build-zipapp` flag is on by default; use `--no-build-zipapp` to skip when only the bare CPython .wasm is wanted. Placeholder builds (no `--really-build`) skip the zipapp automatically. Both artifacts are Sigstore-signed + SLSA-attested via the existing PH-21.5 / PH-21.6 pattern.
+
+  Reduced-scope contract carries forward: only the stdlib-only base ships in the zipapp; subprocess-based commands still don't work under WASI.
+
 What's still deferred:
 
 - ⚠️ **Stdlib freezing customization.** CPython's WASI build path freezes the stdlib into the binary. Today the build accepts the upstream-default freeze list; a future session can prune unused stdlib modules to shrink the artifact.
-- ⚠️ **Embedding the mythic-vibe-cli wheel.** The current build produces a base CPython python.wasm — running `mythic-vibe doctor --json` requires the wheel be available to the runtime. A future slice either embeds the wheel into the .wasm (via `_freeze_module`) or ships a sidecar `--load-wheel` flag.
 - ⚠️ **Browser playground.** A `<wasm-host>` HTML page that loads the `.wasm` and exposes `mythic-vibe doctor --json` as a JS API.
 - ⚠️ **Subprocess fallback.** Commands that shell out to git could be rewritten to use `dulwich` (pure-Python git) for WASI compatibility — opens the door to `mythic-vibe doctor` working under WASI without functionality loss. Multi-week refactor; out of v2.0 scope.
 

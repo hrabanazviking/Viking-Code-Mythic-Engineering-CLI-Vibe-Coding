@@ -123,6 +123,25 @@ def main(argv: Sequence[str] | None = None) -> int:
             "(default: ~/.cache/mythic-vibe-wasi-build/)"
         ),
     )
+    parser.add_argument(
+        "--build-zipapp",
+        action="store_true",
+        default=True,
+        help=(
+            "Also build a zipapp sidecar (mythic-vibe.pyz) "
+            "alongside the .wasm, so WASI hosts can run "
+            "`wasmtime --dir=. mythic-vibe.wasm -- "
+            "mythic-vibe.pyz doctor --json`. ON by default; "
+            "use --no-build-zipapp to skip (placeholder builds "
+            "skip automatically)."
+        ),
+    )
+    parser.add_argument(
+        "--no-build-zipapp",
+        dest="build_zipapp",
+        action="store_false",
+        help="Skip the zipapp sidecar build.",
+    )
     args = parser.parse_args(argv)
 
     repo_root = Path(__file__).resolve().parent.parent.parent
@@ -137,13 +156,31 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(f"  CPython:  {args.cpython_version}")
     print(f"  wasi-sdk: {args.wasi_sdk_version} ({WASI_SDK_RELEASE})")
     print(f"  output:   {args.output}")
+    if args.build_zipapp:
+        print(f"  zipapp:   {args.output.with_suffix('.pyz')}")
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
 
     if not args.really_build:
         return _emit_foundation_placeholder(args.output)
 
-    return _run_full_wasi_build(repo_root, args)
+    rc = _run_full_wasi_build(repo_root, args)
+    if rc != 0:
+        return rc
+
+    # PH-23.11 — build the zipapp sidecar after the .wasm is in
+    # place. The sidecar is a .pyz containing mythic_vibe_cli/
+    # source that a WASI runtime can execute directly via the
+    # python.wasm. Building it last means a failed wasm build
+    # short-circuits before we waste time on the zipapp.
+    if args.build_zipapp:
+        try:
+            _build_zipapp_sidecar(repo_root, args.output)
+        except BuildStepFailed as exc:
+            print(f"FATAL: zipapp build failed: {exc}", file=sys.stderr)
+            return 14
+
+    return 0
 
 
 # ---- Foundation placeholder path -----------------------------------
@@ -415,6 +452,97 @@ def _run_wasi_orchestrator(
             )
             return rc
     return 0
+
+
+# ---- Zipapp sidecar (PH-23.11) ------------------------------------
+
+
+def _build_zipapp_sidecar(repo_root: Path, wasm_output: Path) -> None:
+    """Build a ``.pyz`` zipapp containing the mythic_vibe_cli
+    source tree, written next to ``wasm_output`` with the same
+    basename + ``.pyz`` extension.
+
+    The zipapp can be executed by the WASI-built CPython via:
+
+        wasmtime --dir=. mythic-vibe.wasm -- mythic-vibe.pyz doctor --json
+
+    We use stdlib ``zipapp.create_archive`` rather than calling
+    ``pip install --target`` because the pip path drags in
+    pip + setuptools metadata files we don't need; the source-
+    tree-only zipapp is ~50-150 KB vs ~1-2 MB for the full
+    pip-installed tree.
+
+    Limitations (consistent with the v2.0 reduced-scope
+    contract documented in packaging/wasi/README.md):
+
+    - Only the stdlib-only base ships in the zipapp. Optional
+      extras (anthropic / openai / textual / rich / opentelemetry)
+      are NOT bundled — they wouldn't WASI-compile anyway.
+    - subprocess-based commands (git checks in doctor, plugin
+      sandbox in verify) are still broken under WASI; the
+      zipapp doesn't fix that.
+
+    Raises :class:`BuildStepFailed` if the zipapp build fails;
+    the driver maps to exit code 14 so the workflow log shows
+    the source of the failure.
+    """
+    import zipapp
+
+    package_root = repo_root / "mythic_vibe_cli"
+    if not package_root.is_dir():
+        raise BuildStepFailed(
+            f"package source missing at {package_root}; cannot build zipapp"
+        )
+
+    # The zipapp's "main" needs to invoke mythic_vibe_cli.cli.main
+    # so command-line invocations behave the same as the pip path.
+    main_target = "mythic_vibe_cli.cli:main"
+
+    # zipapp.create_archive's source arg expects a directory
+    # *containing* the package, not the package itself. We stage
+    # the package into a temp dir so the .pyz packs
+    # mythic_vibe_cli/<files...> as the top-level layout the
+    # interpreter will import from.
+    import shutil
+    import tempfile
+
+    sidecar_path = wasm_output.with_suffix(".pyz")
+    print(f"  building zipapp sidecar at {sidecar_path}")
+
+    with tempfile.TemporaryDirectory() as staging_root:
+        staging = Path(staging_root)
+        # Mirror the package tree, excluding test artifacts +
+        # bytecode caches that bloat the zipapp without adding
+        # functionality.
+        shutil.copytree(
+            package_root,
+            staging / "mythic_vibe_cli",
+            ignore=shutil.ignore_patterns(
+                "__pycache__", "*.pyc", "*.pyo",
+            ),
+        )
+        try:
+            zipapp.create_archive(
+                staging,
+                target=str(sidecar_path),
+                main=main_target,
+                # Compress the zipapp — typical 5-10x size win
+                # at negligible startup cost in CPython's
+                # zipimport.
+                compressed=True,
+            )
+        except Exception as exc:  # noqa: BLE001 — surface as BuildStepFailed
+            raise BuildStepFailed(
+                f"zipapp.create_archive failed: {exc}"
+            ) from exc
+
+    if not sidecar_path.is_file():
+        raise BuildStepFailed(
+            f"zipapp build reported success but {sidecar_path} is missing"
+        )
+
+    size_kb = sidecar_path.stat().st_size / 1024
+    print(f"  wrote {sidecar_path} ({size_kb:.1f} KB)")
 
 
 # ---- Helpers ------------------------------------------------------

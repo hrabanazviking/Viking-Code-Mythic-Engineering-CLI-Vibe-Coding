@@ -138,23 +138,40 @@ jobs:
           mv dist-wasi/mythic-vibe.wasm "dist-wasi/${ASSET_NAME}"
           cd dist-wasi
           sha256sum "${ASSET_NAME}" > "${ASSET_NAME}.sha256"
+          # PH-23.11 — the build also produces a .pyz zipapp
+          # sidecar (only on tag pushes via --really-build; the
+          # placeholder path skips it). Rename + checksum it
+          # too if present so the release attaches both files.
+          if [ -f "mythic-vibe.pyz" ]; then
+            ZIPAPP_NAME="mythic-vibe-${VERSION}-wasi-experimental.pyz"
+            mv "mythic-vibe.pyz" "${ZIPAPP_NAME}"
+            sha256sum "${ZIPAPP_NAME}" > "${ZIPAPP_NAME}.sha256"
+          fi
           ls -la
 
       # Phase 21.5 — Sigstore signing applies even to the
       # foundation placeholder, so the verification path can be
       # exercised end-to-end before the real build lands.
+      # PH-23.11 — the glob now picks up both the .wasm AND the
+      # .pyz zipapp sidecar so both artifacts ship signed.
       - name: Sign WASI artifact with Sigstore (keyless)
         if: ${{ startsWith(github.ref, 'refs/tags/v') }}
         uses: sigstore/gh-action-sigstore-python@v3.0.0
         with:
-          inputs: dist-wasi/mythic-vibe-*.wasm
+          inputs: |
+            dist-wasi/mythic-vibe-*.wasm
+            dist-wasi/mythic-vibe-*.pyz
 
-      # Phase 21.6 — SLSA Level 3 build provenance.
+      # Phase 21.6 — SLSA Level 3 build provenance for both
+      # artifacts. attest-build-provenance accepts a glob-style
+      # subject-path so the .wasm + .pyz both get attested.
       - name: Attest WASI build provenance
         if: ${{ startsWith(github.ref, 'refs/tags/v') }}
         uses: actions/attest-build-provenance@v2
         with:
-          subject-path: dist-wasi/mythic-vibe-*.wasm
+          subject-path: |
+            dist-wasi/mythic-vibe-*.wasm
+            dist-wasi/mythic-vibe-*.pyz
 
       - name: Upload WASI artifact
         uses: actions/upload-artifact@v4

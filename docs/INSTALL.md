@@ -299,21 +299,26 @@ The CLI ships a single-file `.wasm` artifact built for the [WASI](https://wasi.d
 - `mythic-vibe status --json`
 - `mythic-vibe packet list --json`
 
+Each release attaches **two artifacts**: the `.wasm` (CPython compiled to WebAssembly) and a `.pyz` zipapp sidecar (the `mythic_vibe_cli/` source tree). The runtime invokes the zipapp via the wasm:
+
 ```bash
 VERSION=1.0.0
 gh release download "v${VERSION}" \
     --repo hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding \
-    --pattern "mythic-vibe-${VERSION}-wasi-experimental.wasm*"
+    --pattern "mythic-vibe-${VERSION}-wasi-experimental.wasm*" \
+    --pattern "mythic-vibe-${VERSION}-wasi-experimental.pyz*"
 
-# Verify SHA256:
+# Verify SHA256 of both artifacts:
 sha256sum --check "mythic-vibe-${VERSION}-wasi-experimental.wasm.sha256"
+sha256sum --check "mythic-vibe-${VERSION}-wasi-experimental.pyz.sha256"
 
 # Run with Wasmtime (--dir grants the wasm access to your project):
 wasmtime --dir=. \
-    "mythic-vibe-${VERSION}-wasi-experimental.wasm" -- doctor --json
+    "mythic-vibe-${VERSION}-wasi-experimental.wasm" -- \
+    "mythic-vibe-${VERSION}-wasi-experimental.pyz" doctor --json
 ```
 
-The `--dir` flag pre-opens the host directory the CLI sees as `/work` (or whatever the WASI host names it). Without it the wasm runs in a fully-sandboxed mode and can't read or write any files.
+The `--dir` flag pre-opens the host directory the CLI sees as `/work` (or whatever the WASI host names it). Without it the wasm runs in a fully-sandboxed mode and can't read or write any files. The `.pyz` zipapp must be passed as an argument to the `.wasm` so the WASI Python interpreter knows what to execute.
 
 For full design rationale (why WASI, the three Python-to-WASM paths considered, the per-stdlib-module compatibility matrix, deferred work), see [`packaging/wasi/README.md`](../packaging/wasi/README.md).
 

@@ -193,6 +193,66 @@ class WasiBuildScriptTests(unittest.TestCase):
         # level pipeline.
         self.assertTrue(hasattr(self.module, "_run_wasi_orchestrator"))
 
+    def test_build_zipapp_sidecar_function_exists(self) -> None:
+        # PH-23.11 — the zipapp builder produces a .pyz sidecar
+        # next to the .wasm so the WASI runtime has the
+        # mythic-vibe-cli source to execute.
+        self.assertTrue(
+            hasattr(self.module, "_build_zipapp_sidecar"),
+        )
+
+    def test_build_zipapp_sidecar_creates_pyz(self) -> None:
+        # The zipapp builder runs in-process (no subprocess), so
+        # we can drive it directly. Verify it produces a .pyz
+        # next to the wasm output and the file is non-empty.
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_dir = Path(tmp)
+            wasm_path = tmp_dir / "fake.wasm"
+            wasm_path.write_bytes(b"placeholder wasm")
+            # Repo root is the parent's parent's parent of build.py
+            # (matches main()'s repo_root resolution).
+            repo_root = Path(self.module.__file__).resolve().parent.parent.parent
+            self.module._build_zipapp_sidecar(repo_root, wasm_path)
+            sidecar = wasm_path.with_suffix(".pyz")
+            self.assertTrue(
+                sidecar.is_file(),
+                f"expected zipapp sidecar at {sidecar}",
+            )
+            self.assertGreater(
+                sidecar.stat().st_size, 1024,
+                "zipapp sidecar should contain compressed source "
+                "(expected > 1 KB)",
+            )
+
+    def test_zipapp_sidecar_main_target_runs_cli(self) -> None:
+        # The zipapp's __main__.py must invoke
+        # mythic_vibe_cli.cli.main so command-line invocations
+        # behave the same as the pip path.
+        import zipfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_dir = Path(tmp)
+            wasm_path = tmp_dir / "fake.wasm"
+            wasm_path.write_bytes(b"placeholder")
+            repo_root = Path(self.module.__file__).resolve().parent.parent.parent
+            self.module._build_zipapp_sidecar(repo_root, wasm_path)
+            sidecar = wasm_path.with_suffix(".pyz")
+            with zipfile.ZipFile(sidecar) as zf:
+                names = set(zf.namelist())
+                self.assertIn(
+                    "__main__.py", names,
+                    "zipapp must have __main__.py at top level",
+                )
+                main_text = zf.read("__main__.py").decode("utf-8")
+                # zipapp.create_archive writes a stub that imports
+                # the configured main_target — verify the import
+                # references our cli.main entry point.
+                self.assertIn(
+                    "mythic_vibe_cli.cli", main_text,
+                    "zipapp __main__ must import mythic_vibe_cli.cli",
+                )
+
     def test_resolve_cache_dir_honors_override(self) -> None:
         # The --cache-dir flag must take priority over env vars.
         with tempfile.TemporaryDirectory() as tmp:
@@ -332,6 +392,15 @@ class ReleaseWasiWorkflowTests(unittest.TestCase):
         self.assertIn(
             "wasi-${SDK_RELEASE}-cpython-${CPYTHON}-v1", self.text,
         )
+
+    def test_signs_and_attests_both_wasm_and_pyz(self) -> None:
+        """PH-23.11 — both the .wasm and the .pyz zipapp sidecar
+        must be signed + attested. A glob-style subject path
+        catches both artifacts in one signing/attestation step."""
+        # The Sigstore step's inputs section accepts a multiline
+        # glob list per the action's docs.
+        self.assertIn("dist-wasi/mythic-vibe-*.wasm", self.text)
+        self.assertIn("dist-wasi/mythic-vibe-*.pyz", self.text)
 
     def test_cache_has_restore_keys_fallback(self) -> None:
         """A CPython version bump shouldn't force re-downloading
