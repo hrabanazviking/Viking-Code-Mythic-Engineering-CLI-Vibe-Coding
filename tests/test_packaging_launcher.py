@@ -162,6 +162,73 @@ class LauncherMainRsTests(unittest.TestCase):
         self.assertIn("#[cfg(test)]", self.raw)
         self.assertIn("mod tests", self.raw)
 
+    def test_declares_sha256_expected_table(self) -> None:
+        """PH-23.4 — the launcher must declare a per-arch SHA256
+        expectations table for the python-build-standalone
+        archive, even if entries are None today. The table's
+        existence is the contract; populating it is a future-
+        session step via tools/fetch_pbs_checksums.py."""
+        self.assertIn("PBS_EXPECTED_SHA256", self.raw)
+        # Every supported host triple must have an entry, even
+        # if the SHA value is None during foundation level.
+        for triple in (
+            "x86_64-unknown-linux-gnu",
+            "aarch64-unknown-linux-gnu",
+            "x86_64-apple-darwin",
+            "aarch64-apple-darwin",
+            "x86_64-pc-windows-msvc",
+        ):
+            self.assertIn(
+                f'"{triple}"', self.raw,
+                f"missing SHA table entry for {triple}",
+            )
+
+    def test_declares_strict_mode_constant(self) -> None:
+        # REQUIRE_VERIFIED_CHECKSUMS controls whether a missing
+        # table entry is a hard error (true) or a warning (false).
+        self.assertIn("REQUIRE_VERIFIED_CHECKSUMS", self.raw)
+
+    def test_supports_strict_mode_env_override(self) -> None:
+        # MYTHIC_LAUNCHER_REQUIRE_SHA=1 lets operators flip on
+        # strict mode without rebuilding the launcher.
+        self.assertIn("MYTHIC_LAUNCHER_REQUIRE_SHA", self.raw)
+
+    def test_declares_verify_archive_function(self) -> None:
+        # The verification entry point must exist as a pub fn
+        # so unit tests can drive it.
+        self.assertIn("fn verify_archive_sha256(", self.raw)
+
+    def test_wires_verification_into_ensure_interpreter(self) -> None:
+        # ensure_interpreter must call verify_archive_sha256
+        # between download() and extract_archive(). Catching
+        # the order here prevents a regression where someone
+        # extracts before verifying.
+        ensure_idx = self.raw.find("fn ensure_interpreter(")
+        self.assertGreater(ensure_idx, 0)
+        # Look at the ~1500 chars after the function start
+        # for the verification call.
+        body = self.raw[ensure_idx: ensure_idx + 2000]
+        download_idx = body.find("download(")
+        verify_idx = body.find("verify_archive_sha256(")
+        extract_idx = body.find("extract_archive(")
+        self.assertGreater(
+            download_idx, 0, "download() not in ensure_interpreter",
+        )
+        self.assertGreater(
+            verify_idx, download_idx,
+            "verify_archive_sha256() must come after download()",
+        )
+        self.assertGreater(
+            extract_idx, verify_idx,
+            "extract_archive() must come after verify_archive_sha256()",
+        )
+
+    def test_uses_sha2_crate_directly(self) -> None:
+        # The sha2 + hex crates are pinned in Cargo.toml; the
+        # source must `use` them.
+        self.assertIn("use sha2::{Digest, Sha256}", self.raw)
+        self.assertIn("hex::encode", self.raw)
+
 
 class LauncherReadmeTests(unittest.TestCase):
     def setUp(self) -> None:
