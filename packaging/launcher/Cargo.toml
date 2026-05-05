@@ -57,6 +57,14 @@ hex = "0.4"
 # Error handling without bringing in a heavy dep tree.
 anyhow = "1.0"
 
+# PH-23.6 (additive 2026-05-05): progress bars for the
+# python-build-standalone download. indicatif is the canonical
+# terminal progress-bar crate in Rust — adds ~150 KB to the
+# binary, which is worth it for the first-run UX win where the
+# 30-60s download otherwise looks like a hang. The library is
+# MIT-licensed and pure-Rust (no system C dep).
+indicatif = { version = "0.17", default-features = false }
+
 [profile.release]
 # Smaller binary — operators care about download size more than
 # compile time for a launcher shim.
