@@ -8,6 +8,7 @@ publish Mythic Vibe CLI to its three distribution channels:
 | PyPI | (built from `pyproject.toml` directly) | OIDC trusted publishing — see `.github/workflows/release.yml` `publish-pypi` job |
 | Homebrew tap (`homebrew-mythic`) | [`homebrew/mythic-vibe.rb.template`](homebrew/mythic-vibe.rb.template) | `update-homebrew` job in the release workflow opens a PR against the tap with `__VERSION__` + `__SDIST_SHA256__` substituted |
 | Scoop bucket (`scoop-mythic`) | [`scoop/mythic-vibe.json.template`](scoop/mythic-vibe.json.template) | `update-scoop` job opens a PR against the bucket with `__VERSION__` + `__WHEEL_SHA256__` substituted |
+| AUR maintainer repo (`aur-mythic`) | [`aur/PKGBUILD.template`](aur/PKGBUILD.template), [`aur/.SRCINFO.template`](aur/.SRCINFO.template) | `update-aur` job opens a PR against the maintainer repo with `__VERSION__` + `__SDIST_SHA256__` substituted; a human maintainer syncs to AUR proper (PH-21.7) |
 
 Plus an **offline-install wheelhouse** built into every release
 (`mythic-vibe-cli-<VERSION>-wheelhouse.tar.gz`) for air-gapped
@@ -31,19 +32,39 @@ change without consuming a version number.
 |--------|---------|
 | `TAP_BUMP_TOKEN` | PAT with `contents:write` on `homebrew-mythic` repo for the auto-update PR |
 | `BUCKET_BUMP_TOKEN` | PAT with `contents:write` on `scoop-mythic` repo for the auto-update PR |
+| `AUR_BUMP_TOKEN` | PAT with `contents:write` on `aur-mythic` repo for the auto-update PR (PH-21.7) |
 | (none for PyPI) | Trusted publishing uses OIDC — no long-lived token needed; configured per-repo at https://pypi.org/manage/account/publishing/ |
 
 ## Defer / future channels
 
 The compatibility policy (`docs/compatibility_policy.md`) lists
-PyPI + Homebrew + Scoop as v1.0 channels. Two more channels are
-**deferred to v1.x**:
+PyPI + Homebrew + Scoop as v1.0 channels. AUR landed as PH-21.7
+in the v1.x distribution expansion. Channels still in flight as
+of PH-21 kickoff:
 
-- **AUR** (Arch User Repository) — needs a maintainer with an AUR
-  account and PKGBUILD experience. Tracked as a v1.x stretch.
-- **winget** — needs Microsoft Store / winget-pkgs PR flow.
-  Tracked as a v1.x stretch.
+- **winget** — Microsoft Store / `winget-pkgs` PR flow. PH-21.8.
+- **OCI / container image** — multi-arch buildx → GHCR + Docker Hub.
+  PH-21.1.
+- **Single-file binaries** — PyInstaller + Nuitka per-OS executables.
+  PH-21.2 + PH-21.3.
+- **Termux** — formal Android-on-Termux platform support polish.
+  PH-21.9.
 
-When either lands, add a new template under
+When each lands, add a new template under
 `packaging/<channel>/` and a corresponding job to
 `.github/workflows/release.yml`.
+
+## Maintainer-repo sync recipes
+
+Each non-PyPI channel uses an automated PR against a
+maintainer-owned GitHub repo, since the upstream registry (Homebrew
+core, AUR, winget-pkgs) requires either credentials we don't store
+in CI or a human review step. Operators sync the merged PR upstream
+following the recipe in each maintainer repo's README:
+
+- `homebrew-mythic` — PR merge auto-publishes via `brew tap`.
+- `scoop-mythic` — PR merge auto-publishes via `scoop bucket add`.
+- `aur-mythic` — PR merge requires a human `git push aur master`
+  to `ssh://aur@aur.archlinux.org/mythic-vibe-cli.git` from a
+  workstation with the maintainer's AUR SSH key. The recipe lives
+  in the maintainer-repo README.

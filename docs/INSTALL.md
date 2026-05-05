@@ -60,6 +60,22 @@ scoop bucket add mythic https://github.com/hrabanazviking/scoop-mythic
 scoop install mythic-vibe
 ```
 
+### Arch Linux (AUR)
+
+The package is published as `mythic-vibe-cli` on the [Arch User Repository](https://aur.archlinux.org/). It builds from the PyPI sdist so AUR users get the exact bytes PyPI users get.
+
+```bash
+# Using yay (or any AUR helper):
+yay -S mythic-vibe-cli
+
+# Or manually with makepkg:
+git clone https://aur.archlinux.org/mythic-vibe-cli.git
+cd mythic-vibe-cli
+makepkg -si
+```
+
+After install, both `mythic-vibe` and the `mythic` short alias land on `PATH`. Optional extras (`tui`, `ai`, `ux`, `otel`) install with the standard `pip` flow into a venv after the AUR base package — AUR ships only the runtime base.
+
 ---
 
 ## Offline / air-gapped install

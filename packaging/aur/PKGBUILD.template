@@ -1,0 +1,43 @@
+# PKGBUILD template for mythic-vibe-cli (PH-21.7).
+#
+# This file is consumed by .github/workflows/release.yml — the
+# release workflow substitutes __VERSION__ + __SDIST_SHA256__
+# with the values from the just-built sdist, then opens a PR
+# against the aur-mythic maintainer repo. A human maintainer
+# syncs that PR to the AUR (aur.archlinux.org) git remote when
+# ready, since AUR uses git-over-ssh and the project does not
+# yet store an AUR SSH key in CI secrets.
+#
+# The PKGBUILD installs from the published PyPI sdist (not from a
+# git ref) so AUR users get the exact bytes that PyPI users get.
+# Pure-Python: arch=('any'). Standard AUR Python build pattern
+# (python-build + python-installer + python-wheel).
+
+# Maintainer: Mythic Vibe Contributors <noreply@mythic-vibe.dev>
+
+pkgname=mythic-vibe-cli
+pkgver=__VERSION__
+pkgrel=1
+pkgdesc="Beginner-friendly CLI that enforces Mythic Engineering vibe-coding workflow"
+arch=('any')
+url="https://github.com/hrabanazviking/Mythic-Engineering"
+license=('Apache-2.0')
+depends=('python>=3.10')
+makedepends=('python-build' 'python-installer' 'python-setuptools' 'python-wheel')
+source=("https://files.pythonhosted.org/packages/source/m/mythic-vibe-cli/mythic-vibe-cli-${pkgver}.tar.gz")
+sha256sums=('__SDIST_SHA256__')
+
+build() {
+    cd "${srcdir}/mythic-vibe-cli-${pkgver}"
+    python -m build --wheel --no-isolation
+}
+
+package() {
+    cd "${srcdir}/mythic-vibe-cli-${pkgver}"
+    python -m installer --destdir="${pkgdir}" dist/*.whl
+
+    # Apache-2.0 license file ships as documentation per AUR
+    # convention — operators can audit license terms without
+    # rummaging through site-packages.
+    install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}

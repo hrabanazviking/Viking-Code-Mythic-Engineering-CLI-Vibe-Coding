@@ -28,6 +28,9 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 PACKAGING_DIR = REPO_ROOT / "packaging"
 HOMEBREW_TEMPLATE = PACKAGING_DIR / "homebrew" / "mythic-vibe.rb.template"
 SCOOP_TEMPLATE = PACKAGING_DIR / "scoop" / "mythic-vibe.json.template"
+# Phase 21.7 (PH-21 distribution expansion 2026-05-05).
+AUR_PKGBUILD_TEMPLATE = PACKAGING_DIR / "aur" / "PKGBUILD.template"
+AUR_SRCINFO_TEMPLATE = PACKAGING_DIR / "aur" / ".SRCINFO.template"
 
 # Sample values that mimic what release.yml substitutes.
 SAMPLE_VERSION = "1.2.3"
@@ -141,6 +144,116 @@ class ScoopTemplateTests(unittest.TestCase):
         )
 
 
+class AurPkgbuildTemplateTests(unittest.TestCase):
+    """Phase 21.7 — AUR PKGBUILD template render-time sanity.
+
+    The PKGBUILD is consumed by ``release.yml``'s ``update-aur`` job
+    via the same ``sed`` substitution pattern as Homebrew + Scoop.
+    Render it, then assert the result has the structural shape AUR
+    expects — pkgname / pkgver / sha256sums / build / package
+    sections all present and balanced.
+    """
+
+    def setUp(self) -> None:
+        self.assertTrue(
+            AUR_PKGBUILD_TEMPLATE.is_file(),
+            f"AUR PKGBUILD template missing at {AUR_PKGBUILD_TEMPLATE}",
+        )
+        self.raw = AUR_PKGBUILD_TEMPLATE.read_text(encoding="utf-8")
+
+    def test_declares_required_placeholders(self) -> None:
+        self.assertIn("__VERSION__", self.raw)
+        self.assertIn("__SDIST_SHA256__", self.raw)
+
+    def test_substitution_removes_all_placeholders(self) -> None:
+        rendered = self.raw.replace(
+            "__VERSION__", SAMPLE_VERSION
+        ).replace(
+            "__SDIST_SHA256__", SAMPLE_SDIST_SHA
+        )
+        leftover = re.findall(r"__[A-Z0-9_]+__", rendered)
+        self.assertEqual(
+            leftover, [],
+            f"unrendered placeholders in PKGBUILD: {leftover}",
+        )
+
+    def test_rendered_pkgbuild_has_required_aur_fields(self) -> None:
+        rendered = self.raw.replace(
+            "__VERSION__", SAMPLE_VERSION
+        ).replace(
+            "__SDIST_SHA256__", SAMPLE_SDIST_SHA
+        )
+        # Standard AUR PKGBUILD field set per
+        # https://wiki.archlinux.org/title/PKGBUILD .
+        self.assertIn("pkgname=mythic-vibe-cli", rendered)
+        self.assertIn(f"pkgver={SAMPLE_VERSION}", rendered)
+        self.assertIn("pkgrel=", rendered)
+        self.assertIn("arch=('any')", rendered)
+        self.assertIn("license=('Apache-2.0')", rendered)
+        # Pure-Python packages should depend on python (not a
+        # pinned interpreter) per AUR Python guidelines.
+        self.assertRegex(rendered, r"depends=\(.*python.*\)")
+        # The sample sha must appear inside the sha256sums array.
+        self.assertIn(f"sha256sums=('{SAMPLE_SDIST_SHA}')", rendered)
+        # build() and package() functions must both be defined.
+        self.assertRegex(rendered, r"\bbuild\s*\(\)")
+        self.assertRegex(rendered, r"\bpackage\s*\(\)")
+
+    def test_pkgbuild_uses_pypi_sdist_url(self) -> None:
+        """AUR users get the same bytes PyPI users get — install
+        from the published sdist, not from a git ref. Mirrors the
+        Homebrew formula's url field."""
+        self.assertIn(
+            "https://files.pythonhosted.org/packages/source/m/mythic-vibe-cli/",
+            self.raw,
+        )
+
+
+class AurSrcinfoTemplateTests(unittest.TestCase):
+    """Phase 21.7 — AUR .SRCINFO template render-time sanity.
+
+    .SRCINFO is the machine-readable summary AUR derives from the
+    PKGBUILD. The maintainer repo holds both files; the .SRCINFO
+    must stay in sync with the PKGBUILD or AUR rejects the package
+    push. Render the template and assert the line-based key/value
+    format AUR requires."""
+
+    def setUp(self) -> None:
+        self.assertTrue(
+            AUR_SRCINFO_TEMPLATE.is_file(),
+            f"AUR .SRCINFO template missing at {AUR_SRCINFO_TEMPLATE}",
+        )
+        self.raw = AUR_SRCINFO_TEMPLATE.read_text(encoding="utf-8")
+
+    def test_declares_required_placeholders(self) -> None:
+        self.assertIn("__VERSION__", self.raw)
+        self.assertIn("__SDIST_SHA256__", self.raw)
+
+    def test_substitution_removes_all_placeholders(self) -> None:
+        rendered = self.raw.replace(
+            "__VERSION__", SAMPLE_VERSION
+        ).replace(
+            "__SDIST_SHA256__", SAMPLE_SDIST_SHA
+        )
+        leftover = re.findall(r"__[A-Z0-9_]+__", rendered)
+        self.assertEqual(
+            leftover, [],
+            f"unrendered placeholders in .SRCINFO: {leftover}",
+        )
+
+    def test_rendered_srcinfo_has_pkgbase_and_pkgname(self) -> None:
+        rendered = self.raw.replace(
+            "__VERSION__", SAMPLE_VERSION
+        ).replace(
+            "__SDIST_SHA256__", SAMPLE_SDIST_SHA
+        )
+        # Required top-level keys for AUR .SRCINFO.
+        self.assertIn("pkgbase = mythic-vibe-cli", rendered)
+        self.assertIn("pkgname = mythic-vibe-cli", rendered)
+        self.assertIn(f"pkgver = {SAMPLE_VERSION}", rendered)
+        self.assertIn(f"sha256sums = {SAMPLE_SDIST_SHA}", rendered)
+
+
 class ReleaseWorkflowTests(unittest.TestCase):
     """Sanity-check that ``.github/workflows/release.yml`` exists
     and references the expected templates + secrets. Catches the
@@ -174,6 +287,20 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn(
             "packaging/scoop/mythic-vibe.json.template", self.raw
         )
+
+    def test_references_aur_templates(self) -> None:
+        # Phase 21.7 — AUR maintainer-repo update job.
+        self.assertIn(
+            "packaging/aur/PKGBUILD.template", self.raw
+        )
+        self.assertIn(
+            "packaging/aur/.SRCINFO.template", self.raw
+        )
+
+    def test_aur_job_uses_aur_bump_token(self) -> None:
+        # Match the secret-naming convention TAP_BUMP_TOKEN /
+        # BUCKET_BUMP_TOKEN already use.
+        self.assertIn("AUR_BUMP_TOKEN", self.raw)
 
     def test_runs_sbom_regen(self) -> None:
         self.assertIn("scripts/regenerate_sbom.py", self.raw)
