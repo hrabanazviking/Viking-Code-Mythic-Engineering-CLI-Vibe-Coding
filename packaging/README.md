@@ -9,6 +9,7 @@ publish Mythic Vibe CLI to its three distribution channels:
 | Homebrew tap (`homebrew-mythic`) | [`homebrew/mythic-vibe.rb.template`](homebrew/mythic-vibe.rb.template) | `update-homebrew` job in the release workflow opens a PR against the tap with `__VERSION__` + `__SDIST_SHA256__` substituted |
 | Scoop bucket (`scoop-mythic`) | [`scoop/mythic-vibe.json.template`](scoop/mythic-vibe.json.template) | `update-scoop` job opens a PR against the bucket with `__VERSION__` + `__WHEEL_SHA256__` substituted |
 | AUR maintainer repo (`aur-mythic`) | [`aur/PKGBUILD.template`](aur/PKGBUILD.template), [`aur/.SRCINFO.template`](aur/.SRCINFO.template) | `update-aur` job opens a PR against the maintainer repo with `__VERSION__` + `__SDIST_SHA256__` substituted; a human maintainer syncs to AUR proper (PH-21.7) |
+| GHCR (always) + Docker Hub (opt-in) | [`Dockerfile`](../Dockerfile), [`.dockerignore`](../.dockerignore) | `release-oci.yml` workflow builds a multi-arch (linux/amd64 + linux/arm64) image via buildx + QEMU on tag push; pushes to `ghcr.io/<owner>/mythic-vibe-cli:<VERSION>` + `:latest`; mirrors to Docker Hub when the `DOCKERHUB_PUBLISH_ENABLED` repo variable is `true` (PH-21.1) |
 
 Plus an **offline-install wheelhouse** built into every release
 (`mythic-vibe-cli-<VERSION>-wheelhouse.tar.gz`) for air-gapped
@@ -33,22 +34,20 @@ change without consuming a version number.
 | `TAP_BUMP_TOKEN` | PAT with `contents:write` on `homebrew-mythic` repo for the auto-update PR |
 | `BUCKET_BUMP_TOKEN` | PAT with `contents:write` on `scoop-mythic` repo for the auto-update PR |
 | `AUR_BUMP_TOKEN` | PAT with `contents:write` on `aur-mythic` repo for the auto-update PR (PH-21.7) |
+| (none for GHCR) | Workflow `GITHUB_TOKEN` is auto-provisioned with `packages:write`; no extra secret needed (PH-21.1) |
+| `DOCKERHUB_USERNAME` + `DOCKERHUB_TOKEN` | **optional** — only needed when `DOCKERHUB_PUBLISH_ENABLED` repo variable is set to `true` to mirror images to Docker Hub (PH-21.1) |
 | (none for PyPI) | Trusted publishing uses OIDC — no long-lived token needed; configured per-repo at https://pypi.org/manage/account/publishing/ |
 
 ## Defer / future channels
 
 The compatibility policy (`docs/compatibility_policy.md`) lists
-PyPI + Homebrew + Scoop as v1.0 channels. AUR landed as PH-21.7
-in the v1.x distribution expansion. Channels still in flight as
-of PH-21 kickoff:
+PyPI + Homebrew + Scoop as v1.0 channels. AUR + OCI + Termux
+landed in the v1.x distribution expansion (PH-21.7 / PH-21.1 /
+PH-21.9). Channels still in flight as of PH-21 mid-phase:
 
 - **winget** — Microsoft Store / `winget-pkgs` PR flow. PH-21.8.
-- **OCI / container image** — multi-arch buildx → GHCR + Docker Hub.
-  PH-21.1.
 - **Single-file binaries** — PyInstaller + Nuitka per-OS executables.
   PH-21.2 + PH-21.3.
-- **Termux** — formal Android-on-Termux platform support polish.
-  PH-21.9.
 
 When each lands, add a new template under
 `packaging/<channel>/` and a corresponding job to

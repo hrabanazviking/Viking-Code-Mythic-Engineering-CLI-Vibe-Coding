@@ -107,6 +107,27 @@ mythic-vibe hardware       # platform_tags includes "wsl"
 
 The runtime detects WSL by reading `platform.uname().release` and matching `microsoft` (case-insensitive) — works for both WSL1 and WSL2. The detection is read-only and never raises; if the kernel string changes in a future WSL release, the worst case is the tag drops, not a CLI failure.
 
+### Container (Docker / Podman)
+
+Each release publishes a multi-arch (linux/amd64 + linux/arm64) image to GitHub Container Registry:
+
+```bash
+# Pull and run the latest tag:
+docker run --rm ghcr.io/hrabanazviking/mythic-vibe-cli:latest --help
+
+# Pin to a specific version:
+docker run --rm ghcr.io/hrabanazviking/mythic-vibe-cli:1.0.0 doctor --json
+
+# Mount your project directory for in-place workflows:
+docker run --rm -v "$(pwd):/work" ghcr.io/hrabanazviking/mythic-vibe-cli:1.0.0 status
+```
+
+The image runs as a non-root `mythic` user (uid 1000) with the workspace mounted at `/work`. Default `ENTRYPOINT` is `mythic-vibe`, so any flag/subcommand you pass goes straight to the CLI. The container ships with the `[ai,otel,ux,tui]` extras pre-installed.
+
+Podman works the same — substitute `podman run` for `docker run`. The image manifest declares standard `org.opencontainers.image.*` labels (license, source, documentation URL) so registry UIs surface project metadata correctly.
+
+If Docker Hub is also enabled (an opt-in publish target — see `packaging/README.md`), the same image is mirrored to `docker.io/hrabanazviking/mythic-vibe-cli`.
+
 ---
 
 ## Offline / air-gapped install

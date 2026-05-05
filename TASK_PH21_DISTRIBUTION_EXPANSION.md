@@ -52,7 +52,7 @@ earlier slices produce.
 | 1 | **21.7** | AUR `mythic-vibe-cli` package + maintainer-repo workflow | ~2h | [x] |
 | 2 | **21.8** | winget manifest PR to `winget-pkgs` | ~2h | [ ] |
 | 3 | **21.9** | Android / Termux formal support (docs + platform detection) | ~3-4h | [x] |
-| 4 | **21.1** | Container / OCI image (multi-arch buildx → GHCR + Docker Hub) | ~3-4h | [ ] |
+| 4 | **21.1** | Container / OCI image (multi-arch buildx → GHCR + Docker Hub) | ~3-4h | [x] |
 | 5 | **21.2** | Single-file executables via PyInstaller (Linux + Windows + macOS) | ~6-8h | [ ] |
 | 6 | **21.3** | Single-file executables via Nuitka (alternative; faster startup) | ~6-8h | [ ] |
 | 7 | **21.4** | macOS Gatekeeper override docs (rescoped — not full notarization) | ~30min | [ ] |
@@ -306,6 +306,65 @@ treat absence-of-tag as "not detected" rather than "definitely
 not that platform" (read-only signals, never raise).
 
 Beginning slice 21.1 (OCI multi-arch image) next.
+
+### 2026-05-05 — Slice 21.1 closed (OCI multi-arch container image)
+**Shipped:**
+- `Dockerfile` — multi-stage build at repo root. Stage 1 (builder)
+  installs the project + `[ai,otel,ux,tui]` extras into `/opt/venv`
+  with build deps available for any wheel that needs to compile
+  from sdist on arm64; bytecode caches stripped before handoff.
+  Stage 2 (runtime) on python:3.12-slim, copies the venv, runs as
+  non-root `mythic` user (uid 1000) with workspace at `/work`,
+  layer-time smoke (`mythic-vibe --version`) catches a broken
+  venv copy before push. ENTRYPOINT in exec-form so signals
+  reach the CLI directly. Standard `org.opencontainers.image.*`
+  labels (title, description, source, documentation, licenses,
+  vendor) so registry UIs surface project metadata.
+- `.dockerignore` — keeps the buildx context minimal: excludes
+  `.git`, `.github`, `tests/`, `docs/`, `research_data/`,
+  `scripts/`, `tools/`, `packaging/`, all Python caches, `mythic/`
+  operational data, `.env*`, and the `Users/` test-debris path.
+- `.github/workflows/release-oci.yml` — new workflow triggered on
+  `v*.*.*` tag pushes (mirrors release.yml semantics) plus
+  `workflow_dispatch` for build-only rehearsal. Sets up QEMU +
+  buildx, logs into GHCR via `GITHUB_TOKEN`, optionally logs into
+  Docker Hub when `DOCKERHUB_PUBLISH_ENABLED` repo variable is
+  `true` and `DOCKERHUB_USERNAME` + `DOCKERHUB_TOKEN` secrets
+  are present. Builds linux/amd64 + linux/arm64 in one pass.
+  SLSA `provenance: true` + SPDX `sbom: true` attached to the
+  manifest (Sigstore signing lands separately in PH-21.5).
+  Smoke test pulls + runs the amd64 image post-push so a broken
+  image fails the workflow before operators pull it.
+- `tests/test_dockerfile_lint.py` — 21 new tests across 3 classes
+  covering: multi-stage build invariants, syntax directive,
+  non-root USER, exec-form ENTRYPOINT, apt cache cleanup in
+  same RUN, layer-time smoke, OCI labels, Apache-2.0 license
+  label, dockerignore exclusions (git/CI/tests/docs/caches/env),
+  workflow trigger semantics, multi-arch buildx setup, GHCR
+  login, optional Docker Hub gating, provenance + SBOM emission,
+  post-push smoke test, version resolution from pyproject.
+- `docs/INSTALL.md` — new "Container (Docker / Podman)" section
+  with three example invocations: latest tag, pinned version,
+  bind-mounted project dir. Documents the non-root user, /work
+  mount, default extras, OCI labels, and Docker Hub mirror
+  opt-in.
+- `packaging/README.md` — channel table extended with the OCI
+  row pointing at the Dockerfile + .dockerignore. Secret table
+  documents the GHCR (free) and Docker Hub (opt-in) auth paths.
+  Defer-section tightened: AUR + OCI + Termux removed (now
+  shipped); winget + PyInstaller + Nuitka remain in flight.
+
+**Gates green:** 2340 passed / 1 skipped / 109 subtests (+21 from
+this slice); ruff clean; mypy clean (156 source files); contract
+audit clean (no new commands).
+
+**Compatibility surface:** new publication channel; existing
+stable surfaces (CLI commands, JSON contracts, exit codes) are
+unaffected. Image tagging follows v1.0 SemVer (`:VERSION` per tag,
+`:latest` floats). Operators pinning by sha256 digest get
+deterministic builds across replays.
+
+Beginning slice 21.2 (PyInstaller binaries) next.
 
 ---
 
