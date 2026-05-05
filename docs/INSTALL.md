@@ -138,6 +138,45 @@ Each binary ships with a `.sha256` sidecar for out-of-band verification.
 
 The standalone binary embeds **only the CLI's stdlib-only base** — optional extras (`ai`, `tui`, `ux`, `otel`) are deliberately excluded so the binary stays small (~15-25 MB) and starts fast. If you need extras, use the PyPI / Homebrew / Scoop / AUR / Container channels above; those install into a venv where extras work via pip.
 
+#### macOS first-launch (Gatekeeper override)
+
+The macOS binaries ship **un-notarized**. On first launch macOS Gatekeeper will block the binary with a dialog that reads roughly:
+
+> "mythic-vibe-1.0.0-macos-arm64" cannot be opened because it is from an unidentified developer.
+
+This is expected. You have two clean ways past it:
+
+**Option A — Right-click → Open (operator-friendly):**
+
+1. In Finder, locate the downloaded binary.
+2. Hold Control and click the binary; choose **Open**.
+3. The same dialog appears, but this time it has an **Open** button. Click it once.
+4. macOS records your trust decision; subsequent launches no longer prompt.
+
+**Option B — clear the quarantine attribute (CLI-friendly):**
+
+```bash
+# Adjust the filename to whichever asset you downloaded:
+xattr -d com.apple.quarantine /path/to/mythic-vibe-1.0.0-macos-arm64
+
+# Now run normally:
+chmod +x /path/to/mythic-vibe-1.0.0-macos-arm64
+/path/to/mythic-vibe-1.0.0-macos-arm64 --version
+```
+
+`xattr -d com.apple.quarantine` removes the extended attribute Safari (or any other downloader) sets on freshly-downloaded files. After it's removed, Gatekeeper treats the binary as trusted local content.
+
+##### Why we ship un-notarized
+
+Notarization requires an Apple Developer account ($99/year), Apple-side review of every release, and a tighter signing setup that doesn't fit a small-team open-source project. The trade-off:
+
+- ✅ **Operator sovereignty.** Anyone can build the same binary from source and verify it byte-for-byte against the published artifact via the SHA256 sidecar (or via the Sigstore signatures landing in PH-21.5).
+- ✅ **No upstream gatekeeper.** Apple cannot revoke the project's notarization (and through it, every operator's installed binary) over a policy disagreement.
+- ✅ **Open-source-philosophy aligned.** The project's threat model trusts cryptographic verification (sha256 → keyless Sigstore signatures) rather than corporate identity.
+- ⚠️ **One-time prompt.** Operators see one Gatekeeper warning per binary per release. After the right-click → Open or `xattr -d` step, no further prompts.
+
+If demand for notarization grows post-v1.0, the project can revisit by adding a separate v1.x slice with the Apple Developer account work. The decision is reversible — adding notarization later doesn't break any existing binary; it just adds a new code path.
+
 ### Container (Docker / Podman)
 
 Each release publishes a multi-arch (linux/amd64 + linux/arm64) image to GitHub Container Registry:
