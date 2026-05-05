@@ -76,6 +76,37 @@ makepkg -si
 
 After install, both `mythic-vibe` and the `mythic` short alias land on `PATH`. Optional extras (`tui`, `ai`, `ux`, `otel`) install with the standard `pip` flow into a venv after the AUR base package — AUR ships only the runtime base.
 
+### Termux (Android)
+
+Termux turns an Android phone or tablet into a real Linux userland. The CLI installs from PyPI exactly the same way as on a desktop, plus a one-time apt prep:
+
+```bash
+# Inside Termux:
+pkg update && pkg install python rust
+pip install --upgrade pip
+pip install mythic-vibe-cli
+
+mythic-vibe doctor
+mythic-vibe hardware       # confirms platform_tags includes "termux"
+```
+
+Notes:
+
+- `rust` is needed to compile any optional extra that has a Rust-built wheel (the base CLI is pure-Python and does not need Rust). If you only install the base, `pkg install python` is enough.
+- The CLI honors `XDG_CONFIG_HOME` and the `MYTHIC_HOME` env var. Termux already sets `XDG_CONFIG_HOME` to `~/.config`, so caches and config land under `~/.config/mythic-vibe/` exactly like on a desktop. No path tweaks required.
+- `mythic-vibe hardware` exposes a `platform_tags` array that includes `termux` when the runtime detects either the `TERMUX_VERSION` environment variable or the Termux package prefix at `/data/data/com.termux/files/usr`. Use it to gate Termux-specific behavior in your own scripts.
+
+### WSL (Windows Subsystem for Linux)
+
+Inside a WSL distro the install path is identical to native Linux:
+
+```bash
+python3 -m pip install mythic-vibe-cli
+mythic-vibe hardware       # platform_tags includes "wsl"
+```
+
+The runtime detects WSL by reading `platform.uname().release` and matching `microsoft` (case-insensitive) — works for both WSL1 and WSL2. The detection is read-only and never raises; if the kernel string changes in a future WSL release, the worst case is the tag drops, not a CLI failure.
+
 ---
 
 ## Offline / air-gapped install
@@ -255,6 +286,7 @@ mythic-vibe completion --shell powershell | Invoke-Expression
 
 - **`mythic-vibe: command not found`** — your venv is not active, OR you used `pip install` outside any venv and your shell's `PATH` doesn't include user-local install dirs. Activate the venv (or use the module form: `python -m mythic_vibe_cli --help`).
 - **Wheel install fails on Pi Zero / very-low-RAM device** — use the offline wheelhouse path above; it ships pre-built wheels so the install path doesn't need a build toolchain.
+- **Termux `pip install` fails compiling a wheel** — install `pkg install rust` first, or use the offline wheelhouse path which ships pre-built wheels and bypasses the compile step entirely.
 - **`pipx` install with extras fails** — make sure you're using the PEP 508 form: `pipx install "mythic-vibe-cli[ai] @ git+URL@branch"` for VCS installs, or just `pipx install "mythic-vibe-cli[ai]"` for PyPI.
 - **`mythic-vibe tui` says Textual is missing** — install the `[tui]` extra: `python -m pip install "mythic-vibe-cli[tui]"`.
 
