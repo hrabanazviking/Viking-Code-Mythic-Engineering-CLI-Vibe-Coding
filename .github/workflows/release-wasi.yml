@@ -1,0 +1,107 @@
+name: Release WASI
+
+# Phase 22.3 — WebAssembly (WASI) experimental runtime.
+# Triggered by pushing a v*.*.* tag plus workflow_dispatch for
+# build-only rehearsal.
+#
+# Foundation-level: the build step today emits a placeholder
+# .wasm via packaging/wasi/build.py without --really-build. The
+# workflow shape exists so a future session that fills in the
+# actual CPython WASI cross-build only needs to flip the build
+# command to include --really-build, not change the workflow
+# structure.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  build:
+    name: Build WASI artifact
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Resolve project version
+        id: version
+        run: |
+          VERSION=$(python -c "import tomllib, pathlib; \
+            print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build WASI artifact (foundation-level placeholder)
+        run: |
+          python packaging/wasi/build.py \
+            --output dist-wasi/mythic-vibe.wasm
+          # The foundation-level build emits a placeholder. Once
+          # the wasi-sdk + CPython WASI cross-build lands in a
+          # future session, switch to:
+          #   python packaging/wasi/build.py \
+          #     --output dist-wasi/mythic-vibe.wasm \
+          #     --really-build
+          ls -la dist-wasi/
+
+      - name: Rename artifact with version suffix
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          ASSET_NAME="mythic-vibe-${VERSION}-wasi-experimental.wasm"
+          mv dist-wasi/mythic-vibe.wasm "dist-wasi/${ASSET_NAME}"
+          cd dist-wasi
+          sha256sum "${ASSET_NAME}" > "${ASSET_NAME}.sha256"
+          ls -la
+
+      # Phase 21.5 — Sigstore signing applies even to the
+      # foundation placeholder, so the verification path can be
+      # exercised end-to-end before the real build lands.
+      - name: Sign WASI artifact with Sigstore (keyless)
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        uses: sigstore/gh-action-sigstore-python@v3.0.0
+        with:
+          inputs: dist-wasi/mythic-vibe-*.wasm
+
+      # Phase 21.6 — SLSA Level 3 build provenance.
+      - name: Attest WASI build provenance
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist-wasi/mythic-vibe-*.wasm
+
+      - name: Upload WASI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasi-artifact
+          path: dist-wasi/*
+          if-no-files-found: error
+
+  github-release:
+    name: Attach WASI artifact to GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - name: Download WASI artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: wasi-artifact
+          path: dist-wasi
+      - name: Upload to existing GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist-wasi/*
