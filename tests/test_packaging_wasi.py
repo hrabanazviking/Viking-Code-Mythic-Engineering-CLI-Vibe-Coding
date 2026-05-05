@@ -65,6 +65,37 @@ class WasiBuildScriptTests(unittest.TestCase):
     def test_pins_wasi_sdk_version(self) -> None:
         self.assertTrue(hasattr(self.module, "WASI_SDK_VERSION"))
 
+    def test_pins_wasi_sdk_release_tag(self) -> None:
+        # PH-23.7 — the wasi-sdk release tag (e.g. wasi-sdk-24.0)
+        # is a separate constant from the major version number,
+        # so the upstream URL template can construct asset names
+        # consistently across major.minor bumps.
+        self.assertTrue(hasattr(self.module, "WASI_SDK_RELEASE"))
+        # Format: wasi-sdk-MAJOR.MINOR (matches upstream tags).
+        self.assertRegex(
+            self.module.WASI_SDK_RELEASE, r"^wasi-sdk-\d+\.\d+$",
+        )
+
+    def test_declares_url_templates(self) -> None:
+        # Both download URLs must be pinned at module level so a
+        # future session bumping CPython or wasi-sdk minor edits
+        # one place.
+        self.assertTrue(
+            hasattr(self.module, "CPYTHON_SOURCE_URL_TEMPLATE"),
+        )
+        self.assertTrue(
+            hasattr(self.module, "WASI_SDK_URL_TEMPLATE"),
+        )
+
+    def test_declares_buildstepfailed_exception(self) -> None:
+        # PH-23.7 — typed exception lets the driver map step
+        # failures to specific exit codes (10 / 11 / 12 / 13)
+        # so the CI log shows where the build broke.
+        self.assertTrue(hasattr(self.module, "BuildStepFailed"))
+        self.assertTrue(
+            issubclass(self.module.BuildStepFailed, RuntimeError),
+        )
+
     def test_main_supports_output_flag(self) -> None:
         # The build script must let the workflow specify the
         # output path so renaming is the workflow's responsibility,
@@ -78,18 +109,51 @@ class WasiBuildScriptTests(unittest.TestCase):
             self.assertTrue(output.is_file())
 
     def test_main_supports_really_build_flag(self) -> None:
-        # --really-build is the foundation-deferred path; today
-        # it returns 0 with a clear log message. A future session
-        # implements the real cross-build behind this flag.
+        # PH-23.7 — --really-build now drives the actual cross-
+        # build. We can't run the real build here (needs
+        # wasi-sdk + ~10-20 minutes), so the test just confirms
+        # the flag is parsed without immediate error. With our
+        # cache + ensure_wasi_sdk patched to short-circuit, the
+        # full pipeline would be exercised; here we just check
+        # the path takes off without crashing on argparse.
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp) / "test.wasm"
+            cache = Path(tmp) / "cache"
             buf = io.StringIO()
             with mock.patch.object(sys, "stdout", buf):
-                rc = self.module.main([
-                    "--output", str(output),
-                    "--really-build",
-                ])
-            self.assertEqual(rc, 0)
+                # Patch the ensure_* helpers so the cross-build
+                # short-circuits before any network IO. Returns
+                # a stub path that won't be a real cpython tree;
+                # we expect the orchestrator to fail with a
+                # non-zero return, which is fine — the test is
+                # about argv parsing reaching the build path.
+                with mock.patch.object(
+                    self.module, "_ensure_wasi_sdk",
+                    return_value=Path(tmp) / "fake-sdk",
+                ):
+                    with mock.patch.object(
+                        self.module, "_ensure_cpython_source",
+                        return_value=Path(tmp) / "fake-cpython",
+                    ):
+                        with mock.patch.object(
+                            self.module, "_run_wasi_orchestrator",
+                            return_value=0,
+                        ):
+                            rc = self.module.main([
+                                "--output", str(output),
+                                "--really-build",
+                                "--cache-dir", str(cache),
+                            ])
+            # Expected to fail at step 7 (artifact-not-found)
+            # since our stubbed dirs don't actually contain the
+            # produced .wasm. Exit code 13 confirms the path
+            # ran the full pipeline up to that step.
+            self.assertEqual(
+                rc, 13,
+                "expected exit 13 (artifact-not-found) when "
+                "ensure_* stubs short-circuit but copy step "
+                "finds no real artifact",
+            )
 
     def test_emits_placeholder_when_not_really_building(self) -> None:
         # Without --really-build the script writes a non-wasm
@@ -111,6 +175,57 @@ class WasiBuildScriptTests(unittest.TestCase):
         # documents the contract.
         self.assertTrue(hasattr(self.module, "shell"))
         self.assertTrue(callable(self.module.shell))
+
+    def test_run_full_wasi_build_function_exists(self) -> None:
+        # PH-23.7 — the function that drives the real cross-build.
+        self.assertTrue(hasattr(self.module, "_run_full_wasi_build"))
+
+    def test_ensure_wasi_sdk_function_exists(self) -> None:
+        self.assertTrue(hasattr(self.module, "_ensure_wasi_sdk"))
+
+    def test_ensure_cpython_source_function_exists(self) -> None:
+        self.assertTrue(hasattr(self.module, "_ensure_cpython_source"))
+
+    def test_run_wasi_orchestrator_function_exists(self) -> None:
+        # The orchestrator runs the four ./Tools/wasm/wasi.py
+        # steps. Pulled out so a future session can extend with
+        # additional pre/post steps without touching the higher-
+        # level pipeline.
+        self.assertTrue(hasattr(self.module, "_run_wasi_orchestrator"))
+
+    def test_resolve_cache_dir_honors_override(self) -> None:
+        # The --cache-dir flag must take priority over env vars.
+        with tempfile.TemporaryDirectory() as tmp:
+            override = Path(tmp) / "explicit-cache"
+            resolved = self.module._resolve_cache_dir(override)
+            self.assertEqual(resolved, override)
+            self.assertTrue(override.is_dir())
+
+    def test_resolve_cache_dir_default_lands_under_cache_subdir(self) -> None:
+        # Without override, should land at <home>/.cache/<subdir>
+        # or under XDG_CACHE_HOME / MYTHIC_WASI_CACHE.
+        resolved = self.module._resolve_cache_dir(None)
+        self.assertIn(self.module.CACHE_SUBDIR, str(resolved))
+
+    def test_wasi_sdk_os_suffix_for_supported_platforms(self) -> None:
+        # The function must return a known suffix for each
+        # supported runner OS.
+        with mock.patch.object(sys, "platform", "linux"):
+            self.assertEqual(
+                self.module._wasi_sdk_os_suffix(), "x86_64-linux",
+            )
+        with mock.patch.object(sys, "platform", "darwin"):
+            self.assertEqual(
+                self.module._wasi_sdk_os_suffix(), "x86_64-macos",
+            )
+
+    def test_wasi_sdk_os_suffix_rejects_unsupported_platform(self) -> None:
+        # Windows isn't a supported wasi-sdk host upstream — the
+        # function must raise BuildStepFailed rather than return
+        # a wrong suffix.
+        with mock.patch.object(sys, "platform", "win32"):
+            with self.assertRaises(self.module.BuildStepFailed):
+                self.module._wasi_sdk_os_suffix()
 
 
 class WasiReadmeTests(unittest.TestCase):
