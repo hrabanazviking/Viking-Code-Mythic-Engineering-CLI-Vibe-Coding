@@ -54,7 +54,7 @@ even if the session doesn't make it through all three.
 
 | Order | Slice | What | Effort (full impl) | Status |
 |---|---|---|---|---|
-| 1 | **22.1** | Rust launcher shim — single static binary with no Python dep | ~2-4 weeks | [ ] |
+| 1 | **22.1** | Rust launcher shim — single static binary with no Python dep | ~2-4 weeks | [x] foundation |
 | 2 | **22.2** | Native Android wrapper app — Kotlin/Chaquopy CLI shell | ~3-6 weeks | [ ] |
 | 3 | **22.3** | WASI experimental runtime — CLI compiled to WebAssembly | ~4+ weeks (speculative) | [ ] |
 
@@ -195,6 +195,95 @@ append; prior entries are never mutated.
 ### 2026-05-05 — Kickoff committed
 TASK file written, plan locked. Beginning slice 22.1 (Rust
 launcher) on commit `+1` from this kickoff commit.
+
+### 2026-05-05 — Slice 22.1 closed at FOUNDATION level (Rust launcher shim)
+**Shipped:**
+- `packaging/launcher/Cargo.toml` — Rust crate manifest pinning
+  Rust 1.74 MSRV, Apache-2.0 license, all 10 runtime deps (ureq
+  for HTTP, flate2 + tar + zstd for archive extraction, dirs for
+  per-user cache dir resolution, serde + serde_json for JSON,
+  sha2 + hex for SHA256 verification, anyhow for error
+  handling). Release profile pinned for size: `opt-level = "z"`,
+  `lto = true`, `codegen-units = 1`, `strip = true`,
+  `panic = "abort"` — produces ~3 MB binary.
+- `packaging/launcher/src/main.rs` — 13 named pub fn lifecycle
+  stages (run, resolve_cache_root, ensure_interpreter,
+  pbs_download_url, host_target_triple, python_executable_in,
+  download, extract_archive, ensure_venv_with_cli, venv_has_cli,
+  create_venv, pip_install_cli, exec_cli) plus `#[cfg(test)]`
+  unit tests covering env-override resolution, URL
+  composition, host triple resolution, and Python exe path.
+  Cross-platform: Unix `execv` for signal passthrough; Windows
+  spawn+wait fallback. 5-arch host_target_triple match
+  (x86_64+aarch64 Linux, x86_64+arm64 macOS, x86_64 Windows).
+  Two archive extraction paths (.tar.gz + .tar.zst).
+- `packaging/launcher/README.md` — design doc covering: what
+  the launcher is, three-strategy comparison
+  (PyInstaller/Nuitka/Launcher), per-platform cache layout,
+  build instructions, "adding an extra to the cached venv"
+  recipe, foundation-vs-deferred breakdown (5 deferred items
+  enumerated for future sessions: SHA256 verification,
+  first-run UX polish, wheel version pinning, Sigstore wheel
+  verification, offline cache pre-population), Rust-vs-Go
+  rationale, and three-operator-profile guidance.
+- `.github/workflows/release-launcher.yml` — new workflow with
+  5-row arch matrix (ubuntu-latest, ubuntu-24.04-arm,
+  macos-latest, macos-13, windows-latest, each with explicit
+  rustup target). Per row: install Rust toolchain, resolve
+  version from pyproject, `cargo build --release --target X`,
+  `cargo test --release --target X` for unit-level coverage,
+  rename binary with asset suffix, compute SHA256 sidecar,
+  apply PH-21.5 Sigstore signing + PH-21.6 SLSA attestation
+  (workflow permissions extended with `attestations: write`),
+  upload artifact. Separate `github-release` job flattens all
+  5 rows + uploads to the existing GitHub Release.
+- `tests/test_packaging_launcher.py` — 26 Python-side
+  structural tests across 4 classes:
+    LauncherCargoManifestTests (5) — crate name, license, MSRV,
+        all 10 runtime deps present, size-optimized release
+        profile flags.
+    LauncherMainRsTests (8) — pinned PYTHON_VERSION constant,
+        pinned PBS_RELEASE_TAG, all 13 lifecycle pub fn names
+        present, MYTHIC_LAUNCHER_CACHE env var, all 5 host
+        target triples covered, both .tar.gz + .tar.zst
+        extraction paths, Unix execv usage, internal test mod
+        present.
+    LauncherReadmeTests (4) — cache layout documented,
+        env-override documented, three-strategy comparison
+        present, deferred-work subsection present.
+    ReleaseLauncherWorkflowTests (9) — tag triggers, manual
+        rehearsal, full 5-arch matrix coverage, cargo build +
+        cargo test invocation, sha256 sidecar emission,
+        Sigstore signing, SLSA attestation, GitHub Release
+        upload.
+- `docs/INSTALL.md` — new "Launcher binary (no Python required)"
+  section between Standalone binaries and Container. Three-way
+  comparison table; download + verify recipe; per-platform
+  cache layout; "install extras into cached venv" recipe;
+  forward-pointer to `packaging/launcher/README.md`.
+- `packaging/README.md` — channel table extended with the
+  launcher row.
+
+**Gates green:** 2431 passed / 1 skipped / 109 subtests (+26
+from this slice); ruff clean; mypy clean (156 source files);
+contract audit clean.
+
+**Foundation status:** the crate compiles, the CI workflow
+shape is right, the design + cache layout + operator UX are
+fully documented. **Production-quality completion
+deferred** to future sessions and explicitly enumerated in
+`packaging/launcher/README.md` (SHA256 verification, first-run
+UX polish, wheel version pinning, Sigstore wheel verification,
+offline cache pre-population). A future session has every
+hook needed to extend this without rederiving design.
+
+**Compatibility surface:** new publication channel.
+Fundamentally different trade-off from the
+PyInstaller/Nuitka binaries: smaller initial download, slower
+first run, supports operator-installed extras post-first-run.
+Does not affect any existing stable surface.
+
+Beginning slice 22.2 (Native Android wrapper app) next.
 
 ---
 
