@@ -42,16 +42,40 @@ jobs:
             print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Build WASI artifact (foundation-level placeholder)
+      # Phase 23.7 — the build driver now actually runs the
+      # CPython WASI cross-build when --really-build is passed.
+      # We gate the real build behind a workflow input so PR
+      # rehearsals stay fast (placeholder path) but tag pushes
+      # produce real artifacts.
+      - name: Install build prerequisites for the cross-build
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
         run: |
-          python packaging/wasi/build.py \
-            --output dist-wasi/mythic-vibe.wasm
-          # The foundation-level build emits a placeholder. Once
-          # the wasi-sdk + CPython WASI cross-build lands in a
-          # future session, switch to:
-          #   python packaging/wasi/build.py \
-          #     --output dist-wasi/mythic-vibe.wasm \
-          #     --really-build
+          # The CPython WASI build needs a host C toolchain plus
+          # the standard autoconf/make stack. Ubuntu's defaults
+          # are sufficient; we explicitly install xz-utils + tar
+          # + curl to make the dependency intent clear.
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            ca-certificates \
+            curl \
+            tar \
+            xz-utils
+
+      - name: Build WASI artifact (real cross-build on tags)
+        run: |
+          if [ "${{ startsWith(github.ref, 'refs/tags/v') }}" = "true" ]; then
+            # Tag push: run the actual cross-build. ~10-20 min,
+            # ~1-2 GB peak disk under the build cache.
+            python packaging/wasi/build.py \
+              --output dist-wasi/mythic-vibe.wasm \
+              --really-build
+          else
+            # PR / development push / workflow_dispatch rehearsal:
+            # placeholder path so CI stays fast.
+            python packaging/wasi/build.py \
+              --output dist-wasi/mythic-vibe.wasm
+          fi
           ls -la dist-wasi/
 
       - name: Rename artifact with version suffix

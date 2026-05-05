@@ -107,7 +107,7 @@ Pyodide remains a parallel exploration for a future browser-playground slice; py
 
 ---
 
-## Foundation-level scope (PH-22.3, this commit)
+## Foundation-level scope (PH-22.3)
 
 What's shipped:
 
@@ -117,10 +117,21 @@ What's shipped:
 - ✅ `tests/test_packaging_wasi.py` — Python-side structural tests for the build script + workflow shape.
 - ✅ `docs/INSTALL.md` updated with a "WebAssembly (experimental)" section explicit about the reduced functional scope.
 
-What's deferred:
+## What was shipped after the foundation level
 
-- ⚠️ **Actually performing the CPython WASI cross-build in CI.** The build infrastructure is laid out but the WASI cross-build environment (wasi-sdk + WASM-friendly Python configure) is not yet provisioned. A future session adds the wasi-sdk install step + the cross-build invocation.
-- ⚠️ **Stdlib freezing.** CPython's WASI build path freezes the stdlib into the binary. Future session pins the freeze list.
+- ✅ **CPython WASI cross-build wired up** (PH-23.7, 2026-05-05). The `--really-build` flag now actually runs the build pipeline:
+  1. Resolves a per-user build cache (`~/.cache/mythic-vibe-wasi-build/`, override via `MYTHIC_WASI_CACHE` or `--cache-dir`).
+  2. Downloads + unpacks `wasi-sdk-24.0` (~250 MB) into the cache; idempotent on re-run.
+  3. Downloads + unpacks the CPython source tarball at `CPYTHON_VERSION` (~25 MB) into the cache.
+  4. Runs the four `./Tools/wasm/wasi.py` orchestrator steps in sequence: `configure-build-python` → `make-build-python` → `configure-host` → `make-host`. `WASI_SDK_PATH` env var set so the orchestrator finds the cross-toolchain.
+  5. Copies the produced `cross-build/wasi/python.wasm` to the requested output path.
+
+  Each step has a distinct exit code (10 / 11 / 12 / 13 for SDK install / source resolution / orchestrator / artifact-copy) so the CI log shows where the build broke. The release workflow runs the real build on tag pushes only; PR rehearsals stay on the placeholder path so CI runs stay fast.
+
+What's still deferred:
+
+- ⚠️ **Stdlib freezing customization.** CPython's WASI build path freezes the stdlib into the binary. Today the build accepts the upstream-default freeze list; a future session can prune unused stdlib modules to shrink the artifact.
+- ⚠️ **Embedding the mythic-vibe-cli wheel.** The current build produces a base CPython python.wasm — running `mythic-vibe doctor --json` requires the wheel be available to the runtime. A future slice either embeds the wheel into the .wasm (via `_freeze_module`) or ships a sidecar `--load-wheel` flag.
 - ⚠️ **Browser playground.** A `<wasm-host>` HTML page that loads the `.wasm` and exposes `mythic-vibe doctor --json` as a JS API.
 - ⚠️ **Subprocess fallback.** Commands that shell out to git could be rewritten to use `dulwich` (pure-Python git) for WASI compatibility — opens the door to `mythic-vibe doctor` working under WASI without functionality loss. Multi-week refactor; out of v2.0 scope.
 
