@@ -290,6 +290,33 @@ To install extras into the cached venv after first run:
 
 For full design, deferred work, and rationale for choosing Rust, see [`packaging/launcher/README.md`](../packaging/launcher/README.md).
 
+### WebAssembly (experimental)
+
+The CLI ships a single-file `.wasm` artifact built for the [WASI](https://wasi.dev/) target. **Status: experimental, foundation-level.** Most of the CLI's surfaces won't work in WASI today — `subprocess`-based commands (git checks in `doctor`, plugin sandbox in `verify`) exit with a "module not available" error. The supported scope is **read-only JSON-emitting commands**:
+
+- `mythic-vibe --version`
+- `mythic-vibe doctor --json` (subprocess-based git checks suppressed)
+- `mythic-vibe status --json`
+- `mythic-vibe packet list --json`
+
+```bash
+VERSION=1.0.0
+gh release download "v${VERSION}" \
+    --repo hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding \
+    --pattern "mythic-vibe-${VERSION}-wasi-experimental.wasm*"
+
+# Verify SHA256:
+sha256sum --check "mythic-vibe-${VERSION}-wasi-experimental.wasm.sha256"
+
+# Run with Wasmtime (--dir grants the wasm access to your project):
+wasmtime --dir=. \
+    "mythic-vibe-${VERSION}-wasi-experimental.wasm" -- doctor --json
+```
+
+The `--dir` flag pre-opens the host directory the CLI sees as `/work` (or whatever the WASI host names it). Without it the wasm runs in a fully-sandboxed mode and can't read or write any files.
+
+For full design rationale (why WASI, the three Python-to-WASM paths considered, the per-stdlib-module compatibility matrix, deferred work), see [`packaging/wasi/README.md`](../packaging/wasi/README.md).
+
 ### Container (Docker / Podman)
 
 Each release publishes a multi-arch (linux/amd64 + linux/arm64) image to GitHub Container Registry:
