@@ -34,7 +34,8 @@ on:
 permissions:
   contents: read
   packages: write       # for GHCR push
-  id-token: write       # reserved for future OIDC (Sigstore in PH-21.5)
+  id-token: write       # for cosign keyless signing (PH-21.5)
+  attestations: write   # for SLSA build provenance (PH-21.6)
 
 jobs:
   build-and-push:
@@ -200,3 +201,28 @@ jobs:
           # Sign :latest separately so operators pulling :latest
           # also get a verifiable signature path.
           cosign sign --yes "${{ steps.tags.outputs.ghcr_latest }}"
+
+      # Phase 21.6 — SLSA Level 3 build provenance attestation for
+      # the OCI image. The docker/build-push-action provenance:true
+      # flag already attaches a basic SLSA attestation to the
+      # manifest, but attest-build-provenance produces an
+      # operator-verifiable attestation indexed by digest that
+      # `gh attestation verify-image` can resolve directly.
+      # Resolves the image digest first (cosign signs digest, not
+      # tag, so the attestation must reference the same digest).
+      - name: Resolve image digest for attestation
+        id: digest
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        env:
+          IMAGE: ${{ steps.tags.outputs.ghcr_versioned }}
+        run: |
+          DIGEST=$(docker buildx imagetools inspect "$IMAGE" --format '{{.Manifest.Digest}}')
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+          echo "Image digest: $DIGEST"
+      - name: Attest OCI image build provenance
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ steps.tags.outputs.ghcr_image }}
+          subject-digest: ${{ steps.digest.outputs.digest }}
+          push-to-registry: true

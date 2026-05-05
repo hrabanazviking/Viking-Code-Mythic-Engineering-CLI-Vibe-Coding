@@ -32,7 +32,8 @@ on:
 
 permissions:
   contents: write       # GitHub Release uploads
-  id-token: write       # reserved for Sigstore (PH-21.5)
+  id-token: write       # for Sigstore keyless signing (PH-21.5)
+  attestations: write   # for SLSA build provenance (PH-21.6)
 
 jobs:
   build:
@@ -133,6 +134,16 @@ jobs:
         uses: sigstore/gh-action-sigstore-python@v3.0.0
         with:
           inputs: dist/mythic-vibe-*
+
+      # Phase 21.6 — SLSA Level 3 build provenance for the
+      # PyInstaller binary path. Same attest-build-provenance
+      # pattern used in release.yml. Operators verify with
+      # `gh attestation verify --owner hrabanazviking <binary>`.
+      - name: Attest PyInstaller binary build provenance
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/mythic-vibe-*
 
       - name: Upload binary artifact
         uses: actions/upload-artifact@v4
@@ -240,6 +251,14 @@ jobs:
         uses: sigstore/gh-action-sigstore-python@v3.0.0
         with:
           inputs: dist-nuitka/mythic-vibe-nuitka-*
+
+      # Phase 21.6 — SLSA Level 3 build provenance for the Nuitka
+      # binary path.
+      - name: Attest Nuitka binary build provenance
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist-nuitka/mythic-vibe-nuitka-*
 
       - name: Upload Nuitka binary artifact
         uses: actions/upload-artifact@v4

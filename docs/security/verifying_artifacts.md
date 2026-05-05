@@ -129,14 +129,62 @@ If you need offline verification (no network reach to Rekor at verify time), `--
 
 ---
 
-## Reproducibility
+## Build provenance attestations (PH-21.6)
 
-A signature proves who built and signed the artifact. It does **not** prove that the artifact was built from the source tree the project published. PH-21.6 adds SLSA Level 3 build provenance attestations on top of the signatures so operators can verify both:
+Per-artifact signatures (PH-21.5) prove **who** signed the artifact. SLSA Level 3 build provenance attestations (PH-21.6) prove **from what source tree** the artifact was built. Together they close the supply-chain trust gap: a verified signature against an attested build provenance means the artifact you're holding is the one the project's release workflow built from a specific git commit, signed by the workflow's transient identity, and logged in Rekor.
 
-- **Who:** the GitHub Actions OIDC identity that signed the artifact (this guide).
-- **From what:** the exact commit, workflow, and inputs that produced the artifact bytes (PH-21.6).
+The attestations are emitted by `actions/attest-build-provenance@v2` and bind:
 
-Together they close the supply-chain trust gap: a verified signature against an attested build provenance means the artifact you're holding is the one the project's release workflow built from a specific git commit, signed by the workflow's transient identity, and logged in Rekor.
+- **Subject digest:** the SHA256 of the artifact bytes.
+- **Builder identity:** the GitHub Actions runner type + workflow file + commit + invocation ID.
+- **Build inputs:** the git refs, environment variables, and source-tree state that produced the artifact.
+
+Operators verify them via the GitHub CLI:
+
+```bash
+# Wheel + sdist + SBOM (release.yml workflow):
+gh attestation verify \
+    --owner hrabanazviking \
+    "mythic_vibe_cli-1.0.0-py3-none-any.whl"
+
+# Standalone binaries (release-binaries.yml workflow):
+gh attestation verify \
+    --owner hrabanazviking \
+    "mythic-vibe-1.0.0-linux-x86_64"
+
+# OCI image (release-oci.yml workflow):
+gh attestation verify-image \
+    --owner hrabanazviking \
+    ghcr.io/hrabanazviking/mythic-vibe-cli:1.0.0
+```
+
+A successful verify prints the attestation payload + the workflow run that produced it. Operators with strict supply-chain requirements can chain `--predicate-type` filters to enforce SLSA L3 specifically:
+
+```bash
+gh attestation verify \
+    --owner hrabanazviking \
+    --predicate-type "https://slsa.dev/provenance/v1" \
+    "mythic_vibe_cli-1.0.0-py3-none-any.whl"
+```
+
+For offline operation, `gh attestation verify --bundle <path>` accepts a pre-downloaded attestation bundle, avoiding network reach to Rekor / sigstore.dev at verify time.
+
+## Tag signatures (PH-21.6)
+
+Release tags are signed with [`gitsign`](https://docs.sigstore.dev/cosign/signing/gitsign/) — Sigstore's keyless equivalent of GPG-signed tags. Verifying tag signatures gives operators an additional anchor: proof of which commit was intended as the release, independent of the artifact provenance chain.
+
+```bash
+# Verify a tag's signature against the Sigstore root CA:
+git verify-tag v1.0.0
+
+# For richer verification including the Rekor entry:
+gitsign verify \
+    --certificate-identity "<maintainer-email-or-github-handle>" \
+    --certificate-oidc-issuer https://github.com/login/oauth \
+    "$(git rev-parse v1.0.0)"
+```
+
+The maintainer-side workflow for cutting a signed tag lives in [`tag_signing.md`](tag_signing.md). Tags created via the GitHub Releases web UI are **not** signed — releases are always tagged from the maintainer's CLI to get the signature.
 
 ---
 

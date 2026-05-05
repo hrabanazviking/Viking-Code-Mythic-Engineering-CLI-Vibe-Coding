@@ -495,6 +495,17 @@ class ReleaseWorkflowTests(unittest.TestCase):
         # is useless for verification.
         self.assertIn("dist/*.sigstore", self.raw)
 
+    def test_emits_slsa_build_provenance_attestation(self) -> None:
+        # Phase 21.6 — SLSA Level 3 build provenance over the
+        # wheel + sdist + SBOM.
+        self.assertIn("actions/attest-build-provenance", self.raw)
+
+    def test_attestations_write_permission_present(self) -> None:
+        # actions/attest-build-provenance requires the
+        # attestations:write permission. Without it the attest
+        # step fails at runtime.
+        self.assertIn("attestations: write", self.raw)
+
     def test_runs_sbom_regen(self) -> None:
         self.assertIn("scripts/regenerate_sbom.py", self.raw)
 
