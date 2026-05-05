@@ -6,9 +6,67 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 ## [Unreleased]
 
-### Added
+This unreleased band tracks work landed on `development` after the v1.0.0 stable launch on 2026-05-03. None of it changes any v1.0 documented contract; everything is strictly additive.
 
-- chore: clean slate after v1.0.0 — first entry will land as `feat:` / `fix:` / `docs:` / etc. (run `python scripts/check_changelog.py --classify` to bucket entries)
+### Added — Hermes Agent control plane (post-v1.0)
+
+- **Hermes Agent** — programmatic control plane for any external AI agent. Two access modes (TCL Python in-process + HTTP API) share one core (`mythic_vibe_cli/agent_api/`). 18 curated tools cover status, doctor, drift, packet creation/lint, verify, reflect, ai recommend, provenance verify, workflow lineage, persona, plugin doctor, artifact read/list, recent events. Every invocation audited via the existing event-log primitive. New `mythic-vibe surface hermes [--bind ADDR --port N --token TOKEN]` launches the token-protected HTTP API. New `mythic-vibe hermes tools|inspect|invoke` invokes the curated agent-tool surface from the CLI without HTTP. See `docs/HERMES_AGENT.md` (operator + author guide).
+
+### Added — PH-21 v1.x distribution expansion
+
+Six new install channels alongside the v1.0 PyPI / Homebrew / Scoop trio:
+
+- **AUR (Arch User Repository)** — `packaging/aur/PKGBUILD.template` + `.SRCINFO.template`. Release workflow `update-aur` job opens a PR against the `aur-mythic` maintainer repo via the `AUR_BUMP_TOKEN` secret. Builds from PyPI sdist so AUR users get the exact bytes PyPI users get. Operators install via `yay -S mythic-vibe-cli` or `makepkg -si`.
+- **winget (Windows)** — `packaging/winget/` three-file v1.6 manifest (installer + locale + version). Workflow `update-winget` job resolves the PH-21.2 Windows binary URL + sha256 from the GitHub Release, renders the manifests, opens a PR against `winget-mythic` via `WINGET_BUMP_TOKEN`. Operators install via `winget install hrabanazviking.MythicVibeCLI`.
+- **OCI multi-arch container** — `Dockerfile` + `.dockerignore` at repo root. New `release-oci.yml` workflow builds linux/amd64 + linux/arm64 via QEMU + buildx, pushes to `ghcr.io/hrabanazviking/mythic-vibe-cli:<VERSION>` + `:latest`. Optional Docker Hub mirror gated by the `DOCKERHUB_PUBLISH_ENABLED` repo variable. Image runs as non-root `mythic` (uid 1000) with workspace at `/work`, ENTRYPOINT in exec-form, OCI image labels for license + source + docs URL.
+- **PyInstaller standalone binaries** — `packaging/pyinstaller/mythic-vibe.spec` + `entrypoint.py`. New `release-binaries.yml` workflow runs a 4-row OS matrix (Linux x86_64, macOS arm64, macOS x86_64 via macos-13, Windows x86_64). Each binary embeds the stdlib-only base only — extras stay with pip.
+- **Nuitka alternative binaries** — `packaging/nuitka/build.py` driver. Same 4-row matrix, parallel job in `release-binaries.yml`. Smaller binaries (~8-15 MB vs ~15-25 MB for PyInstaller) and faster cold start (~80-150 ms vs ~250-500 ms) at the cost of longer build (~3-8 min per OS vs ~30-90 s).
+- **macOS Gatekeeper override docs** — explicit "Right-click → Open" + `xattr -d com.apple.quarantine` recipes in `docs/INSTALL.md` for first-launch override of un-notarized binaries. Project ships un-notarized by design (no Apple Developer account required).
+
+Plus platform polish:
+
+- **Termux + WSL + Pi + arm64 platform-tag detection** — new `is_termux()`, `is_wsl()`, `is_raspberry_pi()`, `detect_platform_tags()` helpers in `mythic_vibe_cli/hardware.py`. `HardwareProfile` gains a `platform_tags: list[str]` field. `mythic-vibe hardware --json` exposes the tag set so operators can gate scripts on host context.
+- **Termux install recipe** in `docs/INSTALL.md` covering `pkg install python rust && pip install mythic-vibe-cli`.
+
+### Added — PH-22 v2.0 strategic stretch (foundation level)
+
+Three v2.0 channels shipped at foundation level — real working scaffolds with comprehensive READMEs, tests, and CI workflows:
+
+- **Rust launcher shim** — `packaging/launcher/` with `Cargo.toml` (10 runtime deps, MSRV 1.74) + `src/main.rs` (13 named pub fn lifecycle stages: cache resolve / interpreter download / archive extract / venv create / pip install / exec). Static native binary (~3-5 MB) that fetches python-build-standalone + the wheel into `~/.cache/mythic-vibe-launcher/` on first run. Subsequent runs short-circuit to the cached venv. New `release-launcher.yml` workflow runs a 5-arch matrix (Linux x86_64 + Linux aarch64 + macOS arm64 + macOS x86_64 + Windows x86_64), `cargo build --release`, `cargo test`, Sigstore signing + SLSA attestation. Operator env vars: `MYTHIC_LAUNCHER_CACHE`, `MYTHIC_LAUNCHER_REQUIRE_SHA`, `MYTHIC_LAUNCHER_MIRRORS`.
+- **Native Android wrapper app** — `packaging/android/` Gradle/Kotlin project. AGP 8.5.2 + Kotlin 2.0.20 + Compose 2024.09.03 + Chaquopy 16.0.0. App embeds CPython 3.12 + the wheel via Chaquopy's pip install at APK build time. Compose-based single-activity UI invokes the CLI via JNI on Dispatchers.IO. Min-SDK 26 (Android 8.0+). Four ABIs covered (armeabi-v7a + arm64-v8a + x86 + x86_64). New `release-android.yml` workflow runs `./gradlew assembleRelease` + Sigstore signing + SLSA attestation. Single INTERNET permission — privacy-by-default. Maintainer keystore setup recipe at `packaging/android/SIGNING.md`.
+- **WASI experimental runtime** — `packaging/wasi/` with `build.py` driver + `release-wasi.yml` workflow + comprehensive research README. CPython compiled to WebAssembly via the upstream `wasm32-wasi` target. Reduced functional scope: read-only JSON-emitting commands only (subprocess-based commands don't work in WASI today).
+
+### Added — PH-23 cross-cutting polish (16 slices)
+
+- **PH-23.1 — mkdocs-material documentation site.** New `mkdocs.yml` at repo root + `.github/workflows/docs.yml` (strict-build PR gate + GitHub Pages deploy on main pushes). Comprehensive nav: Getting Started → Operator Guides → Reference → Architecture → Security → Governance → Decision Records (10 ADRs explicitly listed). New operator-facing `docs/INDEX.md` landing; legacy contributor hub preserved at `docs/contributor_index.md`. `[docs]` extra extends with `mkdocs-material>=9.5` + `pymdown-extensions>=10.0`.
+- **PH-23.2 — absolute-path-leak guard fixture.** New `tests/conftest.py` with two session-scope autouse fixtures: `remove_stale_test_debris` cleans up the May-2026 audit-cycle debris pattern at session start; `detect_absolute_path_leaks` snapshots leak-pattern dirs at start, fails the session if any test introduces new debris (Users / private / var / tmp / AppData / ProgramData top-level dirs). `MYTHIC_LEAK_GUARD_DISABLED` env disables for intentional regression tests.
+- **PH-23.3 — historical wire-in TASK file commit.** Stale `TASK_wirein_cleanup.md` from 2026-05-01 (predated PH-18) committed as historical record with a closeout header verifying every listed item has a real implementation in the live codebase.
+- **PH-23.4 — launcher SHA256 verification.** `verify_archive_sha256()` in `packaging/launcher/src/main.rs` with three branches (matched / mismatched / missing). New `tools/fetch_pbs_checksums.py` Python helper fetches upstream SHA256SUMS + renders a populated `PBS_EXPECTED_SHA256` const for paste-in. `MYTHIC_LAUNCHER_REQUIRE_SHA=1` env enables strict mode.
+- **PH-23.5 — Android APK signing config.** `app/build.gradle.kts` declares a release `signingConfig` reading from project properties or env vars. `release-android.yml` decodes the `ANDROID_KEYSTORE_BASE64` secret to a temp file before `assembleRelease`. Falls back to unsigned APK with `::warning::` when secrets absent. New `packaging/android/SIGNING.md` maintainer guide.
+- **PH-23.6 — launcher first-run UX polish.** indicatif progress bar streaming the python-build-standalone download (~30-60 s on first run no longer looks like a hang). Retry with exponential backoff (1 → 2 → 4 s, 4 attempts). Mirror failover via `MYTHIC_LAUNCHER_MIRRORS` env var with `__VERSION__` / `__TAG__` / `__TRIPLE__` placeholder substitution.
+- **PH-23.7 — WASI real cross-build pipeline.** `_run_full_wasi_build()` in `packaging/wasi/build.py` now actually drives the CPython WASI cross-build: downloads wasi-sdk-24.0 + CPython source, runs the four `./Tools/wasm/wasi.py` orchestrator steps (configure-build-python → make-build-python → configure-host → make-host), copies the produced `python.wasm` to the output. Per-step exit codes (10 / 11 / 12 / 13) so the CI log shows exactly where the build broke.
+- **PH-23.8 — output_guard property accessors coverage.** 7 new tests for `_ProxyStream`'s `encoding` / `name` / `closed` / `isatty` / `fileno` accessors. Module 88% → ~98%.
+- **PH-23.9 — WASI cross-build CI cache.** `actions/cache@v4` keyed on `wasi-{WASI_SDK_RELEASE}-cpython-{CPYTHON_VERSION}-v1`. Cache-hot tag pushes complete in ~5-8 min vs ~15-20 min cold. Restore-key fallback matches just the SDK release for partial-hit on CPython-only bumps.
+- **PH-23.10 — event_log + voice/transcribe coverage push.** 19 new tests covering OSError swallow paths, parse-line edge cases, EventTailReader poll branches, StubTranscriber edge cases, `_write_wav_temp` cleanup. event_log 84% → 97%; voice/transcribe 84% → 88%.
+- **PH-23.11 — WASI zipapp sidecar.** `_build_zipapp_sidecar()` in `build.py` produces a `.pyz` zipapp containing the `mythic_vibe_cli/` source tree alongside the `.wasm`. Operators run `wasmtime --dir=. mythic-vibe.wasm -- mythic-vibe.pyz doctor --json`. The CLI now actually runs under WASI (the `.wasm` alone was bare CPython).
+- **PH-23.12 — chat_bridge.py coverage push 78% → 96%.** 25 targeted tests covering parse_command shlex/empty-token edges, handle_message exception + SystemExit branches, _render_chat_block formatting modes, MatrixConfig + TelegramConfig from_file/from_env/from_sources full paths, _matrix_request + _telegram_request JSON edges, allowlist semantics.
+- **PH-23.13 — workflow.py coverage push 82% → 93%.** 14 tests covering check_in invalid-phase rejection, reflect-blocked-without-verification + invalid-record + non-pass paths, status_summary handoff line composition, _load_status fallbacks, _next_phase all-complete branch, doctor edge branches.
+- **PH-23.14 — web_terminal.py coverage push 80% → 97%.** 11 tests covering live HTTP routing edges (static JS path, 404 GET/POST), _read_json_body error branches (empty / invalid JSON / non-dict), handle_run_request SystemExit + Exception swallow paths, server.stop() idempotence.
+- **PH-23.15 — WASI stdlib usage audit.** New `tools/wasi_stdlib_audit.py` walks the runtime AST + reports which stdlib modules are used (~44 of 213), which are always-prunable in WASI regardless of usage (~72), which are unused-and-prunable (~103). Pruning impact estimate: ~30-40% reduction on python.wasm size. Output formats: human-readable text (default) or JSON (`--json`).
+- **PH-23.16 — WASI browser playground foundation.** New `packaging/wasi/playground/` directory with `index.html` (page shell + CSS) + `playground.js` (UI wiring + stub command runner) + `README.md`. Covers the v2.0 WASI command surface with quick-pick buttons + free-form text input. JS stub runner produces realistic JSON output today; future slice replaces with `@bjorn3/browser_wasi_shim` for real WASI execution.
+
+### Added — cryptographic provenance (Sigstore + SLSA L3 + tag signing)
+
+- **Sigstore keyless signing** over every release artifact via GitHub Actions OIDC + Fulcio. Wired into `release.yml` (PyPI wheel + sdist + SBOM), `release-oci.yml` (cosign sign --yes against the manifest digest of both `:VERSION` and `:latest`), `release-binaries.yml` (PyInstaller + Nuitka per-binary), `release-launcher.yml` (Rust launcher per-arch), `release-android.yml` (APK), `release-wasi.yml` (.wasm + .pyz). All `.sigstore` bundles ship to operators alongside the artifacts they sign.
+- **SLSA Level 3 build provenance attestations** via `actions/attest-build-provenance@v2`. Bound to artifact digest + workflow run. Verifiable via `gh attestation verify` (or `gh attestation verify-image` for the OCI image).
+- **gitsign-based signed release tags** — Sigstore's keyless equivalent of GPG-signed tags. Maintainer-side workflow recipe in `docs/security/tag_signing.md`.
+- **`docs/security/verifying_artifacts.md`** — comprehensive end-user verification guide. Quick-reference table mapping channel → tool → expected cert identity. Per-channel recipes for PyPI / OCI / standalone binaries. Forward-pointer to PH-21.6's SLSA attestations. Troubleshooting: tag mismatch, old tooling, asset/bundle mismatch.
+
+### Cross-project housekeeping
+
+- **MindSpark ThoughtForge** (`C:/Users/volma/runa/MindSpark_ThoughtForge`) — committed previously-untracked `src/thoughtforge/utils/errors.py` (typed exception hierarchy with `context` / `recoverable` / `suggested_fix` fields) and `validators.py` (input validation + sanitisation). Both files were already imported by 6 modules; landing them in git closes the working-tree drift.
+- **NorseSagaEngine** (`C:/Users/volma/runa/NorseSagaEngine`) — reverted runtime drift (timestamp + cache_key noise on auto-generated quest yaml + rag_meta.json), gitignored `data/character_memory/` runtime tree.
+- **pygame Viking Edition** (`C:/Users/volma/runa/pygame`) — Phase 1E thread-safety audit (no bugs found across event.c + surface.c + display.c) + Phase 1F self-healing audit (2 real C defects fixed: `scrap_sdl2.c:53` discarded SDL_Init return; `base.c:352-356` silently swallowed top-level SDL_Init failure) + Phase 2A platform-guard audit (~150-guard taxonomy + new `src_c/include/pgplatform.h` additive header with `PG_PLATFORM_*` / `PG_ARCH_*` / `PG_HAVE_*` / `PG_BUILD_*` macros).
 
 ## [1.0.0] — 2026-05-03
 
