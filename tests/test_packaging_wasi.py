@@ -308,6 +308,44 @@ class ReleaseWasiWorkflowTests(unittest.TestCase):
     def test_uploads_to_github_release(self) -> None:
         self.assertIn("softprops/action-gh-release", self.text)
 
+    def test_caches_wasi_sdk_and_cpython_source(self) -> None:
+        """PH-23.9 — actions/cache restores + saves the wasi-sdk
+        + CPython source tree between tag-push runs. Without the
+        cache, every release re-downloads ~275 MB and re-extracts
+        from scratch (~15-20 min); with the cache, ~5-8 min."""
+        self.assertIn("actions/cache@v4", self.text)
+        # The cached path is the build driver's default cache
+        # root; if a future session changes _resolve_cache_dir,
+        # this assertion catches the workflow staying out of sync.
+        self.assertIn("~/.cache/mythic-vibe-wasi-build", self.text)
+
+    def test_cache_key_includes_sdk_and_cpython_pins(self) -> None:
+        """The cache key must be invalidated when EITHER pinned
+        constant (WASI_SDK_RELEASE or CPYTHON_VERSION) bumps,
+        otherwise a stale toolchain could be reused against a
+        new source tree."""
+        # The cache_key step reads both constants directly from
+        # packaging/wasi/build.py so the workflow stays in sync.
+        self.assertIn("WASI_SDK_RELEASE", self.text)
+        self.assertIn("CPYTHON_VERSION", self.text)
+        # The composed key includes both versions.
+        self.assertIn(
+            "wasi-${SDK_RELEASE}-cpython-${CPYTHON}-v1", self.text,
+        )
+
+    def test_cache_has_restore_keys_fallback(self) -> None:
+        """A CPython version bump shouldn't force re-downloading
+        the (unchanged) wasi-sdk tree. The restore-keys fallback
+        matches just the SDK release so the SDK portion of the
+        cache survives a CPython-only bump."""
+        self.assertIn("restore-keys:", self.text)
+        # The fallback prefix must be SDK-release-keyed only —
+        # i.e. not include the CPython version segment.
+        self.assertRegex(
+            self.text,
+            r"restore-keys:\s*\|\s*\n\s*wasi-\$\{\{\s*steps\.cache_key\.outputs\.sdk_release",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

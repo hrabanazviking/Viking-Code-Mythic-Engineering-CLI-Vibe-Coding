@@ -128,6 +128,8 @@ What's shipped:
 
   Each step has a distinct exit code (10 / 11 / 12 / 13 for SDK install / source resolution / orchestrator / artifact-copy) so the CI log shows where the build broke. The release workflow runs the real build on tag pushes only; PR rehearsals stay on the placeholder path so CI runs stay fast.
 
+- ✅ **CI cross-build cache** (PH-23.9, 2026-05-05). The release workflow now uses `actions/cache@v4` to persist `~/.cache/mythic-vibe-wasi-build/` between tag-push runs. Cache key is `wasi-{WASI_SDK_RELEASE}-cpython-{CPYTHON_VERSION}-v1` — bumping either pinned constant invalidates the cache so a stale toolchain never gets reused against a new source tree. Restore-key fallback matches just the SDK release, so a CPython-only bump still benefits from the already-downloaded wasi-sdk tree (~250 MB savings). Cache-hot tag pushes complete in ~5-8 min vs ~15-20 min cold.
+
 What's still deferred:
 
 - ⚠️ **Stdlib freezing customization.** CPython's WASI build path freezes the stdlib into the binary. Today the build accepts the upstream-default freeze list; a future session can prune unused stdlib modules to shrink the artifact.

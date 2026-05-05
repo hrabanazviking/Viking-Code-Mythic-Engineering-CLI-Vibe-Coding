@@ -62,11 +62,63 @@ jobs:
             tar \
             xz-utils
 
+      # Phase 23.9 — restore + save the wasi-sdk + CPython source
+      # cache between tag pushes. A fresh build downloads ~275 MB
+      # (wasi-sdk + Python tarball) and runs ~10-20 minutes; with
+      # the cache hit, the same run completes in ~5-8 minutes
+      # because only the make step re-runs (the unpacked sdk +
+      # source trees are reused).
+      #
+      # Cache key: the two pinned constants from build.py
+      # (PBS_RELEASE_TAG via WASI_SDK_RELEASE + CPYTHON_VERSION).
+      # Bumping either constant invalidates the cache so we never
+      # accidentally reuse stale toolchain bytes against a new
+      # source tree. The fallback restore-key matches just the
+      # SDK version so a CPython bump still benefits from the
+      # already-downloaded wasi-sdk tree.
+      - name: Resolve cache key
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        id: cache_key
+        run: |
+          # Read the two pinned constants directly from build.py
+          # so the workflow stays in sync without operator
+          # editing two files on a bump.
+          SDK_RELEASE=$(python -c "import importlib.util as u; \
+            spec = u.spec_from_file_location('b', 'packaging/wasi/build.py'); \
+            m = u.module_from_spec(spec); spec.loader.exec_module(m); \
+            print(m.WASI_SDK_RELEASE)")
+          CPYTHON=$(python -c "import importlib.util as u; \
+            spec = u.spec_from_file_location('b', 'packaging/wasi/build.py'); \
+            m = u.module_from_spec(spec); spec.loader.exec_module(m); \
+            print(m.CPYTHON_VERSION)")
+          echo "sdk_release=$SDK_RELEASE" >> "$GITHUB_OUTPUT"
+          echo "cpython=$CPYTHON" >> "$GITHUB_OUTPUT"
+          echo "cache_key=wasi-${SDK_RELEASE}-cpython-${CPYTHON}-v1" >> "$GITHUB_OUTPUT"
+
+      - name: Restore wasi build cache
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        id: cache_restore
+        uses: actions/cache@v4
+        with:
+          # The build driver writes to ~/.cache/mythic-vibe-wasi-build/
+          # by default per _resolve_cache_dir(). Cache that whole
+          # tree so wasi-sdk + the CPython source are reusable
+          # across runs.
+          path: ~/.cache/mythic-vibe-wasi-build
+          key: ${{ steps.cache_key.outputs.cache_key }}
+          # Fallback: a previous run with the same SDK release but
+          # an older CPython still has the unpacked SDK tree we
+          # can reuse, saving the ~250 MB SDK download on the new
+          # run.
+          restore-keys: |
+            wasi-${{ steps.cache_key.outputs.sdk_release }}-cpython-
+
       - name: Build WASI artifact (real cross-build on tags)
         run: |
           if [ "${{ startsWith(github.ref, 'refs/tags/v') }}" = "true" ]; then
-            # Tag push: run the actual cross-build. ~10-20 min,
-            # ~1-2 GB peak disk under the build cache.
+            # Tag push: run the actual cross-build. With the
+            # PH-23.9 cache hot the build completes in ~5-8 min;
+            # cache miss is the slow path at ~15-20 min.
             python packaging/wasi/build.py \
               --output dist-wasi/mythic-vibe.wasm \
               --really-build
