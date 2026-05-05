@@ -86,7 +86,7 @@ For the full design rationale see:
 
 ## Distribution channels
 
-The CLI ships through eight channels as of v1.x:
+The CLI ships through **eleven channels** as of v1.x, plus three v2.0 foundations:
 
 | Channel | Use when |
 |---|---|
@@ -95,11 +95,22 @@ The CLI ships through eight channels as of v1.x:
 | **Scoop bucket** | Windows operators who prefer Scoop |
 | **AUR** | Arch Linux operators |
 | **winget** | Windows operators who prefer winget |
-| **Container** (GHCR) | Docker / Podman / Kubernetes |
-| **Standalone binaries** | No-Python-on-host scenarios (PyInstaller / Nuitka) |
-| **Launcher** (PH-22.1, foundation) | Tiny initial download + extras supported via cached venv |
+| **Container** (GHCR + opt-in Docker Hub) | Docker / Podman / Kubernetes |
+| **Standalone PyInstaller binaries** | No-Python-on-host scenarios; offline-friendly first run |
+| **Nuitka alternative binaries** | Smaller binary + faster cold start than PyInstaller |
+| **Termux** (Android) | Linux-style CLI on Android phones / tablets |
+| **Offline wheelhouse** | Air-gapped install (Pi Zero, hardened CI) |
+| **Launcher binary** (PH-22.1, foundation) | ~3-5 MB static binary; downloads python-build-standalone + the wheel on first run; supports installing extras via pip |
 
-Plus three foundation-level v2.0 channels (Android, WASI) tracked in their per-package READMEs.
+Plus three v2.0 foundations:
+
+| Channel | Status | Best for |
+|---|---|---|
+| **Native Android app** (Chaquopy) | foundation | One-tap Android install with a Material 3 UI; complementary to Termux |
+| **WASI runtime** (`.wasm` + `.pyz` zipapp sidecar) | foundation | Run the CLI under Wasmtime / wasmer / browsers |
+| **WASI browser playground** | foundation | Static HTML+JS preview hosted next to the docs site |
+
+Every release artifact across every channel is Sigstore-signed + SLSA-attested. Verification recipes per channel: [Verifying Artifacts](security/verifying_artifacts.md).
 
 ---
 
