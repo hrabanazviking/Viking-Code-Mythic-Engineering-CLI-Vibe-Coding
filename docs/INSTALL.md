@@ -211,6 +211,58 @@ Notarization requires an Apple Developer account ($99/year), Apple-side review o
 
 If demand for notarization grows post-v1.0, the project can revisit by adding a separate v1.x slice with the Apple Developer account work. The decision is reversible — adding notarization later doesn't break any existing binary; it just adds a new code path.
 
+### Launcher binary (no Python required)
+
+The **launcher** is a small (~3-5 MB) static Rust binary that handles installing the CLI into a per-user cache the first time you run it. Different trade-off vs the PyInstaller / Nuitka standalone binaries above:
+
+| Property | PyInstaller / Nuitka | Launcher |
+|---|---|---|
+| Binary size | ~15-25 MB / ~8-15 MB | ~3-5 MB |
+| First-run cold start | fast | ~30-60 s (downloads interpreter) |
+| Subsequent runs | fast | fast (cached) |
+| Optional extras (`ai`, `tui`, `ux`, `otel`) | ❌ stdlib-only | ✅ pip into the cached venv |
+| Network on first run | ❌ | ✅ |
+
+Use the launcher when:
+- You need a tiny initial download.
+- You may want to install extras later (`pip install "mythic-vibe-cli[ai]"` into the cached venv works).
+- Network is available at first run.
+
+Use PyInstaller / Nuitka when:
+- You need offline-friendly first run.
+- You only need the stdlib base.
+
+```bash
+VERSION=1.0.0
+gh release download "v${VERSION}" \
+    --repo hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding \
+    --pattern "mythic-vibe-launcher-${VERSION}-linux-x86_64*"
+
+# Verify SHA256:
+sha256sum --check "mythic-vibe-launcher-${VERSION}-linux-x86_64.sha256"
+
+# First run downloads the interpreter + wheel into a per-user
+# cache (~30 MB). Subsequent runs are fast.
+chmod +x "mythic-vibe-launcher-${VERSION}-linux-x86_64"
+./"mythic-vibe-launcher-${VERSION}-linux-x86_64" --version
+```
+
+The cache lives at:
+
+- **Linux:** `~/.cache/mythic-vibe-launcher/`
+- **macOS:** `~/Library/Caches/mythic-vibe-launcher/`
+- **Windows:** `%LOCALAPPDATA%\mythic-vibe-launcher\Cache\`
+
+Set `MYTHIC_LAUNCHER_CACHE=/path/to/cache` to redirect (useful for CI runners and sandboxed environments).
+
+To install extras into the cached venv after first run:
+
+```bash
+~/.cache/mythic-vibe-launcher/venv/bin/pip install "mythic-vibe-cli[ai,tui]"
+```
+
+For full design, deferred work, and rationale for choosing Rust, see [`packaging/launcher/README.md`](../packaging/launcher/README.md).
+
 ### Container (Docker / Podman)
 
 Each release publishes a multi-arch (linux/amd64 + linux/arm64) image to GitHub Container Registry:
