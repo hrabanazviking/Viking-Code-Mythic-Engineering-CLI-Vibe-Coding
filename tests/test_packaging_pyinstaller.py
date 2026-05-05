@@ -208,6 +208,19 @@ class ReleaseBinariesWorkflowTests(unittest.TestCase):
         # release.yml-created GitHub Release for the tag.
         self.assertIn("softprops/action-gh-release", self.raw)
 
+    def test_signs_pyinstaller_binary_with_sigstore(self) -> None:
+        # Phase 21.5 — keyless signing over each per-OS PyInstaller
+        # binary. The signing step must reference the dist/ path
+        # the build step writes to.
+        self.assertIn("sigstore/gh-action-sigstore-python", self.raw)
+        self.assertIn("inputs: dist/mythic-vibe-*", self.raw)
+
+    def test_signs_nuitka_binary_with_sigstore(self) -> None:
+        # Phase 21.5 — same pattern for the Nuitka binary path.
+        # Nuitka writes to dist-nuitka/ to keep the two builders'
+        # outputs distinct.
+        self.assertIn("inputs: dist-nuitka/mythic-vibe-nuitka-*", self.raw)
+
 
 if __name__ == "__main__":
     unittest.main()

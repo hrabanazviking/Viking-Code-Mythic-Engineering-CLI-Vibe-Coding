@@ -258,6 +258,13 @@ class ReleaseOciWorkflowTests(unittest.TestCase):
         self.assertIn("pyproject.toml", self.raw)
         self.assertIn("tomllib", self.raw)
 
+    def test_signs_image_with_cosign_keyless(self) -> None:
+        # Phase 21.5 — cosign keyless signing over the multi-arch
+        # OCI manifest. Operators verify with `cosign verify`
+        # against the Fulcio cert identity matching this workflow.
+        self.assertIn("sigstore/cosign-installer", self.raw)
+        self.assertIn("cosign sign --yes", self.raw)
+
 
 if __name__ == "__main__":
     unittest.main()

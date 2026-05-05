@@ -124,6 +124,16 @@ jobs:
           fi
           ls -la
 
+      # Phase 21.5 — Sigstore keyless signing over the PyInstaller
+      # binary. Each matrix row signs its own binary; signatures
+      # land alongside the binary as .sigstore bundles. Operators
+      # verify later via `python -m sigstore verify identity ...`.
+      - name: Sign binary with Sigstore (keyless)
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        uses: sigstore/gh-action-sigstore-python@v3.0.0
+        with:
+          inputs: dist/mythic-vibe-*
+
       - name: Upload binary artifact
         uses: actions/upload-artifact@v4
         with:
@@ -222,6 +232,14 @@ jobs:
             shasum -a 256 "${ASSET_NAME}" > "${ASSET_NAME}.sha256"
           fi
           ls -la
+
+      # Phase 21.5 — Sigstore keyless signing over the Nuitka
+      # binary. Same pattern as the PyInstaller signing step.
+      - name: Sign Nuitka binary with Sigstore (keyless)
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        uses: sigstore/gh-action-sigstore-python@v3.0.0
+        with:
+          inputs: dist-nuitka/mythic-vibe-nuitka-*
 
       - name: Upload Nuitka binary artifact
         uses: actions/upload-artifact@v4

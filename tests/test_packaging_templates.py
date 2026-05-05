@@ -481,6 +481,20 @@ class ReleaseWorkflowTests(unittest.TestCase):
         # PH-21.2 naming without breaking PH-21.8.
         self.assertIn("mythic-vibe-${VERSION}-windows-x86_64.exe", self.raw)
 
+    def test_signs_artifacts_with_sigstore(self) -> None:
+        # Phase 21.5 — keyless signing over wheel + sdist + sbom.
+        self.assertIn("sigstore/gh-action-sigstore-python", self.raw)
+        # The action must reference all three artifact families.
+        self.assertIn("dist/*.whl", self.raw)
+        self.assertIn("dist/*.tar.gz", self.raw)
+        self.assertIn("dist/sbom.json", self.raw)
+
+    def test_uploads_sigstore_bundles_to_release(self) -> None:
+        # The .sigstore bundles must ship to operators alongside the
+        # artifacts they sign — a signature stored only inside CI
+        # is useless for verification.
+        self.assertIn("dist/*.sigstore", self.raw)
+
     def test_runs_sbom_regen(self) -> None:
         self.assertIn("scripts/regenerate_sbom.py", self.raw)
 
