@@ -107,6 +107,37 @@ mythic-vibe hardware       # platform_tags includes "wsl"
 
 The runtime detects WSL by reading `platform.uname().release` and matching `microsoft` (case-insensitive) — works for both WSL1 and WSL2. The detection is read-only and never raises; if the kernel string changes in a future WSL release, the worst case is the tag drops, not a CLI failure.
 
+### Standalone binaries (PyInstaller)
+
+Each release attaches per-OS single-file executables to its GitHub Release page. No Python required on the target — the binary bundles a frozen interpreter plus the CLI's stdlib-only base.
+
+```bash
+VERSION=1.0.0
+gh release download "v${VERSION}" \
+    --repo hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding \
+    --pattern "mythic-vibe-${VERSION}-linux-x86_64*"
+
+# Verify the SHA256 sidecar:
+sha256sum --check "mythic-vibe-${VERSION}-linux-x86_64.sha256"
+
+# Make executable + run:
+chmod +x "mythic-vibe-${VERSION}-linux-x86_64"
+./"mythic-vibe-${VERSION}-linux-x86_64" --version
+```
+
+Released binary names follow this pattern:
+
+| OS / arch | Asset name |
+|---|---|
+| Linux x86_64 | `mythic-vibe-<VERSION>-linux-x86_64` |
+| macOS arm64 (Apple Silicon) | `mythic-vibe-<VERSION>-macos-arm64` |
+| macOS x86_64 (Intel) | `mythic-vibe-<VERSION>-macos-x86_64` |
+| Windows x86_64 | `mythic-vibe-<VERSION>-windows-x86_64.exe` |
+
+Each binary ships with a `.sha256` sidecar for out-of-band verification.
+
+The standalone binary embeds **only the CLI's stdlib-only base** — optional extras (`ai`, `tui`, `ux`, `otel`) are deliberately excluded so the binary stays small (~15-25 MB) and starts fast. If you need extras, use the PyPI / Homebrew / Scoop / AUR / Container channels above; those install into a venv where extras work via pip.
+
 ### Container (Docker / Podman)
 
 Each release publishes a multi-arch (linux/amd64 + linux/arm64) image to GitHub Container Registry:
@@ -308,6 +339,8 @@ mythic-vibe completion --shell powershell | Invoke-Expression
 - **`mythic-vibe: command not found`** — your venv is not active, OR you used `pip install` outside any venv and your shell's `PATH` doesn't include user-local install dirs. Activate the venv (or use the module form: `python -m mythic_vibe_cli --help`).
 - **Wheel install fails on Pi Zero / very-low-RAM device** — use the offline wheelhouse path above; it ships pre-built wheels so the install path doesn't need a build toolchain.
 - **Termux `pip install` fails compiling a wheel** — install `pkg install rust` first, or use the offline wheelhouse path which ships pre-built wheels and bypasses the compile step entirely.
+- **Standalone binary refuses to run on macOS first launch ("unidentified developer")** — see the macOS Gatekeeper override section under [Standalone binaries](#standalone-binaries-pyinstaller); the project ships un-notarized so a one-time right-click → Open is required, or run `xattr -d com.apple.quarantine /path/to/mythic-vibe-*-macos-*` from the CLI.
+- **Standalone binary triggers a Windows SmartScreen "unrecognized publisher" warning** — the binaries are unsigned. Click "More info" → "Run anyway" on first launch. Code signing is on the v1.x roadmap (PH-21.5 keyless signing via Sigstore).
 - **`pipx` install with extras fails** — make sure you're using the PEP 508 form: `pipx install "mythic-vibe-cli[ai] @ git+URL@branch"` for VCS installs, or just `pipx install "mythic-vibe-cli[ai]"` for PyPI.
 - **`mythic-vibe tui` says Textual is missing** — install the `[tui]` extra: `python -m pip install "mythic-vibe-cli[tui]"`.
 

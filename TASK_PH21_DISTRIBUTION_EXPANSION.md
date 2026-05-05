@@ -53,7 +53,7 @@ earlier slices produce.
 | 2 | **21.8** | winget manifest PR to `winget-pkgs` | ~2h | [ ] |
 | 3 | **21.9** | Android / Termux formal support (docs + platform detection) | ~3-4h | [x] |
 | 4 | **21.1** | Container / OCI image (multi-arch buildx → GHCR + Docker Hub) | ~3-4h | [x] |
-| 5 | **21.2** | Single-file executables via PyInstaller (Linux + Windows + macOS) | ~6-8h | [ ] |
+| 5 | **21.2** | Single-file executables via PyInstaller (Linux + Windows + macOS) | ~6-8h | [x] |
 | 6 | **21.3** | Single-file executables via Nuitka (alternative; faster startup) | ~6-8h | [ ] |
 | 7 | **21.4** | macOS Gatekeeper override docs (rescoped — not full notarization) | ~30min | [ ] |
 | 8 | **21.5** | GPG / Sigstore signed artifacts (replaces 20.6 checksums-only) | ~6-8h | [ ] |
@@ -365,6 +365,77 @@ unaffected. Image tagging follows v1.0 SemVer (`:VERSION` per tag,
 deterministic builds across replays.
 
 Beginning slice 21.2 (PyInstaller binaries) next.
+
+### 2026-05-05 — Slice 21.2 closed (PyInstaller standalone binaries)
+**Shipped:**
+- `packaging/pyinstaller/mythic-vibe.spec` — PyInstaller spec for
+  the stdlib-only base CLI. Uses `collect_data_files` to bundle
+  `resources/schemas/*.json`. Hidden imports cover three lazily-
+  imported runtime modules (model_catalog, doctor_fix, ai.route)
+  plus tomllib/tomli for cross-3.10/3.11+ compat. Excludes every
+  optional extra (anthropic / openai / google-genai / textual /
+  rich / opentelemetry-* / hypothesis / pytest / mypy / ruff /
+  tkinter / matplotlib / numpy) so the binary stays small (~15-25
+  MB target) and starts fast. `console=True` keeps stdio attached;
+  `upx=False` because UPX corrupts macOS code signatures and trips
+  Windows Defender false positives; `target_arch=None` lets the
+  matrix runner's host arch dictate the output.
+- `packaging/pyinstaller/entrypoint.py` — minimal shim that imports
+  `mythic_vibe_cli.cli.main` and calls `sys.exit(main())`. Kept
+  tiny on purpose so the binary's behavior matches a pip-installed
+  CLI exactly.
+- `.github/workflows/release-binaries.yml` — new workflow with a
+  4-row matrix:
+    ubuntu-latest  → mythic-vibe-${VERSION}-linux-x86_64
+    macos-latest   → mythic-vibe-${VERSION}-macos-arm64
+    macos-13       → mythic-vibe-${VERSION}-macos-x86_64 (Intel)
+    windows-latest → mythic-vibe-${VERSION}-windows-x86_64.exe
+  Each row installs the project + PyInstaller, runs `pyinstaller
+  packaging/pyinstaller/mythic-vibe.spec --clean`, smoke-tests the
+  binary (--version + --help + doctor --json), renames with the
+  per-OS asset suffix, computes a SHA256 sidecar, uploads the
+  artifact. A separate `github-release` job downloads every
+  artifact, flattens them into one dir, and attaches all four
+  binaries + four `.sha256` files to the release.yml-created
+  GitHub Release for the tag (softprops idempotently appends to
+  the existing release). `workflow_dispatch` runs the build-only
+  rehearsal path.
+- `tests/test_packaging_pyinstaller.py` — 19 new tests across 3
+  classes:
+    PyInstallerSpecTests (8) — entrypoint reference, schema data-
+        file collection, optional-extra excludes, console mode,
+        no-UPX, target_arch=None, hidden-imports covering the
+        lazy-import runtime paths, tomli/tomllib fallback.
+    EntrypointShimTests (3) — imports cli.main, calls sys.exit
+        on its return, compiles cleanly.
+    ReleaseBinariesWorkflowTests (8) — tag triggers, manual
+        rehearsal, Linux/macOS/Windows matrix coverage, macos-13
+        Intel row, spec invocation, smoke-test commands, per-
+        binary sha256 emission, GitHub Release upload.
+- `docs/INSTALL.md` — new "Standalone binaries (PyInstaller)"
+  section between AUR/Termux/WSL and the Container section. Covers
+  download via `gh release download`, sha256 verification,
+  per-OS asset name table, and the explicit "no extras bundled"
+  caveat directing extras-needers to the pip channels. New
+  troubleshooting bullets for macOS Gatekeeper (forwarding to
+  PH-21.4) and Windows SmartScreen (forwarding to PH-21.5).
+- `packaging/README.md` — channel table extended with the
+  PyInstaller row pointing at the spec + entrypoint. Defer-section
+  tightened: Nuitka (PH-21.3) and winget (PH-21.8) remain.
+
+**Gates green:** 2359 passed / 1 skipped / 109 subtests (+19 from
+this slice); ruff clean; mypy clean (156 source files); contract
+audit clean.
+
+**Compatibility surface:** new publication channel; existing
+stable surfaces unaffected. The standalone binary is intentionally
+stdlib-only — operators who need extras must use the pip channels.
+This is documented as a Stable property of the binary surface so
+later additions of "ai-flavor" or "tui-flavor" binaries would land
+as separate assets rather than mutating the base binary's
+contract.
+
+Beginning slice 21.4 (macOS Gatekeeper override docs) next.
 
 ---
 
