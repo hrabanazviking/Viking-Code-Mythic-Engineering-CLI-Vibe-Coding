@@ -148,6 +148,30 @@ Each binary ships with a `.sha256` sidecar for out-of-band verification.
 
 The standalone binary embeds **only the CLI's stdlib-only base** — optional extras (`ai`, `tui`, `ux`, `otel`) are deliberately excluded so the binary stays small (~15-25 MB) and starts fast. If you need extras, use the PyPI / Homebrew / Scoop / AUR / Container channels above; those install into a venv where extras work via pip.
 
+#### Nuitka alternative
+
+Each release also ships a **Nuitka-compiled** binary alongside the PyInstaller binary. Nuitka compiles Python to C and links a real native executable, while PyInstaller bundles a frozen interpreter:
+
+| Property | PyInstaller | Nuitka |
+|---|---|---|
+| Asset name | `mythic-vibe-<VERSION>-<os>-<arch>` | `mythic-vibe-nuitka-<VERSION>-<os>-<arch>` |
+| Binary size | ~15-25 MB | ~8-15 MB |
+| Cold start | ~250-500 ms | ~80-150 ms |
+| Build time | ~30-90 s per OS | ~3-8 minutes per OS |
+| Behavior | Identical (both compile from the same `entrypoint.py` shim) | Identical |
+
+Both binaries are stdlib-only; both pass the same smoke tests. **Pick by preference**: PyInstaller is the default; Nuitka is the right choice when binary size or cold-start latency matters (e.g. a CI runner where you invoke the CLI hundreds of times per pipeline).
+
+```bash
+VERSION=1.0.0
+gh release download "v${VERSION}" \
+    --repo hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding \
+    --pattern "mythic-vibe-nuitka-${VERSION}-linux-x86_64*"
+sha256sum --check "mythic-vibe-nuitka-${VERSION}-linux-x86_64.sha256"
+chmod +x "mythic-vibe-nuitka-${VERSION}-linux-x86_64"
+./"mythic-vibe-nuitka-${VERSION}-linux-x86_64" --version
+```
+
 #### macOS first-launch (Gatekeeper override)
 
 The macOS binaries ship **un-notarized**. On first launch macOS Gatekeeper will block the binary with a dialog that reads roughly:

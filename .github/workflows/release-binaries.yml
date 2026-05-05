@@ -132,9 +132,108 @@ jobs:
             dist/mythic-vibe-*
           if-no-files-found: error
 
+  build-nuitka:
+    # Phase 21.3 — alternative single-file binaries via Nuitka.
+    # Nuitka compiles to C and links a real native executable, so
+    # the resulting binary is smaller (~8-15 MB vs PyInstaller's
+    # ~15-25 MB) and starts faster (~80-150 ms vs ~250-500 ms),
+    # but takes 3-8 minutes to build per matrix row vs PyInstaller's
+    # 30-90 s. Operators get both options on the GitHub Release
+    # page; the asset names embed "nuitka" so the two are
+    # distinguishable. Both binaries embed the stdlib-only base
+    # only — extras stay with pip.
+    name: Nuitka / ${{ matrix.os }} / ${{ matrix.arch_label }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: linux
+            runner: ubuntu-latest
+            arch_label: x86_64
+            binary_suffix: ""
+            asset_suffix: linux-x86_64
+          - os: macos
+            runner: macos-latest
+            arch_label: arm64
+            binary_suffix: ""
+            asset_suffix: macos-arm64
+          - os: macos
+            runner: macos-13
+            arch_label: x86_64
+            binary_suffix: ""
+            asset_suffix: macos-x86_64
+          - os: windows
+            runner: windows-latest
+            arch_label: x86_64
+            binary_suffix: ".exe"
+            asset_suffix: windows-x86_64.exe
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install project + Nuitka
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install "nuitka>=2.0"
+
+      - name: Resolve version from pyproject
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(python -c "import tomllib, pathlib; \
+            print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build binary via Nuitka driver
+        shell: bash
+        run: |
+          python packaging/nuitka/build.py --output-dir dist-nuitka
+          ls -la dist-nuitka/
+
+      - name: Smoke test binary
+        shell: bash
+        env:
+          BINARY: dist-nuitka/mythic-vibe${{ matrix.binary_suffix }}
+        run: |
+          "$BINARY" --version
+          "$BINARY" --help
+          "$BINARY" doctor --json
+
+      - name: Rename binary with nuitka + OS + arch suffix
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          ASSET_SUFFIX: ${{ matrix.asset_suffix }}
+          BINARY: dist-nuitka/mythic-vibe${{ matrix.binary_suffix }}
+        run: |
+          ASSET_NAME="mythic-vibe-nuitka-${VERSION}-${ASSET_SUFFIX}"
+          mv "$BINARY" "dist-nuitka/${ASSET_NAME}"
+          cd dist-nuitka
+          if command -v sha256sum >/dev/null 2>&1; then
+            sha256sum "${ASSET_NAME}" > "${ASSET_NAME}.sha256"
+          else
+            shasum -a 256 "${ASSET_NAME}" > "${ASSET_NAME}.sha256"
+          fi
+          ls -la
+
+      - name: Upload Nuitka binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-nuitka-${{ matrix.asset_suffix }}
+          path: |
+            dist-nuitka/mythic-vibe-nuitka-*
+          if-no-files-found: error
+
   github-release:
     name: Attach binaries to GitHub Release
-    needs: build
+    needs: [build, build-nuitka]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
@@ -144,8 +243,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           # No name= filter -> downloads every artifact emitted by
-          # the build matrix. actions/download-artifact@v4 lays
-          # them out under separate per-artifact directories.
+          # the build + build-nuitka matrices. actions/download-
+          # artifact@v4 lays them out under separate per-artifact
+          # directories.
           path: artifacts
       - name: Flatten artifact directories
         run: |

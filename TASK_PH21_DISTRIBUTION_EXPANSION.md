@@ -54,7 +54,7 @@ earlier slices produce.
 | 3 | **21.9** | Android / Termux formal support (docs + platform detection) | ~3-4h | [x] |
 | 4 | **21.1** | Container / OCI image (multi-arch buildx → GHCR + Docker Hub) | ~3-4h | [x] |
 | 5 | **21.2** | Single-file executables via PyInstaller (Linux + Windows + macOS) | ~6-8h | [x] |
-| 6 | **21.3** | Single-file executables via Nuitka (alternative; faster startup) | ~6-8h | [ ] |
+| 6 | **21.3** | Single-file executables via Nuitka (alternative; faster startup) | ~6-8h | [x] |
 | 7 | **21.4** | macOS Gatekeeper override docs (rescoped — not full notarization) | ~30min | [x] |
 | 8 | **21.5** | GPG / Sigstore signed artifacts (replaces 20.6 checksums-only) | ~6-8h | [ ] |
 | 9 | **21.6** | Reproducible build attestations + tag signing | ~4-6h | [ ] |
@@ -534,6 +534,76 @@ must update both PH-21.2 and PH-21.8 in lockstep — caught by
 the test_winget_resolves_windows_binary_from_release_assets test.
 
 Beginning slice 21.3 (Nuitka alternative binaries) next.
+
+### 2026-05-05 — Slice 21.3 closed (Nuitka alternative binaries)
+**Shipped:**
+- `packaging/nuitka/build.py` — Python build driver wrapping the
+  Nuitka invocation. Pure function `build_command(output_dir,
+  binary_name)` returns the argv list (testable without invoking
+  Nuitka). Flags: `--standalone --onefile`, explicit
+  `--include-package=mythic_vibe_cli` so Nuitka's static analyzer
+  picks up modules beyond the entrypoint shim's direct imports,
+  `--include-package-data=mythic_vibe_cli` for resources/schemas/*.json,
+  `--remove-output` for clean rebuilds, `--show-progress` for
+  informative CI logs, `--assume-yes-for-downloads` for
+  unattended runs, eight `--nofollow-import-to=` excludes
+  matching PyInstaller's exclusion set (anthropic / openai /
+  google / textual / rich / opentelemetry / hypothesis / pytest).
+  Compiles from the **same** entrypoint shim as PyInstaller
+  (`packaging/pyinstaller/entrypoint.py`) so both binaries'
+  runtime behavior matches exactly. `--dry-run` flag for
+  local rehearsal without the build cost.
+- `.github/workflows/release-binaries.yml` — new `build-nuitka`
+  job parallel to the existing `build` (PyInstaller) job. Same
+  4-row OS matrix (ubuntu-latest, macos-latest, macos-13,
+  windows-latest). Invokes `python packaging/nuitka/build.py`
+  for each row, smoke-tests the binary, renames with the nuitka
+  suffix (`mythic-vibe-nuitka-${VERSION}-${OS}-${ARCH}`), uploads
+  per-row sha256 sidecar. The `github-release` job now waits on
+  both `build` and `build-nuitka` (`needs: [build, build-nuitka]`),
+  flattens both artifact sets, and uploads all 8 binaries + 8
+  sha256 files to the GitHub Release for the tag.
+- `tests/test_packaging_nuitka.py` — 16 new tests across 2
+  classes:
+    NuitkaBuildDriverTests (10) — driver imports cleanly, returns
+    argv list of strings, invokes `python -m nuitka`, uses
+    `--standalone --onefile`, includes the project package, bundles
+    package data, excludes optional extras with the right
+    nofollow flags, points at the shared PyInstaller entrypoint
+    shim, propagates `--output-dir` correctly across platforms,
+    accepts `--dry-run` cleanly.
+    ReleaseBinariesNuitkaJobTests (6) — workflow has the
+    build-nuitka job, invokes the build driver, covers the full
+    OS matrix including macos-13, asset names embed `nuitka`,
+    smoke commands present, github-release waits for both
+    matrices.
+- `docs/INSTALL.md` — new `#### Nuitka alternative` subsection
+  inside the standalone-binaries section. Comparison table
+  (asset name, binary size, cold start, build time, behavior)
+  contrasts the two binary flavors. Operator-facing guidance:
+  pick by preference, Nuitka wins when binary size or cold-start
+  latency matters (e.g. CI runners invoking the CLI hundreds of
+  times per pipeline). Same download + verify recipe shape as
+  the PyInstaller subsection.
+- `packaging/README.md` — channel table extended with the Nuitka
+  binaries row. Defer-section finalized: all v1.x distribution
+  channels have shipped; only PH-21.5 (Sigstore) and PH-21.6
+  (reproducible attestations + tag signing) remain in PH-21
+  scope, both cross-cutting cryptographic provenance work that
+  applies on top of the channels rather than adding new ones.
+
+**Gates green:** 2393 passed / 1 skipped / 109 subtests (+16 from
+this slice); ruff clean; mypy clean (156 source files); contract
+audit clean.
+
+**Compatibility surface:** new publication channel; existing
+stable surfaces unaffected. Both Nuitka and PyInstaller binaries
+ship the same stdlib-only contract — the only operator-visible
+differences are file size and cold-start latency. Operators who
+script CI pipelines around the binary's exit codes / argv
+parsing get identical behavior either way.
+
+Beginning slice 21.5 (Sigstore signed artifacts) next.
 
 ---
 
