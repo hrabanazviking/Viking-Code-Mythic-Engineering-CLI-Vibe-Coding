@@ -50,12 +50,45 @@ jobs:
             print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
+      # Phase 23.5 — decode the keystore secret to a temp file and
+      # set the env vars app/build.gradle.kts reads. The four
+      # secrets are optional: when any is missing we skip the
+      # decode and the build produces an unsigned release APK
+      # (matches PH-22.2 foundation behavior). When ALL four are
+      # present, the build produces a signed release APK that
+      # installs on Android devices without "unknown developer"
+      # warnings.
+      - name: Decode signing keystore (when secrets configured)
+        id: keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] \
+              || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "::warning::ANDROID_KEYSTORE_* secrets incomplete — release APK will be unsigned"
+            echo "signing_available=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          KEYSTORE_PATH="${RUNNER_TEMP}/mythic-release.jks"
+          echo "$KEYSTORE_BASE64" | base64 -d > "$KEYSTORE_PATH"
+          echo "ANDROID_KEYSTORE_FILE=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+          echo "ANDROID_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "ANDROID_KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "ANDROID_KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
+          echo "signing_available=true" >> "$GITHUB_OUTPUT"
+          echo "Keystore decoded — release APK will be signed"
+
       - name: Build Android release APK
         working-directory: packaging/android
         run: |
-          # Foundation-level: assembleRelease produces an unsigned
-          # APK. A future session swaps in assembleSignedRelease once
-          # the keystore secrets are provisioned.
+          # When the Decode keystore step set the env vars above,
+          # app/build.gradle.kts wires the signingConfig into the
+          # release buildType. When secrets are absent, the env
+          # vars are unset and the build produces an unsigned APK
+          # (foundation fallback).
           chmod +x ./gradlew || true
           # The android Gradle wrapper isn't checked in at the
           # foundation level — a future session generates it via

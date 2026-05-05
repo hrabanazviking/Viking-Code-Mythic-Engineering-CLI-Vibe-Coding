@@ -13,6 +13,41 @@ plugins {
     id("com.chaquo.python")
 }
 
+// PH-23.5 (additive 2026-05-05) — APK signing config. Reads
+// keystore credentials from project properties + env vars so
+// the keystore + passwords NEVER land in the source tree.
+//
+// Three sources, in priority order:
+//   1. Project properties (e.g. -PmythicReleaseStorePassword=...)
+//   2. Environment variables (ANDROID_KEYSTORE_PASSWORD etc.)
+//   3. None — falls back to unsigned release (foundation behavior)
+//
+// The release-android.yml workflow uses path #2: it decodes a
+// base64'd keystore from the ANDROID_KEYSTORE_BASE64 secret and
+// sets the four env vars below before running assembleRelease.
+//
+// Operators creating a fresh keystore should follow
+// `packaging/android/SIGNING.md`.
+val mythicReleaseStoreFile: String? =
+    (project.findProperty("mythicReleaseStoreFile") as String?)
+        ?: System.getenv("ANDROID_KEYSTORE_FILE")
+val mythicReleaseStorePassword: String? =
+    (project.findProperty("mythicReleaseStorePassword") as String?)
+        ?: System.getenv("ANDROID_KEYSTORE_PASSWORD")
+val mythicReleaseKeyAlias: String? =
+    (project.findProperty("mythicReleaseKeyAlias") as String?)
+        ?: System.getenv("ANDROID_KEY_ALIAS")
+val mythicReleaseKeyPassword: String? =
+    (project.findProperty("mythicReleaseKeyPassword") as String?)
+        ?: System.getenv("ANDROID_KEY_PASSWORD")
+
+val mythicReleaseSigningAvailable: Boolean = listOf(
+    mythicReleaseStoreFile,
+    mythicReleaseStorePassword,
+    mythicReleaseKeyAlias,
+    mythicReleaseKeyPassword,
+).all { !it.isNullOrEmpty() }
+
 android {
     namespace = "dev.mythicvibe.android"
     compileSdk = 34
@@ -33,6 +68,26 @@ android {
         }
     }
 
+    signingConfigs {
+        // Foundation rule: the signing config exists at this
+        // level so the release buildType below can always
+        // reference it; if no keystore is configured, the
+        // signingConfig is left null and the APK is unsigned.
+        if (mythicReleaseSigningAvailable) {
+            create("release") {
+                storeFile = file(mythicReleaseStoreFile!!)
+                storePassword = mythicReleaseStorePassword
+                keyAlias = mythicReleaseKeyAlias
+                keyPassword = mythicReleaseKeyPassword
+                // Both v1 (JAR) + v2 (APK Signature Scheme v2)
+                // are enabled by default in AGP 8.x. Explicitly
+                // enabling v3 + v4 would require additional setup
+                // (rotated keys for v3, idsig sidecars for v4) —
+                // a future session can add those incrementally.
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false        // Compose + Python embedding don't play nicely with R8
@@ -40,6 +95,13 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Wire in the signing config when keystore credentials
+            // are available; otherwise the release APK is unsigned
+            // (matches the PH-22.2 foundation behavior so operators
+            // without keystore secrets still get a working build).
+            if (mythicReleaseSigningAvailable) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 

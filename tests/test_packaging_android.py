@@ -116,6 +116,48 @@ class AppModuleTests(unittest.TestCase):
         # the launcher use the same interpreter version.
         self.assertRegex(self.text, r'version\s*=\s*"3\.12"')
 
+    def test_declares_release_signing_config(self) -> None:
+        """PH-23.5 — the release buildType must reference a
+        signing config when keystore credentials are available.
+        Without this, the release APK installs only with
+        "unknown sources" enabled."""
+        self.assertIn("signingConfigs", self.text)
+        self.assertIn('create("release")', self.text)
+        # The signing config must reference all four credential
+        # sources — file path, store password, key alias, key
+        # password. Missing any produces a build-time error.
+        for field in ("storeFile", "storePassword", "keyAlias", "keyPassword"):
+            self.assertIn(field, self.text)
+
+    def test_signing_config_falls_back_when_secrets_absent(self) -> None:
+        """The build must fall back gracefully to unsigned APK
+        when secrets aren't configured — otherwise foundation-
+        level operators (no keystore yet) get a broken build."""
+        self.assertIn("mythicReleaseSigningAvailable", self.text)
+        # The release buildType must guard the signingConfig
+        # assignment behind the availability check.
+        self.assertRegex(
+            self.text,
+            r"if \(mythicReleaseSigningAvailable\)\s*\{[^}]*signingConfig\s*=",
+        )
+
+    def test_signing_reads_from_property_or_env(self) -> None:
+        """Two paths: project property (-P flag for local builds)
+        OR env var (the workflow's path). Property takes priority
+        so a local workstation build doesn't accidentally pick
+        up CI env vars."""
+        self.assertIn("findProperty", self.text)
+        self.assertIn("System.getenv", self.text)
+        # The four env var names the workflow sets must all be
+        # referenced.
+        for env in (
+            "ANDROID_KEYSTORE_FILE",
+            "ANDROID_KEYSTORE_PASSWORD",
+            "ANDROID_KEY_ALIAS",
+            "ANDROID_KEY_PASSWORD",
+        ):
+            self.assertIn(env, self.text)
+
 
 class AndroidManifestTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -271,6 +313,74 @@ class ReleaseAndroidWorkflowTests(unittest.TestCase):
 
     def test_uploads_to_github_release(self) -> None:
         self.assertIn("softprops/action-gh-release", self.text)
+
+    def test_decodes_signing_keystore(self) -> None:
+        """PH-23.5 — the workflow must decode the base64'd
+        keystore secret to a temp file before assembleRelease."""
+        self.assertIn("ANDROID_KEYSTORE_BASE64", self.text)
+        self.assertIn("base64 -d", self.text)
+        # Env vars set on $GITHUB_ENV so the gradle build picks
+        # them up.
+        for env in (
+            "ANDROID_KEYSTORE_FILE",
+            "ANDROID_KEYSTORE_PASSWORD",
+            "ANDROID_KEY_ALIAS",
+            "ANDROID_KEY_PASSWORD",
+        ):
+            self.assertIn(env, self.text)
+
+    def test_falls_back_to_unsigned_when_secrets_missing(self) -> None:
+        """Foundation behavior: incomplete keystore secrets
+        produce an unsigned APK, not a workflow failure. The
+        warning must be visible in the workflow log."""
+        self.assertIn("::warning::", self.text)
+        self.assertIn("unsigned", self.text)
+
+
+class AndroidSigningGuideTests(unittest.TestCase):
+    """PH-23.5 — verify the maintainer-facing SIGNING.md exists
+    and covers the keystore creation + secret config recipe."""
+
+    def setUp(self) -> None:
+        signing_doc = (
+            REPO_ROOT / "packaging" / "android" / "SIGNING.md"
+        )
+        self.assertTrue(
+            signing_doc.is_file(),
+            f"SIGNING.md missing at {signing_doc}",
+        )
+        self.text = signing_doc.read_text(encoding="utf-8")
+
+    def test_documents_keytool_creation_recipe(self) -> None:
+        # Operators creating a fresh keystore need the keytool
+        # invocation documented.
+        self.assertIn("keytool -genkey", self.text)
+        self.assertIn("RSA", self.text)
+        # 4096-bit key and 10000-day validity are the AGP-
+        # recommended defaults.
+        self.assertIn("4096", self.text)
+        self.assertIn("10000", self.text)
+
+    def test_documents_required_secrets(self) -> None:
+        for secret in (
+            "ANDROID_KEYSTORE_BASE64",
+            "ANDROID_KEYSTORE_PASSWORD",
+            "ANDROID_KEY_ALIAS",
+            "ANDROID_KEY_PASSWORD",
+        ):
+            self.assertIn(secret, self.text)
+
+    def test_documents_apksigner_verification(self) -> None:
+        # End-users (and the maintainer) verify the released APK
+        # via apksigner. The doc must show the recipe.
+        self.assertIn("apksigner verify", self.text)
+
+    def test_explains_signing_separation_from_sigstore(self) -> None:
+        # PH-21.5 Sigstore signing + Android APK signing are
+        # different concerns; the doc must call this out so
+        # operators don't conflate them.
+        self.assertIn("Sigstore", self.text)
+        self.assertIn("APK signing", self.text)
 
 
 if __name__ == "__main__":
