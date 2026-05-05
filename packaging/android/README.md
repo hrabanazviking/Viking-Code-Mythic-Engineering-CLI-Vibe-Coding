@@ -61,9 +61,11 @@ What works today:
 - ✅ Min-SDK 26 (Android 8.0+) covers ~99 % of in-use Android devices.
 - ✅ Four ABI filters (armeabi-v7a, arm64-v8a, x86, x86_64) cover essentially every device shipped since 2019.
 
-What's deferred to a future session:
+What was shipped after the foundation level:
 
-- ⚠️ **APK signing config.** Today the release build produces an unsigned APK; signing requires the maintainer's keystore + per-environment secrets handling. Pattern matches PH-21.2's PyInstaller signing concern.
+- ✅ **APK signing config** (PH-23.5, 2026-05-05). `app/build.gradle.kts` declares a release `signingConfig` that reads from project properties (`mythicReleaseStoreFile`, etc.) or env vars (`ANDROID_KEYSTORE_FILE`, etc.). When all four credentials are present the release APK is signed; when any are missing the build falls back to an unsigned APK. The `release-android.yml` workflow decodes a base64'd keystore from the `ANDROID_KEYSTORE_BASE64` secret and sets the env vars before `assembleRelease`. Maintainer setup recipe lives in `packaging/android/SIGNING.md`.
+
+What's deferred to a future session:
 - ⚠️ **Streaming stdout.** The runner buffers full output and returns once the CLI exits. A line-streaming generator + Kotlin polling loop would make `mythic-vibe verify` feel responsive on long runs.
 - ⚠️ **Cancellation.** Compose's coroutine cancellation should propagate into the Python runner. Today a tap on Run during a previous run is no-op'd; better UX would interrupt + restart.
 - ⚠️ **Persistent session log.** Each Run replaces the previous output. A scrollable log would let operators review prior commands.
