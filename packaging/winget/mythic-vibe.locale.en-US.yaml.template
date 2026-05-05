@@ -1,0 +1,33 @@
+# winget Default-Locale Manifest template (PH-21.8).
+#
+# Stable English-language metadata. Refreshed on release only when
+# Description / ShortDescription / ReleaseNotes copy needs an
+# update (rare). The release workflow substitutes __VERSION__ +
+# __RELEASE_NOTES_URL__ at render time.
+
+PackageIdentifier: hrabanazviking.MythicVibeCLI
+PackageVersion: __VERSION__
+PackageLocale: en-US
+Publisher: Mythic Vibe Contributors
+PublisherUrl: https://github.com/hrabanazviking/Mythic-Engineering
+PublisherSupportUrl: https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/issues
+PackageName: Mythic Vibe CLI
+PackageUrl: https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding
+License: Apache-2.0
+LicenseUrl: https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/blob/main/LICENSE
+ShortDescription: Beginner-friendly CLI that enforces Mythic Engineering vibe-coding workflow.
+Description: |-
+  Mythic Vibe CLI is an architecture-first, document-guided,
+  AI-orchestrated developer workflow tool. The standalone Windows
+  binary embeds the stdlib-only base; optional extras (AI
+  providers, Textual TUI, OpenTelemetry exporter) install via pip
+  if needed. See https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/blob/main/docs/INSTALL.md for the full channel matrix.
+Tags:
+  - cli
+  - developer-tools
+  - python
+  - vibe-coding
+  - mythic-engineering
+ReleaseNotesUrl: __RELEASE_NOTES_URL__
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

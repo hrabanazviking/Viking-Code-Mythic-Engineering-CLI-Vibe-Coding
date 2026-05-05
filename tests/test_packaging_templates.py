@@ -31,11 +31,30 @@ SCOOP_TEMPLATE = PACKAGING_DIR / "scoop" / "mythic-vibe.json.template"
 # Phase 21.7 (PH-21 distribution expansion 2026-05-05).
 AUR_PKGBUILD_TEMPLATE = PACKAGING_DIR / "aur" / "PKGBUILD.template"
 AUR_SRCINFO_TEMPLATE = PACKAGING_DIR / "aur" / ".SRCINFO.template"
+# Phase 21.8 (PH-21 distribution expansion 2026-05-05).
+WINGET_INSTALLER_TEMPLATE = (
+    PACKAGING_DIR / "winget" / "mythic-vibe.installer.yaml.template"
+)
+WINGET_LOCALE_TEMPLATE = (
+    PACKAGING_DIR / "winget" / "mythic-vibe.locale.en-US.yaml.template"
+)
+WINGET_VERSION_TEMPLATE = (
+    PACKAGING_DIR / "winget" / "mythic-vibe.yaml.template"
+)
 
 # Sample values that mimic what release.yml substitutes.
 SAMPLE_VERSION = "1.2.3"
 SAMPLE_SDIST_SHA = "a" * 64
 SAMPLE_WHEEL_SHA = "b" * 64
+SAMPLE_WINDOWS_URL = (
+    "https://github.com/owner/repo/releases/download/v1.2.3/"
+    "mythic-vibe-1.2.3-windows-x86_64.exe"
+)
+SAMPLE_WINDOWS_SHA = "C" * 64
+SAMPLE_RELEASE_DATE = "2026-05-05"
+SAMPLE_RELEASE_NOTES_URL = (
+    "https://github.com/owner/repo/releases/tag/v1.2.3"
+)
 
 
 class HomebrewTemplateTests(unittest.TestCase):
@@ -254,6 +273,145 @@ class AurSrcinfoTemplateTests(unittest.TestCase):
         self.assertIn(f"sha256sums = {SAMPLE_SDIST_SHA}", rendered)
 
 
+class WingetInstallerTemplateTests(unittest.TestCase):
+    """Phase 21.8 — winget Installer manifest render-time sanity.
+
+    The release workflow renders this template with the Windows
+    binary URL + sha256 from the PH-21.2 PyInstaller release, then
+    submits the result as part of a winget-pkgs PR. Catches
+    template drift before the manifest hits Microsoft's review.
+    """
+
+    def setUp(self) -> None:
+        self.assertTrue(
+            WINGET_INSTALLER_TEMPLATE.is_file(),
+            f"winget installer template missing at {WINGET_INSTALLER_TEMPLATE}",
+        )
+        self.raw = WINGET_INSTALLER_TEMPLATE.read_text(encoding="utf-8")
+
+    def test_declares_required_placeholders(self) -> None:
+        for placeholder in (
+            "__VERSION__",
+            "__WINDOWS_BINARY_URL__",
+            "__WINDOWS_BINARY_SHA256__",
+            "__RELEASE_DATE__",
+        ):
+            self.assertIn(placeholder, self.raw)
+
+    def test_substitution_removes_all_placeholders(self) -> None:
+        rendered = (
+            self.raw.replace("__VERSION__", SAMPLE_VERSION)
+            .replace("__WINDOWS_BINARY_URL__", SAMPLE_WINDOWS_URL)
+            .replace("__WINDOWS_BINARY_SHA256__", SAMPLE_WINDOWS_SHA)
+            .replace("__RELEASE_DATE__", SAMPLE_RELEASE_DATE)
+        )
+        leftover = re.findall(r"__[A-Z0-9_]+__", rendered)
+        self.assertEqual(
+            leftover, [],
+            f"unrendered placeholders in installer manifest: {leftover}",
+        )
+
+    def test_uses_portable_installer_type(self) -> None:
+        # Portable matches PH-21.2's PyInstaller-built single-file
+        # binary — winget extracts to a known location and adds to
+        # PATH; no installer chrome.
+        self.assertIn("InstallerType: portable", self.raw)
+
+    def test_declares_command_aliases(self) -> None:
+        # Both mythic-vibe and the mythic short alias must appear in
+        # the Commands array — matches the pyproject.toml console-
+        # scripts entry points so winget operators see both on PATH.
+        self.assertRegex(self.raw, r"Commands:\s*\n\s+-\s+mythic-vibe")
+        self.assertRegex(self.raw, r"-\s+mythic\b")
+
+    def test_uses_x64_architecture(self) -> None:
+        # PH-21.2 builds a windows-x86_64 binary; the installer
+        # manifest's Architecture must match.
+        self.assertIn("Architecture: x64", self.raw)
+
+    def test_manifest_version_is_modern(self) -> None:
+        # winget v1.6+ format. Older formats are accepted but use
+        # different field names; staying current avoids a future
+        # forced migration.
+        self.assertIn("ManifestType: installer", self.raw)
+        self.assertIn("ManifestVersion: 1.6.0", self.raw)
+
+
+class WingetLocaleTemplateTests(unittest.TestCase):
+    """Phase 21.8 — winget default-locale manifest sanity."""
+
+    def setUp(self) -> None:
+        self.assertTrue(
+            WINGET_LOCALE_TEMPLATE.is_file(),
+            f"winget locale template missing at {WINGET_LOCALE_TEMPLATE}",
+        )
+        self.raw = WINGET_LOCALE_TEMPLATE.read_text(encoding="utf-8")
+
+    def test_declares_required_placeholders(self) -> None:
+        self.assertIn("__VERSION__", self.raw)
+        self.assertIn("__RELEASE_NOTES_URL__", self.raw)
+
+    def test_substitution_removes_all_placeholders(self) -> None:
+        rendered = self.raw.replace(
+            "__VERSION__", SAMPLE_VERSION
+        ).replace(
+            "__RELEASE_NOTES_URL__", SAMPLE_RELEASE_NOTES_URL
+        )
+        leftover = re.findall(r"__[A-Z0-9_]+__", rendered)
+        self.assertEqual(
+            leftover, [],
+            f"unrendered placeholders in locale manifest: {leftover}",
+        )
+
+    def test_declares_apache_license(self) -> None:
+        self.assertIn("License: Apache-2.0", self.raw)
+
+    def test_includes_publisher_metadata(self) -> None:
+        # winget-pkgs review checks publisher, support, and homepage
+        # URLs; missing fields fail validation.
+        self.assertIn("Publisher: Mythic Vibe Contributors", self.raw)
+        self.assertIn("PublisherUrl:", self.raw)
+        self.assertIn("PackageName: Mythic Vibe CLI", self.raw)
+
+    def test_manifest_version_is_modern(self) -> None:
+        self.assertIn("ManifestType: defaultLocale", self.raw)
+        self.assertIn("PackageLocale: en-US", self.raw)
+        self.assertIn("ManifestVersion: 1.6.0", self.raw)
+
+
+class WingetVersionTemplateTests(unittest.TestCase):
+    """Phase 21.8 — winget version manifest sanity (the top-level
+    pointer file)."""
+
+    def setUp(self) -> None:
+        self.assertTrue(
+            WINGET_VERSION_TEMPLATE.is_file(),
+            f"winget version template missing at {WINGET_VERSION_TEMPLATE}",
+        )
+        self.raw = WINGET_VERSION_TEMPLATE.read_text(encoding="utf-8")
+
+    def test_declares_required_placeholders(self) -> None:
+        self.assertIn("__VERSION__", self.raw)
+
+    def test_substitution_removes_all_placeholders(self) -> None:
+        rendered = self.raw.replace("__VERSION__", SAMPLE_VERSION)
+        leftover = re.findall(r"__[A-Z0-9_]+__", rendered)
+        self.assertEqual(
+            leftover, [],
+            f"unrendered placeholders in version manifest: {leftover}",
+        )
+
+    def test_default_locale_matches_locale_template(self) -> None:
+        # The version manifest's DefaultLocale must point at the
+        # locale file's PackageLocale. Drift here breaks the
+        # manifest set's internal references.
+        self.assertIn("DefaultLocale: en-US", self.raw)
+
+    def test_manifest_version_is_modern(self) -> None:
+        self.assertIn("ManifestType: version", self.raw)
+        self.assertIn("ManifestVersion: 1.6.0", self.raw)
+
+
 class ReleaseWorkflowTests(unittest.TestCase):
     """Sanity-check that ``.github/workflows/release.yml`` exists
     and references the expected templates + secrets. Catches the
@@ -301,6 +459,27 @@ class ReleaseWorkflowTests(unittest.TestCase):
         # Match the secret-naming convention TAP_BUMP_TOKEN /
         # BUCKET_BUMP_TOKEN already use.
         self.assertIn("AUR_BUMP_TOKEN", self.raw)
+
+    def test_references_winget_templates(self) -> None:
+        # Phase 21.8 — winget channel.
+        self.assertIn(
+            "packaging/winget/mythic-vibe.installer.yaml.template", self.raw
+        )
+        self.assertIn(
+            "packaging/winget/mythic-vibe.locale.en-US.yaml.template", self.raw
+        )
+        self.assertIn(
+            "packaging/winget/mythic-vibe.yaml.template", self.raw
+        )
+
+    def test_winget_job_uses_winget_bump_token(self) -> None:
+        self.assertIn("WINGET_BUMP_TOKEN", self.raw)
+
+    def test_winget_resolves_windows_binary_from_release_assets(self) -> None:
+        # The job must look up the Windows binary in the release
+        # assets, not assume a hardcoded URL — that lets us refactor
+        # PH-21.2 naming without breaking PH-21.8.
+        self.assertIn("mythic-vibe-${VERSION}-windows-x86_64.exe", self.raw)
 
     def test_runs_sbom_regen(self) -> None:
         self.assertIn("scripts/regenerate_sbom.py", self.raw)

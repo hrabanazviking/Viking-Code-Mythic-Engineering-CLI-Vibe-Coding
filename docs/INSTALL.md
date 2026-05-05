@@ -60,6 +60,16 @@ scoop bucket add mythic https://github.com/hrabanazviking/scoop-mythic
 scoop install mythic-vibe
 ```
 
+### winget (Windows)
+
+```powershell
+winget install hrabanazviking.MythicVibeCLI
+```
+
+The winget package ships the standalone PyInstaller binary as a `portable` installer — winget extracts the `.exe` to a known location and adds it to `PATH`. No registry installer chrome; `winget uninstall` cleans up by removing the binary.
+
+The first launch may trigger a Windows SmartScreen "unrecognized publisher" prompt (the binary is unsigned until PH-21.5 keyless Sigstore signatures land). Click **More info** → **Run anyway**.
+
 ### Arch Linux (AUR)
 
 The package is published as `mythic-vibe-cli` on the [Arch User Repository](https://aur.archlinux.org/). It builds from the PyPI sdist so AUR users get the exact bytes PyPI users get.

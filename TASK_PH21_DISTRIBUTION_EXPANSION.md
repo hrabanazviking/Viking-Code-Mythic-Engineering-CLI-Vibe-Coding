@@ -50,7 +50,7 @@ earlier slices produce.
 | Order | Slice | What | Est. effort | Status |
 |---|---|---|---|---|
 | 1 | **21.7** | AUR `mythic-vibe-cli` package + maintainer-repo workflow | ~2h | [x] |
-| 2 | **21.8** | winget manifest PR to `winget-pkgs` | ~2h | [ ] |
+| 2 | **21.8** | winget manifest PR to `winget-pkgs` | ~2h | [x] |
 | 3 | **21.9** | Android / Termux formal support (docs + platform detection) | ~3-4h | [x] |
 | 4 | **21.1** | Container / OCI image (multi-arch buildx → GHCR + Docker Hub) | ~3-4h | [x] |
 | 5 | **21.2** | Single-file executables via PyInstaller (Linux + Windows + macOS) | ~6-8h | [x] |
@@ -464,6 +464,76 @@ documented but not modified.
 Beginning slice 21.8 (winget manifest) next. With PH-21.2's
 Windows binary now in the release pipeline, the winget portable
 manifest can reference the actual asset URL.
+
+### 2026-05-05 — Slice 21.8 closed (winget manifest channel)
+**Shipped:**
+- `packaging/winget/mythic-vibe.installer.yaml.template` — winget
+  v1.6 Installer manifest. `InstallerType: portable` matches
+  PH-21.2's PyInstaller single-file binary (winget extracts to
+  `%LOCALAPPDATA%\Microsoft\WinGet\Packages\<id>\` and adds to
+  `PATH`; `winget uninstall` cleans up by removing the binary).
+  Declares both `mythic-vibe` and `mythic` console-script
+  aliases in the `Commands` array. `Architecture: x64` matches
+  the windows-x86_64 asset.
+- `packaging/winget/mythic-vibe.locale.en-US.yaml.template` —
+  default-locale manifest with publisher / homepage / support
+  URLs (winget-pkgs review checks all three), Apache-2.0 license,
+  short and long descriptions, tags, and a release-notes URL
+  pointing at the GitHub Release page for the tag.
+- `packaging/winget/mythic-vibe.yaml.template` — top-level version
+  manifest pointing at the en-US default locale.
+- `.github/workflows/release.yml` — new `update-winget` job
+  parallel to `update-aur`/`update-homebrew`/`update-scoop`.
+  Pipeline:
+  1. Probes the Windows binary asset on the GitHub Release with
+     up to 5 retries x 30s sleep — handles the race where
+     release-binaries.yml's Windows row finishes after the
+     wheel/sdist release goes live.
+  2. Resolves URL + computes SHA256 by downloading the asset
+     and hashing it locally (avoids relying on the .sha256
+     sidecar's presence/format).
+  3. Renders all three templates into the maintainer-repo's
+     `manifests/h/hrabanazviking/MythicVibeCLI/<VERSION>/`
+     subdirectory (the layout winget-pkgs requires).
+  4. Opens a PR against `hrabanazviking/winget-mythic` using
+     `WINGET_BUMP_TOKEN`. A human syncs to `microsoft/winget-pkgs`
+     via wingetcreate or a manual fork PR (recipe lives in the
+     maintainer-repo README).
+- `tests/test_packaging_templates.py` — 18 new tests across 3
+  classes (WingetInstallerTemplateTests, WingetLocaleTemplateTests,
+  WingetVersionTemplateTests) plus 3 extensions to
+  ReleaseWorkflowTests. Catches every "renamed something but
+  forgot to update X" regression for the winget channel:
+  required placeholders, full substitution removes all markers,
+  portable installer type, x64 architecture, Commands array
+  with both aliases, modern (v1.6) manifest version, license +
+  publisher metadata, default locale match between version and
+  locale templates, workflow references all three templates,
+  workflow uses the WINGET_BUMP_TOKEN secret, workflow resolves
+  the Windows binary by name (not hardcoded URL).
+- `docs/INSTALL.md` — new "winget (Windows)" section between
+  Scoop and AUR. One-line install (`winget install
+  hrabanazviking.MythicVibeCLI`) plus a SmartScreen note
+  forwarding to PH-21.5's keyless-signing slice.
+- `packaging/README.md` — channel table extended with the winget
+  row pointing at all three template files. Secret table
+  includes WINGET_BUMP_TOKEN. Defer-section tightened: only
+  Nuitka (PH-21.3) remains. New entry in the maintainer-repo
+  sync recipes section explains the Microsoft-side review
+  expectation (1-3 day turnaround per release).
+
+**Gates green:** 2377 passed / 1 skipped / 109 subtests (+18 from
+this slice); ruff clean; mypy clean (156 source files); contract
+audit clean.
+
+**Compatibility surface:** new publication channel; existing
+stable surfaces unaffected. The winget manifest references the
+PH-21.2 binary by URL pattern (mythic-vibe-${VERSION}-windows-
+x86_64.exe), so any future renaming of PH-21.2's asset suffix
+must update both PH-21.2 and PH-21.8 in lockstep — caught by
+the test_winget_resolves_windows_binary_from_release_assets test.
+
+Beginning slice 21.3 (Nuitka alternative binaries) next.
 
 ---
 
