@@ -13,9 +13,12 @@ dist/
 # this line if you want to bring the file back into version control.
 research_data/vibe_research_part1_tier1a.md
 
-# Stray absolute-path leak from a test that wrote to a literal
-# "Users/volma/AppData/..." string instead of a proper temp dir.
-# The directory contents are pure debris (out.txt files in deeply
-# nested junk paths). Ignored so the leak doesn't pollute the
-# tracked tree; the underlying test fix should land separately.
-Users/
+# PH-23.2 (additive 2026-05-05): the previous `Users/` gitignore
+# entry was removed once tests/conftest.py landed a session-scope
+# finalizer + cleanup fixture (`detect_absolute_path_leaks` +
+# `remove_stale_test_debris`). The conftest now both deletes
+# the existing audit-cycle debris at session start AND fails any
+# session that leaves new leak debris behind. Hiding the leak via
+# .gitignore was a workaround; the conftest is the real fix and
+# we want any future leaks to surface loudly rather than be
+# silently absorbed.
