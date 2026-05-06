@@ -768,5 +768,215 @@ class CmdSurfaceChatRunTests(unittest.TestCase):
         self.assertIn("scaffolding entry", out.getvalue())
 
 
+# ---------------------------------------------------------------------------
+# PH-26.1 coverage push — exercise the long-poll loops' transient-error
+# branches + telegram-loop send-failure path + classifier helper. Goal:
+# take ``surfaces/chat_bridge_loop.py`` from 79% to 90%+.
+# ---------------------------------------------------------------------------
+
+
+class IsTransientHttpErrorClassifierTests(unittest.TestCase):
+    def test_5xx_http_error_is_transient(self) -> None:
+        from mythic_vibe_cli.surfaces.chat_bridge_loop import _is_transient_http_error
+        err = urllib.error.HTTPError(
+            url="https://x", code=503, msg="Service Unavailable",
+            hdrs=None, fp=None,  # type: ignore[arg-type]
+        )
+        self.assertTrue(_is_transient_http_error(err))
+
+    def test_4xx_http_error_is_terminal_except_408_429(self) -> None:
+        from mythic_vibe_cli.surfaces.chat_bridge_loop import _is_transient_http_error
+        terminal = urllib.error.HTTPError(
+            url="https://x", code=403, msg="Forbidden",
+            hdrs=None, fp=None,  # type: ignore[arg-type]
+        )
+        self.assertFalse(_is_transient_http_error(terminal))
+        # 408 + 429 are transient.
+        for code in (408, 429):
+            err = urllib.error.HTTPError(
+                url="https://x", code=code, msg="x",
+                hdrs=None, fp=None,  # type: ignore[arg-type]
+            )
+            self.assertTrue(_is_transient_http_error(err))
+
+    def test_url_error_is_transient(self) -> None:
+        from mythic_vibe_cli.surfaces.chat_bridge_loop import _is_transient_http_error
+        err = urllib.error.URLError("connection refused")
+        self.assertTrue(_is_transient_http_error(err))
+
+    def test_timeout_connection_oserror_are_transient(self) -> None:
+        from mythic_vibe_cli.surfaces.chat_bridge_loop import _is_transient_http_error
+        self.assertTrue(_is_transient_http_error(TimeoutError()))
+        self.assertTrue(_is_transient_http_error(ConnectionError()))
+        self.assertTrue(_is_transient_http_error(OSError()))
+
+    def test_value_error_is_terminal(self) -> None:
+        from mythic_vibe_cli.surfaces.chat_bridge_loop import _is_transient_http_error
+        self.assertFalse(_is_transient_http_error(ValueError("config bad")))
+
+
+class MatrixLoopTransientErrorTests(unittest.TestCase):
+    def test_matrix_loop_retries_on_transient_then_stops(self) -> None:
+        """A transport that raises a 503 first, then returns empty
+        sync, should retry once + sleep with backoff + then exit."""
+        from mythic_vibe_cli.surfaces.chat_bridge import MatrixConfig
+        from mythic_vibe_cli.surfaces.chat_bridge_loop import _Backoff, run_matrix_loop
+
+        config = MatrixConfig(
+            homeserver="https://h",
+            access_token="t",
+            user_id="@u:h",
+            room_id="!r:h",
+            allowed_rooms=("!r:h",),
+        )
+
+        calls = {"n": 0}
+
+        def transport(_cfg, _method, _path, *, params=None, body=None):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise urllib.error.HTTPError(
+                    url="https://x", code=503, msg="boom",
+                    hdrs=None, fp=None,  # type: ignore[arg-type]
+                )
+            return {"next_batch": "tok", "rooms": {}}
+
+        sleeps: list[float] = []
+
+        # 2 iterations is enough: error -> sleep -> empty sync -> stop
+        dispatched = run_matrix_loop(
+            config, max_iterations=2, transport=transport,
+            clock_sleep=lambda d: sleeps.append(d),
+            backoff=_Backoff(base=0.5),
+        )
+        self.assertEqual(dispatched, 0)
+        self.assertGreater(len(sleeps), 0)
+
+    def test_matrix_loop_terminal_error_propagates(self) -> None:
+        from mythic_vibe_cli.surfaces.chat_bridge import MatrixConfig
+        from mythic_vibe_cli.surfaces.chat_bridge_loop import run_matrix_loop
+
+        config = MatrixConfig(
+            homeserver="https://h",
+            access_token="t",
+            user_id="@u:h",
+            room_id="!r:h",
+            allowed_rooms=("!r:h",),
+        )
+
+        def transport(*_a, **_kw):
+            raise urllib.error.HTTPError(
+                url="https://x", code=403, msg="forbidden",
+                hdrs=None, fp=None,  # type: ignore[arg-type]
+            )
+
+        with self.assertRaises(urllib.error.HTTPError):
+            run_matrix_loop(config, max_iterations=3, transport=transport)
+
+
+class TelegramLoopErrorPathsTests(unittest.TestCase):
+    def test_telegram_loop_swallows_send_exception(self) -> None:
+        """When ``sender`` raises during reply, the loop logs the
+        error but keeps polling. Verify no exception escapes."""
+        from mythic_vibe_cli.surfaces.chat_bridge import (
+            ChatResponse,
+            TelegramConfig,
+        )
+        from mythic_vibe_cli.surfaces.chat_bridge_loop import run_telegram_loop
+
+        config = TelegramConfig(
+            bot_token="t",
+            chat_id="42",
+            allowed_chats=("42",),
+        )
+
+        sent_calls: list[dict] = []
+
+        def transport(_cfg, _offset):
+            return {
+                "ok": True,
+                "result": [
+                    {
+                        "update_id": 1,
+                        "message": {
+                            "chat": {"id": 42},
+                            "from": {"id": 7},
+                            "text": "/status",
+                        },
+                    }
+                ],
+            }
+
+        def sender(*_args, **kwargs):
+            sent_calls.append(kwargs)
+            raise ConnectionError("simulated reply failure")
+
+        def handler(_text):
+            return ChatResponse(
+                command="status", exit_code=0, stdout="", stderr="", rendered="ok",
+            )
+
+        # Run a single iteration: get update -> dispatch -> sender raises ->
+        # caught -> next iteration hits max -> exit.
+        dispatched = run_telegram_loop(
+            config, max_iterations=2, transport=transport,
+            sender=sender, handler=handler, clock_sleep=lambda _d: None,
+        )
+        # Dispatch counter only increments on successful send; ours raised.
+        self.assertEqual(dispatched, 0)
+        # But the sender WAS called — verifying we hit the except block.
+        # (Each iteration receives the same update + retries the send.)
+        self.assertGreaterEqual(len(sent_calls), 1)
+
+    def test_telegram_loop_terminal_error_propagates(self) -> None:
+        from mythic_vibe_cli.surfaces.chat_bridge import TelegramConfig
+        from mythic_vibe_cli.surfaces.chat_bridge_loop import run_telegram_loop
+
+        config = TelegramConfig(
+            bot_token="t", chat_id="42", allowed_chats=("42",),
+        )
+
+        def transport(*_a, **_kw):
+            raise ValueError("config fatal")
+
+        with self.assertRaises(ValueError):
+            run_telegram_loop(config, max_iterations=3, transport=transport)
+
+    def test_telegram_loop_skips_when_dispatch_returns_none(self) -> None:
+        """A handler returning None (e.g. unknown command) should
+        cause the loop to skip that update without sending anything."""
+        from mythic_vibe_cli.surfaces.chat_bridge import TelegramConfig
+        from mythic_vibe_cli.surfaces.chat_bridge_loop import run_telegram_loop
+
+        config = TelegramConfig(
+            bot_token="t", chat_id="42", allowed_chats=("42",),
+        )
+        sent: list[dict] = []
+
+        def transport(_cfg, _offset):
+            return {
+                "ok": True,
+                "result": [{
+                    "update_id": 5,
+                    "message": {
+                        "chat": {"id": 42}, "from": {"id": 1},
+                        "text": "unknown command",
+                    },
+                }],
+            }
+
+        def sender(*_a, **kw):
+            sent.append(kw)
+            return {}
+
+        run_telegram_loop(
+            config, max_iterations=1, transport=transport,
+            sender=sender, handler=lambda _t: None,
+            clock_sleep=lambda _d: None,
+        )
+        # Sender must NOT have been called.
+        self.assertEqual(sent, [])
+
+
 if __name__ == "__main__":
     unittest.main()
