@@ -151,5 +151,188 @@ class PlunderWorkflowTests(unittest.TestCase):
             self.assertIn("Do not plunder", output.getvalue())
 
 
+# ---------------------------------------------------------------------------
+# PH-24.2 coverage push — exercise the real ``GitHubClient`` HTTP shim
+# (urllib mocked). Goal: take ``plunder/github.py`` from ~46% to 95%+.
+# ---------------------------------------------------------------------------
+
+
+from mythic_vibe_cli.plunder.github import GitHubClient  # noqa: E402
+
+
+class _GitHubFakeResponse:
+    def __init__(self, payload: bytes) -> None:
+        self._payload = payload
+
+    def read(self) -> bytes:
+        return self._payload
+
+    def __enter__(self) -> "_GitHubFakeResponse":
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> bool:
+        return False
+
+
+class GitHubClientUnitTests(unittest.TestCase):
+    """Direct coverage of the urllib-based shim that real users hit."""
+
+    def test_repo_info_to_dict_round_trips(self) -> None:
+        info = GitHubRepoInfo(
+            repo="x/y",
+            ref="main",
+            sha="aaaa",
+            license_spdx_id="MIT",
+            license_name="MIT License",
+            html_url="https://github.com/x/y",
+        )
+        as_dict = info.to_dict()
+        self.assertEqual(as_dict["repo"], "x/y")
+        self.assertEqual(as_dict["sha"], "aaaa")
+        self.assertEqual(as_dict["license_spdx_id"], "MIT")
+
+    def test_get_json_raises_on_non_dict_payload(self) -> None:
+        client = GitHubClient(token="ghp_test")
+        def fake_urlopen(req, timeout=0):  # noqa: ANN001
+            return _GitHubFakeResponse(b'["not a dict"]')
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            with self.assertRaises(ValueError):
+                client.get_json("https://api.github.com/repos/x/y")
+
+    def test_get_json_includes_authorization_header_when_token_present(self) -> None:
+        client = GitHubClient(token="ghp_secret")
+        captured = {}
+
+        def fake_urlopen(req, timeout=0):  # noqa: ANN001
+            captured["auth"] = req.headers.get("Authorization")
+            return _GitHubFakeResponse(b'{"ok": true}')
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            payload = client.get_json("https://api.github.com/repos/x/y")
+        self.assertEqual(payload, {"ok": True})
+        self.assertEqual(captured["auth"], "token ghp_secret")
+
+    def test_get_json_omits_authorization_header_when_no_token(self) -> None:
+        client = GitHubClient()
+        captured = {}
+
+        def fake_urlopen(req, timeout=0):  # noqa: ANN001
+            captured["auth"] = req.headers.get("Authorization")
+            return _GitHubFakeResponse(b'{"ok": true}')
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            client.get_json("https://api.github.com/repos/x/y")
+        self.assertIsNone(captured["auth"])
+
+    def test_inspect_repo_extracts_license_and_sha(self) -> None:
+        client = GitHubClient()
+        repo_payload = {
+            "html_url": "https://github.com/example/source",
+            "license": {"spdx_id": "Apache-2.0", "name": "Apache License 2.0"},
+        }
+        ref_payload = {"sha": "deadbeef"}
+
+        responses = [repo_payload, ref_payload]
+
+        def fake_urlopen(req, timeout=0):  # noqa: ANN001
+            return _GitHubFakeResponse(json.dumps(responses.pop(0)).encode("utf-8"))
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            info = client.inspect_repo("example/source", "main")
+        self.assertEqual(info.sha, "deadbeef")
+        self.assertEqual(info.license_spdx_id, "Apache-2.0")
+        self.assertEqual(info.license_name, "Apache License 2.0")
+        self.assertTrue(info.html_url.endswith("/example/source"))
+
+    def test_inspect_repo_handles_missing_license_block(self) -> None:
+        """When ``repo.license`` is null/missing, the result should fall
+        back to ``Unknown`` strings without raising."""
+        client = GitHubClient()
+        repo_payload: dict = {"html_url": "https://github.com/x/y"}
+        ref_payload = {"sha": "abc"}
+        responses = [repo_payload, ref_payload]
+
+        def fake_urlopen(req, timeout=0):  # noqa: ANN001
+            return _GitHubFakeResponse(json.dumps(responses.pop(0)).encode("utf-8"))
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            info = client.inspect_repo("x/y", "main")
+        self.assertEqual(info.license_spdx_id, "Unknown")
+        self.assertEqual(info.license_name, "Unknown")
+
+    def test_get_file_decodes_base64_content(self) -> None:
+        import base64
+
+        client = GitHubClient()
+        body_text = "print('borrow')\n"
+        encoded = base64.b64encode(body_text.encode("utf-8")).decode("ascii")
+        file_payload = {
+            "type": "file",
+            "encoding": "base64",
+            "content": encoded,
+            "sha": "f1l3sha",
+            "html_url": "https://github.com/x/y/blob/main/src/tool.py",
+        }
+
+        def fake_urlopen(req, timeout=0):  # noqa: ANN001
+            return _GitHubFakeResponse(json.dumps(file_payload).encode("utf-8"))
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            github_file = client.get_file("x/y", "src/tool.py", "main")
+        self.assertEqual(github_file.text, body_text)
+        self.assertEqual(github_file.sha, "f1l3sha")
+        self.assertEqual(github_file.path, "src/tool.py")
+
+    def test_get_file_rejects_non_file_response(self) -> None:
+        client = GitHubClient()
+
+        def fake_urlopen(req, timeout=0):  # noqa: ANN001
+            return _GitHubFakeResponse(json.dumps({"type": "dir"}).encode("utf-8"))
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            with self.assertRaises(ValueError):
+                client.get_file("x/y", "src/", "main")
+
+    def test_get_file_rejects_unsupported_encoding(self) -> None:
+        client = GitHubClient()
+
+        def fake_urlopen(req, timeout=0):  # noqa: ANN001
+            return _GitHubFakeResponse(
+                json.dumps({"type": "file", "encoding": "utf-8"}).encode("utf-8")
+            )
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            with self.assertRaises(ValueError):
+                client.get_file("x/y", "src/tool.py", "main")
+
+    def test_fetch_to_cache_writes_file_under_cache_root(self) -> None:
+        import base64
+
+        client = GitHubClient()
+        body_text = "borrowed body\n"
+        encoded = base64.b64encode(body_text.encode("utf-8")).decode("ascii")
+        file_payload = {
+            "type": "file",
+            "encoding": "base64",
+            "content": encoded,
+            "sha": "abc",
+            "html_url": "https://github.com/x/y/blob/main/src/t.py",
+        }
+
+        def fake_urlopen(req, timeout=0):  # noqa: ANN001
+            return _GitHubFakeResponse(json.dumps(file_payload).encode("utf-8"))
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+                gh_file, cache_path = client.fetch_to_cache(
+                    root, "x/y", "src/t.py", "main"
+                )
+            self.assertTrue(cache_path.exists())
+            self.assertEqual(cache_path.read_text(encoding="utf-8"), body_text)
+            self.assertEqual(gh_file.text, body_text)
+
+
 if __name__ == "__main__":
     unittest.main()
