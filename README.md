@@ -678,6 +678,48 @@ These environment variables override any file-based value at runtime:
 - `MYTHIC_WASI_CACHE` — redirect the WASI cross-build cache root (default: `~/.cache/mythic-vibe-wasi-build/`)
 - `MYTHIC_LEAK_GUARD_DISABLED` — disable the test-suite session-scope leak guard (used only when running an intentional regression test for the leak pattern)
 
+**App data + cost guards (PH-24.6 documentation completeness):**
+
+- `MYTHIC_HOME` — override the per-user app-data root (default: `~/.mythic-vibe/`); used for the method-source cache + cross-project state
+- `MYTHIC_HOOKS` — colon-separated path list of operator-supplied hook scripts (run before / after specific commands; opt-in)
+- `MYTHIC_DAILY_COST_CAP_USD` — positive float; when set, the AI cost guard blocks any provider call that would push the running daily total above the cap. Unset = no cap.
+- `MYTHIC_PATH_RE` — override the regex used by ``robustness/path_audit.py`` to detect operator-supplied absolute paths in produced artifacts (default catches Windows + POSIX patterns)
+- `MYTHIC_TUI_NARROW` — set to `1` to force the narrow-layout TUI even when the terminal would otherwise pick the wide layout (useful for split-pane terminal multiplexers)
+
+**MCP protocol tuning (PH-13 / `[mcp]` extra):**
+
+- `MYTHIC_MCP_READ_TIMEOUT` — positive float; per-message read timeout in seconds for the MCP stdio transport (default 60s)
+- `MYTHIC_MCP_MAX_DISCARD` — positive int; max number of malformed protocol frames to skip before declaring the peer unrecoverable (default 16)
+
+**Chat-bridge per-backend config (set under `MYTHIC_CHAT_BRIDGE_ENABLED=1`):**
+
+Matrix backend:
+
+- `MYTHIC_CHAT_MATRIX_HOMESERVER` — Matrix homeserver URL (e.g. `https://matrix.example.com`)
+- `MYTHIC_CHAT_MATRIX_ACCESS_TOKEN` — bot's access token
+- `MYTHIC_CHAT_MATRIX_USER_ID` — bot's full Matrix user id (e.g. `@bot:matrix.example.com`)
+- `MYTHIC_CHAT_MATRIX_ROOM_ID` — primary room the bot joins on start
+- `MYTHIC_CHAT_MATRIX_ALLOWED_ROOMS` — comma-separated allow-list of room ids (default: room id only)
+- `MYTHIC_CHAT_MATRIX_SYNC_TIMEOUT_MS` — long-poll sync timeout in milliseconds (default 30000)
+
+Telegram backend:
+
+- `MYTHIC_CHAT_TELEGRAM_BOT_TOKEN` — Bot API token from BotFather
+- `MYTHIC_CHAT_TELEGRAM_CHAT_ID` — primary chat id the bot replies into
+- `MYTHIC_CHAT_TELEGRAM_API_ROOT` — Bot API base URL (default `https://api.telegram.org`); override for self-hosted relays
+- `MYTHIC_CHAT_TELEGRAM_ALLOWED_CHATS` — comma-separated allow-list of chat ids (default: chat id only)
+- `MYTHIC_CHAT_TELEGRAM_ALLOWED_USERS` — comma-separated allow-list of user ids permitted to invoke commands (default: empty = open chat-wide)
+- `MYTHIC_CHAT_TELEGRAM_POLL_TIMEOUT_S` — getUpdates long-poll timeout in seconds (default 30)
+
+**Yggdrasil islands (operator-controlled adapters):**
+
+- `MYTHIC_ISLAND_YGGDRASIL_ENABLED` — opt-in gate for the Yggdrasil island provider (`ai run --provider yggdrasil`)
+- `MYTHIC_ISLAND_MINDSPARK_ENABLED` — opt-in gate for the MindSpark ThoughtForge island provider
+- `MYTHIC_ISLAND_WYRD_ENABLED` — opt-in gate for the WYRD Protocol island provider
+- `MYTHIC_ISLAND_CHATTERBOX_ENABLED` — opt-in gate for the Chatterbox TTS island
+
+All gates default to off; setting any to `1` / `true` / `yes` / `on` opts that island in. See `docs/PHILOSOPHY.md` for the operator-sovereignty rationale.
+
 To see what the tool is actually reading in your current project:
 
 ```bash
