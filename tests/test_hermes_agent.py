@@ -326,5 +326,194 @@ class DefaultToolBehaviourTests(unittest.TestCase):
             self.assertIn("hermes_invoke", content)
 
 
+# ---------------------------------------------------------------------------
+# PH-24.2 coverage push — exercise the tool implementations that earlier
+# tests skipped (checkin, packet_create, packet_lint, verify, reflect,
+# provenance_verify, workflow_lineage, plugin_doctor, artifact escapes).
+# Goal: take ``agent_api/tcl.py`` from ~57% to 90%+.
+# ---------------------------------------------------------------------------
+
+
+class HermesToolCoverageTests(unittest.TestCase):
+    """Direct coverage of every tool wrapper end-to-end."""
+
+    def _scaffolded_root(self, tmp: str) -> Path:
+        """Create the minimum project shape the workflow tools expect."""
+        root = Path(tmp)
+        (root / "docs").mkdir(parents=True, exist_ok=True)
+        (root / "tasks").mkdir(parents=True, exist_ok=True)
+        (root / "mythic").mkdir(parents=True, exist_ok=True)
+        (root / "docs" / "ARCHITECTURE.md").write_text("# Architecture\n", encoding="utf-8")
+        (root / "tasks" / "current_GOALS.md").write_text("Ship\n", encoding="utf-8")
+        (root / "mythic" / "plan.md").write_text("# Plan\n", encoding="utf-8")
+        (root / "mythic" / "loop.md").write_text("# Loop\n", encoding="utf-8")
+        return root
+
+    def test_checkin_writes_status_and_devlog(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            self._scaffolded_root(tmp)
+            agent = build_default_agent(root=tmp)
+            result = agent.invoke(
+                "checkin", phase="build", update="forge worker landed PH-24.2 tests"
+            )
+        self.assertEqual(result.status, "ok")
+        self.assertIn("status_path", result.value)
+        self.assertIn("devlog_path", result.value)
+
+    def test_checkin_returns_error_when_workflow_raises(self) -> None:
+        """The schema enum prevents Hermes from forwarding bad phase
+        values to the tool body, so this test calls the underlying
+        ``_tool_checkin`` directly to exercise its ``ValueError`` catch."""
+        from mythic_vibe_cli.agent_api.core import HermesCore
+        from mythic_vibe_cli.agent_api.tcl import _tool_checkin
+
+        with tempfile.TemporaryDirectory() as tmp:
+            self._scaffolded_root(tmp)
+            core = HermesCore(root=Path(tmp))
+            # phase="reflect" without a recorded successful verification
+            # triggers ``_require_successful_verification`` -> ValueError.
+            result = _tool_checkin(
+                core, {"phase": "reflect", "update": "premature reflect"}
+            )
+        self.assertEqual(result.status, "error")
+        self.assertIsNotNone(result.error)
+
+    def test_packet_create_returns_packet_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            self._scaffolded_root(tmp)
+            agent = build_default_agent(root=tmp)
+            result = agent.invoke(
+                "packet_create",
+                task="wire packet creation in TCL",
+                phase="build",
+                role="Forge Worker",
+            )
+        self.assertEqual(result.status, "ok")
+        self.assertIn("packet_path", result.value)
+        self.assertEqual(result.value["phase"], "build")
+
+    def test_packet_lint_returns_report_for_existing_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self._scaffolded_root(tmp)
+            packet_md = root / "PKT-000999.md"
+            packet_md.write_text(
+                "# Packet PKT-000999\n\nTask: test packet lint\n",
+                encoding="utf-8",
+            )
+            agent = build_default_agent(root=tmp)
+            result = agent.invoke("packet_lint", file=str(packet_md))
+        self.assertEqual(result.status, "ok")
+        self.assertIn("source", result.value)
+
+    def test_packet_lint_errors_when_file_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            agent = build_default_agent(root=tmp)
+            result = agent.invoke("packet_lint", file="does/not/exist.md")
+        self.assertEqual(result.status, "error")
+
+    def test_packet_lint_errors_when_no_file_arg(self) -> None:
+        """The schema requires ``file`` so Hermes rejects missing-arg
+        invocations before they reach the tool. Call the tool body
+        directly to cover the in-tool branch that returns
+        ``packet_lint: provide 'file' arg`` for empty-arg dicts."""
+        from mythic_vibe_cli.agent_api.core import HermesCore
+        from mythic_vibe_cli.agent_api.tcl import _tool_packet_lint
+
+        with tempfile.TemporaryDirectory() as tmp:
+            core = HermesCore(root=Path(tmp))
+            result = _tool_packet_lint(core, {})
+        self.assertEqual(result.status, "error")
+        self.assertIn("packet_lint", result.error or "")
+
+    def test_verify_returns_exit_code_payload(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            self._scaffolded_root(tmp)
+            agent = build_default_agent(root=tmp)
+            result = agent.invoke("verify")
+        self.assertEqual(result.status, "ok")
+        self.assertIn("exit_code", result.value)
+
+    def test_reflect_writes_handoff_record(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            self._scaffolded_root(tmp)
+            agent = build_default_agent(root=tmp)
+            result = agent.invoke(
+                "reflect",
+                objective="closing PH-24.2",
+                next_step="ship slice",
+                note="autonomous run",
+            )
+        self.assertEqual(result.status, "ok")
+        self.assertIn("handoff_id", result.value)
+        self.assertIn("markdown_path", result.value)
+
+    def test_provenance_verify_runs_against_empty_project(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            self._scaffolded_root(tmp)
+            agent = build_default_agent(root=tmp)
+            result = agent.invoke("provenance_verify")
+        self.assertEqual(result.status, "ok")
+
+    def test_workflow_lineage_returns_not_found_for_empty_project(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            agent = build_default_agent(root=tmp)
+            result = agent.invoke("workflow_lineage")
+        self.assertEqual(result.status, "ok")
+        self.assertFalse(result.value["found"])
+
+    def test_plugin_doctor_returns_plugins_list_even_when_empty(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            agent = build_default_agent(root=tmp)
+            result = agent.invoke("plugin_doctor")
+        self.assertEqual(result.status, "ok")
+        self.assertIn("plugins", result.value)
+        self.assertIsInstance(result.value["plugins"], list)
+
+    def test_read_artifact_rejects_path_escape(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            agent = build_default_agent(root=tmp)
+            result = agent.invoke("read_artifact", path="../../etc/passwd")
+        self.assertEqual(result.status, "error")
+        self.assertIn("escapes", result.error or "")
+
+    def test_read_artifact_returns_text_for_existing_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "mythic").mkdir(exist_ok=True)
+            artifact = root / "mythic" / "demo.txt"
+            artifact.write_text("hello-artifact\n", encoding="utf-8")
+            agent = build_default_agent(root=tmp)
+            result = agent.invoke("read_artifact", path="mythic/demo.txt")
+        self.assertEqual(result.status, "ok")
+        self.assertEqual(result.value["content"], "hello-artifact\n")
+        self.assertFalse(result.value["truncated"])
+
+    def test_read_artifact_truncates_when_max_bytes_exceeded(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "mythic").mkdir(exist_ok=True)
+            artifact = root / "mythic" / "big.txt"
+            artifact.write_text("x" * 1024, encoding="utf-8")
+            agent = build_default_agent(root=tmp)
+            result = agent.invoke(
+                "read_artifact", path="mythic/big.txt", max_bytes=100
+            )
+        self.assertEqual(result.status, "ok")
+        self.assertTrue(result.value["truncated"])
+        self.assertEqual(len(result.value["content"]), 100)
+
+    def test_read_artifact_returns_error_when_file_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            agent = build_default_agent(root=tmp)
+            result = agent.invoke("read_artifact", path="mythic/missing.txt")
+        self.assertEqual(result.status, "error")
+
+    def test_list_artifacts_rejects_path_escape(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            agent = build_default_agent(root=tmp)
+            result = agent.invoke("list_artifacts", under="../../")
+        self.assertEqual(result.status, "error")
+
+
 if __name__ == "__main__":
     unittest.main()
