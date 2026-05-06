@@ -164,9 +164,11 @@ def list_models(
     health = check_ollama_health(host, port, timeout=timeout)
     if not health.reachable:
         return [], health
+    from ..runtime.url_guard import assert_safe_url
     url = f"{health.endpoint}/api/tags"
+    assert_safe_url(url)
     try:
-        with urllib.request.urlopen(url, timeout=timeout) as resp:
+        with urllib.request.urlopen(url, timeout=timeout) as resp:  # noqa: S310 — scheme validated
             data = resp.read().decode("utf-8", errors="replace")
         payload = json.loads(data)
     except (OSError, urllib.error.URLError, json.JSONDecodeError) as exc:

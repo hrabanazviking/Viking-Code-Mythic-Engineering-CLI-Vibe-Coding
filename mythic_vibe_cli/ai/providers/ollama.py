@@ -33,6 +33,7 @@ import urllib.request
 from dataclasses import dataclass
 from typing import Iterator
 
+from ...runtime.url_guard import assert_safe_url
 from ..ollama_health import (
     DEFAULT_OLLAMA_HOST,
     DEFAULT_OLLAMA_PORT,
@@ -149,8 +150,10 @@ class OllamaProvider:
             "stream": False,
         }
         body = json.dumps(request_payload).encode("utf-8")
+        endpoint_url = f"{health.endpoint}/api/generate"
+        assert_safe_url(endpoint_url)
         request = urllib.request.Request(
-            f"{health.endpoint}/api/generate",
+            endpoint_url,
             data=body,
             headers={
                 "Content-Type": "application/json",
@@ -161,7 +164,7 @@ class OllamaProvider:
 
         start = time.perf_counter()
         try:
-            with urllib.request.urlopen(
+            with urllib.request.urlopen(  # noqa: S310 — scheme validated
                 request, timeout=DEFAULT_REQUEST_TIMEOUT_S
             ) as http_resp:
                 raw = http_resp.read().decode("utf-8", errors="replace")
@@ -310,8 +313,10 @@ class OllamaProvider:
             "stream": True,
         }
         body = json.dumps(request_payload).encode("utf-8")
+        endpoint_url = f"{health.endpoint}/api/generate"
+        assert_safe_url(endpoint_url)
         request = urllib.request.Request(
-            f"{health.endpoint}/api/generate",
+            endpoint_url,
             data=body,
             headers={
                 "Content-Type": "application/json",
@@ -331,7 +336,7 @@ class OllamaProvider:
         cancelled = False
 
         try:
-            http_resp = urllib.request.urlopen(
+            http_resp = urllib.request.urlopen(  # noqa: S310 — scheme validated
                 request, timeout=DEFAULT_REQUEST_TIMEOUT_S
             )
         except (OSError, urllib.error.URLError) as exc:

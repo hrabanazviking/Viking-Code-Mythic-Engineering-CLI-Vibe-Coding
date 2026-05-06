@@ -193,8 +193,10 @@ class MethodStore:
         self.method_source = resolve_method_source(method_source)
 
     def sync(self, timeout: int = 10) -> MethodBundle:
+        from .runtime.url_guard import assert_safe_url
+        assert_safe_url(self.method_source.readme_raw)
         req = urllib.request.Request(self.method_source.readme_raw, headers={"User-Agent": "mythic-vibe-cli/0.1"})
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 — scheme validated
             content = resp.read().decode("utf-8", errors="replace")
 
         bundle = MethodBundle(source=self.method_source.source, content=content)
@@ -244,10 +246,12 @@ class MethodStore:
         )
 
     def import_all_markdown(self, target_dir: Path, timeout: int = 20) -> MethodImportManifest:
+        from .runtime.url_guard import assert_safe_url
         target_dir.mkdir(parents=True, exist_ok=True)
 
+        assert_safe_url(self.method_source.tree_api)
         req = urllib.request.Request(self.method_source.tree_api, headers={"User-Agent": "mythic-vibe-cli/0.1"})
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 — scheme validated
             tree_payload = json.loads(resp.read().decode("utf-8", errors="replace"))
 
         items = tree_payload.get("tree", [])
@@ -257,11 +261,12 @@ class MethodStore:
         files: list[MethodManifestEntry] = []
         for rel_path in md_paths:
             raw_url = f"{self.method_source.raw_base}{rel_path}"
+            assert_safe_url(raw_url)
             out_path = target_dir / rel_path
             out_path.parent.mkdir(parents=True, exist_ok=True)
 
             file_req = urllib.request.Request(raw_url, headers={"User-Agent": "mythic-vibe-cli/0.1"})
-            with urllib.request.urlopen(file_req, timeout=timeout) as file_resp:
+            with urllib.request.urlopen(file_req, timeout=timeout) as file_resp:  # noqa: S310 — scheme validated
                 content = file_resp.read().decode("utf-8", errors="replace")
 
             out_path.write_text(content, encoding="utf-8")
