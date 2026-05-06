@@ -52,6 +52,8 @@ class GitHubClient:
         self.token = token.strip()
 
     def get_json(self, url: str) -> dict[str, object]:
+        from ..runtime.url_guard import assert_safe_url
+        assert_safe_url(url)
         headers = {
             "Accept": "application/vnd.github+json",
             "User-Agent": "mythic-vibe-cli",
@@ -59,7 +61,7 @@ class GitHubClient:
         if self.token:
             headers["Authorization"] = f"token {self.token}"
         req = urllib.request.Request(url, headers=headers)
-        with urllib.request.urlopen(req, timeout=30) as response:
+        with urllib.request.urlopen(req, timeout=30) as response:  # noqa: S310 — scheme validated
             payload = json.loads(response.read().decode("utf-8"))
         if not isinstance(payload, dict):
             raise ValueError(f"Unexpected GitHub API response for {url}")

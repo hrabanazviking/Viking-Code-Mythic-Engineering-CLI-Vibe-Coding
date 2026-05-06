@@ -404,9 +404,11 @@ def _matrix_request(
     parsed JSON body. Raises :class:`urllib.error.URLError` /
     :class:`urllib.error.HTTPError` on transport failures —
     callers handle those for the long-poll loop."""
+    from ..runtime.url_guard import assert_safe_url
     url = config.homeserver.rstrip("/") + path
     if params:
         url += "?" + urllib.parse.urlencode(params, doseq=True)
+    assert_safe_url(url)
     data: bytes | None = None
     headers = {
         "Authorization": f"Bearer {config.access_token}",
@@ -416,7 +418,7 @@ def _matrix_request(
         data = json.dumps(body).encode("utf-8")
         headers["Content-Type"] = "application/json"
     request = urllib.request.Request(url, data=data, headers=headers, method=method)
-    with urllib.request.urlopen(request, timeout=config.sync_timeout_ms / 1000 + 5) as resp:
+    with urllib.request.urlopen(request, timeout=config.sync_timeout_ms / 1000 + 5) as resp:  # noqa: S310 — scheme validated
         raw = resp.read().decode("utf-8", errors="replace")
     if not raw:
         return {}
@@ -639,7 +641,9 @@ def _telegram_request(
     *,
     body: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    from ..runtime.url_guard import assert_safe_url
     url = f"{config.api_root}/bot{urllib.parse.quote(config.bot_token)}/{method_name}"
+    assert_safe_url(url)
     data = json.dumps(body or {}).encode("utf-8")
     request = urllib.request.Request(
         url,
@@ -647,7 +651,7 @@ def _telegram_request(
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    with urllib.request.urlopen(request, timeout=15) as resp:
+    with urllib.request.urlopen(request, timeout=15) as resp:  # noqa: S310 — scheme validated
         raw = resp.read().decode("utf-8", errors="replace")
     if not raw:
         return {}
