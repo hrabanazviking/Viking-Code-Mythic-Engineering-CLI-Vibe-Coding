@@ -448,5 +448,298 @@ class SkipLedgerFlagTests(unittest.TestCase):
             self.assertFalse(ledger.path.exists())
 
 
+# ---------------------------------------------------------------------------
+# PH-25.1 coverage push — exercise the human-readable output paths of
+# cmd_forge_run + the ledger / reflection sub-commands. These paths only
+# fire when ``--json`` is absent, which existing tests skip because they
+# all pass json=True.
+# ---------------------------------------------------------------------------
+
+
+def _ns_human(tmp: str, **kwargs) -> argparse.Namespace:
+    """Like ``_ns`` but with json=False, hitting the write_line/
+    write_bullet output rendering."""
+    ns = _ns(tmp, **kwargs)
+    ns.json = False
+    return ns
+
+
+class ForgeRunHumanReadableOutputTests(unittest.TestCase):
+    def test_human_readable_output_lists_each_step(self) -> None:
+        stub = StubProvider()
+        out = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmp:
+            with redirect_stdout(out):
+                code = cmd_forge_run(
+                    _ns_human(tmp),
+                    provider_factory=_factory_for(stub),
+                    auditor_gates=_NO_GATES,
+                )
+        self.assertEqual(code, SUCCESS)
+        text = out.getvalue()
+        self.assertIn("Mythic forge run", text)
+        self.assertIn("Workflow", text)
+        self.assertIn("Steps", text)
+        self.assertIn("Provider", text)
+        # Per-step lines render with role + phase + handoff arrow.
+        self.assertIn("->", text)
+        self.assertIn("status:", text)
+
+    def test_human_readable_output_includes_aborted_marker_when_relevant(self) -> None:
+        """When a gate aborts, the output renders an ``Aborted: yes``
+        line. This is the slice-3.6 abort branch of the renderer."""
+        # Strict gate that always rejects on first invocation.
+        def rejecting_gate(ctx) -> bool:  # noqa: ANN001
+            return False
+
+        stub = StubProvider()
+        out = io.StringIO()
+        ns = _ns_human(tmp_dir := tempfile.mkdtemp())
+        ns.interactive = True
+        try:
+            with redirect_stdout(out):
+                cmd_forge_run(
+                    ns,
+                    provider_factory=_factory_for(stub),
+                    auditor_gates=_NO_GATES,
+                    gate_handler=rejecting_gate,
+                )
+            text = out.getvalue()
+            self.assertIn("Mythic forge run", text)
+            self.assertIn("Interactive", text)
+        finally:
+            import shutil
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+class ForgeLedgerLatestTests(unittest.TestCase):
+    def test_latest_human_readable_with_no_entries(self) -> None:
+        from mythic_vibe_cli.forge import cmd_forge_ledger_latest
+
+        out = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmp:
+            ns = argparse.Namespace(path=tmp, limit=5, json=False, quiet=False, verbose=False)
+            with redirect_stdout(out):
+                code = cmd_forge_ledger_latest(ns)
+        self.assertEqual(code, SUCCESS)
+        self.assertIn("No entries", out.getvalue())
+
+    def test_latest_human_readable_renders_entries(self) -> None:
+        from mythic_vibe_cli.forge import cmd_forge_ledger_latest
+
+        # Seed a real ledger via a forge run.
+        stub = StubProvider()
+        with tempfile.TemporaryDirectory() as tmp:
+            with redirect_stdout(io.StringIO()):
+                cmd_forge_run(
+                    _ns(tmp),
+                    provider_factory=_factory_for(stub),
+                    auditor_gates=_NO_GATES,
+                )
+            out = io.StringIO()
+            ns = argparse.Namespace(path=tmp, limit=10, json=False, quiet=False, verbose=False)
+            with redirect_stdout(out):
+                code = cmd_forge_ledger_latest(ns)
+        self.assertEqual(code, SUCCESS)
+        text = out.getvalue()
+        self.assertIn("Forge ledger", text)
+        self.assertIn("::", text)
+
+
+class ForgeLedgerShowTests(unittest.TestCase):
+    def test_show_requires_workflow_arg(self) -> None:
+        from mythic_vibe_cli.forge import cmd_forge_ledger_show
+
+        with tempfile.TemporaryDirectory() as tmp:
+            ns = argparse.Namespace(path=tmp, workflow="", step="", json=False, quiet=False, verbose=False)
+            err_buf = io.StringIO()
+            with redirect_stderr(err_buf):
+                code = cmd_forge_ledger_show(ns)
+        self.assertEqual(code, USER_INPUT_ERROR)
+        self.assertIn("--workflow", err_buf.getvalue())
+
+    def test_show_unknown_workflow_returns_error_json(self) -> None:
+        from mythic_vibe_cli.forge import cmd_forge_ledger_show
+
+        out = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmp:
+            ns = argparse.Namespace(path=tmp, workflow="WF-NOPE", step="", json=True, quiet=False, verbose=False)
+            with redirect_stdout(out):
+                code = cmd_forge_ledger_show(ns)
+        self.assertEqual(code, USER_INPUT_ERROR)
+        payload = json.loads(out.getvalue())
+        self.assertEqual(payload["count"], 0)
+        self.assertIn("errors", payload)
+
+    def test_show_unknown_workflow_with_step_returns_error_human(self) -> None:
+        from mythic_vibe_cli.forge import cmd_forge_ledger_show
+
+        err_buf = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmp:
+            ns = argparse.Namespace(path=tmp, workflow="WF-NOPE", step="step-01", json=False, quiet=False, verbose=False)
+            with redirect_stderr(err_buf):
+                code = cmd_forge_ledger_show(ns)
+        self.assertEqual(code, USER_INPUT_ERROR)
+        # Error message should mention both workflow + step.
+        msg = err_buf.getvalue()
+        self.assertIn("WF-NOPE", msg)
+        self.assertIn("step-01", msg)
+
+    def test_show_human_readable_renders_entries(self) -> None:
+        from mythic_vibe_cli.forge import cmd_forge_ledger_show
+
+        stub = StubProvider()
+        with tempfile.TemporaryDirectory() as tmp:
+            with redirect_stdout(io.StringIO()):
+                cmd_forge_run(
+                    _ns(tmp),
+                    provider_factory=_factory_for(stub),
+                    auditor_gates=_NO_GATES,
+                )
+            ledger = ForgeLedger(root=Path(tmp))
+            entries = ledger.load()
+            self.assertGreater(len(entries), 0)
+            workflow_id = entries[0].workflow_id
+
+            out = io.StringIO()
+            ns = argparse.Namespace(path=tmp, workflow=workflow_id, step="", json=False, quiet=False, verbose=False)
+            with redirect_stdout(out):
+                code = cmd_forge_ledger_show(ns)
+        self.assertEqual(code, SUCCESS)
+        text = out.getvalue()
+        self.assertIn("Forge ledger", text)
+        self.assertIn(workflow_id, text)
+
+
+class ForgeReflectionDispatchTests(unittest.TestCase):
+    def test_reflection_list_human_readable_with_no_entries(self) -> None:
+        from mythic_vibe_cli.forge import cmd_forge_reflection_list
+
+        with tempfile.TemporaryDirectory() as tmp:
+            out = io.StringIO()
+            ns = argparse.Namespace(path=tmp, json=False, quiet=False, verbose=False)
+            with redirect_stdout(out):
+                code = cmd_forge_reflection_list(ns)
+        self.assertEqual(code, SUCCESS)
+        self.assertIn("No forge reflections", out.getvalue())
+
+    def test_reflection_list_human_readable_renders_workflow_ids(self) -> None:
+        from mythic_vibe_cli.forge import cmd_forge_reflection_list
+
+        stub = StubProvider()
+        with tempfile.TemporaryDirectory() as tmp:
+            with redirect_stdout(io.StringIO()):
+                cmd_forge_run(
+                    _ns(tmp),
+                    provider_factory=_factory_for(stub),
+                    auditor_gates=_NO_GATES,
+                )
+            out = io.StringIO()
+            ns = argparse.Namespace(path=tmp, json=False, quiet=False, verbose=False)
+            with redirect_stdout(out):
+                code = cmd_forge_reflection_list(ns)
+        self.assertEqual(code, SUCCESS)
+        self.assertIn("Forge reflections", out.getvalue())
+
+    def test_reflection_show_requires_workflow(self) -> None:
+        from mythic_vibe_cli.forge import cmd_forge_reflection_show
+
+        err_buf = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmp:
+            ns = argparse.Namespace(path=tmp, workflow="", json=False, quiet=False, verbose=False)
+            with redirect_stderr(err_buf):
+                code = cmd_forge_reflection_show(ns)
+        self.assertEqual(code, USER_INPUT_ERROR)
+        self.assertIn("--workflow", err_buf.getvalue())
+
+    def test_reflection_show_unknown_workflow_returns_error_json(self) -> None:
+        from mythic_vibe_cli.forge import cmd_forge_reflection_show
+
+        out = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmp:
+            ns = argparse.Namespace(path=tmp, workflow="WF-NOPE", json=True, quiet=False, verbose=False)
+            with redirect_stdout(out):
+                code = cmd_forge_reflection_show(ns)
+        self.assertEqual(code, USER_INPUT_ERROR)
+        payload = json.loads(out.getvalue())
+        self.assertFalse(payload["ok"])
+
+    def test_reflection_latest_with_no_entries_human(self) -> None:
+        from mythic_vibe_cli.forge import cmd_forge_reflection_latest
+
+        out = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmp:
+            ns = argparse.Namespace(path=tmp, json=False, quiet=False, verbose=False)
+            with redirect_stdout(out):
+                code = cmd_forge_reflection_latest(ns)
+        self.assertEqual(code, SUCCESS)
+        self.assertIn("No forge reflections", out.getvalue())
+
+    def test_reflection_latest_with_no_entries_json_returns_input_error(self) -> None:
+        from mythic_vibe_cli.forge import cmd_forge_reflection_latest
+
+        out = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmp:
+            ns = argparse.Namespace(path=tmp, json=True, quiet=False, verbose=False)
+            with redirect_stdout(out):
+                code = cmd_forge_reflection_latest(ns)
+        # JSON-flagged means errors-payload + USER_INPUT_ERROR exit.
+        self.assertEqual(code, USER_INPUT_ERROR)
+        payload = json.loads(out.getvalue())
+        self.assertFalse(payload["ok"])
+
+    def test_reflection_dispatch_unknown_subcommand(self) -> None:
+        from mythic_vibe_cli.forge import cmd_forge_reflection_dispatch
+
+        err_buf = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmp:
+            ns = argparse.Namespace(
+                path=tmp,
+                reflection_command="nosuch",
+                json=False,
+                quiet=False,
+                verbose=False,
+            )
+            with redirect_stderr(err_buf):
+                code = cmd_forge_reflection_dispatch(ns)
+        self.assertEqual(code, USER_INPUT_ERROR)
+        self.assertIn("Unknown forge reflection subcommand", err_buf.getvalue())
+
+    def test_reflection_dispatch_routes_list(self) -> None:
+        from mythic_vibe_cli.forge import cmd_forge_reflection_dispatch
+
+        with tempfile.TemporaryDirectory() as tmp:
+            ns = argparse.Namespace(
+                path=tmp,
+                reflection_command="list",
+                json=True,
+                quiet=False,
+                verbose=False,
+            )
+            with redirect_stdout(io.StringIO()):
+                code = cmd_forge_reflection_dispatch(ns)
+        self.assertEqual(code, SUCCESS)
+
+
+class ForgeLedgerDispatchTests(unittest.TestCase):
+    def test_ledger_dispatch_unknown_subcommand(self) -> None:
+        from mythic_vibe_cli.forge import cmd_forge_ledger_dispatch
+
+        err_buf = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmp:
+            ns = argparse.Namespace(
+                path=tmp,
+                ledger_command="nosuch",
+                json=False,
+                quiet=False,
+                verbose=False,
+            )
+            with redirect_stderr(err_buf):
+                code = cmd_forge_ledger_dispatch(ns)
+        # Most dispatchers in forge.py return USER_INPUT_ERROR
+        # for unknown sub.
+        self.assertEqual(code, USER_INPUT_ERROR)
+
+
 if __name__ == "__main__":
     unittest.main()
