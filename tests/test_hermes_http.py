@@ -297,5 +297,153 @@ class HermesHttpLiveServerTests(unittest.TestCase):
         self.assertEqual(code, 404)
 
 
+# ---------------------------------------------------------------------------
+# PH-24.2 coverage push — error-path coverage for the HTTP layer:
+# missing tools (state_show / list_artifacts / read_artifact / recent_events
+# absent from the registry), bad query-param shapes, server lifecycle.
+# Goal: take ``agent_api/http_api.py`` from ~73% to 90%+.
+# ---------------------------------------------------------------------------
+
+
+from mythic_vibe_cli.agent_api.core import HermesCore  # noqa: E402
+from mythic_vibe_cli.agent_api.http_api import (  # noqa: E402
+    HermesHttpServer,
+    _err_envelope,
+    _ok_envelope,
+)
+
+
+def _bare_core_config() -> HermesHttpConfig:
+    """Build a config whose core has no tools — exercises the
+    ``not_implemented`` branches in handle_state/list_artifacts/etc."""
+    with tempfile.TemporaryDirectory() as tmp:
+        core = HermesCore(root=Path(tmp))
+        return HermesHttpConfig(core=core, token="t")
+
+
+class HandleStateMissingToolTests(unittest.TestCase):
+    def test_returns_not_implemented_when_state_show_absent(self) -> None:
+        config = _bare_core_config()
+        payload = handle_state(config)
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["code"], "not_implemented")
+
+
+class HandleListArtifactsErrorTests(unittest.TestCase):
+    def test_not_implemented_when_tool_absent(self) -> None:
+        config = _bare_core_config()
+        payload = handle_list_artifacts({}, config)
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["code"], "not_implemented")
+
+    def test_glob_query_passes_through(self) -> None:
+        config = _config()
+        payload = handle_list_artifacts({"glob": ["*.txt"], "under": ["mythic"]}, config)
+        self.assertTrue(payload["ok"])
+
+    def test_invalid_limit_returns_bad_request(self) -> None:
+        config = _config()
+        payload = handle_list_artifacts({"limit": ["not-an-int"]}, config)
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["code"], "bad_request")
+
+
+class HandleReadArtifactErrorTests(unittest.TestCase):
+    def test_not_implemented_when_tool_absent(self) -> None:
+        config = _bare_core_config()
+        payload = handle_read_artifact("any.txt", {}, config)
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["code"], "not_implemented")
+
+    def test_invalid_max_bytes_returns_bad_request(self) -> None:
+        config = _config()
+        payload = handle_read_artifact("x.txt", {"max_bytes": ["nan"]}, config)
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["code"], "bad_request")
+
+
+class HandleEventsErrorTests(unittest.TestCase):
+    def test_not_implemented_when_tool_absent(self) -> None:
+        config = _bare_core_config()
+        payload = handle_events({}, config)
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["code"], "not_implemented")
+
+    def test_invalid_limit_returns_bad_request(self) -> None:
+        config = _config()
+        payload = handle_events({"limit": ["bad"]}, config)
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["code"], "bad_request")
+
+
+class HandleInvokeRequestIdValidationTests(unittest.TestCase):
+    def test_request_id_must_be_string_when_supplied(self) -> None:
+        config = _config()
+        payload = handle_invoke({"tool": "status", "request_id": 42}, config)
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["code"], "bad_request")
+        self.assertIn("request_id", payload["error"])
+
+
+class EnvelopeHelperTests(unittest.TestCase):
+    def test_ok_envelope_marks_value(self) -> None:
+        self.assertEqual(_ok_envelope({"a": 1}), {"ok": True, "value": {"a": 1}})
+
+    def test_err_envelope_includes_code(self) -> None:
+        env = _err_envelope("nope", code="bad_request")
+        self.assertFalse(env["ok"])
+        self.assertEqual(env["code"], "bad_request")
+        self.assertEqual(env["error"], "nope")
+
+    def test_err_envelope_default_code(self) -> None:
+        env = _err_envelope("nope")
+        self.assertEqual(env["code"], "error")
+
+
+class HermesHttpServerLifecycleTests(unittest.TestCase):
+    """Cover server start/stop/bound_address — the wrapper around
+    ThreadingHTTPServer that earlier tests instantiated indirectly."""
+
+    def test_bound_address_is_none_before_start(self) -> None:
+        config = _config()
+        server = HermesHttpServer(config=config)
+        self.assertIsNone(server.bound_address)
+
+    def test_stop_is_idempotent_when_never_started(self) -> None:
+        config = _config()
+        server = HermesHttpServer(config=config)
+        # Should not raise even with httpd is None.
+        server.stop()
+
+    def test_start_then_stop_returns_bound_address(self) -> None:
+        """A live-server-like start/stop sequence on an ephemeral port,
+        wrapped in a thread so the blocking serve_forever() returns
+        when stop() is called."""
+        agent = build_default_agent(root=tempfile.gettempdir())
+        config = HermesHttpConfig(
+            core=agent.core, host="127.0.0.1", port=0, token="t"
+        )
+        server = HermesHttpServer(config=config)
+        thread = threading.Thread(target=server.start, daemon=True)
+        thread.start()
+        # Wait until httpd is bound.
+        deadline = 5.0
+        step = 0.02
+        elapsed = 0.0
+        while server.httpd is None and elapsed < deadline:
+            import time
+            time.sleep(step)
+            elapsed += step
+        try:
+            self.assertIsNotNone(server.httpd)
+            addr = server.bound_address
+            self.assertIsNotNone(addr)
+            self.assertEqual(addr[0], "127.0.0.1")
+            self.assertGreater(addr[1], 0)
+        finally:
+            server.stop()
+            thread.join(timeout=5.0)
+
+
 if __name__ == "__main__":
     unittest.main()
