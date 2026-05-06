@@ -80,6 +80,8 @@ For the full design rationale see:
 - [Command Contracts](COMMAND_CONTRACTS.md) — the canonical surface; every command, flag, and exit code.
 - [Compatibility Policy](compatibility_policy.md) — what's stable, what's experimental, what can change between releases.
 - [Plugin Authoring Guide](PLUGIN_AUTHORING_GUIDE.md) — how to extend the CLI with operator-supplied plugins.
+- [Troubleshooting](TROUBLESHOOTING.md) — common issues, organised by symptom: install / doctor / AI provider / plugins / TUI / chat-bridge / Hermes / cross-platform / tests / release verification.
+- [Security Policy](../SECURITY.md) — how to report vulnerabilities, supported versions, response timeline, in-scope vs out-of-scope.
 - [Contributor Index](contributor_index.md) — the deep contributor-orientation hub linking every doc in the project.
 
 ---

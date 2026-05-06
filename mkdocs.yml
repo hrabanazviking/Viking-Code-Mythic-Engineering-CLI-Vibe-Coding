@@ -93,6 +93,7 @@ nav:
       - SSH Deployment: SSH_DEPLOYMENT.md
       - Plugins: plugins.md
       - Plugin Authoring: PLUGIN_AUTHORING_GUIDE.md
+      - Troubleshooting: TROUBLESHOOTING.md
 
   - Reference:
       - Command Contracts: COMMAND_CONTRACTS.md
