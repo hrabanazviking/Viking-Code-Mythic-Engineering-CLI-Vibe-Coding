@@ -61,7 +61,13 @@ build = [
   "twine>=5.0"
 ]
 docs = [
-  "mkdocs>=1.6"
+  "mkdocs>=1.6",
+  # Phase 23.1 (PH-23 documentation site, 2026-05-05): mkdocs-
+  # material theme + the pymdownx extensions the mkdocs.yml at
+  # repo root configures. mkdocs-material has a permissive
+  # MIT license; pymdownx-extensions is also MIT.
+  "mkdocs-material>=9.5",
+  "pymdown-extensions>=10.0"
 ]
 ux = [
   "rich>=13.0"
@@ -96,8 +102,10 @@ dev = [
   "google-genai>=1.0",
   "hypothesis>=6.0",
   "mkdocs>=1.6",
+  "mkdocs-material>=9.5",
   "mypy>=1.10",
   "openai>=1.40",
+  "pymdown-extensions>=10.0",
   "pytest>=8.0",
   "pytest-cov>=5.0",
   "rich>=13.0",

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import ClassVar
 
 from textual.app import ComposeResult
 from textual.binding import Binding
@@ -146,7 +147,7 @@ class CommandPreviewScreen(Screen):
     Non-builtin (plugin / extension / skill / prompt) entries display a notice
     that this slice does not yet dispatch them."""
 
-    BINDINGS = [
+    BINDINGS: ClassVar[list[Binding]] = [
         Binding("escape", "app.pop_screen", "Back"),
         Binding("q", "app.pop_screen", "Back", show=False),
         Binding("r", "run_command", "Run"),
@@ -260,7 +261,7 @@ class PluginSlashRunScreen(Screen):
     commands that opted into the ``run_slash`` protocol via
     ``SlashCommandInfo(runnable=True)``."""
 
-    BINDINGS = [
+    BINDINGS: ClassVar[list[Binding]] = [
         Binding("escape", "app.pop_screen", "Back"),
         Binding("q", "app.pop_screen", "Back", show=False),
         Binding("question_mark", "show_help", "Help"),
@@ -387,7 +388,7 @@ class SlashPickerScreen(Screen):
     """Filterable list of slash commands. Pushes ``CommandPreviewScreen`` on
     selection. Esc cancels back to the prior screen."""
 
-    BINDINGS = [
+    BINDINGS: ClassVar[list[Binding]] = [
         Binding("escape", "app.pop_screen", "Cancel"),
         Binding("question_mark", "show_help", "Help"),
         Binding("t", "app.cycle_theme", "Theme"),

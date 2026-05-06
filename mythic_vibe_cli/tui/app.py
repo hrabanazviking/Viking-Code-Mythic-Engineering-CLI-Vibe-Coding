@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 import time
 
@@ -689,7 +689,7 @@ def _format_footer_line(data: StatusData) -> str:
 class StatusScreen(Screen):
     """Single screen showing four status panels with auto-refresh."""
 
-    BINDINGS = [
+    BINDINGS: ClassVar[list[Binding]] = [
         Binding("q", "quit", "Quit"),
         Binding("ctrl+c", "quit", "Quit", show=False),
         Binding("r", "refresh_now", "Refresh"),

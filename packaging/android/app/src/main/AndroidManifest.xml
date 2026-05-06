@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Android manifest for the mythic-vibe Android wrapper (PH-22.2).
+
+    Permissions are deliberately minimal:
+      - INTERNET: only for the AI-provider extras when an operator
+        configures one. Without an API key configured, the CLI
+        makes zero network calls.
+
+    Intentionally NOT declared:
+      - ACCESS_NETWORK_STATE  — we don't gate on connectivity status.
+      - WRITE_EXTERNAL_STORAGE — the CLI writes only inside the
+        app's private data dir (filesUtilDir + cacheDir), which
+        doesn't need a permission on Android 10+.
+      - RECORD_AUDIO          — voice features are a future slice.
+
+    The app is a single-activity Compose UI; no exported services,
+    receivers, or providers.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:label="Mythic Vibe"
+        android:icon="@android:drawable/sym_def_app_icon"
+        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="Mythic Vibe">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+    </application>
+
+</manifest>

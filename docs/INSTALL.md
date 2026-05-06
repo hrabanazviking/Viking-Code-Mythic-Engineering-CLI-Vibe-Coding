@@ -60,6 +60,289 @@ scoop bucket add mythic https://github.com/hrabanazviking/scoop-mythic
 scoop install mythic-vibe
 ```
 
+### winget (Windows)
+
+```powershell
+winget install hrabanazviking.MythicVibeCLI
+```
+
+The winget package ships the standalone PyInstaller binary as a `portable` installer — winget extracts the `.exe` to a known location and adds it to `PATH`. No registry installer chrome; `winget uninstall` cleans up by removing the binary.
+
+The first launch may trigger a Windows SmartScreen "unrecognized publisher" prompt (the binary is unsigned until PH-21.5 keyless Sigstore signatures land). Click **More info** → **Run anyway**.
+
+### Arch Linux (AUR)
+
+The package is published as `mythic-vibe-cli` on the [Arch User Repository](https://aur.archlinux.org/). It builds from the PyPI sdist so AUR users get the exact bytes PyPI users get.
+
+```bash
+# Using yay (or any AUR helper):
+yay -S mythic-vibe-cli
+
+# Or manually with makepkg:
+git clone https://aur.archlinux.org/mythic-vibe-cli.git
+cd mythic-vibe-cli
+makepkg -si
+```
+
+After install, both `mythic-vibe` and the `mythic` short alias land on `PATH`. Optional extras (`tui`, `ai`, `ux`, `otel`) install with the standard `pip` flow into a venv after the AUR base package — AUR ships only the runtime base.
+
+### Android (native app)
+
+A native Android app wraps `mythic-vibe-cli` via [Chaquopy](https://chaquo.com/chaquopy/), embedding CPython 3.12 + the wheel into the APK at build time. Single-tap install + Material 3 UI for the convenience-first Android operator who doesn't want to set up Termux.
+
+```bash
+VERSION=1.0.0
+gh release download "v${VERSION}" \
+    --repo hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding \
+    --pattern "mythic-vibe-${VERSION}-android.apk*"
+
+sha256sum --check "mythic-vibe-${VERSION}-android.apk.sha256"
+
+# Side-load via adb (developer mode):
+adb install "mythic-vibe-${VERSION}-android.apk"
+
+# Or transfer the APK to the device and tap to install (requires
+# enabling "Install unknown apps" for whichever installer you use).
+```
+
+The app shows a single text-input field; type any CLI command (e.g. `--version`, `doctor --json`, `status`) and tap **Run**. Output streams into a scrollable Text panel.
+
+Permissions: **INTERNET only**, used solely when an operator configures an AI-provider API key. The app does not record audio, read contacts, access location, or write to external storage.
+
+The app is **complementary, not competing** with the [Termux install path](#termux-android) — Termux gives you a full Linux shell + pip flexibility; the native app gives you a one-tap install + Material UI.
+
+For full design rationale (why Chaquopy over BeeWare, the deferred-work list, future Play Store / F-Droid distribution path), see [`packaging/android/README.md`](../packaging/android/README.md).
+
+### Termux (Android)
+
+Termux turns an Android phone or tablet into a real Linux userland. The CLI installs from PyPI exactly the same way as on a desktop, plus a one-time apt prep:
+
+```bash
+# Inside Termux:
+pkg update && pkg install python rust
+pip install --upgrade pip
+pip install mythic-vibe-cli
+
+mythic-vibe doctor
+mythic-vibe hardware       # confirms platform_tags includes "termux"
+```
+
+Notes:
+
+- `rust` is needed to compile any optional extra that has a Rust-built wheel (the base CLI is pure-Python and does not need Rust). If you only install the base, `pkg install python` is enough.
+- The CLI honors `XDG_CONFIG_HOME` and the `MYTHIC_HOME` env var. Termux already sets `XDG_CONFIG_HOME` to `~/.config`, so caches and config land under `~/.config/mythic-vibe/` exactly like on a desktop. No path tweaks required.
+- `mythic-vibe hardware` exposes a `platform_tags` array that includes `termux` when the runtime detects either the `TERMUX_VERSION` environment variable or the Termux package prefix at `/data/data/com.termux/files/usr`. Use it to gate Termux-specific behavior in your own scripts.
+
+### WSL (Windows Subsystem for Linux)
+
+Inside a WSL distro the install path is identical to native Linux:
+
+```bash
+python3 -m pip install mythic-vibe-cli
+mythic-vibe hardware       # platform_tags includes "wsl"
+```
+
+The runtime detects WSL by reading `platform.uname().release` and matching `microsoft` (case-insensitive) — works for both WSL1 and WSL2. The detection is read-only and never raises; if the kernel string changes in a future WSL release, the worst case is the tag drops, not a CLI failure.
+
+### Standalone binaries (PyInstaller)
+
+Each release attaches per-OS single-file executables to its GitHub Release page. No Python required on the target — the binary bundles a frozen interpreter plus the CLI's stdlib-only base.
+
+```bash
+VERSION=1.0.0
+gh release download "v${VERSION}" \
+    --repo hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding \
+    --pattern "mythic-vibe-${VERSION}-linux-x86_64*"
+
+# Verify the SHA256 sidecar:
+sha256sum --check "mythic-vibe-${VERSION}-linux-x86_64.sha256"
+
+# Make executable + run:
+chmod +x "mythic-vibe-${VERSION}-linux-x86_64"
+./"mythic-vibe-${VERSION}-linux-x86_64" --version
+```
+
+Released binary names follow this pattern:
+
+| OS / arch | Asset name |
+|---|---|
+| Linux x86_64 | `mythic-vibe-<VERSION>-linux-x86_64` |
+| macOS arm64 (Apple Silicon) | `mythic-vibe-<VERSION>-macos-arm64` |
+| macOS x86_64 (Intel) | `mythic-vibe-<VERSION>-macos-x86_64` |
+| Windows x86_64 | `mythic-vibe-<VERSION>-windows-x86_64.exe` |
+
+Each binary ships with a `.sha256` sidecar for out-of-band verification.
+
+The standalone binary embeds **only the CLI's stdlib-only base** — optional extras (`ai`, `tui`, `ux`, `otel`) are deliberately excluded so the binary stays small (~15-25 MB) and starts fast. If you need extras, use the PyPI / Homebrew / Scoop / AUR / Container channels above; those install into a venv where extras work via pip.
+
+#### Nuitka alternative
+
+Each release also ships a **Nuitka-compiled** binary alongside the PyInstaller binary. Nuitka compiles Python to C and links a real native executable, while PyInstaller bundles a frozen interpreter:
+
+| Property | PyInstaller | Nuitka |
+|---|---|---|
+| Asset name | `mythic-vibe-<VERSION>-<os>-<arch>` | `mythic-vibe-nuitka-<VERSION>-<os>-<arch>` |
+| Binary size | ~15-25 MB | ~8-15 MB |
+| Cold start | ~250-500 ms | ~80-150 ms |
+| Build time | ~30-90 s per OS | ~3-8 minutes per OS |
+| Behavior | Identical (both compile from the same `entrypoint.py` shim) | Identical |
+
+Both binaries are stdlib-only; both pass the same smoke tests. **Pick by preference**: PyInstaller is the default; Nuitka is the right choice when binary size or cold-start latency matters (e.g. a CI runner where you invoke the CLI hundreds of times per pipeline).
+
+```bash
+VERSION=1.0.0
+gh release download "v${VERSION}" \
+    --repo hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding \
+    --pattern "mythic-vibe-nuitka-${VERSION}-linux-x86_64*"
+sha256sum --check "mythic-vibe-nuitka-${VERSION}-linux-x86_64.sha256"
+chmod +x "mythic-vibe-nuitka-${VERSION}-linux-x86_64"
+./"mythic-vibe-nuitka-${VERSION}-linux-x86_64" --version
+```
+
+#### macOS first-launch (Gatekeeper override)
+
+The macOS binaries ship **un-notarized**. On first launch macOS Gatekeeper will block the binary with a dialog that reads roughly:
+
+> "mythic-vibe-1.0.0-macos-arm64" cannot be opened because it is from an unidentified developer.
+
+This is expected. You have two clean ways past it:
+
+**Option A — Right-click → Open (operator-friendly):**
+
+1. In Finder, locate the downloaded binary.
+2. Hold Control and click the binary; choose **Open**.
+3. The same dialog appears, but this time it has an **Open** button. Click it once.
+4. macOS records your trust decision; subsequent launches no longer prompt.
+
+**Option B — clear the quarantine attribute (CLI-friendly):**
+
+```bash
+# Adjust the filename to whichever asset you downloaded:
+xattr -d com.apple.quarantine /path/to/mythic-vibe-1.0.0-macos-arm64
+
+# Now run normally:
+chmod +x /path/to/mythic-vibe-1.0.0-macos-arm64
+/path/to/mythic-vibe-1.0.0-macos-arm64 --version
+```
+
+`xattr -d com.apple.quarantine` removes the extended attribute Safari (or any other downloader) sets on freshly-downloaded files. After it's removed, Gatekeeper treats the binary as trusted local content.
+
+##### Why we ship un-notarized
+
+Notarization requires an Apple Developer account ($99/year), Apple-side review of every release, and a tighter signing setup that doesn't fit a small-team open-source project. The trade-off:
+
+- ✅ **Operator sovereignty.** Anyone can build the same binary from source and verify it byte-for-byte against the published artifact via the SHA256 sidecar (or via the Sigstore signatures landing in PH-21.5).
+- ✅ **No upstream gatekeeper.** Apple cannot revoke the project's notarization (and through it, every operator's installed binary) over a policy disagreement.
+- ✅ **Open-source-philosophy aligned.** The project's threat model trusts cryptographic verification (sha256 → keyless Sigstore signatures) rather than corporate identity.
+- ⚠️ **One-time prompt.** Operators see one Gatekeeper warning per binary per release. After the right-click → Open or `xattr -d` step, no further prompts.
+
+If demand for notarization grows post-v1.0, the project can revisit by adding a separate v1.x slice with the Apple Developer account work. The decision is reversible — adding notarization later doesn't break any existing binary; it just adds a new code path.
+
+### Launcher binary (no Python required)
+
+The **launcher** is a small (~3-5 MB) static Rust binary that handles installing the CLI into a per-user cache the first time you run it. Different trade-off vs the PyInstaller / Nuitka standalone binaries above:
+
+| Property | PyInstaller / Nuitka | Launcher |
+|---|---|---|
+| Binary size | ~15-25 MB / ~8-15 MB | ~3-5 MB |
+| First-run cold start | fast | ~30-60 s (downloads interpreter) |
+| Subsequent runs | fast | fast (cached) |
+| Optional extras (`ai`, `tui`, `ux`, `otel`) | ❌ stdlib-only | ✅ pip into the cached venv |
+| Network on first run | ❌ | ✅ |
+
+Use the launcher when:
+- You need a tiny initial download.
+- You may want to install extras later (`pip install "mythic-vibe-cli[ai]"` into the cached venv works).
+- Network is available at first run.
+
+Use PyInstaller / Nuitka when:
+- You need offline-friendly first run.
+- You only need the stdlib base.
+
+```bash
+VERSION=1.0.0
+gh release download "v${VERSION}" \
+    --repo hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding \
+    --pattern "mythic-vibe-launcher-${VERSION}-linux-x86_64*"
+
+# Verify SHA256:
+sha256sum --check "mythic-vibe-launcher-${VERSION}-linux-x86_64.sha256"
+
+# First run downloads the interpreter + wheel into a per-user
+# cache (~30 MB). Subsequent runs are fast.
+chmod +x "mythic-vibe-launcher-${VERSION}-linux-x86_64"
+./"mythic-vibe-launcher-${VERSION}-linux-x86_64" --version
+```
+
+The cache lives at:
+
+- **Linux:** `~/.cache/mythic-vibe-launcher/`
+- **macOS:** `~/Library/Caches/mythic-vibe-launcher/`
+- **Windows:** `%LOCALAPPDATA%\mythic-vibe-launcher\Cache\`
+
+Set `MYTHIC_LAUNCHER_CACHE=/path/to/cache` to redirect (useful for CI runners and sandboxed environments).
+
+To install extras into the cached venv after first run:
+
+```bash
+~/.cache/mythic-vibe-launcher/venv/bin/pip install "mythic-vibe-cli[ai,tui]"
+```
+
+For full design, deferred work, and rationale for choosing Rust, see [`packaging/launcher/README.md`](../packaging/launcher/README.md).
+
+### WebAssembly (experimental)
+
+The CLI ships a single-file `.wasm` artifact built for the [WASI](https://wasi.dev/) target. **Status: experimental, foundation-level.** Most of the CLI's surfaces won't work in WASI today — `subprocess`-based commands (git checks in `doctor`, plugin sandbox in `verify`) exit with a "module not available" error. The supported scope is **read-only JSON-emitting commands**:
+
+- `mythic-vibe --version`
+- `mythic-vibe doctor --json` (subprocess-based git checks suppressed)
+- `mythic-vibe status --json`
+- `mythic-vibe packet list --json`
+
+Each release attaches **two artifacts**: the `.wasm` (CPython compiled to WebAssembly) and a `.pyz` zipapp sidecar (the `mythic_vibe_cli/` source tree). The runtime invokes the zipapp via the wasm:
+
+```bash
+VERSION=1.0.0
+gh release download "v${VERSION}" \
+    --repo hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding \
+    --pattern "mythic-vibe-${VERSION}-wasi-experimental.wasm*" \
+    --pattern "mythic-vibe-${VERSION}-wasi-experimental.pyz*"
+
+# Verify SHA256 of both artifacts:
+sha256sum --check "mythic-vibe-${VERSION}-wasi-experimental.wasm.sha256"
+sha256sum --check "mythic-vibe-${VERSION}-wasi-experimental.pyz.sha256"
+
+# Run with Wasmtime (--dir grants the wasm access to your project):
+wasmtime --dir=. \
+    "mythic-vibe-${VERSION}-wasi-experimental.wasm" -- \
+    "mythic-vibe-${VERSION}-wasi-experimental.pyz" doctor --json
+```
+
+The `--dir` flag pre-opens the host directory the CLI sees as `/work` (or whatever the WASI host names it). Without it the wasm runs in a fully-sandboxed mode and can't read or write any files. The `.pyz` zipapp must be passed as an argument to the `.wasm` so the WASI Python interpreter knows what to execute.
+
+For full design rationale (why WASI, the three Python-to-WASM paths considered, the per-stdlib-module compatibility matrix, deferred work), see [`packaging/wasi/README.md`](../packaging/wasi/README.md).
+
+### Container (Docker / Podman)
+
+Each release publishes a multi-arch (linux/amd64 + linux/arm64) image to GitHub Container Registry:
+
+```bash
+# Pull and run the latest tag:
+docker run --rm ghcr.io/hrabanazviking/mythic-vibe-cli:latest --help
+
+# Pin to a specific version:
+docker run --rm ghcr.io/hrabanazviking/mythic-vibe-cli:1.0.0 doctor --json
+
+# Mount your project directory for in-place workflows:
+docker run --rm -v "$(pwd):/work" ghcr.io/hrabanazviking/mythic-vibe-cli:1.0.0 status
+```
+
+The image runs as a non-root `mythic` user (uid 1000) with the workspace mounted at `/work`. Default `ENTRYPOINT` is `mythic-vibe`, so any flag/subcommand you pass goes straight to the CLI. The container ships with the `[ai,otel,ux,tui]` extras pre-installed.
+
+Podman works the same — substitute `podman run` for `docker run`. The image manifest declares standard `org.opencontainers.image.*` labels (license, source, documentation URL) so registry UIs surface project metadata correctly.
+
+If Docker Hub is also enabled (an opt-in publish target — see `packaging/README.md`), the same image is mirrored to `docker.io/hrabanazviking/mythic-vibe-cli`.
+
 ---
 
 ## Offline / air-gapped install
@@ -239,6 +522,9 @@ mythic-vibe completion --shell powershell | Invoke-Expression
 
 - **`mythic-vibe: command not found`** — your venv is not active, OR you used `pip install` outside any venv and your shell's `PATH` doesn't include user-local install dirs. Activate the venv (or use the module form: `python -m mythic_vibe_cli --help`).
 - **Wheel install fails on Pi Zero / very-low-RAM device** — use the offline wheelhouse path above; it ships pre-built wheels so the install path doesn't need a build toolchain.
+- **Termux `pip install` fails compiling a wheel** — install `pkg install rust` first, or use the offline wheelhouse path which ships pre-built wheels and bypasses the compile step entirely.
+- **Standalone binary refuses to run on macOS first launch ("unidentified developer")** — see the macOS Gatekeeper override section under [Standalone binaries](#standalone-binaries-pyinstaller); the project ships un-notarized so a one-time right-click → Open is required, or run `xattr -d com.apple.quarantine /path/to/mythic-vibe-*-macos-*` from the CLI.
+- **Standalone binary triggers a Windows SmartScreen "unrecognized publisher" warning** — the binaries are unsigned. Click "More info" → "Run anyway" on first launch. Code signing is on the v1.x roadmap (PH-21.5 keyless signing via Sigstore).
 - **`pipx` install with extras fails** — make sure you're using the PEP 508 form: `pipx install "mythic-vibe-cli[ai] @ git+URL@branch"` for VCS installs, or just `pipx install "mythic-vibe-cli[ai]"` for PyPI.
 - **`mythic-vibe tui` says Textual is missing** — install the `[tui]` extra: `python -m pip install "mythic-vibe-cli[tui]"`.
 

@@ -1,86 +1,125 @@
-# Documentation Hub
+# Mythic Vibe CLI
 
-This hub orients contributors to the active Mythic Vibe CLI product (v1.0.0) and the surrounding mythic engineering workspace. If you do not know where to stand, follow the stones in order.
+**Beginner-friendly CLI that enforces the Mythic Engineering vibe-coding workflow.**
 
-## Start Here
-
-- `README.md` — front door, install paths, command overview.
-- `docs/quickstart.md` — first project, first loop, first reflection in five minutes.
-- `docs/INSTALL.md` — full install matrix (PyPI / Homebrew / Scoop / wheelhouse / editable / pipx).
-- `docs/compatibility_policy.md` — **v1.0 binding contract**: SemVer, Python + OS support window, deprecation cadence, public-surface tier table.
-
-## Boundary And Architecture
-
-- `REPO_BOUNDARY.md` — repository-level active runtime and dormant island law.
-- `docs/ACTIVE_PRODUCT_BOUNDARY.md` — exact product paths and runtime contract.
-- `docs/DORMANT_ISLANDS.md` — quarantined reference, research, and vendor surfaces.
-- `docs/ARCHITECTURE.md` — active runtime architecture and dependency direction.
-- `docs/DOMAIN_MAP.md` — ownership map and routing rules.
-- `docs/COMMAND_CONTRACTS.md` — CLI entrypoints, dispatch registry, aliases, and exit codes.
-- `docs/DATA_FLOW.md` — state and artifact movement through the active CLI.
-
-## Architecture Decisions
-
-- `docs/ADRS/ADR-0001-active-runtime-boundary.md` — accepted active runtime boundary.
-- `docs/ADRS/ADR-0002-no-direct-vendor-imports.md` — no direct dormant-island or vendor imports.
-- `docs/ADRS/ADR-0003-verification-gates.md` — verification records and reflect gating.
-- `docs/ADRS/ADR-0004-doctor-diagnostics.md` — doctor as a first-class diagnostic scanner.
-- `docs/ADRS/ADR-0005-island-b-yggdrasil-adapter.md` — Yggdrasil adapter contract.
-- `docs/ADRS/ADR-0006-island-c-mindspark-adapter.md` — MindSpark adapter contract.
-- `docs/ADRS/ADR-0007-island-d-wyrd-adapter.md` — WYRD adapter contract.
-- `docs/ADRS/ADR-0008-island-e-chatterbox-adapter.md` — Chatterbox TTS adapter contract.
-- `docs/ADRS/ADR-0009-internal-api-surfaces.md` — internal API surfaces.
-- `docs/ADRS/ADR-0010-ai-model-listing-policy.md` — AI model listing policy (static-first with remote opt-in).
-
-## Operator Docs
-
-- `docs/api.md` — command/API contract overview.
-- `docs/plugins.md` — operator guide for writing and registering Mythic plugins (eight life-cycle hooks; v1.0 capability declarations + circuit breaker).
-- `docs/PLUGIN_AUTHORING_GUIDE.md` — plugin authoring template and conventions.
-- `docs/runtime.md` — operator guide for the **ten** runtime primitives in `mythic_vibe_cli/runtime/` (file mutation queue, output guard, event bus, timings, slash-commands catalog, source-info provenance, exec, event log, plus the v1.0 additions cross-process lock and atomic write).
-- `docs/hardware_profiles.md` — hardware-oriented guidance (Pi Zero / Pi 5 / desktop / server tiers).
-- `docs/DOCUMENTATION_STANDARDS.md` — documentation maintenance rules.
-- `docs/RELEASE_CHECKLIST.md` — release and packaging verification checklist + PH-19.7 tag-driven distribution flow.
-- `docs/CHAT_BRIDGE_DEPLOYMENT.md` — Matrix / Telegram bridge deployment (systemd / NSSM / launchd).
-- `docs/SSH_DEPLOYMENT.md` — SSH-surface deployment notes.
-- `docs/HERMES_AGENT.md` — **v1.0 agent control plane** — TCL (Python in-process) + HTTP API, 18 curated tools, security model.
-- `docs/INSTALL.md` — install matrix (also linked under "Start Here").
-- `docs/quickstart.md` — first workflow walkthrough (also linked under "Start Here").
-- `docs/SESSION_HANDOFF.md` — latest generated session handoff summary.
-- `docs/SESSION_HANDOFF_TEMPLATE.md` — continuity template for session closure.
-
-## Security And Supply Chain
-
-- `docs/security/threat_model.md` — assets, attackers, mitigations (with file:line anchors).
-- `docs/security/sbom.json` — CycloneDX v1.6 dependency manifest. Regenerate via `python scripts/regenerate_sbom.py`.
-
-## Distribution Channels (v1.0)
-
-- `packaging/README.md` — PyPI + Homebrew + Scoop channel inventory + trigger semantics + required secrets.
-- `packaging/WHEELHOUSE.md` — operator guide for offline / air-gapped install.
-- `packaging/homebrew/mythic-vibe.rb.template` — Homebrew formula template (auto-rendered by `release.yml`).
-- `packaging/scoop/mythic-vibe.json.template` — Scoop manifest template (auto-rendered by `release.yml`).
-
-## Governance
-
-- `docs/governance/quarterly_review.md` — architecture-review cadence + agenda.
-
-## Method And Philosophy
-
-- `docs/SYSTEM_VISION.md` — product vision.
-- `docs/PHILOSOPHY.md` — values and engineering stance.
-- `MYTHIC_ENGINEERING.md` — method source and local project alignment.
-
-## Boundary Verification
-
-Run these before merging architecture-sensitive work:
+Mythic Vibe is an opinionated developer-workflow tool. It gives operators a structured surface for capturing intent, verifying changes against architecture rules, and handing off work between sessions — all while staying out of the way for the routine cases.
 
 ```bash
-python -m mythic_vibe_cli.cli doctor --repo-boundary --path .
-python tools/contract_audit.py --strict
-pytest -q
-ruff check mythic_vibe_cli tests scripts tools
-mypy mythic_vibe_cli
+# Install:
+pipx install mythic-vibe-cli
+
+# Initialize a project:
+mythic-vibe init
+
+# Capture intent for a slice of work:
+mythic-vibe imbue "Add OAuth login flow"
+
+# Run pre-flight checks:
+mythic-vibe doctor --json
+
+# Verify a finished slice:
+mythic-vibe verify
 ```
 
-If this file is reached through the lowercase `docs/index2.md` path, treat it as the same canonical navigation hub.
+---
+
+## Where to start
+
+<div class="grid cards" markdown>
+
+-   :material-rocket-launch: **Quickstart**
+
+    ---
+
+    Run the first command, capture an intent packet, and finish a slice with verify in under five minutes.
+
+    [:octicons-arrow-right-24: Quickstart](quickstart.md)
+
+-   :material-download: **Install Guide**
+
+    ---
+
+    Pick the install channel that matches your situation — PyPI / Homebrew / Scoop / AUR / OCI / standalone binaries / Termux / Android / WASI.
+
+    [:octicons-arrow-right-24: Install Guide](INSTALL.md)
+
+-   :material-robot-outline: **Hermes Agent**
+
+    ---
+
+    The TCL + HTTP API control plane that lets external AI agents drive the CLI surface end-to-end.
+
+    [:octicons-arrow-right-24: Hermes Agent](HERMES_AGENT.md)
+
+-   :material-shield-check: **Verifying Artifacts**
+
+    ---
+
+    Verify a release with Sigstore signatures + SLSA build provenance attestations. Per-channel recipes for PyPI, OCI, and standalone binaries.
+
+    [:octicons-arrow-right-24: Verifying Artifacts](security/verifying_artifacts.md)
+
+</div>
+
+---
+
+## Project shape
+
+The CLI is **architecture-first**: every command operates against a `mythic/` directory under your project that captures intent, decisions, verification results, and architectural anchors. The base CLI is **stdlib-only** — every external dependency is opt-in via an extras (`ai`, `tui`, `ux`, `otel`).
+
+For the full design rationale see:
+
+- [Philosophy](PHILOSOPHY.md) — why the workflow looks the way it does.
+- [Architecture](ARCHITECTURE.md) — module boundaries, data flow, runtime invariants.
+- [System Vision](SYSTEM_VISION.md) — where the project is heading.
+
+---
+
+## Reference & operations
+
+- [Command Contracts](COMMAND_CONTRACTS.md) — the canonical surface; every command, flag, and exit code.
+- [Compatibility Policy](compatibility_policy.md) — what's stable, what's experimental, what can change between releases.
+- [Plugin Authoring Guide](PLUGIN_AUTHORING_GUIDE.md) — how to extend the CLI with operator-supplied plugins.
+- [Contributor Index](contributor_index.md) — the deep contributor-orientation hub linking every doc in the project.
+
+---
+
+## Distribution channels
+
+The CLI ships through **eleven channels** as of v1.x, plus three v2.0 foundations:
+
+| Channel | Use when |
+|---|---|
+| **PyPI** (`pipx install`) | Default — works everywhere Python does |
+| **Homebrew tap** | macOS / Linuxbrew operators |
+| **Scoop bucket** | Windows operators who prefer Scoop |
+| **AUR** | Arch Linux operators |
+| **winget** | Windows operators who prefer winget |
+| **Container** (GHCR + opt-in Docker Hub) | Docker / Podman / Kubernetes |
+| **Standalone PyInstaller binaries** | No-Python-on-host scenarios; offline-friendly first run |
+| **Nuitka alternative binaries** | Smaller binary + faster cold start than PyInstaller |
+| **Termux** (Android) | Linux-style CLI on Android phones / tablets |
+| **Offline wheelhouse** | Air-gapped install (Pi Zero, hardened CI) |
+| **Launcher binary** (PH-22.1, foundation) | ~3-5 MB static binary; downloads python-build-standalone + the wheel on first run; supports installing extras via pip |
+
+Plus three v2.0 foundations:
+
+| Channel | Status | Best for |
+|---|---|---|
+| **Native Android app** (Chaquopy) | foundation | One-tap Android install with a Material 3 UI; complementary to Termux |
+| **WASI runtime** (`.wasm` + `.pyz` zipapp sidecar) | foundation | Run the CLI under Wasmtime / wasmer / browsers |
+| **WASI browser playground** | foundation | Static HTML+JS preview hosted next to the docs site |
+
+Every release artifact across every channel is Sigstore-signed + SLSA-attested. Verification recipes per channel: [Verifying Artifacts](security/verifying_artifacts.md).
+
+---
+
+## Project values
+
+Mythic Vibe carries explicit operator-sovereignty guarantees:
+
+- **Stdlib-only base.** The runtime imports zero external packages by default. Every extra is opt-in.
+- **Open-source-only deps.** Apache-2.0 (project) + a small set of permissively-licensed libraries.
+- **No telemetry.** The CLI calls home only when an operator configures an AI provider.
+- **Cryptographic provenance.** Every release artifact ships with Sigstore keyless signatures + SLSA L3 build provenance attestations.
+- **Cross-platform invariant.** CI exercises Linux × macOS × Windows × py3.10/3.11/3.12 × x86_64/arm64 on every PR.

@@ -15,6 +15,8 @@ Cross-platform: Textual is pure Python; no platform branches.
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.screen import Screen
@@ -62,7 +64,7 @@ class HelpOverlayScreen(Screen):
     to dismiss back to the screen that pushed it.
     """
 
-    BINDINGS = [
+    BINDINGS: ClassVar[list[Binding]] = [
         Binding("escape", "app.pop_screen", "Close"),
         Binding("q", "app.pop_screen", "Close", show=False),
         Binding("question_mark", "app.pop_screen", "Close", show=False),

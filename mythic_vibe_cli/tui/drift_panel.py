@@ -17,7 +17,7 @@ Cross-platform: pure Python; no platform branches.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from textual.app import ComposeResult
 from textual.binding import Binding
@@ -75,7 +75,7 @@ class DriftScreen(Screen):
     pop back to the caller.
     """
 
-    BINDINGS = [
+    BINDINGS: ClassVar[list[Binding]] = [
         Binding("escape", "app.pop_screen", "Back"),
         Binding("q", "app.pop_screen", "Back", show=False),
         Binding("r", "refresh_now", "Refresh"),

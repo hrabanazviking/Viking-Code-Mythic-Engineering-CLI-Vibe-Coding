@@ -20,7 +20,11 @@ from mythic_vibe_cli.hardware import (
     DEFAULT_PROFILE_FILENAME,
     DEFAULT_PROFILE_JSON_FILENAME,
     HardwareProfile,
+    detect_platform_tags,
     detect_profile,
+    is_raspberry_pi,
+    is_termux,
+    is_wsl,
     render_profile_markdown,
     render_profile_text,
     write_profile,
@@ -294,6 +298,204 @@ class HardwareSlashCatalogTests(unittest.TestCase):
             spec = command_for_builtin("hardware", project_root=Path(tmp))
         self.assertIn("--path", spec.argv)
         self.assertIn(str(Path(tmp)), spec.argv)
+
+
+# ---- PH-21.9 platform tag detection -----------------------------------
+
+
+class IsTermuxTests(unittest.TestCase):
+    """PH-21.9 — Termux runtime detection.
+
+    Two independent signals: ``TERMUX_VERSION`` env var, and the
+    ``/data/data/com.termux/files/usr`` filesystem prefix. Either
+    triggers ``is_termux()``. Both being absent returns False, which
+    is the expected non-Termux case for every CI runner."""
+
+    def test_returns_true_when_termux_version_env_set(self) -> None:
+        with mock.patch.dict("os.environ", {"TERMUX_VERSION": "0.118.0"}, clear=False):
+            with mock.patch("os.path.isdir", return_value=False):
+                self.assertTrue(is_termux())
+
+    def test_returns_true_when_termux_prefix_dir_exists(self) -> None:
+        env_without_termux = {
+            k: v for k, v in __import__("os").environ.items()
+            if k != "TERMUX_VERSION"
+        }
+        with mock.patch.dict("os.environ", env_without_termux, clear=True):
+            with mock.patch(
+                "os.path.isdir",
+                lambda p: p == "/data/data/com.termux/files/usr",
+            ):
+                self.assertTrue(is_termux())
+
+    def test_returns_false_on_normal_host(self) -> None:
+        env_without_termux = {
+            k: v for k, v in __import__("os").environ.items()
+            if k != "TERMUX_VERSION"
+        }
+        with mock.patch.dict("os.environ", env_without_termux, clear=True):
+            with mock.patch("os.path.isdir", return_value=False):
+                self.assertFalse(is_termux())
+
+
+class IsWslTests(unittest.TestCase):
+    """PH-21.9 — WSL detection via uname().release substring."""
+
+    def test_detects_wsl1_signature(self) -> None:
+        fake_uname = mock.MagicMock()
+        fake_uname.release = "4.4.0-19041-Microsoft"
+        with mock.patch("platform.uname", return_value=fake_uname):
+            self.assertTrue(is_wsl())
+
+    def test_detects_wsl2_signature(self) -> None:
+        fake_uname = mock.MagicMock()
+        fake_uname.release = "5.15.90.1-microsoft-standard-WSL2"
+        with mock.patch("platform.uname", return_value=fake_uname):
+            self.assertTrue(is_wsl())
+
+    def test_returns_false_on_native_linux(self) -> None:
+        fake_uname = mock.MagicMock()
+        fake_uname.release = "6.5.0-21-generic"
+        with mock.patch("platform.uname", return_value=fake_uname):
+            self.assertFalse(is_wsl())
+
+    def test_returns_false_when_uname_raises(self) -> None:
+        with mock.patch("platform.uname", side_effect=OSError("denied")):
+            self.assertFalse(is_wsl())
+
+
+class IsRaspberryPiTests(unittest.TestCase):
+    """PH-21.9 — Raspberry Pi detection via /proc/device-tree/model."""
+
+    def test_detects_pi_model_string(self) -> None:
+        fake_path = mock.MagicMock()
+        fake_path.is_file.return_value = True
+        fake_path.read_text.return_value = "Raspberry Pi 5 Model B Rev 1.0"
+        with mock.patch("mythic_vibe_cli.hardware.Path", return_value=fake_path):
+            self.assertTrue(is_raspberry_pi())
+
+    def test_returns_false_when_model_file_missing(self) -> None:
+        fake_path = mock.MagicMock()
+        fake_path.is_file.return_value = False
+        with mock.patch("mythic_vibe_cli.hardware.Path", return_value=fake_path):
+            self.assertFalse(is_raspberry_pi())
+
+    def test_returns_false_when_read_raises(self) -> None:
+        fake_path = mock.MagicMock()
+        fake_path.is_file.return_value = True
+        fake_path.read_text.side_effect = OSError("denied")
+        with mock.patch("mythic_vibe_cli.hardware.Path", return_value=fake_path):
+            self.assertFalse(is_raspberry_pi())
+
+
+class DetectPlatformTagsTests(unittest.TestCase):
+    """PH-21.9 — composite platform-tag detector.
+
+    The function returns a deterministic ordered list. Adding a new
+    tag is additive; the test asserts existing tags appear in the
+    documented order so future additions land at well-defined
+    positions."""
+
+    def test_no_tags_on_normal_host(self) -> None:
+        env_without_termux = {
+            k: v for k, v in __import__("os").environ.items()
+            if k != "TERMUX_VERSION"
+        }
+        fake_uname = mock.MagicMock()
+        fake_uname.release = "6.5.0-21-generic"
+        with mock.patch.dict("os.environ", env_without_termux, clear=True):
+            with mock.patch("os.path.isdir", return_value=False):
+                with mock.patch("platform.uname", return_value=fake_uname):
+                    with mock.patch("platform.machine", return_value="x86_64"):
+                        # Pi detector path patch — ensure no-Pi return.
+                        fake_pi_path = mock.MagicMock()
+                        fake_pi_path.is_file.return_value = False
+                        with mock.patch(
+                            "mythic_vibe_cli.hardware.Path",
+                            return_value=fake_pi_path,
+                        ):
+                            tags = detect_platform_tags()
+        self.assertEqual(tags, [])
+
+    def test_termux_only(self) -> None:
+        with mock.patch.dict(
+            "os.environ", {"TERMUX_VERSION": "0.118.0"}, clear=False
+        ):
+            with mock.patch("os.path.isdir", return_value=False):
+                fake_uname = mock.MagicMock()
+                fake_uname.release = "5.10.0-android"
+                with mock.patch("platform.uname", return_value=fake_uname):
+                    with mock.patch("platform.machine", return_value="x86_64"):
+                        fake_pi = mock.MagicMock()
+                        fake_pi.is_file.return_value = False
+                        with mock.patch(
+                            "mythic_vibe_cli.hardware.Path",
+                            return_value=fake_pi,
+                        ):
+                            tags = detect_platform_tags()
+        self.assertIn("termux", tags)
+
+    def test_arm64_emitted_when_machine_is_aarch64(self) -> None:
+        env_without_termux = {
+            k: v for k, v in __import__("os").environ.items()
+            if k != "TERMUX_VERSION"
+        }
+        with mock.patch.dict("os.environ", env_without_termux, clear=True):
+            with mock.patch("os.path.isdir", return_value=False):
+                fake_uname = mock.MagicMock()
+                fake_uname.release = "6.5.0"
+                with mock.patch("platform.uname", return_value=fake_uname):
+                    with mock.patch("platform.machine", return_value="aarch64"):
+                        fake_pi = mock.MagicMock()
+                        fake_pi.is_file.return_value = False
+                        with mock.patch(
+                            "mythic_vibe_cli.hardware.Path",
+                            return_value=fake_pi,
+                        ):
+                            tags = detect_platform_tags()
+        self.assertEqual(tags, ["arm64"])
+
+
+class HardwareProfileTagsIntegrationTests(unittest.TestCase):
+    """PH-21.9 — verify platform_tags propagates through detect_profile,
+    to_dict, and renderers."""
+
+    def test_profile_includes_platform_tags_field(self) -> None:
+        profile = detect_profile()
+        # The field exists on the dataclass and serializes via to_dict.
+        self.assertIsInstance(profile.platform_tags, list)
+        self.assertIn("platform_tags", profile.to_dict())
+
+    def test_text_renderer_emits_platform_tags_line(self) -> None:
+        # Empty case shows "(none)" so the field is always visible.
+        empty = HardwareProfile()
+        self.assertIn("Platform tags:", render_profile_text(empty))
+        self.assertIn("(none)", render_profile_text(empty))
+
+    def test_text_renderer_lists_tags_when_present(self) -> None:
+        tagged = HardwareProfile(
+            os="Linux",
+            python_version="3.11.0",
+            platform_tags=["termux", "arm64"],
+        )
+        rendered = render_profile_text(tagged)
+        self.assertIn("termux", rendered)
+        self.assertIn("arm64", rendered)
+
+    def test_markdown_renderer_emits_platform_tags_row(self) -> None:
+        empty = HardwareProfile()
+        md = render_profile_markdown(empty)
+        self.assertIn("| Platform tags |", md)
+        self.assertIn("(none)", md)
+
+    def test_markdown_renderer_lists_tags_when_present(self) -> None:
+        tagged = HardwareProfile(
+            os="Linux",
+            python_version="3.11.0",
+            platform_tags=["wsl"],
+        )
+        md = render_profile_markdown(tagged)
+        self.assertIn("| Platform tags | wsl |", md)
 
 
 if __name__ == "__main__":

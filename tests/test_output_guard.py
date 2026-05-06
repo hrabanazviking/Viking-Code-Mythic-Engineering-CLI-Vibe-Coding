@@ -152,5 +152,92 @@ class OutputGuardTests(unittest.TestCase):
         self.assertIs(sys.stdout, self.fake_stdout)
 
 
+# PH-23.8 — coverage push for output_guard's _ProxyStream
+# property getters + isatty error branches. The existing tests
+# above cover the routing behavior; these exercise the file-like
+# attribute accessors directly (lines 52, 56, 60, 69-72, 81).
+
+
+class ProxyStreamAccessorTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self._original_stdout = sys.stdout
+        self._original_stderr = sys.stderr
+        self.fake_stdout = io.StringIO()
+        self.fake_stderr = io.StringIO()
+        sys.stdout = self.fake_stdout
+        sys.stderr = self.fake_stderr
+
+    def tearDown(self) -> None:
+        if is_stdout_taken_over():
+            restore_stdout()
+        sys.stdout = self._original_stdout
+        sys.stderr = self._original_stderr
+
+    def test_proxy_encoding_falls_back_to_utf8(self) -> None:
+        # The proxy's encoding property returns sys.stderr.encoding
+        # if set, otherwise utf-8. StringIO has no encoding attr,
+        # so this exercises the fallback path.
+        take_over_stdout()
+        encoding = sys.stdout.encoding
+        self.assertIsInstance(encoding, str)
+        # Must be a non-empty truthy string per the implementation.
+        self.assertTrue(encoding)
+
+    def test_proxy_name_is_descriptive(self) -> None:
+        take_over_stdout()
+        name = sys.stdout.name
+        self.assertEqual(name, "<stdout-routed-to-stderr>")
+
+    def test_proxy_closed_reflects_underlying_stderr(self) -> None:
+        take_over_stdout()
+        # StringIO's closed attribute is False by default.
+        self.assertFalse(sys.stdout.closed)
+        # Force-close the underlying stderr and verify the proxy
+        # reports it.
+        self.fake_stderr.close()
+        self.assertTrue(sys.stdout.closed)
+
+    def test_proxy_isatty_returns_false_for_stringio(self) -> None:
+        # StringIO.isatty returns False; the proxy must surface
+        # the same value.
+        take_over_stdout()
+        self.assertFalse(sys.stdout.isatty())
+
+    def test_proxy_isatty_swallows_attribute_error(self) -> None:
+        # If the underlying stderr lacks isatty (or raises), the
+        # proxy returns False rather than propagating.
+        take_over_stdout()
+
+        class BrokenStderr:
+            def isatty(self) -> bool:
+                raise AttributeError("no isatty")
+
+            def write(self, text: str) -> int:
+                return len(text)
+
+            def flush(self) -> None:
+                pass
+
+        sys.stderr = BrokenStderr()  # type: ignore[assignment]
+        try:
+            self.assertFalse(sys.stdout.isatty())
+        finally:
+            sys.stderr = self.fake_stderr
+
+    def test_proxy_isatty_swallows_value_error(self) -> None:
+        # ValueError is raised by closed io.IOBase streams when
+        # isatty is called. The proxy must downgrade to False.
+        take_over_stdout()
+        self.fake_stderr.close()
+        self.assertFalse(sys.stdout.isatty())
+
+    def test_proxy_fileno_delegates_to_stderr(self) -> None:
+        # fileno is delegated; StringIO raises UnsupportedOperation
+        # which is fine — we just verify the call reaches stderr.
+        take_over_stdout()
+        with self.assertRaises((io.UnsupportedOperation, OSError)):
+            sys.stdout.fileno()
+
+
 if __name__ == "__main__":
     unittest.main()
