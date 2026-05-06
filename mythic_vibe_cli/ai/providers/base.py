@@ -238,9 +238,12 @@ def utc_now() -> str:
 
 
 def post_json(url: str, payload: dict[str, Any], headers: dict[str, str]) -> dict[str, Any]:
+    # PH-24.5: scheme-validated before urlopen.
+    from ...runtime.url_guard import assert_safe_url
+    assert_safe_url(url)
     body = json.dumps(payload).encode("utf-8")
     req = urllib_request.Request(url, data=body, headers=headers, method="POST")
-    with urllib_request.urlopen(req, timeout=60) as resp:
+    with urllib_request.urlopen(req, timeout=60) as resp:  # noqa: S310 — scheme validated above
         data = resp.read().decode("utf-8", errors="replace")
     parsed = json.loads(data)
     if not isinstance(parsed, dict):

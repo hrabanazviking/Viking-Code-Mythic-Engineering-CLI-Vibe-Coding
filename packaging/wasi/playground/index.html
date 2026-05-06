@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mythic Vibe CLI — WASI playground</title>
+  <!--
+    PH-23.16 — browser playground for the WASI release
+    artifact. Loads the .wasm via Pyodide-style WASI host (this
+    page wraps wasmtime-bindings JavaScript shim once it's
+    provisioned; at the foundation level we ship the page +
+    UI + stub host so a future session can wire the real
+    wasm-loader without touching the page structure).
+
+    The page targets modern evergreen browsers — Chrome 113+,
+    Firefox 122+, Safari 16.4+ all support WebAssembly.System
+    interface (the standardized WASI-in-browser path). Older
+    browsers fall through to the @bjorn3/browser_wasi_shim
+    polyfill loaded next.
+
+    Status: foundation-level. The WASM artifact + .pyz sidecar
+    download links are wired but the in-browser execution
+    itself runs against a stub for v2.0; a future slice
+    integrates the real wasi-shim invocation when upstream
+    tooling matures.
+  -->
+  <style>
+    :root {
+      --bg: #1a1a2e;
+      --bg-elevated: #16213e;
+      --fg: #eaeaea;
+      --fg-muted: #9aa3b2;
+      --accent: #e94560;
+      --accent-hover: #ff5b78;
+      --border: #2a2a4a;
+      --code-bg: #0f0f1e;
+      --success: #6ee7b7;
+      --warning: #fbbf24;
+      --error: #fca5a5;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                   "Inter", "Helvetica Neue", sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    header {
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-elevated);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      margin-left: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      background: var(--warning);
+      color: #1a1a2e;
+      border-radius: 0.25rem;
+    }
+
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    section {
+      margin-bottom: 2rem;
+    }
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0 0 0.5rem 0;
+      color: var(--fg-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .command-input {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 0.625rem 0.75rem;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 0.375rem;
+      color: var(--fg);
+      font-family: "JetBrains Mono", "Consolas", "Monaco", monospace;
+      font-size: 0.875rem;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    button {
+      padding: 0.625rem 1.25rem;
+      background: var(--accent);
+      border: none;
+      border-radius: 0.375rem;
+      color: #fff;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    button:hover {
+      background: var(--accent-hover);
+    }
+
+    button:disabled {
+      background: var(--border);
+      cursor: not-allowed;
+    }
+
+    pre.output {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 0.375rem;
+      padding: 1rem;
+      overflow: auto;
+      max-height: 60vh;
+      font-family: "JetBrains Mono", "Consolas", "Monaco", monospace;
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .status {
+      font-size: 0.875rem;
+      color: var(--fg-muted);
+    }
+
+    .status.loading { color: var(--warning); }
+    .status.ready { color: var(--success); }
+    .status.error { color: var(--error); }
+
+    .commands-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .commands-grid button {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      font-size: 0.8125rem;
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+    }
+
+    .commands-grid button:hover {
+      background: var(--border);
+    }
+
+    a {
+      color: var(--accent);
+    }
+
+    a:hover {
+      color: var(--accent-hover);
+    }
+
+    .note {
+      background: rgba(251, 191, 36, 0.1);
+      border-left: 3px solid var(--warning);
+      padding: 0.75rem 1rem;
+      margin: 1rem 0;
+      font-size: 0.875rem;
+      border-radius: 0 0.25rem 0.25rem 0;
+    }
+
+    footer {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem;
+      border-top: 1px solid var(--border);
+      color: var(--fg-muted);
+      font-size: 0.875rem;
+    }
+
+    code {
+      background: var(--code-bg);
+      padding: 0.125rem 0.375rem;
+      border-radius: 0.25rem;
+      font-family: "JetBrains Mono", "Consolas", monospace;
+      font-size: 0.8em;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Mythic Vibe CLI <span class="badge">WASI playground (experimental)</span></h1>
+  </header>
+
+  <main>
+    <div class="note">
+      <strong>Status:</strong> foundation-level. This page hosts the UI
+      shell + stub-runner; the production WASI execution path
+      activates once upstream <code>browser_wasi_shim</code>
+      bindings are wired (PH-23.16 → PH-23.x). The supported v2.0
+      command surface remains read-only JSON-emitting commands
+      (subprocess / git / file-write paths don't work in
+      browser WASI any more than they do in Wasmtime).
+    </div>
+
+    <section>
+      <h2>Try a command</h2>
+      <div class="commands-grid">
+        <button data-cmd="--version">--version</button>
+        <button data-cmd="--help">--help</button>
+        <button data-cmd="doctor --json">doctor --json</button>
+        <button data-cmd="status --json">status --json</button>
+        <button data-cmd="packet list --json">packet list --json</button>
+      </div>
+      <div class="command-input">
+        <input
+          type="text"
+          id="cmd-input"
+          placeholder="--version"
+          value="--version"
+        >
+        <button id="run-btn">Run</button>
+      </div>
+      <div class="status" id="status">Idle.</div>
+    </section>
+
+    <section>
+      <h2>Output</h2>
+      <pre class="output" id="output">Press Run or pick a command above.</pre>
+    </section>
+
+    <section>
+      <h2>Download artifacts</h2>
+      <p>Want to run the same WASI artifact locally with Wasmtime?</p>
+      <ul>
+        <li>
+          <a href="#" id="download-wasm">mythic-vibe.wasm</a>
+          (CPython compiled to WebAssembly, ~30-40 MB)
+        </li>
+        <li>
+          <a href="#" id="download-pyz">mythic-vibe.pyz</a>
+          (zipapp sidecar containing the CLI source, ~50-150 KB)
+        </li>
+      </ul>
+      <p>Then run locally:</p>
+      <pre class="output" style="max-height: none">wasmtime --dir=. mythic-vibe.wasm -- mythic-vibe.pyz doctor --json</pre>
+    </section>
+  </main>
+
+  <footer>
+    <p>
+      Mythic Vibe CLI &middot; WASI playground &middot;
+      Generated by <code>packaging/wasi/playground/</code> &middot;
+      <a href="https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/blob/main/packaging/wasi/README.md">
+        Design rationale
+      </a>
+    </p>
+  </footer>
+
+  <script src="./playground.js"></script>
+</body>
+</html>

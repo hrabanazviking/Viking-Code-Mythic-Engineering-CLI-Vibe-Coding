@@ -79,6 +79,30 @@ class StubTranscriberTests(unittest.TestCase):
         self.assertIn("stub transcript", result.text)
         self.assertEqual(result.dry_run, True)
 
+    def test_oserror_on_read_falls_back_to_placeholder(self) -> None:
+        # PH-23.10 — line 155-156: OSError reading the source
+        # file falls back to the placeholder string instead of
+        # propagating. Drive by mocking Path.read_text to raise.
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "intent.txt"
+            path.write_text("real content", encoding="utf-8")
+            req = TranscriptionRequest(source_path=str(path))
+            with mock.patch.object(
+                Path, "read_text", side_effect=OSError("perm denied")
+            ):
+                result = StubTranscriber().transcribe(req)
+        self.assertIn("stub transcript", result.text)
+        # The placeholder uses path.name when the source is set.
+        self.assertIn("intent.txt", result.text)
+
+    def test_no_source_returns_no_source_placeholder(self) -> None:
+        # PH-23.10 — line 160: source_path is None → distinct
+        # placeholder string explaining the missing source.
+        req = TranscriptionRequest(source_path=None)  # type: ignore[arg-type]
+        result = StubTranscriber().transcribe(req)
+        self.assertIn("no source", result.text)
+        self.assertEqual(result.dry_run, True)
+
 
 # ---- WhisperTranscriber (slice 7.1) ----------------------------------
 
@@ -159,6 +183,103 @@ class TranscribeFactoryTests(unittest.TestCase):
         )
         self.assertIn("Unknown transcribe engine", result.error)
         self.assertEqual(result.text, "")
+
+
+# ---- _write_wav_temp + record_to_temp_wav (PH-07 slice 7.4) ----------
+
+
+class WriteWavTempTests(unittest.TestCase):
+    """PH-23.10 — coverage for the cleanup branch in _write_wav_temp
+    (lines 384-386)."""
+
+    def test_writes_pcm_bytes_to_temp_wav(self) -> None:
+        # Happy path — sanity-check the helper produces a valid
+        # WAV file with the expected sample-width frames.
+        from mythic_vibe_cli.voice.transcribe import _write_wav_temp
+
+        pcm = b"\x00\x01" * 100
+        path = _write_wav_temp(
+            pcm, sample_rate=16000, channels=1, sample_width=2,
+        )
+        try:
+            self.assertTrue(Path(path).is_file())
+            self.assertGreater(Path(path).stat().st_size, len(pcm))
+        finally:
+            Path(path).unlink(missing_ok=True)
+
+    def test_partial_failure_unlinks_temp_file(self) -> None:
+        # Lines 384-386: if wave.open raises mid-write, the
+        # partial temp file must be cleaned up before the
+        # exception re-propagates. Mock wave.open to raise.
+        from mythic_vibe_cli.voice.transcribe import _write_wav_temp
+
+        with mock.patch(
+            "mythic_vibe_cli.voice.transcribe.wave.open",
+            side_effect=RuntimeError("disk full"),
+        ):
+            with self.assertRaises(RuntimeError):
+                _write_wav_temp(
+                    b"\x00\x00", sample_rate=16000, channels=1,
+                )
+        # No temp WAV files should remain in the temp dir with
+        # our prefix — the cleanup branch unlinked them.
+        temp_files = list(Path(tempfile.gettempdir()).glob("mythic-mic-*.wav"))
+        self.assertEqual(
+            temp_files, [],
+            f"expected best-effort cleanup, got {temp_files}",
+        )
+
+
+class RecordToTempWavCoverageTests(unittest.TestCase):
+    """PH-23.10 — line 407: record_to_temp_wav with no recorder
+    must construct a default SoundDeviceRecorder. We can drive
+    the path by passing a fake recorder, but to specifically hit
+    the recorder=None branch we patch SoundDeviceRecorder so it
+    returns our fake instead of try-importing sounddevice.
+
+    Distinct class name from the existing RecordToTempWavTests
+    further down in this file."""
+
+    def test_default_recorder_constructed_when_none_supplied(self) -> None:
+        from mythic_vibe_cli.voice.transcribe import record_to_temp_wav
+
+        @dataclass
+        class FakeRecorder:
+            sample_rate: int = 16000
+            channels: int = 1
+
+            def record(self, duration: float) -> bytes:
+                return b"\x00\x00" * int(duration * self.sample_rate)
+
+        with mock.patch(
+            "mythic_vibe_cli.voice.transcribe.SoundDeviceRecorder",
+            return_value=FakeRecorder(),
+        ):
+            wav_path = record_to_temp_wav(0.001)  # ~16 frames
+
+        try:
+            self.assertTrue(Path(wav_path).is_file())
+        finally:
+            Path(wav_path).unlink(missing_ok=True)
+
+    def test_explicit_recorder_used_verbatim(self) -> None:
+        # The explicit-recorder path is well-tested elsewhere;
+        # this confirms the parameter wiring stays correct.
+        from mythic_vibe_cli.voice.transcribe import record_to_temp_wav
+
+        @dataclass
+        class FakeRecorder:
+            sample_rate: int = 8000
+            channels: int = 1
+
+            def record(self, duration: float) -> bytes:
+                return b"\x00\x00" * int(duration * self.sample_rate)
+
+        wav_path = record_to_temp_wav(0.001, recorder=FakeRecorder())
+        try:
+            self.assertTrue(Path(wav_path).is_file())
+        finally:
+            Path(wav_path).unlink(missing_ok=True)
 
     def test_known_engines_constant(self) -> None:
         for required in {"stub", "whisper"}:

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import ClassVar
 import subprocess
 import sys
 import time
@@ -65,7 +66,7 @@ def command_for_builtin(name: str, *, project_root: Path | None = None) -> RunSp
 class RunningCommandScreen(Screen):
     """Run a subprocess and show live elapsed time, then exit code + tail."""
 
-    BINDINGS = [
+    BINDINGS: ClassVar[list[Binding]] = [
         Binding("escape", "app.pop_screen", "Back"),
         Binding("q", "app.pop_screen", "Back", show=False),
         Binding("question_mark", "show_help", "Help"),

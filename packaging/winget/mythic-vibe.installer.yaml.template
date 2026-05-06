@@ -1,0 +1,34 @@
+# winget Installer Manifest template for mythic-vibe-cli (PH-21.8).
+#
+# Consumed by .github/workflows/release.yml — the release workflow
+# substitutes __VERSION__ + __WINDOWS_BINARY_URL__ + __WINDOWS_BINARY_SHA256__
+# with values from the PH-21.2 PyInstaller workflow's published
+# Windows asset, then opens a PR against microsoft/winget-pkgs via
+# wingetcreate (or the maintainer-repo path if wingetcreate is not
+# yet provisioned).
+#
+# Manifest version is the v1.6+ three-file format:
+#   - mythic-vibe.installer.yaml  (this file)  — installer-specific data
+#   - mythic-vibe.locale.en-US.yaml             — locale strings
+#   - mythic-vibe.yaml                          — version manifest (top)
+#
+# The installer is a "portable" type — winget extracts the .exe to a
+# known location and puts it on PATH. No installer chrome, no
+# uninstall registry entry; the operator's `winget uninstall` cleans
+# up by removing the binary. This matches the PH-21.2 PyInstaller
+# build's "drop one file and run" promise.
+
+PackageIdentifier: hrabanazviking.MythicVibeCLI
+PackageVersion: __VERSION__
+InstallerType: portable
+Scope: user
+Commands:
+  - mythic-vibe
+  - mythic
+ReleaseDate: __RELEASE_DATE__
+Installers:
+  - Architecture: x64
+    InstallerUrl: __WINDOWS_BINARY_URL__
+    InstallerSha256: __WINDOWS_BINARY_SHA256__
+ManifestType: installer
+ManifestVersion: 1.6.0

@@ -290,13 +290,15 @@ def _telegram_get_updates(
     ]
     if offset is not None:
         params.append(("offset", offset))
+    from ..runtime.url_guard import assert_safe_url
     url = (
         f"{config.api_root.rstrip('/')}"
         f"/bot{urllib.parse.quote(config.bot_token)}"
         f"/getUpdates?{urllib.parse.urlencode(params, doseq=True)}"
     )
+    assert_safe_url(url)
     request = urllib.request.Request(url, method="GET")
-    with urllib.request.urlopen(request, timeout=config.poll_timeout_s + 5) as resp:
+    with urllib.request.urlopen(request, timeout=config.poll_timeout_s + 5) as resp:  # noqa: S310 — scheme validated
         raw = resp.read().decode("utf-8", errors="replace")
     if not raw:
         return {}

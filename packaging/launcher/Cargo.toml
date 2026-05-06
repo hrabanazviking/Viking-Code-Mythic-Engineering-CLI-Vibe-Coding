@@ -1,0 +1,75 @@
+# Rust launcher shim crate (PH-22.1).
+#
+# Static native binary that, on first run, fetches python-build-
+# standalone to a per-user cache, downloads the mythic-vibe-cli
+# wheel from PyPI, installs into the cached interpreter, and
+# execs the CLI. Subsequent runs reuse the cache.
+#
+# The crate's surface stays small on purpose — every dep listed
+# here ships in the resulting binary. Pinning to specific minor
+# versions keeps reproducible builds reproducible across CI runs.
+
+[package]
+name = "mythic-vibe-launcher"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.74"
+description = "Static launcher for mythic-vibe-cli — no Python required on the host"
+license = "Apache-2.0"
+repository = "https://github.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding"
+keywords = ["cli", "python-launcher", "mythic-engineering"]
+categories = ["command-line-utilities"]
+
+[[bin]]
+name = "mythic-vibe-launcher"
+path = "src/main.rs"
+
+[dependencies]
+# HTTP client. ureq is sync, blocking, and stdlib-feeling — fits the
+# launcher's "do one download then exec" lifecycle. tokio + reqwest
+# would balloon the binary by ~2 MB for no benefit here.
+ureq = { version = "2.10", default-features = false, features = ["tls"] }
+
+# Tar.gz extraction for the python-build-standalone archive + wheel
+# unpacking. flate2 picks the platform's native zlib via the
+# `rust_backend` feature so we don't need a system zlib.
+flate2 = { version = "1.0", default-features = false, features = ["rust_backend"] }
+tar = "0.4"
+
+# Zstd extraction for python-build-standalone's .tar.zst archives
+# (faster + smaller than .tar.gz on the upstream release page).
+zstd = { version = "0.13", default-features = false }
+
+# Per-user cache directory resolution that respects XDG +
+# %LOCALAPPDATA% + ~/Library/Caches conventions.
+dirs = "5.0"
+
+# JSON for the python-build-standalone release-asset manifest.
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# SHA256 verification of downloaded archives — the
+# python-build-standalone release manifests publish per-file
+# SHA256 we re-verify before trusting the bytes.
+sha2 = "0.10"
+hex = "0.4"
+
+# Error handling without bringing in a heavy dep tree.
+anyhow = "1.0"
+
+# PH-23.6 (additive 2026-05-05): progress bars for the
+# python-build-standalone download. indicatif is the canonical
+# terminal progress-bar crate in Rust — adds ~150 KB to the
+# binary, which is worth it for the first-run UX win where the
+# 30-60s download otherwise looks like a hang. The library is
+# MIT-licensed and pure-Rust (no system C dep).
+indicatif = { version = "0.17", default-features = false }
+
+[profile.release]
+# Smaller binary — operators care about download size more than
+# compile time for a launcher shim.
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

@@ -1,0 +1,57 @@
+# Container build context exclusions (PH-21.1).
+#
+# Keep the build context minimal so multi-arch buildx doesn't re-
+# upload the entire repo for each platform. The Dockerfile only
+# COPY-s pyproject.toml, README.md, LICENSE, and mythic_vibe_cli/,
+# so anything outside that footprint is dead weight.
+
+# Version control + IDE
+.git
+.gitignore
+.gitattributes
+.github
+.vscode
+.idea
+
+# Tests + benchmarks (not shipped in the image)
+tests
+benchmarks
+property
+docs
+research_data
+scripts
+tools
+packaging
+
+# Python build artifacts
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.egg-info
+build
+dist
+.pytest_cache
+.ruff_cache
+.mypy_cache
+.coverage
+htmlcov
+
+# Mythic operational data — operator-specific, not container-baked
+mythic
+forge_ledger
+.mythic-vibe
+
+# Editor swap files + OS junk
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# Environment files (never copy local .env into images)
+.env
+.env.local
+.env.*.local
+
+# Stray test debris (matches root .gitignore)
+Users

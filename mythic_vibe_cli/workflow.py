@@ -222,7 +222,7 @@ class MythicWorkflow:
         current_phase = str(payload.get("current_phase") or "")
         phase_order = {phase: index for index, phase in enumerate(PHASES)}
 
-        for previous, current in zip(completed, completed[1:]):
+        for previous, current in zip(completed, completed[1:], strict=False):
             if phase_order[current] < phase_order[previous]:
                 errors.append(
                     "Phase order regressed in completed_phases: "

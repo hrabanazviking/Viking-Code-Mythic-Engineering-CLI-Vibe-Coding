@@ -306,5 +306,65 @@ class ForgeLedgerCrossProcessIntegrationTests(unittest.TestCase):
             self.assertEqual(len(entries), 15)
 
 
+# ---------------------------------------------------------------------------
+# PH-24.3 hardening — exercise the close-failure swallow path so the lock
+# is robust against transient fd-close errors (e.g. interrupted by signals
+# in some environments). The lock-released-when-body-raises test already
+# proves `_release` is called; this complements that with the os.close
+# failure branch.
+# ---------------------------------------------------------------------------
+
+
+class CrossProcessLockCloseFailureTests(unittest.TestCase):
+    def test_close_failure_is_swallowed(self) -> None:
+        """``finally`` swallows OSError from ``os.close`` so a kernel-
+        side close failure cannot mask the real outcome of the with
+        block."""
+        from unittest import mock as _mock
+        import mythic_vibe_cli.runtime.cross_process_lock as _lock_mod
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "demo.lock"
+            real_close = _lock_mod.os.close
+            calls = {"n": 0}
+
+            def _flaky_close(fd: int) -> None:
+                calls["n"] += 1
+                # Close legitimately first so we don't leak the
+                # OS handle, then *report* a failure. Simulates a
+                # kernel that returns an error from a successful
+                # close (rare but real on some filesystems).
+                real_close(fd)
+                raise OSError("simulated close error")
+
+            with _mock.patch.object(_lock_mod.os, "close", side_effect=_flaky_close):
+                # Body must complete normally despite close failure.
+                with cross_process_lock(path):
+                    self.assertTrue(path.exists())
+            self.assertEqual(calls["n"], 1)
+
+    def test_re_acquire_after_close_failure_still_works(self) -> None:
+        """Even if a close failed last time, the next acquire on the
+        same path should still succeed — the kernel-level lock was
+        already released when the fd died."""
+        from unittest import mock as _mock
+        import mythic_vibe_cli.runtime.cross_process_lock as _lock_mod
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "demo.lock"
+            real_close = _lock_mod.os.close
+
+            def _flaky_close(fd: int) -> None:
+                real_close(fd)
+                raise OSError("simulated")
+
+            with _mock.patch.object(_lock_mod.os, "close", side_effect=_flaky_close):
+                with cross_process_lock(path):
+                    pass
+            # Now acquire again with a normal close — should work.
+            with cross_process_lock(path):
+                self.assertTrue(path.exists())
+
+
 if __name__ == "__main__":
     unittest.main()

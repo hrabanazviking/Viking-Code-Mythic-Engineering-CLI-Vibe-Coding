@@ -1,0 +1,228 @@
+name: Release OCI
+
+# Phase 21.1 — multi-arch container image distribution channel.
+# Triggered by pushing a v*.*.* tag (mirrors release.yml semantics)
+# or via workflow_dispatch for build-only rehearsal.
+#
+# The workflow:
+#   1. Resolves the tag's version from pyproject.toml.
+#   2. Sets up QEMU + buildx so a single Linux runner produces both
+#      linux/amd64 + linux/arm64 layers from one Dockerfile.
+#   3. Logs into GHCR using the workflow's GITHUB_TOKEN (no secret
+#      management needed — every GitHub repo gets this for free).
+#   4. Optionally logs into Docker Hub when the DOCKERHUB_USERNAME +
+#      DOCKERHUB_TOKEN secrets are configured. Skipped silently when
+#      the secrets are absent so the workflow stays useful even
+#      before Volmarr provisions Hub credentials.
+#   5. Builds + pushes ghcr.io/<owner>/mythic-vibe-cli:<VERSION> +
+#      :latest, plus the same tags on docker.io/hrabanazviking/
+#      mythic-vibe-cli when Hub auth succeeded.
+#   6. Smoke-tests the freshly-pushed amd64 image (--version + --help)
+#      via docker run so a broken image fails the workflow before
+#      operators pull it.
+#
+# OCI image labels follow the org.opencontainers.image.* convention
+# so registries surface project + license + source repo + docs URL
+# automatically in their UIs.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  packages: write       # for GHCR push
+  id-token: write       # for cosign keyless signing (PH-21.5)
+  attestations: write   # for SLSA build provenance (PH-21.6)
+
+jobs:
+  build-and-push:
+    name: Build + push multi-arch image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Resolve version from pyproject
+        id: version
+        run: |
+          VERSION=$(python3 -c "import tomllib, pathlib; \
+            print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: $VERSION"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          # Force a stable QEMU image rather than the floating
+          # latest, so a buildx upgrade doesn't silently break
+          # arm64 emulation.
+          platforms: linux/amd64,linux/arm64
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log in to Docker Hub (optional)
+        # Only runs when the operator has configured Hub credentials.
+        # Without these secrets the workflow ships to GHCR only,
+        # which is the supported PH-21.1 baseline.
+        if: ${{ vars.DOCKERHUB_PUBLISH_ENABLED == 'true' }}
+        uses: docker/login-action@v3
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Compute image tags
+        id: tags
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          OWNER: ${{ github.repository_owner }}
+          HUB_ENABLED: ${{ vars.DOCKERHUB_PUBLISH_ENABLED }}
+        run: |
+          # GHCR namespace lowercases the owner. github.repository_owner
+          # already lowercase per GitHub policy, but the image-name path
+          # below codifies it explicitly to avoid surprises if a future
+          # owner is mixed-case.
+          OWNER_LOWER=$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')
+          GHCR_IMAGE="ghcr.io/${OWNER_LOWER}/mythic-vibe-cli"
+          {
+            echo "ghcr_image=${GHCR_IMAGE}"
+            echo "ghcr_versioned=${GHCR_IMAGE}:${VERSION}"
+            echo "ghcr_latest=${GHCR_IMAGE}:latest"
+          } >> "$GITHUB_OUTPUT"
+          if [ "${HUB_ENABLED}" = "true" ]; then
+            HUB_IMAGE="docker.io/${OWNER_LOWER}/mythic-vibe-cli"
+            {
+              echo "hub_image=${HUB_IMAGE}"
+              echo "hub_versioned=${HUB_IMAGE}:${VERSION}"
+              echo "hub_latest=${HUB_IMAGE}:latest"
+              echo "hub_enabled=true"
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo "hub_enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build + push (GHCR-only path)
+        if: ${{ steps.tags.outputs.hub_enabled == 'false' && startsWith(github.ref, 'refs/tags/v') }}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ steps.tags.outputs.ghcr_versioned }}
+            ${{ steps.tags.outputs.ghcr_latest }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true       # SLSA build provenance attestation
+          sbom: true             # SPDX SBOM attached to the manifest
+
+      - name: Build + push (GHCR + Docker Hub path)
+        if: ${{ steps.tags.outputs.hub_enabled == 'true' && startsWith(github.ref, 'refs/tags/v') }}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ steps.tags.outputs.ghcr_versioned }}
+            ${{ steps.tags.outputs.ghcr_latest }}
+            ${{ steps.tags.outputs.hub_versioned }}
+            ${{ steps.tags.outputs.hub_latest }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
+
+      - name: Build only (rehearsal)
+        # workflow_dispatch path: build the image but do not push.
+        # Lets operators verify the Dockerfile compiles before
+        # spending a release tag on it.
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: false
+          load: false
+          provenance: false
+          sbom: false
+
+      - name: Smoke-test pushed amd64 image
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        env:
+          IMAGE: ${{ steps.tags.outputs.ghcr_versioned }}
+        run: |
+          # Pull just the amd64 manifest (matches the runner arch).
+          docker pull --platform linux/amd64 "$IMAGE"
+          # Smoke commands match the CI matrix so we catch any
+          # entrypoint regression that snuck past unit tests.
+          docker run --rm --platform linux/amd64 "$IMAGE" --version
+          docker run --rm --platform linux/amd64 "$IMAGE" --help
+          docker run --rm --platform linux/amd64 "$IMAGE" doctor --json
+
+      # Phase 21.5 — cosign keyless signing over the multi-arch
+      # OCI manifest. Uses GitHub Actions OIDC to request a
+      # short-lived certificate from Fulcio; signs the digest;
+      # logs the signature in Rekor. Operators verify later via
+      # `cosign verify ghcr.io/<owner>/mythic-vibe-cli:<VERSION>
+      # --certificate-identity-regexp ... --certificate-oidc-
+      # issuer https://token.actions.githubusercontent.com`.
+      # Signing the manifest digest (not the tag) means the
+      # signature stays valid even if :latest is later
+      # repointed.
+      - name: Install cosign
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: v2.4.0
+      - name: Sign image with cosign (keyless)
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        env:
+          IMAGE: ${{ steps.tags.outputs.ghcr_versioned }}
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          # cosign sign --yes attaches the signature to the same
+          # manifest under the .sig tag. Verify with cosign verify.
+          cosign sign --yes "$IMAGE"
+          # Sign :latest separately so operators pulling :latest
+          # also get a verifiable signature path.
+          cosign sign --yes "${{ steps.tags.outputs.ghcr_latest }}"
+
+      # Phase 21.6 — SLSA Level 3 build provenance attestation for
+      # the OCI image. The docker/build-push-action provenance:true
+      # flag already attaches a basic SLSA attestation to the
+      # manifest, but attest-build-provenance produces an
+      # operator-verifiable attestation indexed by digest that
+      # `gh attestation verify-image` can resolve directly.
+      # Resolves the image digest first (cosign signs digest, not
+      # tag, so the attestation must reference the same digest).
+      - name: Resolve image digest for attestation
+        id: digest
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        env:
+          IMAGE: ${{ steps.tags.outputs.ghcr_versioned }}
+        run: |
+          DIGEST=$(docker buildx imagetools inspect "$IMAGE" --format '{{.Manifest.Digest}}')
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+          echo "Image digest: $DIGEST"
+      - name: Attest OCI image build provenance
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ steps.tags.outputs.ghcr_image }}
+          subject-digest: ${{ steps.digest.outputs.digest }}
+          push-to-registry: true

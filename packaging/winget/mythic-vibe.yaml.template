@@ -1,0 +1,12 @@
+# winget Version Manifest template (PH-21.8).
+#
+# The top-level manifest pointing at the locale + installer files
+# of the same version. Trivial — just declares the package
+# identifier + version + default locale. The release workflow
+# substitutes __VERSION__ at render time.
+
+PackageIdentifier: hrabanazviking.MythicVibeCLI
+PackageVersion: __VERSION__
+DefaultLocale: en-US
+ManifestType: version
+ManifestVersion: 1.6.0

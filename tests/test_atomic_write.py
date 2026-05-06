@@ -170,5 +170,60 @@ class AtomicWriteRetryTests(unittest.TestCase):
         self.assertEqual(attempt_count["n"], 1)
 
 
+# ---------------------------------------------------------------------------
+# PH-24.3 hardening — exercise the cleanup branch when ``tmp.unlink``
+# itself fails after a write failure. The OSError on unlink is silently
+# swallowed (tmp file is best-effort), but the original write error must
+# still propagate.
+# ---------------------------------------------------------------------------
+
+
+class AtomicWriteCleanupHardeningTests(unittest.TestCase):
+    def test_unlink_failure_is_swallowed_but_original_error_propagates(self) -> None:
+        """When the write fails AND the .tmp unlink also fails, the
+        original write error must still surface. The OSError from
+        unlink is best-effort cleanup and must not mask the cause."""
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "out.txt"
+
+            def _failing_replace(src, dst):  # noqa: ANN001
+                raise PermissionError("disk full mid-replace")
+
+            def _failing_unlink(self):  # noqa: ANN001
+                raise OSError("simulated unlink failure")
+
+            with mock.patch.object(
+                _mod.os, "replace", side_effect=_failing_replace
+            ):
+                with mock.patch.object(Path, "unlink", _failing_unlink):
+                    with self.assertRaises(PermissionError) as cm:
+                        atomic_write_text(
+                            target, "data",
+                            retries=1, base_delay=0.001,
+                        )
+            # The original PermissionError, not the swallowed OSError.
+            self.assertIn("disk full", str(cm.exception))
+
+    def test_write_failure_cleans_up_tmp_when_unlink_succeeds(self) -> None:
+        """When write fails, the .tmp file should not be left behind."""
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "out.txt"
+
+            def _failing_replace(src, dst):  # noqa: ANN001
+                raise OSError("disk full")
+
+            with mock.patch.object(
+                _mod.os, "replace", side_effect=_failing_replace
+            ):
+                with self.assertRaises(OSError):
+                    atomic_write_text(
+                        target, "data",
+                        retries=1, base_delay=0.001,
+                    )
+            # No leftover .tmp files in the directory.
+            leftover = list(Path(tmp).glob("*.tmp"))
+            self.assertEqual(leftover, [])
+
+
 if __name__ == "__main__":
     unittest.main()

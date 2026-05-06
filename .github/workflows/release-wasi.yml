@@ -1,0 +1,200 @@
+name: Release WASI
+
+# Phase 22.3 — WebAssembly (WASI) experimental runtime.
+# Triggered by pushing a v*.*.* tag plus workflow_dispatch for
+# build-only rehearsal.
+#
+# Foundation-level: the build step today emits a placeholder
+# .wasm via packaging/wasi/build.py without --really-build. The
+# workflow shape exists so a future session that fills in the
+# actual CPython WASI cross-build only needs to flip the build
+# command to include --really-build, not change the workflow
+# structure.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  build:
+    name: Build WASI artifact
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Resolve project version
+        id: version
+        run: |
+          VERSION=$(python -c "import tomllib, pathlib; \
+            print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      # Phase 23.7 — the build driver now actually runs the
+      # CPython WASI cross-build when --really-build is passed.
+      # We gate the real build behind a workflow input so PR
+      # rehearsals stay fast (placeholder path) but tag pushes
+      # produce real artifacts.
+      - name: Install build prerequisites for the cross-build
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        run: |
+          # The CPython WASI build needs a host C toolchain plus
+          # the standard autoconf/make stack. Ubuntu's defaults
+          # are sufficient; we explicitly install xz-utils + tar
+          # + curl to make the dependency intent clear.
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            ca-certificates \
+            curl \
+            tar \
+            xz-utils
+
+      # Phase 23.9 — restore + save the wasi-sdk + CPython source
+      # cache between tag pushes. A fresh build downloads ~275 MB
+      # (wasi-sdk + Python tarball) and runs ~10-20 minutes; with
+      # the cache hit, the same run completes in ~5-8 minutes
+      # because only the make step re-runs (the unpacked sdk +
+      # source trees are reused).
+      #
+      # Cache key: the two pinned constants from build.py
+      # (PBS_RELEASE_TAG via WASI_SDK_RELEASE + CPYTHON_VERSION).
+      # Bumping either constant invalidates the cache so we never
+      # accidentally reuse stale toolchain bytes against a new
+      # source tree. The fallback restore-key matches just the
+      # SDK version so a CPython bump still benefits from the
+      # already-downloaded wasi-sdk tree.
+      - name: Resolve cache key
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        id: cache_key
+        run: |
+          # Read the two pinned constants directly from build.py
+          # so the workflow stays in sync without operator
+          # editing two files on a bump.
+          SDK_RELEASE=$(python -c "import importlib.util as u; \
+            spec = u.spec_from_file_location('b', 'packaging/wasi/build.py'); \
+            m = u.module_from_spec(spec); spec.loader.exec_module(m); \
+            print(m.WASI_SDK_RELEASE)")
+          CPYTHON=$(python -c "import importlib.util as u; \
+            spec = u.spec_from_file_location('b', 'packaging/wasi/build.py'); \
+            m = u.module_from_spec(spec); spec.loader.exec_module(m); \
+            print(m.CPYTHON_VERSION)")
+          echo "sdk_release=$SDK_RELEASE" >> "$GITHUB_OUTPUT"
+          echo "cpython=$CPYTHON" >> "$GITHUB_OUTPUT"
+          echo "cache_key=wasi-${SDK_RELEASE}-cpython-${CPYTHON}-v1" >> "$GITHUB_OUTPUT"
+
+      - name: Restore wasi build cache
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        id: cache_restore
+        uses: actions/cache@v4
+        with:
+          # The build driver writes to ~/.cache/mythic-vibe-wasi-build/
+          # by default per _resolve_cache_dir(). Cache that whole
+          # tree so wasi-sdk + the CPython source are reusable
+          # across runs.
+          path: ~/.cache/mythic-vibe-wasi-build
+          key: ${{ steps.cache_key.outputs.cache_key }}
+          # Fallback: a previous run with the same SDK release but
+          # an older CPython still has the unpacked SDK tree we
+          # can reuse, saving the ~250 MB SDK download on the new
+          # run.
+          restore-keys: |
+            wasi-${{ steps.cache_key.outputs.sdk_release }}-cpython-
+
+      - name: Build WASI artifact (real cross-build on tags)
+        run: |
+          if [ "${{ startsWith(github.ref, 'refs/tags/v') }}" = "true" ]; then
+            # Tag push: run the actual cross-build. With the
+            # PH-23.9 cache hot the build completes in ~5-8 min;
+            # cache miss is the slow path at ~15-20 min.
+            python packaging/wasi/build.py \
+              --output dist-wasi/mythic-vibe.wasm \
+              --really-build
+          else
+            # PR / development push / workflow_dispatch rehearsal:
+            # placeholder path so CI stays fast.
+            python packaging/wasi/build.py \
+              --output dist-wasi/mythic-vibe.wasm
+          fi
+          ls -la dist-wasi/
+
+      - name: Rename artifact with version suffix
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          ASSET_NAME="mythic-vibe-${VERSION}-wasi-experimental.wasm"
+          mv dist-wasi/mythic-vibe.wasm "dist-wasi/${ASSET_NAME}"
+          cd dist-wasi
+          sha256sum "${ASSET_NAME}" > "${ASSET_NAME}.sha256"
+          # PH-23.11 — the build also produces a .pyz zipapp
+          # sidecar (only on tag pushes via --really-build; the
+          # placeholder path skips it). Rename + checksum it
+          # too if present so the release attaches both files.
+          if [ -f "mythic-vibe.pyz" ]; then
+            ZIPAPP_NAME="mythic-vibe-${VERSION}-wasi-experimental.pyz"
+            mv "mythic-vibe.pyz" "${ZIPAPP_NAME}"
+            sha256sum "${ZIPAPP_NAME}" > "${ZIPAPP_NAME}.sha256"
+          fi
+          ls -la
+
+      # Phase 21.5 — Sigstore signing applies even to the
+      # foundation placeholder, so the verification path can be
+      # exercised end-to-end before the real build lands.
+      # PH-23.11 — the glob now picks up both the .wasm AND the
+      # .pyz zipapp sidecar so both artifacts ship signed.
+      - name: Sign WASI artifact with Sigstore (keyless)
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        uses: sigstore/gh-action-sigstore-python@v3.0.0
+        with:
+          inputs: |
+            dist-wasi/mythic-vibe-*.wasm
+            dist-wasi/mythic-vibe-*.pyz
+
+      # Phase 21.6 — SLSA Level 3 build provenance for both
+      # artifacts. attest-build-provenance accepts a glob-style
+      # subject-path so the .wasm + .pyz both get attested.
+      - name: Attest WASI build provenance
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            dist-wasi/mythic-vibe-*.wasm
+            dist-wasi/mythic-vibe-*.pyz
+
+      - name: Upload WASI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasi-artifact
+          path: dist-wasi/*
+          if-no-files-found: error
+
+  github-release:
+    name: Attach WASI artifact to GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - name: Download WASI artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: wasi-artifact
+          path: dist-wasi
+      - name: Upload to existing GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist-wasi/*

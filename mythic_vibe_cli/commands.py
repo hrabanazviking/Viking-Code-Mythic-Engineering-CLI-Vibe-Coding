@@ -6662,7 +6662,7 @@ def cmd_audit(args: argparse.Namespace) -> int:
     that's the distinction from plain ``doctor``, which renders a
     human report by default.
     """
-    setattr(args, "json", True)
+    args.json = True
     return cmd_doctor(args)
 
 
