@@ -339,8 +339,12 @@ class ForgeLedger:
             f"{target.name}.{secrets.token_hex(6)}.tmp"
         )
         try:
+            # PH-24.4: ``newline=""`` preserves byte-exact JSONL so
+            # the ledger is reproducible across Windows + POSIX.
             temp_path.write_text(
-                json.dumps(payload, indent=2) + "\n", encoding="utf-8"
+                json.dumps(payload, indent=2) + "\n",
+                encoding="utf-8",
+                newline="",
             )
             # Phase 19.0 / BS-5 (additive 2026-05-02): retry os.replace
             # briefly on PermissionError to absorb transient Windows

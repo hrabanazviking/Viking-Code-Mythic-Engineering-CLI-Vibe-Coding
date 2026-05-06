@@ -153,6 +153,13 @@ class JsonStateStore:
         self.mythic_dir.mkdir(parents=True, exist_ok=True)
         with FileLock(self.lock_path):
             temp_path = self.status_path.with_name(f"{self.status_path.name}.tmp")
-            temp_path.write_text(json.dumps(state.to_dict(), indent=2) + "\n", encoding="utf-8")
+            # PH-24.4: ``newline=""`` keeps the JSON byte-identical
+            # across Windows + POSIX so two operators on different
+            # OSes diff status.json cleanly.
+            temp_path.write_text(
+                json.dumps(state.to_dict(), indent=2) + "\n",
+                encoding="utf-8",
+                newline="",
+            )
             os.replace(temp_path, self.status_path)
         return self.status_path

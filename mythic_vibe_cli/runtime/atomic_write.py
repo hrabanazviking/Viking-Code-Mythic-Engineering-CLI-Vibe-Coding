@@ -75,7 +75,14 @@ def atomic_write_text(
     target.parent.mkdir(parents=True, exist_ok=True)
     tmp = target.with_name(f"{target.name}.{secrets.token_hex(6)}.tmp")
     try:
-        tmp.write_text(text, encoding=encoding)
+        # PH-24.4 (cross-platform regression sweep, 2026-05-05):
+        # ``newline=""`` disables Python's text-mode newline
+        # translation. Without it, ``Path.write_text`` would convert
+        # every ``\n`` to ``\r\n`` on Windows — producing artifacts
+        # that are byte-different from the same content written on
+        # POSIX, which breaks Sigstore/SLSA hashing, attestation
+        # signatures, and JSONL diffs across release machines.
+        tmp.write_text(text, encoding=encoding, newline="")
         _replace_with_retry(tmp, target, retries=retries, base_delay=base_delay)
     except BaseException:
         # Best-effort cleanup of the tmp file on ANY exit path —
