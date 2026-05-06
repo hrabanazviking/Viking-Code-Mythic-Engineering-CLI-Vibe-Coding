@@ -94,7 +94,13 @@ def append_event(
     entry = EventLogEntry(timestamp=_utc_now_iso(), channel=channel, summary=_summarize(payload))
     try:
         log_path.parent.mkdir(parents=True, exist_ok=True)
-        with log_path.open("a", encoding="utf-8") as fh:
+        # PH-24.4 cross-platform sweep: ``newline=""`` keeps the
+        # JSONL byte-stable across Windows + POSIX. Without it,
+        # ``\n`` is translated to ``\r\n`` on Windows, which would
+        # break ``read_recent`` consumers that line-split on ``\n``
+        # if a Windows-written log were later read on a strict
+        # binary-mode reader.
+        with log_path.open("a", encoding="utf-8", newline="") as fh:
             fh.write(json.dumps(entry.to_dict()) + "\n")
     except OSError:
         return entry
@@ -154,12 +160,15 @@ def _count_lines(path: Path) -> int:
 
 
 def _rewrite_with_tail(path: Path, keep: int) -> None:
-    with path.open("r", encoding="utf-8") as fh:
+    # PH-24.4: ``newline=""`` on both read + write preserves the
+    # exact byte stream so a rotation cycle never silently mutates
+    # the trailing lines.
+    with path.open("r", encoding="utf-8", newline="") as fh:
         lines = fh.readlines()
     tail = lines[-keep:]
     fd, tmp_name = tempfile.mkstemp(prefix=".events.", suffix=".tmp", dir=str(path.parent))
     try:
-        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="") as fh:
             fh.writelines(tail)
         os.replace(tmp_name, path)
     except OSError:
