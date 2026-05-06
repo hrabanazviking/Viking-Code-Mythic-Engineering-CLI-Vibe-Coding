@@ -258,3 +258,46 @@ Plugin loader's `importlib.import_module` calls aren't reentrant-protected, but 
 **Slice 24.1.fix-1 (next commit):** apply the Medium + actionable Cosmetic fixes (Findings 1, 2, 3) — `ClassVar` annotations + `strict=False` on zips + `setattr → direct assignment`. Bench: ~10-12 file edits, all behavior-preserving.
 
 **Slice 24.1.fix-2 (deferred to a focused style slice):** the `--fix`-able style sweep (Findings 6, 7, 8, 11). 216 auto-fixes, but bundling them with the substantive fixes muddies the audit trail; landing them as their own slice is the cleaner discipline.
+
+---
+
+## Slice 24.1.fix-1 — Closeout addendum (2026-05-05)
+
+**Status:** SHIPPED.
+
+### What landed
+
+| Finding | Sites touched | Edit |
+|---|---|---|
+| 1 (RUF012 mutable BINDINGS) | `tui/app.py`, `tui/diff_review.py`, `tui/drift_panel.py`, `tui/help_overlay.py`, `tui/picker.py` (×3 — preview, plugin slash run, slash picker), `tui/runner.py` | Added `ClassVar[list[Binding]]` annotation; imported `ClassVar` from `typing` where missing |
+| 2 (B905 zip without `strict=`) | `workflow.py:225`, `workflow_lineage.py:74`, `workflow_lineage.py:186`, `tui/diff_review.py:150` | Appended `, strict=False` to preserve current "ragged-zip is fine" semantics |
+| 3 (B010 setattr literal) | `commands.py:6665` | `setattr(args, "json", True)` → `args.json = True` |
+
+### Notes vs. the original audit
+
+- The audit listed 8 BINDINGS sites but `tui/wave_panel.py` does not exist in the current codebase (must have been a transcription artifact). The actual count is 8 *bindings classes* across 7 files (`tui/picker.py` defines 3 BINDINGS — `CommandPreviewScreen`, `PluginSlashRunScreen`, `SlashPickerScreen`).
+- The audit's fourth B905 site (`workflow_engine.py`) was a transcription error — `workflow_engine.py` contains no `zip()` calls. The actual fourth site is `tui/diff_review.py:150` (accepted-hunks filter zip).
+
+### Verification
+
+| Gate | Result |
+|---|---|
+| `ruff check mythic_vibe_cli/ tests/` | All checks passed |
+| `ruff check mythic_vibe_cli/ --select RUF012` | All checks passed |
+| `ruff check mythic_vibe_cli/ --select B905` | All checks passed |
+| `mypy mythic_vibe_cli/` | Success: no issues found in 156 source files |
+| `pytest tests/ -q` | **2664 passed, 1 skipped, 109 subtests passed in 121.69s** |
+
+### Behavior preservation
+
+All edits are mechanical:
+
+- `ClassVar` annotations carry no runtime effect; they instruct static analyzers that the class attribute is shared, not per-instance.
+- `strict=False` is the explicit form of the *current* default `zip()` behavior (silently truncate to shortest). No iteration semantics change.
+- `args.json = True` is byte-for-byte equivalent to `setattr(args, "json", True)`.
+
+No tests required updates. No regression observed.
+
+### Next slice
+
+**Slice 24.2 — Coverage push toward 90%.** Targets: `tui/app.py`, `tui/picker.py`, `tui/runner.py`, `workflow_engine.py`, `runtime/cross_process_lock.py`, `runtime/exec.py`, `security/approval.py`, large `commands.py` paths. Aggregate baseline ~84% → goal 90%. Bench: ~1,200 statement-equivalents.

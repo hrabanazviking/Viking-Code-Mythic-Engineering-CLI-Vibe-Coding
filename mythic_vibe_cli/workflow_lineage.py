@@ -71,7 +71,7 @@ class LineageGraph:
     def to_dict(self) -> dict[str, Any]:
         edges = [
             {"from": prev.step_id, "to": nxt.step_id}
-            for prev, nxt in zip(self.steps, self.steps[1:])
+            for prev, nxt in zip(self.steps, self.steps[1:], strict=False)
         ]
         return {
             "workflow_id": self.workflow_id,
@@ -183,7 +183,7 @@ def render_markdown(graph: LineageGraph) -> str:
         lines.append(f"    {node_id}[\"{caption}\"]")
 
     # Edges connecting steps in declared order.
-    for prev, nxt in zip(graph.steps, graph.steps[1:]):
+    for prev, nxt in zip(graph.steps, graph.steps[1:], strict=False):
         lines.append(
             f"    {_mermaid_node_id(prev.step_id)} --> "
             f"{_mermaid_node_id(nxt.step_id)}"

@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import re
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal
 
 
 # ---- Data layer ---------------------------------------------------------
@@ -147,7 +147,7 @@ class DiffReviewSession:
         their original position)."""
         return tuple(
             hunk
-            for hunk, decision in zip(self.hunks, self.decisions)
+            for hunk, decision in zip(self.hunks, self.decisions, strict=False)
             if decision == "accepted"
         )
 
@@ -362,7 +362,7 @@ if _Screen is not None:
         * ``?`` — push the shared HelpOverlayScreen (slice 4.7)
         """
 
-        BINDINGS = [
+        BINDINGS: ClassVar[list[_Binding]] = [
             _Binding("a", "accept", "Accept"),
             _Binding("r", "reject", "Reject"),
             _Binding("s", "skip", "Skip"),
