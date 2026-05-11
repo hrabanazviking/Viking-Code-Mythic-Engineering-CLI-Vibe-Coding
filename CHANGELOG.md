@@ -62,6 +62,17 @@ Three v2.0 channels shipped at foundation level — real working scaffolds with 
 - **gitsign-based signed release tags** — Sigstore's keyless equivalent of GPG-signed tags. Maintainer-side workflow recipe in `docs/security/tag_signing.md`.
 - **`docs/security/verifying_artifacts.md`** — comprehensive end-user verification guide. Quick-reference table mapping channel → tool → expected cert identity. Per-channel recipes for PyPI / OCI / standalone binaries. Forward-pointer to PH-21.6's SLSA attestations. Troubleshooting: tag mismatch, old tooling, asset/bundle mismatch.
 
+### Added — PH-26 continued autonomous polish (post-launch slice family)
+
+Volmarr's 2026-05-06 directive after the PH-25 closing report: keep advancing autonomously while respecting the credential boundary. Three slices closed:
+
+- **PH-26.0 — Housekeeping.** `coverage.json` + `htmlcov/` added to `.gitignore` so generated coverage artifacts don't drift into the repo.
+- **PH-26.1 — Coverage push (+36 tests).** `context/scanner.py` 83% → 93% (os.walk fallback + `_is_doc_path` / `_is_test_path` / `_is_binary` / `_test_command_for` / `_dedupe_entries` edge cases). `protocols/mcp_client.py` 78% → 89% (initialize / list_tools / call_tool happy + non-dict / non-list error branches; close() lifecycle including stdin/stdout swallow + process-wait timeout + OSError; context-manager exit). `surfaces/chat_bridge_loop.py` 79% → 84% (transient-error classifier across all branches; matrix-loop retry + terminal propagation; telegram-loop sender exception swallow + dispatch-None skip).
+- **PH-26.2 — Documentation polish.** New `SECURITY.md` (vulnerability disclosure policy with supported-versions table, response timeline by severity, in-scope vs out-of-scope, hardening posture summary) and new `docs/TROUBLESHOOTING.md` (10 sections, organised by symptom: install / doctor / AI provider / plugins / TUI / chat-bridge / Hermes / cross-platform / tests / release verification). Both wired into `docs/INDEX.md`; `TROUBLESHOOTING` added to `mkdocs.yml` nav under Operator Guides.
+- **PH-26.3 — Property-based tests (+9 tests).** First hypothesis suite under `tests/property/` for the PH-24 hardening helpers. `test_url_guard_properties.py` (5 tests) covers allow-list closure across case permutations + reject-list closure across 18+ disallowed schemes + error-message structure invariants + stability-under-fuzz (no exceptions other than ValueError). `test_atomic_write_properties.py` (4 tests) covers byte-exact round-trip across arbitrary BMP text up to 4 KB + newline-preservation under EOL-heavy fuzz (regression guard for the PH-24.4 defect) + no-orphan-tmp invariant + non-utf-8 encoding round-trips.
+
+Cumulative across PH-24 + PH-25 + PH-26: tests **2658 → 2843** (+185), aggregate (line + branch) coverage **84% → 86%** (statement-only **84% → 88.2%**), modules at ≥95% **5 → 75**, modules at ≥90% **n/a → 111 of 157** (~71%). 2 real defects fixed (Windows newline translation + URL scheme open-default); 1 new defensive module (`runtime/url_guard.py`); 2 new operator-facing documents. ruff + mypy clean throughout. Live HEAD on `development`: `878cc43`. Plan + per-slice closeouts: `PH26_CLOSING_REPORT_2026-05-06.md`.
+
 ### Added — PH-24 pre-release hardening (post-launch slice family)
 
 Volmarr's directive 2026-05-05: defer the v1.0.1 release tag, instead spend an extended autonomous run **finding and fixing every bug, gap, and hardening opportunity** so the eventual release is genuinely stable. Strictly additive — no breaking changes, no removed features. Six slices closed:

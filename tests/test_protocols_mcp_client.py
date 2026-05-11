@@ -403,5 +403,195 @@ class EnvVarConfigTests(unittest.TestCase):
         self.assertEqual(client.max_discard, DEFAULT_MAX_DISCARD)
 
 
+# ---------------------------------------------------------------------------
+# PH-26.1 coverage push — exercise the high-level convenience methods
+# (initialize / list_tools / call_tool with non-dict / non-list responses)
+# + close() lifecycle paths. Goal: take ``protocols/mcp_client.py`` from
+# 78% to 90%+.
+# ---------------------------------------------------------------------------
+
+
+class McpClientSpawnValidationTests(unittest.TestCase):
+    def test_spawn_rejects_empty_argv(self) -> None:
+        with self.assertRaises(ValueError) as cm:
+            McpClient.spawn([])
+        self.assertIn("argv must contain", str(cm.exception))
+
+
+class McpClientHighLevelCoverageTests(unittest.TestCase):
+    """Cover initialize / list_tools / call_tool happy + sad paths.
+    Existing tests focus on call() — these cover the convenience layer."""
+
+    def _build(self) -> tuple[McpClient, _RewindableStream, _RewindableStream]:
+        client_in = _RewindableStream()
+        client_out = _RewindableStream()
+        client = McpClient.from_streams(stdin=client_in, stdout=client_out)
+        return client, client_in, client_out
+
+    def test_initialize_returns_dict_and_sends_initialized_notification(self) -> None:
+        client, _client_in, client_out = self._build()
+        _push_response(
+            client_out,
+            {"jsonrpc": "2.0", "id": 1, "result": {"serverInfo": {"name": "fake"}}},
+        )
+        result = client.initialize()
+        self.assertEqual(result, {"serverInfo": {"name": "fake"}})
+
+    def test_initialize_raises_when_result_not_dict(self) -> None:
+        client, _client_in, client_out = self._build()
+        _push_response(
+            client_out,
+            {"jsonrpc": "2.0", "id": 1, "result": ["not", "a", "dict"]},
+        )
+        with self.assertRaises(McpClientError) as cm:
+            client.initialize()
+        self.assertIn("initialize", str(cm.exception))
+
+    def test_list_tools_returns_filtered_list(self) -> None:
+        client, _client_in, client_out = self._build()
+        _push_response(
+            client_out,
+            {
+                "jsonrpc": "2.0", "id": 1,
+                "result": {
+                    "tools": [
+                        {"name": "ok-tool"},
+                        "not-a-dict-skip",  # filtered out
+                        {"name": "another"},
+                    ]
+                },
+            },
+        )
+        tools = client.list_tools()
+        self.assertEqual(len(tools), 2)
+        self.assertEqual(tools[0]["name"], "ok-tool")
+
+    def test_list_tools_raises_when_result_not_dict(self) -> None:
+        client, _client_in, client_out = self._build()
+        _push_response(
+            client_out, {"jsonrpc": "2.0", "id": 1, "result": "scalar"}
+        )
+        with self.assertRaises(McpClientError) as cm:
+            client.list_tools()
+        self.assertIn("tools/list", str(cm.exception))
+
+    def test_list_tools_raises_when_tools_missing_array(self) -> None:
+        client, _client_in, client_out = self._build()
+        _push_response(
+            client_out,
+            {"jsonrpc": "2.0", "id": 1, "result": {"tools": "not-a-list"}},
+        )
+        with self.assertRaises(McpClientError) as cm:
+            client.list_tools()
+        self.assertIn("tools array", str(cm.exception))
+
+    def test_call_tool_returns_dict_result(self) -> None:
+        client, _client_in, client_out = self._build()
+        _push_response(
+            client_out,
+            {
+                "jsonrpc": "2.0", "id": 1,
+                "result": {"content": [{"type": "text", "text": "ok"}]},
+            },
+        )
+        result = client.call_tool("get_weather", arguments={"city": "Oslo"})
+        self.assertEqual(result["content"][0]["text"], "ok")
+
+    def test_call_tool_raises_when_result_not_dict(self) -> None:
+        client, _client_in, client_out = self._build()
+        _push_response(
+            client_out, {"jsonrpc": "2.0", "id": 1, "result": "not-a-dict"}
+        )
+        with self.assertRaises(McpClientError) as cm:
+            client.call_tool("foo")
+        self.assertIn("tools/call", str(cm.exception))
+
+    def test_notify_writes_payload_without_id(self) -> None:
+        client, client_in, _client_out = self._build()
+        client.notify("custom/notification", params={"k": "v"})
+        # Read what the client actually wrote.
+        client_in.seek(0)
+        line = client_in.readline()
+        payload = json.loads(line)
+        self.assertEqual(payload["method"], "custom/notification")
+        self.assertNotIn("id", payload)
+        self.assertEqual(payload["params"], {"k": "v"})
+
+    def test_notify_omits_params_when_none(self) -> None:
+        client, client_in, _client_out = self._build()
+        client.notify("ping")
+        client_in.seek(0)
+        line = client_in.readline()
+        payload = json.loads(line)
+        self.assertEqual(payload["method"], "ping")
+        self.assertNotIn("params", payload)
+
+
+class McpClientCloseTests(unittest.TestCase):
+    """Cover the close() lifecycle — stdin/stdout swallow, process
+    wait+kill, reader-thread join."""
+
+    def test_close_swallows_stdin_close_errors(self) -> None:
+        from unittest import mock
+
+        client_in = _RewindableStream()
+        client_out = _RewindableStream()
+        client = McpClient.from_streams(stdin=client_in, stdout=client_out)
+
+        with mock.patch.object(client_in, "close", side_effect=OSError("simulated")):
+            client.close()  # must not raise
+
+    def test_close_swallows_stdout_close_errors(self) -> None:
+        from unittest import mock
+
+        client_in = _RewindableStream()
+        client_out = _RewindableStream()
+        client = McpClient.from_streams(stdin=client_in, stdout=client_out)
+
+        with mock.patch.object(client_out, "close", side_effect=ValueError("simulated")):
+            client.close()  # must not raise
+
+    def test_close_kills_process_on_wait_timeout(self) -> None:
+        """If process.wait() times out, close() should call kill()."""
+        from unittest import mock
+        import subprocess as _sp
+
+        client_in = _RewindableStream()
+        client_out = _RewindableStream()
+        client = McpClient.from_streams(stdin=client_in, stdout=client_out)
+
+        fake_proc = mock.MagicMock()
+        fake_proc.wait.side_effect = _sp.TimeoutExpired(cmd="x", timeout=2.0)
+        client.process = fake_proc
+
+        client.close()
+        fake_proc.kill.assert_called_once()
+
+    def test_close_swallows_oserror_on_process_wait(self) -> None:
+        from unittest import mock
+
+        client_in = _RewindableStream()
+        client_out = _RewindableStream()
+        client = McpClient.from_streams(stdin=client_in, stdout=client_out)
+
+        fake_proc = mock.MagicMock()
+        fake_proc.wait.side_effect = OSError("simulated")
+        client.process = fake_proc
+
+        client.close()  # must not raise
+
+    def test_context_manager_calls_close_on_exit(self) -> None:
+        from unittest import mock
+
+        client_in = _RewindableStream()
+        client_out = _RewindableStream()
+        client = McpClient.from_streams(stdin=client_in, stdout=client_out)
+
+        with mock.patch.object(client, "close") as close_mock:
+            with client:
+                pass
+        close_mock.assert_called_once()
+
+
 if __name__ == "__main__":
     unittest.main()

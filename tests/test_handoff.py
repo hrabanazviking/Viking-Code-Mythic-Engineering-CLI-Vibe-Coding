@@ -127,5 +127,141 @@ class HandoffCommandTests(unittest.TestCase):
             self.assertIn("# Session Handoff", show_payload["handoff"]["markdown"])
 
 
+# ---------------------------------------------------------------------------
+# PH-25.2 coverage push — exercise handoff.py helper functions directly.
+# Goal: take the module from 76% to 90%+.
+# ---------------------------------------------------------------------------
+
+
+class HandoffHelperTests(unittest.TestCase):
+    """Direct coverage of the helper functions earlier tests skipped."""
+
+    def test_load_handoff_record_returns_none_for_missing_file(self) -> None:
+        from mythic_vibe_cli.handoff import load_handoff_record
+
+        with tempfile.TemporaryDirectory() as tmp:
+            record = load_handoff_record(Path(tmp), "HND-NOPE")
+        self.assertIsNone(record)
+
+    def test_load_handoff_record_returns_none_for_corrupt_json(self) -> None:
+        from mythic_vibe_cli.handoff import (
+            handoff_dir,
+            handoff_json_path,
+            load_handoff_record,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            handoff_dir(root).mkdir(parents=True, exist_ok=True)
+            handoff_json_path(root, "HND-CORRUPT").write_text(
+                "not json {{{", encoding="utf-8"
+            )
+            record = load_handoff_record(root, "HND-CORRUPT")
+        self.assertIsNone(record)
+
+    def test_load_handoff_record_returns_none_for_non_dict_payload(self) -> None:
+        from mythic_vibe_cli.handoff import (
+            handoff_dir,
+            handoff_json_path,
+            load_handoff_record,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            handoff_dir(root).mkdir(parents=True, exist_ok=True)
+            handoff_json_path(root, "HND-LIST").write_text(
+                "[1, 2, 3]", encoding="utf-8"
+            )
+            record = load_handoff_record(root, "HND-LIST")
+        self.assertIsNone(record)
+
+    def test_load_latest_handoff_returns_none_when_path_missing(self) -> None:
+        from mythic_vibe_cli.handoff import load_latest_handoff
+
+        with tempfile.TemporaryDirectory() as tmp:
+            record = load_latest_handoff(Path(tmp))
+        self.assertIsNone(record)
+
+    def test_load_latest_handoff_returns_none_for_corrupt_payload(self) -> None:
+        from mythic_vibe_cli.handoff import (
+            latest_handoff_json_path,
+            load_latest_handoff,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = latest_handoff_json_path(root)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text("not json", encoding="utf-8")
+            record = load_latest_handoff(root)
+        self.assertIsNone(record)
+
+    def test_load_latest_handoff_returns_none_for_non_dict_payload(self) -> None:
+        from mythic_vibe_cli.handoff import (
+            latest_handoff_json_path,
+            load_latest_handoff,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = latest_handoff_json_path(root)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text("[]", encoding="utf-8")
+            record = load_latest_handoff(root)
+        self.assertIsNone(record)
+
+    def test_load_latest_handoff_falls_back_to_inline_payload(self) -> None:
+        """When ``latest.json`` references a handoff_id that doesn't
+        have a sidecar file, the loader falls back to constructing
+        the record from the inline payload."""
+        from mythic_vibe_cli.handoff import (
+            latest_handoff_json_path,
+            load_latest_handoff,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = latest_handoff_json_path(root)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            # handoff_id present but no matching HND-NOPE.json on disk.
+            target.write_text(
+                json.dumps(
+                    {
+                        "handoff_id": "HND-NOPE",
+                        "objective": "fallback path",
+                        "branch": "main",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            record = load_latest_handoff(root)
+        self.assertIsNotNone(record)
+        self.assertEqual(record.handoff_id, "HND-NOPE")
+        self.assertEqual(record.objective, "fallback path")
+
+    def test_list_handoffs_returns_empty_when_dir_missing(self) -> None:
+        from mythic_vibe_cli.handoff import list_handoffs
+
+        with tempfile.TemporaryDirectory() as tmp:
+            records = list_handoffs(Path(tmp))
+        self.assertEqual(records, [])
+
+    def test_list_handoffs_skips_corrupt_files(self) -> None:
+        from mythic_vibe_cli.handoff import handoff_dir, list_handoffs
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            d = handoff_dir(root)
+            d.mkdir(parents=True, exist_ok=True)
+            (d / "HND-OK.json").write_text(
+                json.dumps({"handoff_id": "HND-OK", "objective": "ok"}),
+                encoding="utf-8",
+            )
+            (d / "HND-BAD.json").write_text("not-json", encoding="utf-8")
+            records = list_handoffs(root)
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0].handoff_id, "HND-OK")
+
+
 if __name__ == "__main__":
     unittest.main()
