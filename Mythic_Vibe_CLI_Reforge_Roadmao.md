@@ -16,7 +16,7 @@ A persistent coding environment designed around:
  * Memory preservation
  * Affordable AI models
  * Human-in-command architecture
- * 
+
 ## Phase 0: Reforge Charter
 ### Goal
 Define what is sacred.
@@ -95,7 +95,6 @@ Map the living kingdom.
    * Launchers
    * Distribution experiments
 > **Note:** Nothing is deleted.
->
 
 ## Phase 3: Restore Reliable Installation
 ### Goal
@@ -276,7 +275,6 @@ Controlled code modifications.
  * mythic patch apply
  * mythic patch reject
 > **Note:** No automatic writes.
->
 
 ## Phase 15: Project Continuity System
 ### Goal
@@ -329,7 +327,6 @@ Bring back useful advanced features.
  * DAILY_WORKFLOW.md
 Must answer the question:
 > "I forgot everything. What do I type today?"
->
 
 ## Phase 19: Packaging and Distribution
 ### Verify:
