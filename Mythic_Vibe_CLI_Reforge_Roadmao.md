@@ -157,7 +157,7 @@ The goal is not to destroy the old build, but to turn it into engine parts behin
 
 ### Phase 4: Model Router
  * **Goal:** Let Mythic talk to affordable models.
- * **Supported Backends:** OpenAI-compatible APIs, OpenRouter, Qwen, DeepSeek, Kimi, Alibaba coding models, LM Studio, Ollama, and local servers.
+ * **Supported Backends:** OpenAI-compatible APIs, OpenRouter, Qwen, DeepSeek, Kimi, Alibaba coding models, LM Studio, Ollama, OpenCode Go, ChatGPT Codex AUTH, Gemini CLI AUTH, Grok AUTH, and local servers.
  * **Requirements:** Provider-neutral interface, configuration file management, environment-variable API keys, model switching inside the shell, and zero provider lock-in.
  * **Slash Commands:** /model, /model list, /model set, /provider set.
  * **Success Criteria:** User can seamlessly talk to a configured model from inside Mythic.
