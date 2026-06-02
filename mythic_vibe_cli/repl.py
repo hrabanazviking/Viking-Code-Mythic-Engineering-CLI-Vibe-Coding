@@ -32,6 +32,7 @@ from typing import IO, Callable
 
 from .config import ConfigStore
 from .exit_codes import SUCCESS, USER_INPUT_ERROR
+from .patch import PatchManager
 from .runtime.slash_commands import BUILTIN_SLASH_COMMANDS
 
 
@@ -42,6 +43,7 @@ BANNER = (
 QUIT_TOKENS = frozenset({"/quit", "/exit"})
 HELP_TOKENS = frozenset({"/help", "/?"})
 MODEL_TOKENS = frozenset({"/model"})
+PATCH_TOKENS = frozenset({"/diff", "/apply", "/reject"})
 
 
 @dataclass(frozen=True)
@@ -241,6 +243,22 @@ def _handle_model_command(stripped: str, stdout: IO[str], stderr: IO[str], conte
 
     print("Usage: /model [list|set <provider> [model]]", file=stderr)
     return context
+
+
+def _handle_patch_command(stripped: str, patch_manager: PatchManager, stdout: IO[str], stderr: IO[str]) -> None:
+    action = stripped.lstrip("/")
+    if action == "diff":
+        print(patch_manager.get_diff(), file=stdout)
+    elif action == "apply":
+        if patch_manager.apply_active():
+            print("Patch applied successfully.", file=stdout)
+        else:
+            print("No active patch to apply.", file=stderr)
+    elif action == "reject":
+        if patch_manager.reject_active():
+            print("Patch rejected.", file=stdout)
+        else:
+            print("No active patch to reject.", file=stderr)
 
 
 def _looks_like_command(stripped: str, main_commands: set[str]) -> bool:
@@ -522,6 +540,7 @@ def run_shell(
         main = app_main
 
     shell_context = _detect_shell_context(project_path)
+    patch_manager = PatchManager()
     _print_banner(out_stream, shell_context)
 
     while True:
@@ -549,6 +568,10 @@ def run_shell(
 
         if stripped in MODEL_TOKENS or stripped.startswith("/model "):
             shell_context = _handle_model_command(stripped, out_stream, err_stream, shell_context)
+            continue
+
+        if stripped in PATCH_TOKENS:
+            _handle_patch_command(stripped, patch_manager, out_stream, err_stream)
             continue
 
         # /help <name> routes to `slash inspect <name>` so the operator

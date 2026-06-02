@@ -29,7 +29,19 @@ Implement the roadmap phases in order, starting with Phase 0 and advancing only 
 6. Phase 5: Add the local SQLite memory spine at `.mythic/memory.sqlite`, wire companion-shell natural prompts into it, and answer "What were we doing last time?" from durable memory. Completed in the current Phase 5 implementation commits.
 7. Phase 6: Add a read-only configurable private knowledge reader with SQLite-first support, shell `/knowledge` access, and natural knowledge-search prompts. Completed in the current Phase 6 implementation commit.
 8. Phase 7: Add the GitHub workspace system: default workspace root, clone/open/status, branch creation/tracking, PR draft preparation, and natural clone/branch proposal prompts. Completed in the current Phase 7 implementation commit.
-9. Phase 8+: Continue in roadmap order after Phase 7 is committed and pushed.
+9. Phase 8: Add the Patch Proposal System: in-memory patch staging, generating diffs, applying patches, rejecting patches, and `/diff`, `/apply`, `/reject` slash commands. Completed in the current Phase 8 implementation commit.
+10. Phase 9+: Continue in roadmap order after Phase 8 is committed and pushed.
+
+## Phase 8 Proposed Files
+
+- `mythic_vibe_cli/patch/__init__.py`
+- `mythic_vibe_cli/patch/manager.py`
+- `mythic_vibe_cli/patch/README_AI.md`
+- `tests/test_patch_manager.py`
+- `tests/test_patch_cli.py`
+- `mythic_vibe_cli/repl.py` (updated)
+- `mythic_vibe_cli/runtime/slash_commands.py` (updated)
+- Documentation records (`CHANGELOG.md`, `DEVLOG.md`, `README.md`, `docs/COMMAND_CONTRACTS.md`, this task brief)
 
 ## Phase 7 Proposed Files
 
