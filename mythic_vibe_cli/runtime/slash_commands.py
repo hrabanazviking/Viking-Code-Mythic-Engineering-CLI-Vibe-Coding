@@ -92,6 +92,7 @@ BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
     BuiltinSlashCommand(name="help", description="List available slash commands and their sources"),
     BuiltinSlashCommand(name="model", description="Show, list, or set the active shell model/provider"),
     BuiltinSlashCommand(name="reload", description="Reload plugins, skills, prompts, and method cache"),
+    BuiltinSlashCommand(name="tui", description="Launch the interactive Terminal User Interface (TUI)"),
     BuiltinSlashCommand(name="quit", description="Exit the interactive session"),
 
     # --- Project lifecycle ---

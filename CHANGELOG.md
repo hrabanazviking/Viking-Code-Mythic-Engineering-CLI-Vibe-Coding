@@ -40,6 +40,14 @@ This unreleased band tracks work landed on `development` after the v1.0.0 stable
 
 - Added `mythic_vibe_cli/workspaces/manager.py`, a GitHub workspace manager rooted by default at `~/.mythic-vibe/workspaces/` and overridable through `MYTHIC_WORKSPACE_ROOT`. Added `mythic-vibe workspace status|clone|open|branch|track|pr|plan`, dry-run-by-default clone/branch planning with `--yes` as the mutation gate, PR draft writing gated by `--write`, `/workspace` slash-catalog visibility, and companion-shell natural prompts that propose clone/branch actions without touching local Git state.
 
+### Added — Reforge roadmap Phase 10
+
+- **Phase 10: TUI Integration:**
+  - Added a unified `CockpitScreen` inside Textual to serve as a dashboard for the interactive shell.
+  - Added tabs for Chat, Files, Diff, Memory, Knowledge, Git Status, Tasks, and Model Status.
+  - Bridged the shell REPL loop directly into the TUI Chat tab using asynchronous worker threads.
+  - Added `/tui` slash command to launch the visual interface from the basic REPL.
+
 ### Added — Reforge roadmap Phase 9
 
 - **Phase 9: Test Runner:** 
