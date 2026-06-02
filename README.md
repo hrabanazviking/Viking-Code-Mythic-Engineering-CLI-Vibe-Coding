@@ -24,7 +24,7 @@ It enforces an explicit engineering loop that keeps your reasoning alive on disk
 mythic
 ```
 
-Bare `mythic` now opens the companion shell. The shell reports project, branch, model fallback, memory, and knowledge status at startup; `/help`, `/status`, `/model`, and `/exit` provide the first control surface. Existing command-catalog behavior remains reachable directly or through `mythic admin <command>` while the reforge phases move those tools behind the conversation-first workflow.
+Bare `mythic` now opens the companion shell. The shell reports project, branch, model fallback, memory, and knowledge status at startup; `/help`, `/status`, `/model`, and `/exit` provide the first control surface. Natural inspection prompts like "Find the memory system in this repo" run a read-only context scan and surface likely files. Existing command-catalog behavior remains reachable directly or through `mythic admin <command>` while the reforge phases move those tools behind the conversation-first workflow.
 
 The hall is wide enough for a first-time builder finding their footing, and disciplined enough for a seasoned maintainer who cares about clean handoffs, repeatable process, and artifacts that outlive any single session.
 

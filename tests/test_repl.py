@@ -7,6 +7,7 @@ also injected so the loop can be tested without re-entering the real CLI."""
 from __future__ import annotations
 
 import io
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -79,6 +80,32 @@ class ReplLoopTests(unittest.TestCase):
         self.assertEqual(code, SUCCESS)
         self.assertIn("You are in this project context", out)
         self.assertIn("Project:", out)
+        self.assertEqual(fake.calls, [])
+
+    def test_natural_find_request_runs_context_scan(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "pyproject.toml").write_text("[project]\nname='example'\n", encoding="utf-8")
+            (root / "mythic_vibe_cli" / "memory").mkdir(parents=True)
+            (root / "mythic_vibe_cli" / "memory" / "store.py").write_text(
+                "memory recall logic\n",
+                encoding="utf-8",
+            )
+            stdin = io.StringIO("Find the memory system in this repo.\n/quit\n")
+            stdout = io.StringIO()
+            fake = _FakeMain()
+
+            code = run_shell(
+                stdin=stdin,
+                stdout=stdout,
+                stderr=io.StringIO(),
+                main=fake,
+                project_root=root,
+            )
+
+        self.assertEqual(code, SUCCESS)
+        self.assertIn("Repository context", stdout.getvalue())
+        self.assertIn("mythic_vibe_cli/memory/store.py", stdout.getvalue())
         self.assertEqual(fake.calls, [])
 
     def test_empty_lines_do_not_dispatch(self) -> None:

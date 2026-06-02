@@ -161,6 +161,18 @@ def _answer_natural_prompt(prompt: str, stdout: IO[str], context: ShellContext) 
     normalized = prompt.lower()
     wants_project = any(token in normalized for token in ("project", "repo", "repository", "where am i", "what directory"))
     wants_model = "model" in normalized or "provider" in normalized
+    wants_context_scan = any(token in normalized for token in ("find", "search", "inspect", "scan", "where is", "show me"))
+
+    if wants_context_scan:
+        try:
+            from .context.companion import build_companion_context, render_companion_context
+
+            summary = build_companion_context(context.project_root, prompt)
+            print(render_companion_context(summary), file=stdout)
+            return
+        except Exception as exc:  # noqa: BLE001 - shell prompt handling should not crash
+            print(f"Context scan failed: {exc}", file=stdout)
+            return
 
     if wants_project:
         print("You are in this project context:", file=stdout)
