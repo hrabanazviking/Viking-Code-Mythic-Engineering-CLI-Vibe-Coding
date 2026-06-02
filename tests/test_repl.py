@@ -245,6 +245,17 @@ class ReplLoopTests(unittest.TestCase):
         self.assertIn("Earlier ideas linked Hermes memory", stdout.getvalue())
         self.assertEqual(fake.calls, [])
 
+    def test_workspace_prompt_proposes_without_dispatch(self) -> None:
+        fake = _FakeMain()
+        code, out, _err = self._drive(
+            ["Clone https://github.com/acme/hermes and make a branch for fixing memory.\n", "/quit\n"],
+            main=fake,
+        )
+        self.assertEqual(code, SUCCESS)
+        self.assertIn("Workspace proposal", out)
+        self.assertIn("No changes were made", out)
+        self.assertEqual(fake.calls, [])
+
     def test_empty_lines_do_not_dispatch(self) -> None:
         fake = _FakeMain()
         code, _out, _err = self._drive(["\n", "\n", "\n", "/quit\n"], main=fake)

@@ -78,6 +78,16 @@ Phase 6 gives the companion shell a private knowledge retrieval path without ble
 
 ---
 
+## 2026-06-02 - Reforge roadmap Phase 7: GitHub workspace system
+
+**Status:** Added the local GitHub workspace manager rooted at `~/.mythic-vibe/workspaces/` by default. The command catalog now exposes `workspace status`, `workspace clone`, `workspace open`, `workspace branch`, `workspace track`, `workspace pr`, and `workspace plan`; clone and branch actions are dry-run proposals unless `--yes` is supplied, and PR draft files are written only with `--write`. The companion shell recognizes natural clone/branch workspace requests and produces an approval-oriented plan without mutating local repositories.
+
+### Why it matters
+
+Phase 7 gives Mythic a controlled working-directory layer for repo juggling without turning natural language into implicit Git mutation. The shell can understand "Clone my Hermes fork and make a branch for fixing memory" as a concrete plan, while the operator still approves the change through explicit command flags.
+
+---
+
 ## 2026-05-03 — v1.0.0 launch (PH-19 + PH-20, 26 slices)
 
 **Sessions:** Two consecutive working days, chained through Volmarr's "go for all the rest of 19" then "go for phase 20" then "do a complete look over the README.md and all other project documents" directives.

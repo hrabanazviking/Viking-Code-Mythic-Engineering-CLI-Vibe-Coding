@@ -1956,6 +1956,68 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_runtime_options(audit_cmd)
 
+    # --- Reforge Phase 7: GitHub workspace system ----------------------
+    workspace_cmd = sub.add_parser(
+        "workspace",
+        help="Manage local Git/GitHub workspaces",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe workspace status
+              mythic-vibe workspace clone https://github.com/owner/repo --yes
+              mythic-vibe workspace open ./repo
+              mythic-vibe workspace branch feature/memory --yes
+              mythic-vibe workspace pr --title "Fix memory"
+            """
+        ),
+    )
+    workspace_sub = workspace_cmd.add_subparsers(dest="workspace_command", required=True)
+
+    workspace_status = workspace_sub.add_parser("status", help="Detect current repo and tracked workspaces")
+    workspace_status.add_argument("--path", default=".")
+    workspace_status.add_argument("--workspace-root", default="")
+    add_runtime_options(workspace_status, json_output=True)
+
+    workspace_clone = workspace_sub.add_parser("clone", help="Clone a repo into the workspace root")
+    workspace_clone.add_argument("repo_url")
+    workspace_clone.add_argument("--name", default="")
+    workspace_clone.add_argument("--workspace-root", default="")
+    workspace_clone.add_argument("--yes", action="store_true", help="Actually run git clone")
+    add_runtime_options(workspace_clone, json_output=True)
+
+    workspace_open = workspace_sub.add_parser("open", help="Record an existing local Git repo as a workspace")
+    workspace_open.add_argument("repo_path")
+    workspace_open.add_argument("--name", default="")
+    workspace_open.add_argument("--workspace-root", default="")
+    add_runtime_options(workspace_open, json_output=True)
+
+    workspace_branch = workspace_sub.add_parser("branch", help="Create and track a branch in the current repo")
+    workspace_branch.add_argument("branch")
+    workspace_branch.add_argument("--path", default=".")
+    workspace_branch.add_argument("--workspace-root", default="")
+    workspace_branch.add_argument("--yes", action="store_true", help="Actually create and switch to the branch")
+    add_runtime_options(workspace_branch, json_output=True)
+
+    workspace_track = workspace_sub.add_parser("track", help="Track the current or named branch")
+    workspace_track.add_argument("--path", default=".")
+    workspace_track.add_argument("--branch", default="")
+    workspace_track.add_argument("--workspace-root", default="")
+    add_runtime_options(workspace_track, json_output=True)
+
+    workspace_pr = workspace_sub.add_parser("pr", help="Prepare a pull request draft")
+    workspace_pr.add_argument("--path", default=".")
+    workspace_pr.add_argument("--title", default="")
+    workspace_pr.add_argument("--body", default="")
+    workspace_pr.add_argument("--base", default="main")
+    workspace_pr.add_argument("--workspace-root", default="")
+    workspace_pr.add_argument("--write", action="store_true", help="Write the draft under the workspace root")
+    add_runtime_options(workspace_pr, json_output=True)
+
+    workspace_plan = workspace_sub.add_parser("plan", help="Propose workspace actions from a natural request")
+    workspace_plan.add_argument("request", nargs="+")
+    workspace_plan.add_argument("--workspace-root", default="")
+    add_runtime_options(workspace_plan, json_output=True)
+
     # --- PH-05 slice 5.5 / 5.6: graph query + visualize ---
     graph_cmd = sub.add_parser(
         "graph",

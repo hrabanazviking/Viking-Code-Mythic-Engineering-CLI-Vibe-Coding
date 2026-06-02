@@ -104,6 +104,8 @@ class CliKernelTests(unittest.TestCase):
             "audit",
             # PH-13 slice 13.1 — drift detection
             "drift",
+            # Reforge Phase 7 — GitHub workspace system
+            "workspace",
             # PH-05 slices 5.5 + 5.6 — graph queries + visualize
             "graph",
             # Reforge Phase 6 — private knowledge reader
