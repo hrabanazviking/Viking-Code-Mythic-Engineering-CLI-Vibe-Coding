@@ -33,6 +33,7 @@ class ProviderResponse:
     dry_run: bool = True
     usage: dict[str, int] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
+    tool_calls: list[dict[str, Any]] | None = None
 
 
 @dataclass
@@ -40,6 +41,7 @@ class PacketView:
     text: str
     packet_id: str
     source: str = "inline"
+    tools: list[dict[str, Any]] | None = None
 
 
 class AIProvider(Protocol):
@@ -193,6 +195,7 @@ def normalize_packet(packet: object) -> PacketView:
             text=str(packet.get("text", "")),
             packet_id=str(packet.get("packet_id", "inline")),
             source=str(packet.get("source", "inline")),
+            tools=packet.get("tools"),
         )
     return PacketView(text=str(packet), packet_id="inline", source="inline")
 
