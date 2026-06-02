@@ -38,6 +38,16 @@ This completes the minimal useful companion loop without pretending Phase 4 mode
 
 ---
 
+## 2026-06-02 - Reforge roadmap Phase 3: context builder surface
+
+**Status:** Added `mythic_vibe_cli/context/companion.py` as the shell-facing context adapter. It reuses the existing scanner for repository shape, language/framework clues, important files, tests, Git state, risks, and recommended context, then adds simple relevance ranking for natural-language inspection prompts. The companion shell now routes requests such as "Find the memory system in this repo" into that summary path.
+
+### Why it matters
+
+Phase 3 moves repo inspection out of manual command use and into natural conversation. The user can ask for a subsystem and the shell returns the current project shape plus likely files without requiring a separate `scan` command first.
+
+---
+
 ## 2026-05-03 — v1.0.0 launch (PH-19 + PH-20, 26 slices)
 
 **Sessions:** Two consecutive working days, chained through Volmarr's "go for all the rest of 19" then "go for phase 20" then "do a complete look over the README.md and all other project documents" directives.

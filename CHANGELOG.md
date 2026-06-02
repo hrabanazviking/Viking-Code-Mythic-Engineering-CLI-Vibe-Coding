@@ -20,6 +20,10 @@ This unreleased band tracks work landed on `development` after the v1.0.0 stable
 
 - Upgraded the companion shell startup to show project/repository path, Git branch, fallback model, memory status, and knowledge status. Added `/model` as a shell-local slash control and changed normal natural-language prompts that are not recognized commands to receive a local project-context response instead of falling into argparse errors.
 
+### Added — Reforge roadmap Phase 3
+
+- Added `mythic_vibe_cli/context/companion.py`, a shell-facing repository context adapter over the existing scanner. Natural inspection prompts in the companion shell now build a read-only repository summary and rank relevant files, so requests like "Find the memory system in this repo" surface likely matching files instead of requiring the user to run `scan` manually.
+
 ### Added — Hermes Agent control plane (post-v1.0)
 
 - **Hermes Agent** — programmatic control plane for any external AI agent. Two access modes (TCL Python in-process + HTTP API) share one core (`mythic_vibe_cli/agent_api/`). 18 curated tools cover status, doctor, drift, packet creation/lint, verify, reflect, ai recommend, provenance verify, workflow lineage, persona, plugin doctor, artifact read/list, recent events. Every invocation audited via the existing event-log primitive. New `mythic-vibe surface hermes [--bind ADDR --port N --token TOKEN]` launches the token-protected HTTP API. New `mythic-vibe hermes tools|inspect|invoke` invokes the curated agent-tool surface from the CLI without HTTP. See `docs/HERMES_AGENT.md` (operator + author guide).
