@@ -1,19 +1,21 @@
 #!/bin/sh
-# Mythic Vibe CLI - Linux installation script
+# Mythic Vibe CLI - macOS installation script
 #
 # Usage:
-#   sh install_linux.sh              # install editable checkout with tui extra
-#   sh install_linux.sh --dev        # install editable checkout with dev extra
-#   sh install_linux.sh --extras tui,ai,ux
-#   sh install_linux.sh --venv /path/to/.venv
+#   sh install_macos.sh              # install editable checkout with tui extra
+#   sh install_macos.sh --dev        # install editable checkout with dev extra
+#   sh install_macos.sh --extras tui,ai,ux
+#   sh install_macos.sh --venv /path/to/.venv
+#   sh install_macos.sh --install-bin /path/to/bin
 
 set -eu
 
 EXTRAS="tui"
 VENV_DIR=".venv"
+INSTALL_BIN="${HOME}/.local/bin"
 
 usage() {
-    sed -n '2,8p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 while [ "$#" -gt 0 ]; do
@@ -38,6 +40,14 @@ while [ "$#" -gt 0 ]; do
             VENV_DIR="$2"
             shift 2
             ;;
+        --install-bin)
+            if [ "$#" -lt 2 ]; then
+                echo "ERROR: --install-bin requires a directory path" >&2
+                exit 1
+            fi
+            INSTALL_BIN="$2"
+            shift 2
+            ;;
         --help|-h)
             usage
             exit 0
@@ -51,29 +61,37 @@ while [ "$#" -gt 0 ]; do
 done
 
 echo "================================================"
-echo "  Mythic Vibe CLI - Linux Setup"
+echo "  Mythic Vibe CLI - macOS Setup"
 echo "================================================"
 echo
 
-if ! command -v python3 >/dev/null 2>&1; then
-    echo "ERROR: Python 3 not found!"
-    echo "Please install Python 3.10+ using your package manager:"
-    echo "  Ubuntu/Debian: sudo apt install python3 python3-venv python3-pip"
-    echo "  Fedora: sudo dnf install python3 python3-pip"
-    echo "  Arch: sudo pacman -S python python-pip"
+if [ "$(uname -s 2>/dev/null || echo unknown)" != "Darwin" ]; then
+    echo "ERROR: This installer is for macOS. Use install_linux.sh on Linux."
     exit 1
 fi
 
-if ! python3 -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)' >/dev/null 2>&1; then
-    echo "ERROR: Python 3.10 or newer is required."
-    echo "Found: $(python3 --version 2>&1)"
+PYTHON_CMD=""
+for candidate in python3.14 python3.13 python3.12 python3.11 python3.10 python3; do
+    if command -v "$candidate" >/dev/null 2>&1; then
+        if "$candidate" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)' >/dev/null 2>&1; then
+            PYTHON_CMD="$candidate"
+            break
+        fi
+    fi
+done
+
+if [ -z "$PYTHON_CMD" ]; then
+    echo "ERROR: Python 3.10 or newer not found."
+    echo "Install it with Homebrew or the official python.org installer:"
+    echo "  brew install python"
+    echo "  https://www.python.org/downloads/macos/"
     exit 1
 fi
 
-PYTHON_VERSION="$(python3 --version 2>&1)"
-echo "Found Python: $PYTHON_VERSION"
+PYTHON_VERSION="$($PYTHON_CMD --version 2>&1)"
+echo "Found Python: $PYTHON_VERSION via $PYTHON_CMD"
 
-if python3 -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 14) else 1)' >/dev/null 2>&1; then
+if "$PYTHON_CMD" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 14) else 1)' >/dev/null 2>&1; then
     echo "WARNING: Python 3.14+ is newer than the documented tested range."
     echo "If dependency installation fails, retry with Python 3.12 or 3.13."
 fi
@@ -86,7 +104,7 @@ fi
 
 echo "Creating virtual environment in $VENV_DIR..."
 if [ ! -d "$VENV_DIR" ]; then
-    python3 -m venv "$VENV_DIR"
+    "$PYTHON_CMD" -m venv "$VENV_DIR"
     echo "Virtual environment created."
 else
     echo "Virtual environment already exists."
@@ -127,7 +145,6 @@ case "$VENV_DIR" in
 esac
 REPO_PATH="$(pwd -P)"
 
-INSTALL_BIN="${HOME}/.local/bin"
 echo "Installing user commands in $INSTALL_BIN..."
 mkdir -p "$INSTALL_BIN"
 
@@ -168,7 +185,7 @@ repair_once() {
 if [ ! -x "\$VENV_COMMAND" ]; then
     repair_once "missing executable" || {
         echo "ERROR: Mythic Vibe command is missing: \$VENV_COMMAND" >&2
-        echo "Rerun install_linux.sh from \$REPO_PATH" >&2
+        echo "Rerun install_macos.sh from \$REPO_PATH" >&2
         exit 127
     }
 fi
@@ -187,7 +204,11 @@ EOF
 done
 
 PATH_LINE='export PATH="$HOME/.local/bin:$PATH"'
-for rc_file in "$HOME/.profile" "$HOME/.bash_profile" "$HOME/.bashrc" "$HOME/.zshrc"; do
+if [ "$INSTALL_BIN" != "$HOME/.local/bin" ]; then
+    PATH_LINE="export PATH=\"$INSTALL_BIN:\$PATH\""
+fi
+
+for rc_file in "$HOME/.zprofile" "$HOME/.zshrc" "$HOME/.bash_profile" "$HOME/.bashrc" "$HOME/.profile"; do
     if [ -f "$rc_file" ]; then
         if ! grep -F "$PATH_LINE" "$rc_file" >/dev/null 2>&1; then
             {
@@ -199,11 +220,11 @@ for rc_file in "$HOME/.profile" "$HOME/.bash_profile" "$HOME/.bashrc" "$HOME/.zs
     fi
 done
 
-if [ ! -f "$HOME/.profile" ]; then
+if [ ! -f "$HOME/.zprofile" ]; then
     {
         echo "# Mythic Vibe CLI user commands"
         echo "$PATH_LINE"
-    } > "$HOME/.profile"
+    } > "$HOME/.zprofile"
 fi
 
 PATH="$INSTALL_BIN:$PATH"
@@ -221,6 +242,6 @@ echo "Commands installed:"
 echo "  mythic"
 echo "  mythic-vibe"
 echo
-echo "Open a new terminal, then run:"
+echo "Open a new Terminal window, then run:"
 echo "  mythic --help"
 echo

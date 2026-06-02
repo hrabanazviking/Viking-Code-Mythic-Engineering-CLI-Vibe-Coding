@@ -1,10 +1,17 @@
 # ORIGINS — Best-Effort Attribution of Imported Material
 
-**Last updated:** 2026-04-23
+**Last updated:** 2026-06-02
 **Branch:** development
 **Scribe:** Eirwyn Rúnblóm
 **Scope:** For every major directory and distinctive root-level file, a best-effort judgement of which prior project it came from, with the evidence that supports the attribution and honest marking of uncertainty.
 **Purpose:** To give the integration phase a clean starting point — a register of *where each piece came from*, so that decisions about keep/merge/remove/re-home can be made on known ground rather than guesswork.
+
+---
+
+## Corrections and refinements (2026-06-02, installer/config pass)
+
+- **`install_linux.sh`, `install_windows.bat`, and `install_macos.sh` are now Mythic Vibe CLI installers.** The earlier NSE-attribution finding below remains useful provenance history, but it no longer describes the current root installer files. The Linux and Windows installers have been rewritten for this package, create a project virtual environment, install `.[tui]`, verify `mythic-vibe`, and place both `mythic` and `mythic-vibe` command wrappers on the user's PATH. `install_macos.sh` is new and follows the same behavior using macOS shell/profile conventions.
+- **Root `config.yaml` is now an active Mythic Vibe CLI runtime config.** It is no longer just an imported NSE artifact or compatibility placeholder. It defines provider defaults, router model-type ordering, service-separated model lists, routing rules, knowledge-source slots, and editable prompt templates.
 
 ---
 

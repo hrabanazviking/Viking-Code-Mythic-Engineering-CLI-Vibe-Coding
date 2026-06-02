@@ -240,6 +240,8 @@ mythic-vibe --help          # full command list
 mythic-vibe doctor          # project-scoped health check
 ```
 
+Local checkout installers (`install_linux.sh`, `install_macos.sh`, and `install_windows.bat`) create user-level `mythic` and `mythic-vibe` launchers. Those launchers log repair attempts under the user state directory and will try one reinstall repair if the venv console script is missing or cannot execute. Set `MYTHIC_WRAPPER_REPAIR_ON_FAILURE=1` to also retry after a non-zero command exit. The Python entry point writes crash reports under `MYTHIC_STATE_HOME`, `XDG_STATE_HOME/mythic-vibe`, or the platform user-state directory; set `MYTHIC_STARTUP_RESTARTS=1` to allow one automatic process-level retry. Standalone maintenance/build scripts use the same user-state crash-report convention through `mythic_vibe_cli.runtime.script_guard`.
+
 ### Full channel matrix (v1.x)
 
 | Channel | Best for | Install command |
@@ -513,9 +515,15 @@ For a full six-role pass (Skald → Architect → Cartographer → Forge Worker 
 The tool reads configuration from multiple sources and honors the closest one. Precedence flows low to high:
 
 1. `~/.mythic-vibe.json`
-2. `$XDG_CONFIG_HOME/mythic-vibe/config.json`
-3. `<project>/.mythic-vibe.json`
-4. Environment variable overrides
+2. `~/.mythic-vibe.yaml` / `~/.mythic-vibe.yml`
+3. `$XDG_CONFIG_HOME/mythic-vibe/config.json`
+4. `$XDG_CONFIG_HOME/mythic-vibe/config.yaml` / `config.yml`
+5. `<project>/config.yaml` / `config.yml`
+6. `<project>/.mythic-vibe.json`
+7. `<project>/.mythic-vibe.yaml` / `.mythic-vibe.yml`
+8. Environment variable overrides
+
+The repository root `config.yaml` is a real editable configuration file. It can define provider defaults, model context and output limits, provider/service model lists grouped by route type, YAML routing rules consumed by `ai route`, knowledge sources, and editable prompt templates.
 
 These environment variables override any file-based value at runtime:
 

@@ -1193,6 +1193,7 @@ def cmd_ai_run(args: argparse.Namespace) -> int:
     from .memory.conversation import new_conversation_id, record_turn
 
     root = Path(getattr(args, "path", ".")).resolve()
+    loaded_config = ConfigStore(root).load()
     registry = _ai_registry(root)
     provider = registry.providers().get(args.provider)
     if provider is None:
@@ -1233,14 +1234,48 @@ def cmd_ai_run(args: argparse.Namespace) -> int:
     attempts_payload: list[dict[str, object]] = []
 
     if use_fallback:
+        route_type = str(
+            loaded_config.config.ai_router.get("default_model_type", "general")
+            if isinstance(loaded_config.config.ai_router, dict)
+            else "general"
+        )
+        configured_attempts = loaded_config.config.ai_model_routes.get(route_type, [])
+        primary_model = ""
+        fallback_specs: list[str] = []
+        start_index = -1
+        for index, attempt in enumerate(configured_attempts):
+            if str(attempt.get("provider", "")) == args.provider:
+                start_index = index
+                primary_model = str(attempt.get("id", "") or "")
+                break
+        if start_index >= 0:
+            for attempt in configured_attempts[start_index + 1:]:
+                attempt_provider = str(attempt.get("provider", "") or "")
+                attempt_model = str(attempt.get("id", "") or "")
+                if attempt_provider:
+                    fallback_specs.append(
+                        f"{attempt_provider}|{attempt_model}"
+                        if attempt_model
+                        else attempt_provider
+                    )
+        elif configured_attempts:
+            for attempt in configured_attempts:
+                attempt_provider = str(attempt.get("provider", "") or "")
+                attempt_model = str(attempt.get("id", "") or "")
+                if attempt_provider:
+                    fallback_specs.append(
+                        f"{attempt_provider}|{attempt_model}"
+                        if attempt_model
+                        else attempt_provider
+                    )
         decision = RouteDecision(
             provider=args.provider,
-            model="",
+            model=primary_model,
             rule_matched=None,
-            fallbacks=(),
+            fallbacks=tuple(fallback_specs),
             reasons=(),
             role="",
-            task_type="*",
+            task_type=route_type,
         )
         result = run_with_fallback(
             decision,
@@ -2675,6 +2710,16 @@ def cmd_config(args: argparse.Namespace) -> int:
                     "method.source": loaded.config.method_source,
                     "ai.provider": loaded.config.ai_provider,
                     "ai.model": loaded.config.ai_model,
+                    "ai.context_window_tokens": loaded.config.ai_context_window_tokens,
+                    "ai.max_output_tokens": loaded.config.ai_max_output_tokens,
+                    "ai.request_timeout_seconds": loaded.config.ai_request_timeout_seconds,
+                    "ai.temperature": loaded.config.ai_temperature,
+                    "ai.top_p": loaded.config.ai_top_p,
+                    "ai.router": loaded.config.ai_router,
+                    "ai.services": loaded.config.ai_services,
+                    "ai.model_routes": loaded.config.ai_model_routes,
+                    "ai.routing_rules": loaded.config.ai_routing_rules,
+                    "prompts": loaded.config.ai_prompts,
                     "knowledge.sources": loaded.config.knowledge_sources,
                 },
             }
@@ -2697,6 +2742,15 @@ def cmd_config(args: argparse.Namespace) -> int:
     write_key_value("method.source", loaded.config.method_source, indent=2)
     write_key_value("ai.provider", loaded.config.ai_provider, indent=2)
     write_key_value("ai.model", loaded.config.ai_model, indent=2)
+    write_key_value("ai.context_window_tokens", loaded.config.ai_context_window_tokens, indent=2)
+    write_key_value("ai.max_output_tokens", loaded.config.ai_max_output_tokens, indent=2)
+    write_key_value("ai.request_timeout_seconds", loaded.config.ai_request_timeout_seconds, indent=2)
+    write_key_value("ai.temperature", loaded.config.ai_temperature, indent=2)
+    write_key_value("ai.top_p", loaded.config.ai_top_p, indent=2)
+    write_key_value("ai.services", len(loaded.config.ai_services), indent=2)
+    write_key_value("ai.model_routes", len(loaded.config.ai_model_routes), indent=2)
+    write_key_value("ai.routing_rules", len(loaded.config.ai_routing_rules), indent=2)
+    write_key_value("prompts", len(loaded.config.ai_prompts), indent=2)
     write_key_value("knowledge.sources", len(loaded.config.knowledge_sources), indent=2)
     return SUCCESS
 

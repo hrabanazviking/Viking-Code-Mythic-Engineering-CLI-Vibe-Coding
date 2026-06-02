@@ -2,408 +2,327 @@
 setlocal enabledelayedexpansion
 
 REM ============================================================
-REM Norse Saga Engine v7.0.0 - Windows Installer
-REM ============================================================
-REM Supports Python 3.10–3.14 via:
-REM   py launcher (py -3.x), python, python3 commands.
-REM Creates .venv\ (matches launcher.py expectation).
-REM Does not close automatically - press a key to exit.
-REM ============================================================
-
-echo.
-echo ============================================================
-echo   Norse Saga Engine v7.0.0 - Windows Setup
-echo ============================================================
-echo.
-
-REM ============================================================
-REM 1. SYSTEM REQUIREMENTS
+REM Mythic Vibe CLI - Windows installation script
+REM
+REM Usage:
+REM   install_windows.bat
+REM   install_windows.bat --dev
+REM   install_windows.bat --extras tui,ai,ux
+REM   install_windows.bat --venv C:\path\to\.venv
 REM ============================================================
 
-echo [STEP 1] Checking system requirements...
-echo.
-
-ver | findstr /i "10 11" >nul
-if !errorlevel! equ 0 (
-    echo [OK] Windows 10/11 detected
-) else (
-    echo [WARN] Unrecognised Windows version - proceeding anyway
-)
-
-if "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
-    echo [OK] 64-bit system
-) else (
-    echo [WARN] 32-bit system detected (64-bit recommended^)
-)
-echo.
-
-REM ============================================================
-REM 2. FIND A SUITABLE PYTHON (3.10+)
-REM ============================================================
-
-echo [STEP 2] Searching for Python 3.10 or later...
-echo.
-
+set "EXTRAS=tui"
+set "VENV_DIR=.venv"
+set "VENV_ABS="
+set "REPO_ABS="
+set "INSTALL_BIN=%LOCALAPPDATA%\Programs\MythicVibeCLI\bin"
 set "PYTHON_CMD="
 set "PYTHON_VERSION="
 
-REM --- Helper: test one candidate, accept if 3.10+ ----------
-REM   Usage: call :try_python <cmd>
-REM   Sets PYTHON_CMD and PYTHON_VERSION on success
-REM -----------------------------------------------------------
+:parse_args
+if "%~1"=="" goto :main
+if /i "%~1"=="--help" goto :usage
+if /i "%~1"=="-h" goto :usage
+if /i "%~1"=="/?" goto :usage
+if /i "%~1"=="--dev" (
+    set "EXTRAS=dev"
+    shift
+    goto :parse_args
+)
+if /i "%~1"=="--extras" (
+    if "%~2"=="" (
+        echo [ERROR] --extras requires a comma-separated value, such as tui,ai
+        exit /b 1
+    )
+    set "EXTRAS=%~2"
+    shift
+    shift
+    goto :parse_args
+)
+if /i "%~1"=="--venv" (
+    if "%~2"=="" (
+        echo [ERROR] --venv requires a directory path.
+        exit /b 1
+    )
+    set "VENV_DIR=%~2"
+    shift
+    shift
+    goto :parse_args
+)
+echo [ERROR] Unknown option: %~1
+goto :usage_error
 
-REM Priority 1: Windows Python Launcher (most reliable on Windows)
-REM Try specific minor versions 3.14 down to 3.10 so we get the newest first.
+:usage
+echo Mythic Vibe CLI - Windows installation script
+echo.
+echo Usage:
+echo   install_windows.bat              ^& rem install editable checkout with tui extra
+echo   install_windows.bat --dev        ^& rem install editable checkout with dev extra
+echo   install_windows.bat --extras tui,ai,ux
+echo   install_windows.bat --venv C:\path\to\.venv
+exit /b 0
+
+:usage_error
+echo.
+echo Run install_windows.bat --help for usage.
+exit /b 1
+
+:main
+echo.
+echo ============================================================
+echo   Mythic Vibe CLI - Windows Setup
+echo ============================================================
+echo.
+
+if not exist "pyproject.toml" (
+    echo [ERROR] pyproject.toml not found.
+    echo Please run this script from the Mythic Vibe CLI repository root.
+    exit /b 1
+)
+
+if not exist "mythic_vibe_cli\" (
+    echo [ERROR] mythic_vibe_cli\ not found.
+    echo Please run this script from the Mythic Vibe CLI repository root.
+    exit /b 1
+)
+
+for %%I in ("!VENV_DIR!") do set "VENV_ABS=%%~fI"
+for %%I in (".") do set "REPO_ABS=%%~fI"
+
+echo [STEP 1] Searching for Python 3.10 or later...
+echo.
+
 for %%v in (3.14 3.13 3.12 3.11 3.10) do (
     if not defined PYTHON_CMD (
         call :try_python "py -%%v"
     )
 )
 
-REM Priority 2: bare "py -3" (picks the latest installed 3.x)
-if not defined PYTHON_CMD (
-    call :try_python "py -3"
-)
-
-REM Priority 3: "python" on PATH
-if not defined PYTHON_CMD (
-    call :try_python "python"
-)
-
-REM Priority 4: "python3" on PATH
-if not defined PYTHON_CMD (
-    call :try_python "python3"
-)
+if not defined PYTHON_CMD call :try_python "py -3"
+if not defined PYTHON_CMD call :try_python "python"
+if not defined PYTHON_CMD call :try_python "python3"
 
 if not defined PYTHON_CMD (
-    echo [ERROR] No suitable Python (3.10+^) found.
+    echo [ERROR] No suitable Python 3.10+ found.
     echo.
-    echo Please install Python 3.10 or later from:
-    echo   https://www.python.org/downloads/
-    echo.
-    echo IMPORTANT during installation:
-    echo   - Check "Add Python to PATH"
-    echo   - Check "Install for all users" (recommended^)
-    echo.
-    echo After installing, run this script again.
-    echo.
-    pause
+    echo Install Python from https://www.python.org/downloads/
+    echo During installation, enable "Add Python to PATH".
     exit /b 1
 )
 
 echo [OK] Using Python !PYTHON_VERSION! via: !PYTHON_CMD!
 echo.
 
-REM ============================================================
-REM 3. HANDLE EXISTING VIRTUAL ENVIRONMENT
-REM ============================================================
-
-echo [STEP 3] Checking for existing virtual environment...
-echo.
-
-set "VENV_DIR=.venv"
-set "VENV_ACTIVATE=.venv\Scripts\activate.bat"
-set "KEEP_EXISTING="
-
-REM Check for existing .venv first, then legacy venv/
-if exist ".venv\Scripts\python.exe" (
-    echo [WARN] Existing .venv\ detected.
-    set "FOUND_VENV=.venv"
-    goto :ask_venv
+for /f "tokens=1,2 delims=." %%a in ("!PYTHON_VERSION!") do (
+    set "PY_MAJOR=%%a"
+    set "PY_MINOR=%%b"
 )
-if exist "venv\Scripts\python.exe" (
-    echo [WARN] Existing venv\ detected (legacy name^).
-    echo [INFO] The engine now expects .venv\  - this will be migrated.
-    set "FOUND_VENV=venv"
-    goto :ask_venv
-)
-echo [OK] No existing virtual environment found
-goto :create_venv
-
-:ask_venv
-echo.
-echo Options:
-echo   1. Delete existing environment and create fresh .venv\
-echo   2. Keep existing environment and update packages
-echo   3. Cancel
-echo.
-choice /c 123 /m "Choose option (1, 2, or 3): "
-
-if !errorlevel! equ 3 (
-    echo [INFO] Installation cancelled.
-    echo.
-    pause
-    exit /b 0
-)
-if !errorlevel! equ 2 (
-    echo [INFO] Keeping existing environment.
-    if "!FOUND_VENV!"=="venv" (
-        set "VENV_DIR=venv"
-        set "VENV_ACTIVATE=venv\Scripts\activate.bat"
+if "!PY_MAJOR!"=="3" (
+    if !PY_MINOR! geq 14 (
+        echo [WARN] Python 3.14+ is newer than the documented tested range.
+        echo        If dependency installation fails, retry with Python 3.12 or 3.13.
+        echo.
     )
-    set "KEEP_EXISTING=1"
-    goto :activate_venv
 )
-REM Option 1 — delete and recreate
-echo [INFO] Removing old environment...
-if "!FOUND_VENV!"=="venv" (
-    rmdir /s /q venv >nul 2>&1
+
+echo [STEP 2] Creating virtual environment in !VENV_DIR!\ ...
+echo.
+
+if not exist "!VENV_DIR!\Scripts\python.exe" (
+    !PYTHON_CMD! -m venv "!VENV_DIR!"
+    if !errorlevel! neq 0 (
+        echo [ERROR] Failed to create virtual environment.
+        echo Try removing !VENV_DIR!\ and running this script again.
+        exit /b 1
+    )
 ) else (
-    rmdir /s /q .venv >nul 2>&1
+    echo [OK] Virtual environment already exists.
 )
-if exist "!FOUND_VENV!" (
-    echo [ERROR] Could not delete !FOUND_VENV!\ - please remove it manually.
-    pause
-    exit /b 1
-)
-echo [OK] Old environment removed.
 
-:create_venv
-REM ============================================================
-REM 4. CREATE .venv
-REM ============================================================
-
-echo.
-echo [STEP 4] Creating virtual environment in .venv\ ...
-echo.
-
-!PYTHON_CMD! -m venv .venv
-
-if !errorlevel! neq 0 (
-    echo [ERROR] Failed to create virtual environment.
-    echo.
-    echo Possible fixes:
-    echo   - Run as Administrator
-    echo   - Try: !PYTHON_CMD! -m venv --clear .venv
-    echo.
-    pause
+if not exist "!VENV_DIR!\Scripts\activate.bat" (
+    echo [ERROR] Could not find !VENV_DIR!\Scripts\activate.bat
+    echo Remove !VENV_DIR!\ and rerun this script.
     exit /b 1
 )
 
-if not exist ".venv\Scripts\python.exe" (
-    echo [ERROR] .venv was created but python.exe not found inside it.
-    pause
-    exit /b 1
-)
-
-echo [OK] Virtual environment created: .venv\
-goto :activate_venv
-
-:activate_venv
-REM ============================================================
-REM 5. ACTIVATE AND UPGRADE PIP
-REM ============================================================
-
-echo.
-echo [STEP 5] Activating virtual environment...
+echo [STEP 3] Activating virtual environment...
 echo.
 
-call "!VENV_ACTIVATE!"
-
+call "!VENV_DIR!\Scripts\activate.bat"
 if !errorlevel! neq 0 (
     echo [ERROR] Could not activate virtual environment.
-    pause
     exit /b 1
 )
 
-echo [OK] Virtual environment active.
+echo [STEP 4] Upgrading pip...
 echo.
-echo [INFO] Upgrading pip...
 
-REM Use python -m pip (safer than calling pip.exe directly during upgrades)
-python -m pip install --upgrade pip --quiet
-
+python -m pip install --upgrade pip
 if !errorlevel! neq 0 (
-    echo [WARN] pip upgrade failed - continuing with existing pip version.
+    echo [ERROR] pip upgrade failed.
+    exit /b 1
+)
+
+echo.
+if defined EXTRAS (
+    set "PACKAGE_SPEC=.[!EXTRAS!]"
 ) else (
-    echo [OK] pip up to date.
+    set "PACKAGE_SPEC=."
 )
 
+echo [STEP 5] Installing Mythic Vibe CLI from local checkout: !PACKAGE_SPEC!
 echo.
 
-REM ============================================================
-REM 6. INSTALL DEPENDENCIES
-REM ============================================================
-
-echo [STEP 6] Installing dependencies...
-echo.
-
-if not exist "requirements.txt" (
-    echo [ERROR] requirements.txt not found.
-    echo Please ensure requirements.txt exists in the project root.
-    pause
-    exit /b 1
-)
-
-REM Count packages so we can report something useful without dumping the file
-for /f %%c in ('find /c /v "" ^< requirements.txt') do set "REQ_LINES=%%c"
-echo [INFO] Installing from requirements.txt (!REQ_LINES! entries^)...
-
-python -m pip install -r requirements.txt
-
+python -m pip install -e "!PACKAGE_SPEC!"
 if !errorlevel! neq 0 (
-    echo [WARN] Some packages failed to install.
-    echo.
+    echo [ERROR] Package installation failed.
     echo To retry manually:
-    echo   .venv\Scripts\activate.bat
-    echo   pip install -r requirements.txt
-    echo.
-    set "DEPS_OK=0"
-) else (
-    echo [OK] All packages installed.
-    set "DEPS_OK=1"
+    echo   !VENV_DIR!\Scripts\activate.bat
+    echo   python -m pip install -e "!PACKAGE_SPEC!"
+    exit /b 1
 )
 
 echo.
-
-REM ============================================================
-REM 7. VERIFY KEY IMPORTS
-REM ============================================================
-
-echo [STEP 7] Verifying key packages...
+echo [STEP 6] Installing user commands...
 echo.
 
-python -c "import yaml, rich, httpx, requests; print('[OK] Core packages verified')" 2>&1
-
+if not exist "!INSTALL_BIN!" mkdir "!INSTALL_BIN!"
 if !errorlevel! neq 0 (
-    echo [WARN] One or more core packages could not be imported.
-    echo        Run: pip install PyYAML rich httpx requests
+    echo [ERROR] Could not create !INSTALL_BIN!
+    exit /b 1
+)
+
+if not exist "!VENV_ABS!\Scripts\mythic.exe" (
+    echo [ERROR] !VENV_ABS!\Scripts\mythic.exe not found after installation.
+    exit /b 1
+)
+
+if not exist "!VENV_ABS!\Scripts\mythic-vibe.exe" (
+    echo [ERROR] !VENV_ABS!\Scripts\mythic-vibe.exe not found after installation.
+    exit /b 1
+)
+
+call :write_launcher "mythic" "!VENV_ABS!\Scripts\mythic.exe"
+if !errorlevel! neq 0 exit /b 1
+call :write_launcher "mythic-vibe" "!VENV_ABS!\Scripts\mythic-vibe.exe"
+if !errorlevel! neq 0 exit /b 1
+
+echo [OK] User commands written to !INSTALL_BIN!
+echo.
+echo [STEP 7] Updating user PATH...
+echo.
+
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$bin = $env:LOCALAPPDATA + '\Programs\MythicVibeCLI\bin'; $path = [Environment]::GetEnvironmentVariable('Path','User'); if ([string]::IsNullOrWhiteSpace($path)) { [Environment]::SetEnvironmentVariable('Path', $bin, 'User') } elseif (($path -split ';') -notcontains $bin) { [Environment]::SetEnvironmentVariable('Path', $path.TrimEnd(';') + ';' + $bin, 'User') }"
+if !errorlevel! neq 0 (
+    echo [WARN] Could not persist !INSTALL_BIN! to the user PATH automatically.
+    echo        Add it manually if mythic is not found in new terminals.
 ) else (
-    REM Check AI packages separately (optional but common)
-    python -c "import openai; print('[OK] openai available')" 2>nul
-    python -c "import anthropic; print('[OK] anthropic available')" 2>nul
+    echo [OK] User PATH includes !INSTALL_BIN!
 )
 
+set "PATH=!INSTALL_BIN!;!PATH!"
+
+echo.
+echo [STEP 8] Verifying install...
 echo.
 
-REM ============================================================
-REM 8. CONFIGURATION FILE
-REM ============================================================
-
-echo [STEP 8] Checking configuration...
-echo.
-
-if exist "config.yaml" (
-    echo [OK] config.yaml exists.
-    echo [INFO] Review it and add your OpenRouter API key if not done already.
-) else if exist "config.template.yaml" (
-    echo [INFO] Creating config.yaml from template...
-    copy /y "config.template.yaml" "config.yaml" >nul
-    if !errorlevel! equ 0 (
-        echo [OK] config.yaml created.
-        echo [INFO] Edit config.yaml and add your OpenRouter API key.
-    ) else (
-        echo [ERROR] Could not create config.yaml - copy it manually from config.template.yaml.
-    )
-) else (
-    echo [ERROR] Neither config.yaml nor config.template.yaml found.
-    echo        Ensure project files are intact.
+mythic-vibe --version
+if !errorlevel! neq 0 (
+    echo [ERROR] mythic-vibe command failed after installation.
+    exit /b 1
 )
 
-echo.
-
-REM ============================================================
-REM 9. CREATE REQUIRED DIRECTORIES
-REM ============================================================
-
-echo [STEP 9] Creating required directories...
-echo.
-
-for %%d in (logs data session) do (
-    if not exist "%%d" (
-        mkdir "%%d" >nul 2>&1
-        if exist "%%d" (
-            echo [OK] Created %%d\
-        ) else (
-            echo [WARN] Could not create %%d\
-        )
-    ) else (
-        echo [OK] %%d\ exists
-    )
+mythic-vibe --help >nul
+if !errorlevel! neq 0 (
+    echo [ERROR] mythic-vibe --help failed after installation.
+    exit /b 1
 )
 
-echo.
-
-REM ============================================================
-REM 10. SUMMARY
-REM ============================================================
-
-echo ============================================================
-echo   INSTALLATION COMPLETE
-echo ============================================================
-echo.
-
-if defined KEEP_EXISTING (
-    echo  Python:      !PYTHON_VERSION! (existing environment kept^)
-) else (
-    echo  Python:      !PYTHON_VERSION! (new environment in .venv\^)
+mythic --version
+if !errorlevel! neq 0 (
+    echo [ERROR] mythic command failed after PATH setup.
+    exit /b 1
 )
 
-if "!DEPS_OK!"=="1" (
-    echo  Packages:    Installed successfully
-) else (
-    echo  Packages:    Some failures - see warnings above
-)
-
-echo.
-echo  Next steps:
-echo  -----------
-echo  1. Edit config.yaml - add your OpenRouter API key
-echo     Get one at: https://openrouter.ai/keys
-echo.
-echo  2. Start the game:
-echo       start_game.bat
-echo     Or manually:
-echo       .venv\Scripts\activate.bat  ^&  python main.py
-echo.
-echo  3. Troubleshoot:
-echo       run_diagnostics.bat
-echo       logs\saga.log
 echo.
 echo ============================================================
-echo   Completed: %date% %time%
+echo   Setup Complete
 echo ============================================================
 echo.
-
-REM Deactivate cleanly (uses the activate path we set earlier)
-call "!VENV_ACTIVATE!" >nul 2>&1
-call deactivate >nul 2>&1
-
-echo Press any key to exit...
-pause >nul
+echo Commands installed:
+echo   mythic
+echo   mythic-vibe
+echo.
+echo Open a new terminal, then run:
+echo   mythic --help
+echo.
 exit /b 0
 
+:write_launcher
+set "LAUNCHER_NAME=%~1"
+set "LAUNCHER_EXE=%~2"
+set "LAUNCHER_PATH=!INSTALL_BIN!\!LAUNCHER_NAME!.cmd"
+> "!LAUNCHER_PATH!" echo @echo off
+>> "!LAUNCHER_PATH!" echo setlocal
+>> "!LAUNCHER_PATH!" echo set "VENV_COMMAND=!LAUNCHER_EXE!"
+>> "!LAUNCHER_PATH!" echo set "VENV_PYTHON=!VENV_ABS!\Scripts\python.exe"
+>> "!LAUNCHER_PATH!" echo set "REPO_PATH=!REPO_ABS!"
+>> "!LAUNCHER_PATH!" echo set "PACKAGE_SPEC=!PACKAGE_SPEC!"
+>> "!LAUNCHER_PATH!" echo set "LOG_DIR=%%LOCALAPPDATA%%\MythicVibeCLI\logs"
+>> "!LAUNCHER_PATH!" echo set "LOG_FILE=%%LOG_DIR%%\startup-wrapper.log"
+>> "!LAUNCHER_PATH!" echo if not exist "%%LOG_DIR%%" mkdir "%%LOG_DIR%%" ^>nul 2^>nul
+>> "!LAUNCHER_PATH!" echo if not exist "%%VENV_COMMAND%%" call :repair "missing executable"
+>> "!LAUNCHER_PATH!" echo if not exist "%%VENV_COMMAND%%" ^(
+>> "!LAUNCHER_PATH!" echo   echo ERROR: Mythic Vibe command is missing: %%VENV_COMMAND%% 1^>^&2
+>> "!LAUNCHER_PATH!" echo   echo Rerun install_windows.bat from %%REPO_PATH%% 1^>^&2
+>> "!LAUNCHER_PATH!" echo   exit /b 127
+>> "!LAUNCHER_PATH!" echo ^)
+>> "!LAUNCHER_PATH!" echo "%%VENV_COMMAND%%" %%*
+>> "!LAUNCHER_PATH!" echo set "STATUS=%%ERRORLEVEL%%"
+>> "!LAUNCHER_PATH!" echo if "%%STATUS%%"=="126" call :retry
+>> "!LAUNCHER_PATH!" echo if "%%STATUS%%"=="127" call :retry
+>> "!LAUNCHER_PATH!" echo if "%%STATUS%%"=="9009" call :retry
+>> "!LAUNCHER_PATH!" echo if not "%%STATUS%%"=="0" if "%%MYTHIC_WRAPPER_REPAIR_ON_FAILURE%%"=="1" call :retry
+>> "!LAUNCHER_PATH!" echo exit /b %%STATUS%%
+>> "!LAUNCHER_PATH!" echo.
+>> "!LAUNCHER_PATH!" echo :retry
+>> "!LAUNCHER_PATH!" echo call :repair "command exited with status %%STATUS%%"
+>> "!LAUNCHER_PATH!" echo "%%VENV_COMMAND%%" %%*
+>> "!LAUNCHER_PATH!" echo set "STATUS=%%ERRORLEVEL%%"
+>> "!LAUNCHER_PATH!" echo exit /b 0
+>> "!LAUNCHER_PATH!" echo.
+>> "!LAUNCHER_PATH!" echo :repair
+>> "!LAUNCHER_PATH!" echo echo %%DATE%% %%TIME%% repair requested for !LAUNCHER_NAME!: %%~1 ^>^> "%%LOG_FILE%%" 2^>nul
+>> "!LAUNCHER_PATH!" echo if not exist "%%REPO_PATH%%\pyproject.toml" ^(
+>> "!LAUNCHER_PATH!" echo   echo %%DATE%% %%TIME%% repair skipped: repository path unavailable: %%REPO_PATH%% ^>^> "%%LOG_FILE%%" 2^>nul
+>> "!LAUNCHER_PATH!" echo   exit /b 1
+>> "!LAUNCHER_PATH!" echo ^)
+>> "!LAUNCHER_PATH!" echo if not exist "%%VENV_PYTHON%%" ^(
+>> "!LAUNCHER_PATH!" echo   echo %%DATE%% %%TIME%% repair skipped: venv python unavailable: %%VENV_PYTHON%% ^>^> "%%LOG_FILE%%" 2^>nul
+>> "!LAUNCHER_PATH!" echo   exit /b 1
+>> "!LAUNCHER_PATH!" echo ^)
+>> "!LAUNCHER_PATH!" echo pushd "%%REPO_PATH%%" ^>nul 2^>nul
+>> "!LAUNCHER_PATH!" echo if errorlevel 1 exit /b 1
+>> "!LAUNCHER_PATH!" echo "%%VENV_PYTHON%%" -m pip install -e "%%PACKAGE_SPEC%%" ^>^> "%%LOG_FILE%%" 2^>^&1
+>> "!LAUNCHER_PATH!" echo set "REPAIR_STATUS=%%ERRORLEVEL%%"
+>> "!LAUNCHER_PATH!" echo popd ^>nul 2^>nul
+>> "!LAUNCHER_PATH!" echo exit /b %%REPAIR_STATUS%%
+exit /b 0
 
 REM ============================================================
-REM SUBROUTINE: try_python <cmd>
-REM Tests if <cmd> gives Python 3.10+ and sets PYTHON_CMD / PYTHON_VERSION
+REM SUBROUTINE: try_python ^<cmd^>
+REM Tests whether ^<cmd^> runs Python 3.10+.
 REM ============================================================
 :try_python
 set "_TRY_CMD=%~1"
 
-REM Run candidate silently - skip if it fails entirely
 %_TRY_CMD% --version >nul 2>&1
 if !errorlevel! neq 0 goto :eof
 
-REM Detect Windows Store stub: real Python prints version, stub opens Store
-REM The stub exits with code 9009 on real execution attempts; test with -c
-%_TRY_CMD% -c "import sys; sys.exit(0)" >nul 2>&1
+%_TRY_CMD% -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)" >nul 2>&1
 if !errorlevel! neq 0 goto :eof
 
-REM Grab version string
 for /f "tokens=2" %%v in ('%_TRY_CMD% --version 2^>^&1') do set "_VER=%%v"
-
-REM Parse major.minor
-for /f "tokens=1,2 delims=." %%a in ("!_VER!") do (
-    set "_MAJ=%%a"
-    set "_MIN=%%b"
-)
-
-REM Accept if major=3 and minor>=10
-if "!_MAJ!"=="3" (
-    if !_MIN! geq 10 (
-        set "PYTHON_CMD=%_TRY_CMD%"
-        set "PYTHON_VERSION=!_VER!"
-    )
-)
+set "PYTHON_CMD=%_TRY_CMD%"
+set "PYTHON_VERSION=!_VER!"
 goto :eof

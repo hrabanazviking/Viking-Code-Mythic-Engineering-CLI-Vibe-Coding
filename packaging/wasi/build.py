@@ -48,6 +48,12 @@ import urllib.request
 from pathlib import Path
 from typing import Sequence
 
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from mythic_vibe_cli.runtime.script_guard import guarded_main
+
 
 # Pinned CPython version. Matches the launcher's pin
 # (PYTHON_VERSION in packaging/launcher/src/main.rs) so the WASI
@@ -583,4 +589,10 @@ __all__ = [
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(
+        guarded_main(
+            lambda: main(),
+            script_name="packaging/wasi/build.py",
+            json_mode=False,
+        )
+    )
