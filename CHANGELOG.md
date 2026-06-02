@@ -44,6 +44,7 @@ This unreleased band tracks work landed on `development` after the v1.0.0 stable
 
 - **PHASE 10: TUI Integration**: Converted the shell into a Textual TUI (`CockpitScreen`) with tabs for Chat, Files, Diff, Memory, Knowledge, Tasks, and Model. The chat view runs the REPL output through `RichLog` and defers model inference to worker threads. Added the `/tui` command to trigger visual mode.
 - **PHASE 11: Legacy Command Demotion**: Suppressed legacy Mythic command documentation from the default `mythic --help` screen, emphasizing the `mythic` interactive shell. Added `mythic admin <cmd>` fallback for all suppressed commands, ensuring no workflow tools were destroyed while guiding operators into the conversation flow.
+- **PHASE 12: Documentation Rewrite**: Authored foundational interactive shell documentation including `INTERACTIVE_SHELL.md`, `SLASH_COMMANDS.md`, `INTERNAL_TOOLS.md`, `MEMORY.md`, `KNOWLEDGE.md`, `GITHUB_WORKSPACE.md`, `TUI.md`, and `DAILY_WORKFLOW.md`. Updated `INDEX.md` to point users to the companion shell path first.
 
 ### Added — Reforge roadmap Phase 9
 
