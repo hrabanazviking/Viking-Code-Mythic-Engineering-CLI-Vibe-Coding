@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import os
+from typing import Any
 
 from .base import (
     Estimate,
@@ -77,11 +78,14 @@ class OpenAIProvider:
         if not key:
             raise ValueError("OPENAI_API_KEY is required")
 
-        payload = {
+        payload: dict[str, Any] = {
             "model": self.model,
             "messages": [{"role": "user", "content": view.text}],
             "temperature": 0.2,
         }
+        if view.tools:
+            payload["tools"] = view.tools
+            payload["tool_choice"] = "auto"
         response_payload, latency_ms = timed_post_json(
             "https://api.openai.com/v1/chat/completions",
             payload,
@@ -91,7 +95,10 @@ class OpenAIProvider:
                 "User-Agent": "mythic-vibe-cli",
             },
         )
-        content = response_payload["choices"][0]["message"]["content"]
+        message = response_payload["choices"][0]["message"]
+        content = message.get("content") or ""
+        tool_calls = message.get("tool_calls")
+        
         usage = extract_usage(self.name, response_payload)
         if not usage:
             usage = {
@@ -117,6 +124,7 @@ class OpenAIProvider:
                     usage.get("output_tokens", estimate.output_tokens),
                 ),
             },
+            tool_calls=tool_calls,
         )
         log_payload["response"] = response_payload
         log_payload["latency_ms"] = latency_ms

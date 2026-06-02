@@ -356,105 +356,7 @@ def _known_command_names(_main: Callable[[list[str]], int]) -> set[str]:
 
 
 def _answer_natural_prompt(prompt: str, stdout: IO[str], context: ShellContext) -> None:
-    normalized = prompt.lower()
-    wants_project = any(token in normalized for token in ("project", "repo", "repository", "where am i", "what directory"))
-    wants_model = "model" in normalized or "provider" in normalized
-    wants_knowledge = "knowledge" in normalized and any(
-        token in normalized for token in ("search", "find", "look up", "lookup", "earlier ideas", "ideas about")
-    )
-    wants_workspace = any(token in normalized for token in ("clone", "workspace", "github", "branch", "pull request", " pr "))
-    wants_workspace = wants_workspace and any(token in normalized for token in ("clone", "branch", "workspace", "repo", "repository", "github"))
-    wants_last_time = any(
-        token in normalized
-        for token in (
-            "last time",
-            "previous session",
-            "what were we doing",
-            "where did we leave off",
-            "resume memory",
-        )
-    )
-    wants_context_scan = any(token in normalized for token in ("find", "search", "inspect", "scan", "where is", "show me"))
-
-    if wants_workspace:
-        try:
-            from .workspaces.manager import default_workspace_root, propose_workspace_plan
-
-            rendered = propose_workspace_plan(prompt, workspace_root=default_workspace_root())
-            print(rendered, file=stdout)
-            _record_shell_memory(prompt, rendered, context, "workspace")
-            return
-        except Exception as exc:  # noqa: BLE001 - workspace planning should degrade, not crash
-            print(f"Workspace planning failed: {exc}", file=stdout)
-            return
-
-    if wants_knowledge:
-        try:
-            from .knowledge.reader import render_search, search_knowledge
-
-            query = _knowledge_query_from_prompt(prompt)
-            result = search_knowledge(context.project_root, query, limit=5)
-            rendered = render_search(result)
-            print(rendered, file=stdout)
-            _record_shell_memory(prompt, rendered, context, "knowledge")
-            return
-        except Exception as exc:  # noqa: BLE001 - private knowledge should degrade, not crash
-            print(f"Knowledge search failed: {exc}", file=stdout)
-            return
-
-    if wants_last_time:
-        try:
-            from .memory.spine import render_last_time
-
-            print(render_last_time(context.project_root), file=stdout)
-            return
-        except Exception as exc:  # noqa: BLE001 - memory recall should degrade, not crash
-            print(f"Memory recall failed: {exc}", file=stdout)
-            return
-
-    if wants_context_scan:
-        try:
-            from .context.companion import build_companion_context, render_companion_context
-            from .memory.spine import record_shell_exchange
-
-            summary = build_companion_context(context.project_root, prompt)
-            rendered = render_companion_context(summary)
-            print(rendered, file=stdout)
-            record_shell_exchange(
-                context.project_root,
-                prompt=prompt,
-                response=rendered,
-                provider=context.model_provider,
-                model=context.model_name,
-                context_kind="inspection",
-            )
-            return
-        except Exception as exc:  # noqa: BLE001 - shell prompt handling should not crash
-            print(f"Context scan failed: {exc}", file=stdout)
-            return
-
-    if wants_project:
-        lines = [
-            "You are in this project context:",
-            f"  Project: {context.display_project}",
-            f"  Branch: {context.display_branch}",
-            f"  Working directory: {context.project_root}",
-        ]
-        print("\n".join(lines), file=stdout)
-        _record_shell_memory(prompt, "\n".join(lines), context, "project")
-        return
-
-    if wants_model:
-        lines = [
-            "Model",
-            f"  Provider: {context.model_provider}",
-            f"  Model: {context.model_name}",
-            "  Routing: selected provider with copy-paste fallback",
-        ]
-        print("\n".join(lines), file=stdout)
-        _record_shell_memory(prompt, "\n".join(lines), context, "model")
-        return
-
+    # Phase 14: Hardcoded heuristics removed in favor of LLM Tool Calling
     context_lines = [
         "I can work from this local context:",
         f"  Project: {context.display_project}",
@@ -502,11 +404,20 @@ def _record_shell_memory(prompt: str, response: str, context: ShellContext, cont
 
 
 def _answer_with_selected_model(prompt: str, stdout: IO[str], context: ShellContext) -> str:
+    try:
+        from .ai.tools import get_agent_tools, execute_tool
+        agent_tools = get_agent_tools()
+    except Exception:
+        agent_tools = None
+
     packet = {
         "text": prompt,
         "packet_id": "shell",
         "source": "companion-shell",
     }
+    if agent_tools:
+        packet["tools"] = agent_tools
+
     try:
         from .ai.router import RouteDecision
         from .ai.routing_runtime import run_with_fallback
@@ -540,6 +451,59 @@ def _answer_with_selected_model(prompt: str, stdout: IO[str], context: ShellCont
     lines: list[str] = []
     if result.fell_back:
         lines.append(f"  Fallback: {result.primary_provider} -> {result.used_provider}")
+    
+    if response.tool_calls:
+        lines.append(f"  Model requested tools from {response.provider}/{response.model}:")
+        for call in response.tool_calls:
+            tool_name = call.get("function", {}).get("name", "unknown")
+            args_str = call.get("function", {}).get("arguments", "{}")
+            lines.append(f"   - Tool: {tool_name}")
+            print("\n".join(lines), file=stdout)
+            lines.clear()
+
+            # Execute tool
+            try:
+                import json
+                args = json.loads(args_str)
+            except Exception:
+                args = {}
+
+            print(f"     [Executing {tool_name}...]", file=stdout)
+            try:
+                from .ai.tools import execute_tool
+                tool_output = execute_tool(tool_name, args)
+            except Exception as exc:
+                tool_output = f"Tool execution error: {exc}"
+            
+            lines.append(f"  Tool {tool_name} returned:")
+            lines.append(tool_output)
+            
+            # Send output back to model (simplified loop)
+            packet["text"] = f"User prompt: {prompt}\n\nTool {tool_name} was executed and returned:\n{tool_output}\n\nPlease summarize the result for the user."
+            # Clear tools for the second pass to avoid infinite loops in MVP
+            if "tools" in packet:
+                del packet["tools"]
+
+            try:
+                result2 = run_with_fallback(
+                    RouteDecision(
+                        provider=context.model_provider,
+                        model=context.model_name,
+                        rule_matched=None,
+                        fallbacks=("copy-paste",),
+                        role="Companion Shell",
+                        task_type="conversation",
+                    ),
+                    packet,
+                    resolver=lambda name: providers.get(name),
+                    root=context.project_root,
+                    dry_run=False,
+                )
+                response = result2.response
+            except Exception as exc:
+                lines.append(f"Follow-up model call failed: {exc}")
+                break
+
     if response.provider == "copy-paste":
         lines.append("  Provider-ready prompt:")
     else:
@@ -548,6 +512,7 @@ def _answer_with_selected_model(prompt: str, stdout: IO[str], context: ShellCont
     rendered = "\n".join(lines)
     print(rendered, file=stdout)
     return rendered
+
 
 
 def _print_help(stdout: IO[str], project_root: Path) -> None:
