@@ -2055,6 +2055,49 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_runtime_options(graph_visualize)
 
+    # --- Reforge Phase 6: private knowledge reader ---------------------
+    knowledge_cmd = sub.add_parser(
+        "knowledge",
+        help="Read-only private knowledge sources: status, sources, search",
+        **_example_parser_kwargs(
+            """
+            Examples:
+              mythic-vibe knowledge status
+              mythic-vibe knowledge sources
+              mythic-vibe knowledge search "Hermes memory"
+            """
+        ),
+    )
+    knowledge_sub = knowledge_cmd.add_subparsers(dest="knowledge_command", required=True)
+
+    knowledge_status = knowledge_sub.add_parser(
+        "status",
+        help="Show configured private knowledge-source health",
+    )
+    knowledge_status.add_argument("--path", default=".")
+    add_runtime_options(knowledge_status, json_output=True)
+
+    knowledge_sources = knowledge_sub.add_parser(
+        "sources",
+        help="List configured private knowledge sources",
+    )
+    knowledge_sources.add_argument("--path", default=".")
+    add_runtime_options(knowledge_sources, json_output=True)
+
+    knowledge_search = knowledge_sub.add_parser(
+        "search",
+        help="Search configured private knowledge sources read-only",
+    )
+    knowledge_search.add_argument("query", nargs="+", help="Search query")
+    knowledge_search.add_argument("--path", default=".")
+    knowledge_search.add_argument(
+        "--limit",
+        type=int,
+        default=5,
+        help="Maximum results to return (default: 5)",
+    )
+    add_runtime_options(knowledge_search, json_output=True)
+
     # --- PH-15 + Reforge Phase 5: memory show / list / compact / rehydrate / last / spine ---
     memory_cmd = sub.add_parser(
         "memory",

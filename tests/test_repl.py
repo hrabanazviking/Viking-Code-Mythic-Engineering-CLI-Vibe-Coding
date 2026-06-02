@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import io
 import json
+import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
@@ -192,6 +193,56 @@ class ReplLoopTests(unittest.TestCase):
         self.assertEqual(code, SUCCESS)
         self.assertIn("Last remembered work", stdout.getvalue())
         self.assertIn("We were wiring Phase 5 memory.", stdout.getvalue())
+        self.assertEqual(fake.calls, [])
+
+    def test_knowledge_prompt_searches_private_sqlite_source(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            db_path = root / "knowledge.sqlite"
+            with sqlite3.connect(db_path) as conn:
+                conn.execute("CREATE TABLE notes(title TEXT, body TEXT, source TEXT)")
+                conn.execute(
+                    "INSERT INTO notes(title, body, source) VALUES (?, ?, ?)",
+                    (
+                        "Hermes memory",
+                        "Earlier ideas linked Hermes memory to private notes.",
+                        "tailnet",
+                    ),
+                )
+            (root / ".mythic-vibe.json").write_text(
+                json.dumps(
+                    {
+                        "knowledge": {
+                            "sources": [
+                                {
+                                    "name": "tailnet-notes",
+                                    "type": "sqlite",
+                                    "path": str(db_path),
+                                    "table": "notes",
+                                }
+                            ]
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            stdin = io.StringIO(
+                "Search my knowledge database for earlier ideas about Hermes memory.\n/quit\n"
+            )
+            stdout = io.StringIO()
+            fake = _FakeMain()
+
+            code = run_shell(
+                stdin=stdin,
+                stdout=stdout,
+                stderr=io.StringIO(),
+                main=fake,
+                project_root=root,
+            )
+
+        self.assertEqual(code, SUCCESS)
+        self.assertIn("Knowledge search:", stdout.getvalue())
+        self.assertIn("Earlier ideas linked Hermes memory", stdout.getvalue())
         self.assertEqual(fake.calls, [])
 
     def test_empty_lines_do_not_dispatch(self) -> None:

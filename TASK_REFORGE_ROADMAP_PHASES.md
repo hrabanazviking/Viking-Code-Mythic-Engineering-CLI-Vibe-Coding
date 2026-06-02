@@ -11,7 +11,7 @@ Implement the roadmap phases in order, starting with Phase 0 and advancing only 
 
 ## Current State
 
-- The repository is on `development`; Phase 5 implementation has passed focused verification and is ready to commit.
+- The repository is on `development`; Phase 6 implementation has passed focused verification and is ready to commit.
 - `TODO.md` is historical and points at older v1.0 planning surfaces.
 - `Mythic_Vibe_CLI_Reforge_Roadmap.md` defines the new rebirth direction: Mythic should become a terminal-based coding companion CLI, not primarily a DevOps-style command catalog.
 - `docs/PRODUCT_INTENT.md` records the companion-shell product intent.
@@ -27,7 +27,22 @@ Implement the roadmap phases in order, starting with Phase 0 and advancing only 
 4. Phase 3: Make natural-language shell requests trigger repository context inspection. Completed in commit `e581afd`.
 5. Phase 4: Wire model selection and provider-backed natural prompts into the companion shell. Completed in commit `8c76eec`.
 6. Phase 5: Add the local SQLite memory spine at `.mythic/memory.sqlite`, wire companion-shell natural prompts into it, and answer "What were we doing last time?" from durable memory. Completed in the current Phase 5 implementation commits.
-7. Phase 6+: Continue in roadmap order after verification of the prior phase.
+7. Phase 6: Add a read-only configurable private knowledge reader with SQLite-first support, shell `/knowledge` access, and natural knowledge-search prompts. Completed in the current Phase 6 implementation commit.
+8. Phase 7+: Continue in roadmap order after verification of the prior phase.
+
+## Phase 6 Proposed Files
+
+- `mythic_vibe_cli/knowledge/__init__.py`
+- `mythic_vibe_cli/knowledge/reader.py`
+- `mythic_vibe_cli/config.py`
+- `mythic_vibe_cli/app.py`
+- `mythic_vibe_cli/commands.py`
+- `mythic_vibe_cli/repl.py`
+- `mythic_vibe_cli/runtime/slash_commands.py`
+- `tests/test_knowledge_reader.py`
+- `tests/test_knowledge_cli.py`
+- `tests/test_repl.py`
+- Documentation records (`CHANGELOG.md`, `DEVLOG.md`, `README.md`, `docs/COMMAND_CONTRACTS.md`, this task brief)
 
 ## Phase 5 Proposed Files
 
@@ -64,4 +79,4 @@ Implement the roadmap phases in order, starting with Phase 0 and advancing only 
 
 ## Next Step
 
-Complete Phase 5 verification and then begin Phase 6 Tailscale knowledge-reader work.
+Complete Phase 6 verification and then begin Phase 7 GitHub workspace-system work.

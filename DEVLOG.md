@@ -68,6 +68,16 @@ Phase 5 closes the first real memory hole in the companion workflow. The shell c
 
 ---
 
+## 2026-06-02 - Reforge roadmap Phase 6: private knowledge reader
+
+**Status:** Added the read-only private knowledge reader with SQLite-first support. Configured SQLite sources are opened in read-only mode, searched through a parameterized safe query interface, surfaced through `knowledge status`, `knowledge sources`, and `knowledge search`, and reached naturally from the companion shell when the user asks to search the knowledge database. PostgreSQL sources are recognized as configured but intentionally not queried until an explicit adapter is added.
+
+### Why it matters
+
+Phase 6 gives the companion shell a private knowledge retrieval path without blending it into the project graph or requiring a cloud provider. A Tailscale-mounted SQLite database can now be searched fluidly from conversation while preserving the read-only boundary.
+
+---
+
 ## 2026-05-03 — v1.0.0 launch (PH-19 + PH-20, 26 slices)
 
 **Sessions:** Two consecutive working days, chained through Volmarr's "go for all the rest of 19" then "go for phase 20" then "do a complete look over the README.md and all other project documents" directives.
