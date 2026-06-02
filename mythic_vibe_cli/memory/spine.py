@@ -21,6 +21,8 @@ from pathlib import Path
 import sqlite3
 from typing import Any, Iterable
 
+from ..runtime.paths import paths_for
+
 
 MEMORY_DB = (".mythic", "memory.sqlite")
 SCHEMA_VERSION = 1
@@ -41,7 +43,7 @@ def _utc_now_iso() -> str:
 
 
 def memory_db_path(root: Path) -> Path:
-    return Path(root).joinpath(*MEMORY_DB)
+    return paths_for(root).memory_db
 
 
 @dataclass(frozen=True)

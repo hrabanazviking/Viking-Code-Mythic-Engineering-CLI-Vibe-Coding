@@ -11,6 +11,8 @@ from types import TracebackType
 from typing import Any
 
 from mythic_vibe_cli.core.state import ProjectState, coerce_project_state
+from mythic_vibe_cli.runtime.atomic_write import atomic_write_text
+from mythic_vibe_cli.runtime.paths import paths_for
 
 
 class StateStoreError(RuntimeError):
@@ -109,10 +111,11 @@ class FileLock(AbstractContextManager["FileLock"]):
 class JsonStateStore:
     def __init__(self, root: Path):
         self.root = root.resolve()
-        self.mythic_dir = self.root / "mythic"
-        self.status_path = self.mythic_dir / "status.json"
-        self.backup_dir = self.mythic_dir / "backups"
-        self.lock_path = self.status_path.with_suffix(".json.lock")
+        self.paths = paths_for(self.root)
+        self.mythic_dir = self.paths.project_state_dir
+        self.status_path = self.paths.status_file
+        self.backup_dir = self.paths.state_backup_dir
+        self.lock_path = self.paths.state_lock_file
 
     def exists(self) -> bool:
         return self.status_path.exists()
@@ -149,17 +152,14 @@ class JsonStateStore:
         shutil.copy2(self.status_path, backup)
         return backup
 
-    def write_state(self, state: ProjectState) -> Path:
+    def write_state(self, state: ProjectState, *, preserve_backup: bool = True) -> Path:
         self.mythic_dir.mkdir(parents=True, exist_ok=True)
         with FileLock(self.lock_path):
-            temp_path = self.status_path.with_name(f"{self.status_path.name}.tmp")
-            # PH-24.4: ``newline=""`` keeps the JSON byte-identical
-            # across Windows + POSIX so two operators on different
-            # OSes diff status.json cleanly.
-            temp_path.write_text(
+            if preserve_backup and self.status_path.exists():
+                self.backup_status()
+            atomic_write_text(
+                self.status_path,
                 json.dumps(state.to_dict(), indent=2) + "\n",
                 encoding="utf-8",
-                newline="",
             )
-            os.replace(temp_path, self.status_path)
         return self.status_path

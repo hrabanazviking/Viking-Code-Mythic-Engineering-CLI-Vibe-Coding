@@ -109,6 +109,17 @@ class ConfigAndBridgeTests(unittest.TestCase):
             self.assertEqual(code, 0)
             self.assertEqual(payload["config"]["method.source"], "https://github.com/project/method")
 
+    def test_save_project_values_uses_canonical_atomic_project_config(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+
+            path = ConfigStore(root).save_project_values({"ai.provider": "ollama"})
+
+            self.assertEqual(path, root / ".mythic-vibe.json")
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(payload["ai"]["provider"], "ollama")
+            self.assertEqual(list(root.glob("*.tmp")), [])
+
     def test_config_yaml_loads_router_models_and_prompts(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

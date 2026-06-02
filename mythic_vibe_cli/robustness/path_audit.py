@@ -23,7 +23,7 @@ import ast
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 
 # Modules allowed to construct ``mythic/`` paths inline. Add to
@@ -64,6 +64,27 @@ HARDCODED_PATH_ALLOWED_RELATIVE_PATHS: frozenset[str] = frozenset(
 # './mythic/...'. Matches inside ast.Constant string literals
 # only — we don't lex prose.
 _MYTHIC_PATH_RE = re.compile(r"(?:^|[/\\])?mythic[/\\][a-zA-Z0-9_./\\-]+")
+PathFindingKind = Literal["runtime", "documentation", "reviewed"]
+
+_DOCUMENTATION_CALL_NAMES = {
+    "add_argument",
+    "add_parser",
+    "append",
+    "_help",
+    "write_bullet",
+    "write_error",
+    "write_key_value",
+    "write_line",
+}
+_DOCUMENTATION_KEYWORDS = {"description", "detail", "help", "side_effects"}
+_DOCUMENTATION_KEYWORDS.add("output_artefact_kinds")
+_DOCUMENTATION_DICT_KEYS = {"command", "next", "path", "purpose", "verify"}
+_REVIEWED_ASSIGNMENT_NAMES = {
+    "ARTIFACT_GUIDE",
+    "EXAMPLES",
+    "PHASE_ARTEFACTS",
+}
+_DOCUMENTATION_ASSIGNMENT_NAMES = {"errors", "lines", "message", "warnings"}
 
 
 @dataclass(frozen=True)
@@ -75,6 +96,7 @@ class PathFinding:
     column: int
     snippet: str
     matched_literal: str
+    kind: PathFindingKind = "runtime"
     detail: str = ""
 
     def to_dict(self) -> dict[str, Any]:
@@ -84,6 +106,7 @@ class PathFinding:
             "column": self.column,
             "snippet": self.snippet,
             "matched_literal": self.matched_literal,
+            "kind": self.kind,
             "detail": self.detail,
         }
 
@@ -97,12 +120,27 @@ class PathAuditResult:
 
     @property
     def ok(self) -> bool:
-        return not self.findings
+        return not self.runtime_findings
+
+    @property
+    def runtime_findings(self) -> list[PathFinding]:
+        return [finding for finding in self.findings if finding.kind == "runtime"]
+
+    @property
+    def documentation_findings(self) -> list[PathFinding]:
+        return [finding for finding in self.findings if finding.kind == "documentation"]
+
+    @property
+    def reviewed_findings(self) -> list[PathFinding]:
+        return [finding for finding in self.findings if finding.kind == "reviewed"]
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "findings": [f.to_dict() for f in self.findings],
             "count": len(self.findings),
+            "runtime_count": len(self.runtime_findings),
+            "documentation_count": len(self.documentation_findings),
+            "reviewed_count": len(self.reviewed_findings),
             "files_scanned": self.files_scanned,
             "files_skipped": self.files_skipped,
             "notes": list(self.notes),
@@ -119,6 +157,106 @@ def _line_snippet(source_lines: list[str], line: int, *, limit: int = 120) -> st
     return raw
 
 
+def _parent_map(tree: ast.AST) -> dict[ast.AST, ast.AST]:
+    parents: dict[ast.AST, ast.AST] = {}
+    for parent in ast.walk(tree):
+        for child in ast.iter_child_nodes(parent):
+            parents[child] = parent
+    return parents
+
+
+def _ancestors(node: ast.AST, parents: dict[ast.AST, ast.AST]) -> list[ast.AST]:
+    out: list[ast.AST] = []
+    current = parents.get(node)
+    while current is not None:
+        out.append(current)
+        current = parents.get(current)
+    return out
+
+
+def _call_name(func: ast.AST) -> str:
+    if isinstance(func, ast.Name):
+        return func.id
+    if isinstance(func, ast.Attribute):
+        return func.attr
+    return ""
+
+
+def _is_docstring_node(node: ast.Constant, parents: dict[ast.AST, ast.AST]) -> bool:
+    expr = parents.get(node)
+    owner = parents.get(expr) if isinstance(expr, ast.Expr) else None
+    body = getattr(owner, "body", None)
+    if not (isinstance(body, list) and expr in body):
+        return False
+    if body[0] is expr:
+        return True
+    # Attribute docstrings are common immediately after dataclass fields.
+    return isinstance(owner, ast.ClassDef)
+
+
+def _assignment_target_names(node: ast.AST) -> set[str]:
+    names: set[str] = set()
+    if isinstance(node, ast.Assign):
+        targets = node.targets
+    elif isinstance(node, ast.AnnAssign):
+        targets = [node.target]
+    else:
+        targets = []
+    for target in targets:
+        if isinstance(target, ast.Name):
+            names.add(target.id)
+    return names
+
+
+def _is_documentation_context(node: ast.Constant, parents: dict[ast.AST, ast.AST]) -> bool:
+    if _is_docstring_node(node, parents):
+        return True
+    for ancestor in _ancestors(node, parents):
+        if isinstance(ancestor, ast.keyword) and ancestor.arg in _DOCUMENTATION_KEYWORDS:
+            return True
+        if isinstance(ancestor, ast.Call) and _call_name(ancestor.func) in _DOCUMENTATION_CALL_NAMES:
+            return True
+        if _assignment_target_names(ancestor) & _DOCUMENTATION_ASSIGNMENT_NAMES:
+            return True
+        if isinstance(ancestor, ast.FunctionDef) and ancestor.name.startswith("render_"):
+            return True
+        if isinstance(ancestor, ast.Dict):
+            for key, value in zip(ancestor.keys, ancestor.values):
+                if value is node and isinstance(key, ast.Constant) and str(key.value) in _DOCUMENTATION_DICT_KEYS:
+                    return True
+    return False
+
+
+def _is_reviewed_context(node: ast.Constant, parents: dict[ast.AST, ast.AST]) -> bool:
+    for ancestor in _ancestors(node, parents):
+        target_names = _assignment_target_names(ancestor)
+        if target_names & _REVIEWED_ASSIGNMENT_NAMES:
+            return True
+        if any(name.startswith("_SAMPLE_") for name in target_names):
+            return True
+    return False
+
+
+def _classify_path_literal(node: ast.Constant, parents: dict[ast.AST, ast.AST]) -> PathFindingKind:
+    if _is_documentation_context(node, parents):
+        return "documentation"
+    if _is_reviewed_context(node, parents):
+        return "reviewed"
+    return "runtime"
+
+
+def _detail_for(kind: PathFindingKind) -> str:
+    if kind == "documentation":
+        return "documentation/help string literal — not runtime path construction"
+    if kind == "reviewed":
+        return "reviewed path metadata literal — included for visibility but not release-blocking"
+    return (
+        "hardcoded mythic/<segment> string literal — route "
+        "through runtime.paths or another canonical resolver to keep paths "
+        "configurable"
+    )
+
+
 def _scan_module(path: Path, source: str, *, relative: str) -> list[PathFinding]:
     if relative in HARDCODED_PATH_ALLOWED_RELATIVE_PATHS:
         return []
@@ -128,6 +266,7 @@ def _scan_module(path: Path, source: str, *, relative: str) -> list[PathFinding]
     except SyntaxError:
         return []
 
+    parents = _parent_map(tree)
     lines = source.splitlines()
     findings: list[PathFinding] = []
 
@@ -149,6 +288,7 @@ def _scan_module(path: Path, source: str, *, relative: str) -> list[PathFinding]
         lowered = value.lower()
         if lowered.startswith(("http://", "https://")):
             continue
+        kind = _classify_path_literal(node, parents)
         findings.append(
             PathFinding(
                 location=relative,
@@ -156,11 +296,8 @@ def _scan_module(path: Path, source: str, *, relative: str) -> list[PathFinding]
                 column=getattr(node, "col_offset", 0),
                 snippet=_line_snippet(lines, getattr(node, "lineno", 0)),
                 matched_literal=match.group(0),
-                detail=(
-                    "hardcoded mythic/<segment> string literal — route "
-                    "through core.state's canonical resolver to keep paths "
-                    "configurable"
-                ),
+                kind=kind,
+                detail=_detail_for(kind),
             )
         )
     return findings

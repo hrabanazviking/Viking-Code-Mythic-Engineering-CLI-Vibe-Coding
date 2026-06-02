@@ -29,6 +29,7 @@ from ..runtime.event_log import (
     EventTailReader,
     event_log_path_for,
 )
+from ..runtime.paths import paths_for
 from ..verify import load_latest_verification
 
 
@@ -379,11 +380,12 @@ def _select_packet_path(root: Path) -> Path | None:
     Returns ``None`` when neither exists. Defensive against ``OSError``
     while iterating the packets dir.
     """
-    current = root / "mythic" / "codex_prompt.md"
+    runtime_paths = paths_for(root)
+    current = runtime_paths.current_packet_markdown
     if current.is_file():
         return current
 
-    packets_dir = root / "mythic" / "packets"
+    packets_dir = runtime_paths.packets_dir
     if not packets_dir.is_dir():
         return None
     try:

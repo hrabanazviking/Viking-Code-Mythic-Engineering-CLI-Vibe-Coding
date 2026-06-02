@@ -50,6 +50,7 @@ from pathlib import Path
 from typing import Any
 
 from ..hardware import HardwareProfile
+from ..runtime.paths import paths_for
 
 
 ROUTING_FILE_DIR = ("mythic", "ai")
@@ -299,7 +300,7 @@ class RoutingTable:
         except Exception:  # noqa: BLE001 - routing should degrade to defaults
             config_overrides = []
 
-        path = Path(root).joinpath(*ROUTING_FILE_DIR, ROUTING_FILENAME)
+        path = paths_for(root).routing_file
         if not path.is_file():
             return cls(rules=config_overrides + table.rules)
         try:
