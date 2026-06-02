@@ -88,6 +88,16 @@ Phase 7 gives Mythic a controlled working-directory layer for repo juggling with
 
 ---
 
+## 2026-06-02 - Reforge roadmap Phase 8: Patch Proposal System
+
+**Status:** Added the Patch Proposal System at `mythic_vibe_cli/patch/manager.py`. The companion shell now supports staging patches in-memory via `PatchManager`, generating diffs, and applying or rejecting them with explicit user consent via `/diff`, `/apply`, `/reject` slash commands.
+
+### Why it matters
+
+Phase 8 creates a conversational patch approval workflow. Agents can propose fixes, and users can review and approve them interactively rather than having destructive edits happen behind their back. This is essential for a safe, collaborative coding companion.
+
+---
+
 ## 2026-05-03 — v1.0.0 launch (PH-19 + PH-20, 26 slices)
 
 **Sessions:** Two consecutive working days, chained through Volmarr's "go for all the rest of 19" then "go for phase 20" then "do a complete look over the README.md and all other project documents" directives.

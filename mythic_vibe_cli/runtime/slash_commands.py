@@ -226,4 +226,9 @@ BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
 
     # --- Multi-surface access (PH-17) ---
     BuiltinSlashCommand(name="surface", description="Web terminal / SSH-readiness check / chat bridge — multi-surface access"),
+
+    # --- Patch Proposal System (PH-08) ---
+    BuiltinSlashCommand(name="diff", description="View the currently proposed patch/diff"),
+    BuiltinSlashCommand(name="apply", description="Approve and apply the currently proposed patch"),
+    BuiltinSlashCommand(name="reject", description="Reject the currently proposed patch"),
 )
