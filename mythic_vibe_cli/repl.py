@@ -355,6 +355,23 @@ def _known_command_names(_main: Callable[[list[str]], int]) -> set[str]:
     return set(COMMAND_HANDLERS)
 
 
+COMPANION_SYSTEM_PROMPT = """\
+You are Mythic, an interactive AI coding companion shell.
+You have access to a suite of command-line tools to interact with the user's project workspace.
+
+Execution Loop:
+1. UNDERSTAND the user's request.
+2. INSPECT the repository using file and directory search tools if context is missing.
+3. RETRIEVE memory or knowledge if asked.
+4. PROPOSE a structured plan using tools if the task is complex.
+5. EDIT code, run tests, and execute commands to achieve the goal.
+6. REMEMBER the results of your actions.
+
+Always use your tools when you need to read files, run tests, or modify code. 
+When the user asks you a question or gives you a task, you can invoke multiple tools in sequence. 
+Once you have accomplished the goal, provide a conversational summary to the user.
+"""
+
 def _answer_natural_prompt(prompt: str, stdout: IO[str], context: ShellContext) -> None:
     # Phase 14: Hardcoded heuristics removed in favor of LLM Tool Calling
     context_lines = [
@@ -410,108 +427,110 @@ def _answer_with_selected_model(prompt: str, stdout: IO[str], context: ShellCont
     except Exception:
         agent_tools = None
 
-    packet = {
-        "text": prompt,
-        "packet_id": "shell",
-        "source": "companion-shell",
-    }
-    if agent_tools:
-        packet["tools"] = agent_tools
-
-    try:
-        from .ai.router import RouteDecision
-        from .ai.routing_runtime import run_with_fallback
-        from .ai.registry import ProviderRegistry
-
-        providers = ProviderRegistry(root=context.project_root).providers()
-        selected = providers.get(context.model_provider)
-        if selected is not None and hasattr(selected, "model"):
-            setattr(selected, "model", context.model_name)
-
-        result = run_with_fallback(
-            RouteDecision(
-                provider=context.model_provider,
-                model=context.model_name,
-                rule_matched=None,
-                fallbacks=("copy-paste",),
-                role="Companion Shell",
-                task_type="conversation",
-            ),
-            packet,
-            resolver=lambda name: providers.get(name),
-            root=context.project_root,
-            dry_run=False,
-        )
-    except Exception as exc:  # noqa: BLE001
-        rendered = f"Model call failed: {exc}"
-        print(rendered, file=stdout)
-        return rendered
-
-    response = result.response
-    lines: list[str] = []
-    if result.fell_back:
-        lines.append(f"  Fallback: {result.primary_provider} -> {result.used_provider}")
+    history = []
     
-    if response.tool_calls:
-        lines.append(f"  Model requested tools from {response.provider}/{response.model}:")
-        for call in response.tool_calls:
-            tool_name = call.get("function", {}).get("name", "unknown")
-            args_str = call.get("function", {}).get("arguments", "{}")
-            lines.append(f"   - Tool: {tool_name}")
-            print("\n".join(lines), file=stdout)
-            lines.clear()
+    from .ai.router import RouteDecision
+    from .ai.routing_runtime import run_with_fallback
+    from .ai.registry import ProviderRegistry
+    
+    providers = ProviderRegistry(root=context.project_root).providers()
 
-            # Execute tool
-            try:
-                import json
-                args = json.loads(args_str)
-            except Exception:
-                args = {}
+    MAX_ITERATIONS = 10
+    final_content = ""
+    lines: list[str] = []
 
-            print(f"     [Executing {tool_name}...]", file=stdout)
-            try:
-                from .ai.tools import execute_tool
-                tool_output = execute_tool(tool_name, args)
-            except Exception as exc:
-                tool_output = f"Tool execution error: {exc}"
+    for iteration in range(MAX_ITERATIONS):
+        packet = {
+            "text": prompt if iteration == 0 else "Continue with the next step or provide your final answer.",
+            "packet_id": "shell",
+            "source": "companion-shell",
+            "system_prompt": COMPANION_SYSTEM_PROMPT,
+            "conversation_history": list(history) if history else None,
+        }
+        
+        if agent_tools:
+            packet["tools"] = agent_tools
+
+        try:
+            selected = providers.get(context.model_provider)
+            if selected is not None and hasattr(selected, "model"):
+                setattr(selected, "model", context.model_name)
+
+            result = run_with_fallback(
+                RouteDecision(
+                    provider=context.model_provider,
+                    model=context.model_name,
+                    rule_matched=None,
+                    fallbacks=("copy-paste",),
+                    role="Companion Shell",
+                    task_type="conversation",
+                ),
+                packet,
+                resolver=lambda name: providers.get(name),
+                root=context.project_root,
+                dry_run=False,
+            )
+        except Exception as exc:  # noqa: BLE001
+            rendered = f"Model call failed: {exc}"
+            print(rendered, file=stdout)
+            return rendered
+
+        response = result.response
+        if result.fell_back and iteration == 0:
+            lines.append(f"  Fallback: {result.primary_provider} -> {result.used_provider}")
+        
+        # Append assistant's response to history
+        if response.content:
+            history.append({"role": "assistant", "content": response.content})
+        
+        if response.tool_calls:
+            if not response.content:
+                # Add a dummy content if it's empty so history mapping doesn't fail
+                history.append({"role": "assistant", "content": "(Tool Call Requested)"})
             
-            lines.append(f"  Tool {tool_name} returned:")
-            lines.append(tool_output)
+            lines.append(f"  Model requested tools from {response.provider}/{response.model}:")
+            for call in response.tool_calls:
+                tool_name = call.get("function", {}).get("name", "unknown")
+                args_str = call.get("function", {}).get("arguments", "{}")
+                lines.append(f"   - Tool: {tool_name}")
+                print("\n".join(lines), file=stdout)
+                lines.clear()
+
+                # Execute tool
+                try:
+                    import json
+                    args = json.loads(args_str)
+                except Exception:
+                    args = {}
+
+                print(f"     [Executing {tool_name}...]", file=stdout)
+                try:
+                    tool_output = execute_tool(tool_name, args)
+                except Exception as exc:
+                    tool_output = f"Tool execution error: {exc}"
+                
+                # We append tool output to history as 'user' role so the LLM sees it
+                history.append({"role": "user", "content": f"Tool {tool_name} returned:\n{tool_output}"})
             
-            # Send output back to model (simplified loop)
-            packet["text"] = f"User prompt: {prompt}\n\nTool {tool_name} was executed and returned:\n{tool_output}\n\nPlease summarize the result for the user."
-            # Clear tools for the second pass to avoid infinite loops in MVP
-            if "tools" in packet:
-                del packet["tools"]
-
-            try:
-                result2 = run_with_fallback(
-                    RouteDecision(
-                        provider=context.model_provider,
-                        model=context.model_name,
-                        rule_matched=None,
-                        fallbacks=("copy-paste",),
-                        role="Companion Shell",
-                        task_type="conversation",
-                    ),
-                    packet,
-                    resolver=lambda name: providers.get(name),
-                    root=context.project_root,
-                    dry_run=False,
-                )
-                response = result2.response
-            except Exception as exc:
-                lines.append(f"Follow-up model call failed: {exc}")
-                break
-
-    if response.provider == "copy-paste":
-        lines.append("  Provider-ready prompt:")
+            # Loop again!
+            continue
+        
+        # If no tool calls, we're done.
+        final_content = response.content
+        if response.provider == "copy-paste":
+            lines.append("  Provider-ready prompt:")
+        else:
+            lines.append(f"  Response from {response.provider}/{response.model}:")
+        lines.append(final_content)
+        break
     else:
-        lines.append(f"  Response from {response.provider}/{response.model}:")
-    lines.append(response.content)
+        # Hit max iterations
+        lines.append("\n  [Execution paused: maximum tool loop iterations reached.]")
+        final_content = "Max iterations reached."
+
     rendered = "\n".join(lines)
     print(rendered, file=stdout)
-    return rendered
+    return final_content
 
 
 

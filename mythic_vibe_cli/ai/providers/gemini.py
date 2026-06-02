@@ -88,9 +88,29 @@ class GeminiProvider:
         if not key:
             raise ValueError("GEMINI_API_KEY is required")
 
+        contents = []
+        if view.conversation_history:
+            for msg in view.conversation_history:
+                role = msg.get("role", "user")
+                # map openai roles to gemini
+                if role == "assistant":
+                    role = "model"
+                elif role == "system":
+                    continue # system is handled via systemInstruction
+                elif role == "tool":
+                    role = "user" # Treat tool output as user feeding data back
+                
+                content = msg.get("content", "")
+                if content:
+                    contents.append({"role": role, "parts": [{"text": content}]})
+
+        contents.append({"role": "user", "parts": [{"text": view.text}]})
+
         payload: dict[str, Any] = {
-            "contents": [{"role": "user", "parts": [{"text": view.text}]}],
+            "contents": contents,
         }
+        if view.system_prompt:
+            payload["systemInstruction"] = {"parts": [{"text": view.system_prompt}]}
         if view.tools:
             function_declarations = []
             for tool in view.tools:

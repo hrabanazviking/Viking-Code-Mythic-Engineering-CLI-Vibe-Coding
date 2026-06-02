@@ -78,9 +78,17 @@ class OpenAIProvider:
         if not key:
             raise ValueError("OPENAI_API_KEY is required")
 
+        messages = []
+        if view.system_prompt:
+            messages.append({"role": "system", "content": view.system_prompt})
+        if view.conversation_history:
+            messages.extend(view.conversation_history)
+        
+        messages.append({"role": "user", "content": view.text})
+
         payload: dict[str, Any] = {
             "model": self.model,
-            "messages": [{"role": "user", "content": view.text}],
+            "messages": messages,
             "temperature": 0.2,
         }
         if view.tools:
