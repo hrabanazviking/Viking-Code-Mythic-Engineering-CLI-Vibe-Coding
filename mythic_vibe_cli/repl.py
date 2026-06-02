@@ -371,6 +371,9 @@ Workspace Safety Protocol:
 - Always use `workspace diff` to review your own changes before making a commit.
 - You must ask the user for explicit confirmation before executing `workspace commit` or `workspace push`.
 
+Formatting & Efficiency:
+- When writing code changes, use minimal patching tools if available, or print only the modified snippets with context instead of re-dumping entire files. Be extremely concise.
+
 Always use your tools when you need to read files, run tests, or modify code. 
 When the user asks you a question or gives you a task, you can invoke multiple tools in sequence. 
 Once you have accomplished the goal, provide a conversational summary to the user.
@@ -440,10 +443,20 @@ def _answer_with_selected_model(prompt: str, stdout: IO[str], context: ShellCont
     providers = ProviderRegistry(root=context.project_root).providers()
 
     MAX_ITERATIONS = 10
+    MAX_RETRIES = 3
+    MAX_HISTORY_LEN = 20
+    MAX_TOOL_OUTPUT_LEN = 2000
+
     final_content = ""
     lines: list[str] = []
+    consecutive_errors = 0
 
     for iteration in range(MAX_ITERATIONS):
+        # Prune history if it gets too long
+        if len(history) > MAX_HISTORY_LEN:
+            # keep the first two (could be initial prompt and first reply) and the last N
+            history = history[:2] + history[-(MAX_HISTORY_LEN - 2):]
+
         packet = {
             "text": prompt if iteration == 0 else "Continue with the next step or provide your final answer.",
             "packet_id": "shell",
@@ -474,10 +487,17 @@ def _answer_with_selected_model(prompt: str, stdout: IO[str], context: ShellCont
                 root=context.project_root,
                 dry_run=False,
             )
+            consecutive_errors = 0  # Reset on success
         except Exception as exc:  # noqa: BLE001
-            rendered = f"Model call failed: {exc}"
-            print(rendered, file=stdout)
-            return rendered
+            consecutive_errors += 1
+            if consecutive_errors >= MAX_RETRIES:
+                rendered = f"Model call failed after {MAX_RETRIES} retries: {exc}"
+                print(rendered, file=stdout)
+                return rendered
+            else:
+                print(f"  [Model call failed: {exc}. Retrying...]", file=stdout)
+                history.append({"role": "user", "content": f"System error communicating with model: {exc}. Please try again."})
+                continue
 
         response = result.response
         if result.fell_back and iteration == 0:
@@ -504,8 +524,10 @@ def _answer_with_selected_model(prompt: str, stdout: IO[str], context: ShellCont
                 try:
                     import json
                     args = json.loads(args_str)
-                except Exception:
-                    args = {}
+                except Exception as exc:
+                    print(f"     [Failed to parse arguments for {tool_name}]", file=stdout)
+                    history.append({"role": "user", "content": f"Failed to parse tool arguments for {tool_name} as JSON: {exc}. Please fix the formatting."})
+                    continue
 
                 print(f"     [Executing {tool_name}...]", file=stdout)
                 try:
@@ -513,8 +535,13 @@ def _answer_with_selected_model(prompt: str, stdout: IO[str], context: ShellCont
                 except Exception as exc:
                     tool_output = f"Tool execution error: {exc}"
                 
+                # Truncate large tool outputs
+                tool_output_str = str(tool_output)
+                if len(tool_output_str) > MAX_TOOL_OUTPUT_LEN:
+                    tool_output_str = tool_output_str[:MAX_TOOL_OUTPUT_LEN] + f"\n... [Truncated for brevity. Original length: {len(str(tool_output))} chars]"
+                
                 # We append tool output to history as 'user' role so the LLM sees it
-                history.append({"role": "user", "content": f"Tool {tool_name} returned:\n{tool_output}"})
+                history.append({"role": "user", "content": f"Tool {tool_name} returned:\n{tool_output_str}"})
             
             # Loop again!
             continue
