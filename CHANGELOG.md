@@ -12,6 +12,10 @@ This unreleased band tracks work landed on `development` after the v1.0.0 stable
 
 - Added `docs/PRODUCT_INTENT.md` as the active product-intent record for the reforge roadmap. It states that Mythic is being corrected into a terminal-based coding companion CLI, with `mythic` as the primary interactive entrypoint, natural language as the main interaction, slash commands as secondary controls, and existing command code preserved as internal/admin machinery where useful. Linked the record from `docs/INDEX.md` and `README.md`.
 
+### Added — Reforge roadmap Phase 1
+
+- Added `mythic_vibe_cli/interactive_shell.py` as the canonical interactive shell import surface while preserving the historical `repl` module. Bare `mythic` / `mythic-vibe` now opens the companion shell by default, and `mythic admin <command>` strips the `admin` prefix before dispatch so existing command-catalog workflows remain reachable during the reforge.
+
 ### Added — Hermes Agent control plane (post-v1.0)
 
 - **Hermes Agent** — programmatic control plane for any external AI agent. Two access modes (TCL Python in-process + HTTP API) share one core (`mythic_vibe_cli/agent_api/`). 18 curated tools cover status, doctor, drift, packet creation/lint, verify, reflect, ai recommend, provenance verify, workflow lineage, persona, plugin doctor, artifact read/list, recent events. Every invocation audited via the existing event-log primitive. New `mythic-vibe surface hermes [--bind ADDR --port N --token TOKEN]` launches the token-protected HTTP API. New `mythic-vibe hermes tools|inspect|invoke` invokes the curated agent-tool surface from the CLI without HTTP. See `docs/HERMES_AGENT.md` (operator + author guide).

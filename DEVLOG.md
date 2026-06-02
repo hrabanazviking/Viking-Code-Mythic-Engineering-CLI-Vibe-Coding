@@ -18,6 +18,16 @@ The existing v1.0 documentation still frames Mythic primarily as a structured co
 
 ---
 
+## 2026-06-02 - Reforge roadmap Phase 1: default entrypoint
+
+**Status:** Bare invocation now opens the interactive shell. `app.main([])` routes to the new canonical `interactive_shell.run_interactive_shell()` surface, while `mythic-vibe shell` remains available for explicit compatibility. `mythic admin <command>` strips the `admin` prefix and runs the existing command-catalog handler path, preserving older workflows while making the companion shell the default.
+
+### Why it matters
+
+This turns the product correction from documentation into runtime behavior without deleting any existing command. The old machinery remains reachable, but the first thing a user gets from `mythic` is the companion shell the reforge roadmap calls for.
+
+---
+
 ## 2026-05-03 — v1.0.0 launch (PH-19 + PH-20, 26 slices)
 
 **Sessions:** Two consecutive working days, chained through Volmarr's "go for all the rest of 19" then "go for phase 20" then "do a complete look over the README.md and all other project documents" directives.

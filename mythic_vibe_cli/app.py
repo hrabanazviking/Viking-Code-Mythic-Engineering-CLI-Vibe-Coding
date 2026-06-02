@@ -27,6 +27,7 @@ command-specific logic that grows here should be moved into
 from __future__ import annotations
 
 import argparse
+import sys
 from textwrap import dedent
 
 from . import __version__
@@ -73,6 +74,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="mythic-vibe",
         description="Mythic Engineering-aligned vibe coding CLI",
+        epilog=(
+            "Reforge default: run `mythic` with no arguments to open the "
+            "interactive coding companion shell. Advanced command-catalog "
+            "mode remains available directly, or through `mythic admin <command>`."
+        ),
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
 
@@ -2264,8 +2270,21 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     reset_timings()
     try:
+        raw_argv = list(sys.argv[1:] if argv is None else argv)
+        if not raw_argv:
+            from .interactive_shell import run_interactive_shell
+
+            return run_interactive_shell()
+
+        if raw_argv[0] == "admin":
+            raw_argv = raw_argv[1:]
+            if not raw_argv or raw_argv[0] in {"-h", "--help"}:
+                parser = build_parser()
+                parser.print_help()
+                return 0
+
         parser = build_parser()
-        args = parser.parse_args(argv)
+        args = parser.parse_args(raw_argv)
         record("argparse")
         configure_output(quiet=getattr(args, "quiet", False), verbose=getattr(args, "verbose", False))
         record("configure_output")

@@ -6063,10 +6063,10 @@ def cmd_slash_dispatch(args: argparse.Namespace) -> int:
 
 
 def cmd_shell(args: argparse.Namespace) -> int:
-    from .repl import run_shell
+    from .interactive_shell import run_interactive_shell
 
     project_root = Path(getattr(args, "path", ".")).resolve()
-    return run_shell(project_root=project_root)
+    return run_interactive_shell(project_root=project_root)
 
 
 def cmd_tui(args: argparse.Namespace) -> int:

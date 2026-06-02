@@ -21,8 +21,8 @@ Implement the roadmap phases in order, starting with Phase 0 and advancing only 
 
 ## Phase Order
 
-1. Phase 0: Create `docs/PRODUCT_INTENT.md` and make product intent unambiguous.
-2. Phase 1: Rebuild the default `mythic` entrypoint so it launches the companion shell by default while preserving admin access to older commands.
+1. Phase 0: Create `docs/PRODUCT_INTENT.md` and make product intent unambiguous. Completed in commit `68de233`.
+2. Phase 1: Rebuild the default `mythic` entrypoint so it launches the companion shell by default while preserving admin access to older commands. In progress.
 3. Phase 2: Ensure the minimal interactive shell includes startup banner, repo detection, model display, input loop, slash routing, normal prompt routing, and `/help`, `/status`, `/model`, `/exit`.
 4. Phase 3+: Continue in roadmap order after verification of the prior phase.
 

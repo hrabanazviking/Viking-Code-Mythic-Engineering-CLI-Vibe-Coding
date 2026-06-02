@@ -1310,6 +1310,56 @@ class CliKernelTests(unittest.TestCase):
             self.assertIn("mythic-vibe shell", output.getvalue())
             self.assertIn("mythic-vibe>", output.getvalue())
 
+    def test_zero_arg_entrypoint_opens_interactive_shell(self) -> None:
+        """Reforge Phase 1: bare `mythic` / `mythic-vibe` enters the shell."""
+        saved_stdin = sys.stdin
+        sys.stdin = io.StringIO("")
+        output = io.StringIO()
+        try:
+            with redirect_stdout(output):
+                code = app.main([])
+        finally:
+            sys.stdin = saved_stdin
+
+        self.assertEqual(code, SUCCESS)
+        self.assertIn("mythic-vibe shell", output.getvalue())
+        self.assertIn("mythic-vibe>", output.getvalue())
+
+    def test_admin_prefix_runs_existing_command_catalog(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "mythic").mkdir()
+            (root / "mythic" / "status.json").write_text(
+                json.dumps(
+                    {
+                        "goal": "Keep old commands reachable",
+                        "current_phase": "plan",
+                        "completed_phases": ["intent"],
+                        "last_update": "2026-06-02 00:00:00Z",
+                        "history": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(["admin", "status", "--path", tmp, "--json"])
+
+            payload = json.loads(output.getvalue())
+            self.assertEqual(code, SUCCESS)
+            self.assertTrue(payload["status_found"])
+            self.assertEqual(payload["goal"], "Keep old commands reachable")
+
+    def test_admin_prefix_without_command_shows_help(self) -> None:
+        output = io.StringIO()
+        with redirect_stdout(output):
+            code = app.main(["admin"])
+
+        self.assertEqual(code, SUCCESS)
+        self.assertIn("companion shell", output.getvalue())
+        self.assertIn("status", output.getvalue())
+
     def test_slash_list_shows_builtin_commands(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             output = io.StringIO()
