@@ -11,7 +11,7 @@ Implement the roadmap phases in order, starting with Phase 0 and advancing only 
 
 ## Current State
 
-- The repository is on `development` with Phase 7 implemented and verification passing locally.
+- The repository is on `development` with Phase 9 implemented and verification passing locally.
 - `TODO.md` is historical and points at older v1.0 planning surfaces.
 - `Mythic_Vibe_CLI_Reforge_Roadmap.md` defines the new rebirth direction: Mythic should become a terminal-based coding companion CLI, not primarily a DevOps-style command catalog.
 - `docs/PRODUCT_INTENT.md` records the companion-shell product intent.
@@ -30,7 +30,16 @@ Implement the roadmap phases in order, starting with Phase 0 and advancing only 
 7. Phase 6: Add a read-only configurable private knowledge reader with SQLite-first support, shell `/knowledge` access, and natural knowledge-search prompts. Completed in the current Phase 6 implementation commit.
 8. Phase 7: Add the GitHub workspace system: default workspace root, clone/open/status, branch creation/tracking, PR draft preparation, and natural clone/branch proposal prompts. Completed in the current Phase 7 implementation commit.
 9. Phase 8: Add the Patch Proposal System: in-memory patch staging, generating diffs, applying patches, rejecting patches, and `/diff`, `/apply`, `/reject` slash commands. Completed in the current Phase 8 implementation commit.
-10. Phase 9+: Continue in roadmap order after Phase 8 is committed and pushed.
+10. Phase 9: Test Runner: integrating test execution into the companion shell, summarizing failures, and feeding failures into the model for self-healing. Completed in the current Phase 9 implementation commit.
+11. Phase 10+: Continue in roadmap order after Phase 9 is committed and pushed.
+
+## Phase 9 Proposed Files
+
+- `mythic_vibe_cli/verify/test_runner.py` (updated to summarize failures)
+- `mythic_vibe_cli/repl.py` (updated to handle `/test` and test failures)
+- `mythic_vibe_cli/runtime/slash_commands.py` (updated with `/test`)
+- `tests/test_test_cli.py` (new tests)
+- Documentation records (`CHANGELOG.md`, `DEVLOG.md`, `README.md`, `docs/COMMAND_CONTRACTS.md`, this task brief)
 
 ## Phase 8 Proposed Files
 

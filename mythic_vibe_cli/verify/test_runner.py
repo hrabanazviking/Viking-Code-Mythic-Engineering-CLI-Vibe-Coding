@@ -40,6 +40,31 @@ class TestRunnerResult:
             "ok": self.ok,
         }
 
+    def summarize_failures(self, max_lines: int = 50) -> str:
+        """Returns a concise summary of test failures to feed to an LLM."""
+        if self.ok:
+            return "All tests passed successfully."
+            
+        lines = []
+        for cmd_res in self.commands:
+            if cmd_res.exit_code != 0:
+                lines.append(f"Command '{' '.join(cmd_res.command)}' failed with exit code {cmd_res.exit_code}:")
+                # Combine stdout and stderr
+                combined = (cmd_res.stdout + "\n" + cmd_res.stderr).strip()
+                combined_lines = combined.splitlines()
+                if len(combined_lines) > max_lines:
+                    lines.append("... (output truncated) ...")
+                    lines.extend(combined_lines[-max_lines:])
+                else:
+                    lines.extend(combined_lines)
+                lines.append("-" * 40)
+                
+        if self.warnings:
+            lines.append("Warnings:")
+            lines.extend(self.warnings)
+            
+        return "\n".join(lines)
+
 
 def discover_default_commands(root: Path) -> list[list[str]]:
     tests_dir = root / "tests"

@@ -231,4 +231,7 @@ BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
     BuiltinSlashCommand(name="diff", description="View the currently proposed patch/diff"),
     BuiltinSlashCommand(name="apply", description="Approve and apply the currently proposed patch"),
     BuiltinSlashCommand(name="reject", description="Reject the currently proposed patch"),
+
+    # --- Test Runner System (PH-09) ---
+    BuiltinSlashCommand(name="test", description="Run the project test suite and feed failures into the model"),
 )

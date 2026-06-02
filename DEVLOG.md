@@ -88,6 +88,16 @@ Phase 7 gives Mythic a controlled working-directory layer for repo juggling with
 
 ---
 
+## 2026-06-02 - Reforge roadmap Phase 9: Test Runner
+
+**Status:** Added the Test Runner integration directly into the interactive REPL. The `verify/test_runner.py` now implements a `summarize_failures` utility. The REPL now supports `/test`, `/test last`, and `/test command <cmd...>` commands. When a test fails, the REPL automatically summarizes the failures and feeds them into the active LLM context to propose a self-healing patch.
+
+### Why it matters
+
+Phase 9 completes the core iterative loop. Previously, developers would have to read a huge test failure output and manually explain it to the agent. Now, Mythic can run the tests, parse the output, and directly propose the patch without user handholding.
+
+---
+
 ## 2026-06-02 - Reforge roadmap Phase 8: Patch Proposal System
 
 **Status:** Added the Patch Proposal System at `mythic_vibe_cli/patch/manager.py`. The companion shell now supports staging patches in-memory via `PatchManager`, generating diffs, and applying or rejecting them with explicit user consent via `/diff`, `/apply`, `/reject` slash commands.
