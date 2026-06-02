@@ -2055,10 +2055,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_runtime_options(graph_visualize)
 
-    # --- PH-15 slices 15.3 + 15.4: memory show / list / compact / rehydrate ---
+    # --- PH-15 + Reforge Phase 5: memory show / list / compact / rehydrate / last / spine ---
     memory_cmd = sub.add_parser(
         "memory",
-        help="Conversation memory: show, list, compact, rehydrate",
+        help="Conversation memory and SQLite project spine",
         **_example_parser_kwargs(
             """
             Examples:
@@ -2066,6 +2066,8 @@ def build_parser() -> argparse.ArgumentParser:
               mythic-vibe memory show --id CV-ABCDEF
               mythic-vibe memory compact --id CV-ABCDEF --keep-recent 3
               mythic-vibe memory rehydrate --phase build
+              mythic-vibe memory last
+              mythic-vibe memory spine --json
             """
         ),
     )
@@ -2109,6 +2111,26 @@ def build_parser() -> argparse.ArgumentParser:
         help="Current Mythic phase to scope the brief (default: build)",
     )
     add_runtime_options(memory_rehydrate, json_output=True)
+
+    memory_last = memory_sub.add_parser(
+        "last",
+        help="Answer what the project was doing last time from SQLite memory",
+    )
+    memory_last.add_argument("--path", default=".")
+    add_runtime_options(memory_last, json_output=True)
+
+    memory_spine = memory_sub.add_parser(
+        "spine",
+        help="Show SQLite memory-spine status and recent entries",
+    )
+    memory_spine.add_argument("--path", default=".")
+    memory_spine.add_argument(
+        "--limit",
+        type=int,
+        default=10,
+        help="Recent entry count to include (default: 10)",
+    )
+    add_runtime_options(memory_spine, json_output=True)
 
     # --- PH-07 slices 7.1-7.3: voice & multimodal ---
     voice_cmd = sub.add_parser(
