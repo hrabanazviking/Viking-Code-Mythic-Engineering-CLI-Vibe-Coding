@@ -941,6 +941,14 @@ def build_parser(admin_mode: bool = False) -> argparse.ArgumentParser:
         help="Baseline git ref (e.g. v1.2.3 or a sha) to compare against HEAD",
     )
     add_runtime_options(rollback, json_output=True)
+    # Phase 18: Reintegrate Patch Proposal Engine
+    patch = sub.add_parser("patch", help=_help("Manage patch proposals"))
+    patch_sub = patch.add_subparsers(dest="patch_command", required=True)
+    patch_propose = patch_sub.add_parser("propose", help=_help("Propose a safe file patch"))
+    patch_propose.add_argument("--file", required=True, help="Target file to patch")
+    patch_propose.add_argument("--content", required=True, help="Proposed file content")
+    patch_propose.add_argument("--path", default=".", help="Project directory (default: current directory)")
+    add_runtime_options(patch_propose, json_output=True)
 
     # PH-11 Slice 11.7: `mythic-vibe security audit`.
     security = sub.add_parser(

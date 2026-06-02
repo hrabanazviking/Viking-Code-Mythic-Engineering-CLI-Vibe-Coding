@@ -7,6 +7,7 @@ user consent. No destructive edits happen automatically.
 
 from __future__ import annotations
 
+import json
 import difflib
 from dataclasses import dataclass
 from pathlib import Path
@@ -32,16 +33,56 @@ class PatchProposal:
         )
         return "".join(diff)
 
+    def to_dict(self) -> dict[str, str]:
+        return {
+            "target_file": self.target_file,
+            "original_content": self.original_content,
+            "proposed_content": self.proposed_content,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, str]) -> "PatchProposal":
+        return cls(
+            target_file=data["target_file"],
+            original_content=data["original_content"],
+            proposed_content=data["proposed_content"],
+        )
+
 
 class PatchManager:
-    """Manages the active patch proposal in the current session."""
+    """Manages the active patch proposal across the session via file persistence."""
 
-    def __init__(self) -> None:
-        self._active_patch: PatchProposal | None = None
+    def __init__(self, project_root: str | Path | None = None) -> None:
+        if project_root is None:
+            self.project_root = Path.cwd()
+        else:
+            self.project_root = Path(project_root).resolve()
+            
+        self.state_file = self.project_root / ".mythic" / "active_patch.json"
+
+    def _read_active(self) -> PatchProposal | None:
+        if not self.state_file.exists():
+            return None
+        try:
+            data = json.loads(self.state_file.read_text(encoding="utf-8"))
+            return PatchProposal.from_dict(data)
+        except Exception:
+            return None
+
+    def _write_active(self, proposal: PatchProposal | None) -> None:
+        self.state_file.parent.mkdir(parents=True, exist_ok=True)
+        if proposal is None:
+            if self.state_file.exists():
+                self.state_file.unlink()
+        else:
+            self.state_file.write_text(json.dumps(proposal.to_dict(), indent=2), encoding="utf-8")
 
     def propose(self, target_file: str | Path, proposed_content: str) -> PatchProposal:
         """Stages a patch for review."""
-        path = Path(target_file).resolve()
+        path = Path(target_file)
+        if not path.is_absolute():
+            path = self.project_root / path
+        path = path.resolve()
         
         try:
             original_content = path.read_text(encoding="utf-8") if path.exists() else ""
@@ -53,36 +94,38 @@ class PatchManager:
             original_content=original_content,
             proposed_content=proposed_content,
         )
-        self._active_patch = proposal
+        self._write_active(proposal)
         return proposal
 
     def get_active(self) -> PatchProposal | None:
         """Returns the currently active patch proposal, if any."""
-        return self._active_patch
+        return self._read_active()
 
     def apply_active(self) -> bool:
         """Applies the active patch to the file system and clears it."""
-        if not self._active_patch:
+        active = self._read_active()
+        if not active:
             return False
             
-        path = Path(self._active_patch.target_file)
+        path = Path(active.target_file)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(self._active_patch.proposed_content, encoding="utf-8")
-        self._active_patch = None
+        path.write_text(active.proposed_content, encoding="utf-8")
+        self._write_active(None)
         return True
 
     def reject_active(self) -> bool:
         """Rejects the active patch and clears it."""
-        if not self._active_patch:
+        if not self._read_active():
             return False
             
-        self._active_patch = None
+        self._write_active(None)
         return True
 
     def get_diff(self) -> str:
         """Returns the unified diff of the active patch."""
-        if not self._active_patch:
+        active = self._read_active()
+        if not active:
             return "No active patch proposal."
-        return self._active_patch.generate_diff()
+        return active.generate_diff()
 
 __all__ = ["PatchProposal", "PatchManager"]

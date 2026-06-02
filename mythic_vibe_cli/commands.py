@@ -4390,6 +4390,42 @@ def cmd_docker_dispatch(args: argparse.Namespace) -> int:
     return USER_INPUT_ERROR
 
 
+def cmd_patch_propose(args: argparse.Namespace) -> int:
+    from .patch.manager import PatchManager
+    
+    root = Path(getattr(args, "path", ".")).resolve()
+    target_file = getattr(args, "file", "")
+    content = getattr(args, "content", "")
+    
+    if not target_file or not content:
+        write_error("--file and --content are required.")
+        return USER_INPUT_ERROR
+        
+    pm = PatchManager(project_root=root)
+    proposal = pm.propose(target_file, content)
+    
+    payload = {
+        "command": "patch propose",
+        "target_file": proposal.target_file,
+        "status": "staged",
+    }
+    
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+        
+    write_line(f"Patch proposed for {proposal.target_file}. Use `/patch apply` in the companion shell to apply.")
+    return SUCCESS
+
+
+def cmd_patch_dispatch(args: argparse.Namespace) -> int:
+    sub = getattr(args, "patch_command", "")
+    if sub == "propose":
+        return cmd_patch_propose(args)
+    write_error(f"Unknown patch subcommand: {sub!r}")
+    return USER_INPUT_ERROR
+
+
 def cmd_release(args: argparse.Namespace) -> int:
     """PH-12 Slice 12.3 — semver-aware release helper.
 
@@ -7756,6 +7792,7 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "security": cmd_security_dispatch,
     "ci": cmd_ci_dispatch,
     "docker": cmd_docker_dispatch,
+    "patch": cmd_patch_dispatch,
     "release": cmd_release,
     "rollback": cmd_rollback,
     "policy": cmd_policy_dispatch,
