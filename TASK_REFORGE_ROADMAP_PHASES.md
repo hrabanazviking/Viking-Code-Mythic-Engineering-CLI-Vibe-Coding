@@ -32,7 +32,8 @@ Implement the roadmap phases in order, starting with Phase 0 and advancing only 
 9. Phase 8: Add the Patch Proposal System: in-memory patch staging, generating diffs, applying patches, rejecting patches, and `/diff`, `/apply`, `/reject` slash commands. Completed in the current Phase 8 implementation commit.
 10. Phase 9: Test Runner: integrating test execution into the companion shell, summarizing failures, and feeding failures into the model for self-healing. Completed in the current Phase 9 implementation commit.
 11. Phase 10: TUI Integration: making the TUI the core visual cockpit for the companion shell with a tabbed interface. Completed in the current Phase 10 implementation commit.
-12. Phase 11+: Continue in roadmap order.
+12. Phase 11: Legacy Command Demotion: suppressing legacy commands from the main help screen to emphasize the shell. Completed in the current Phase 11 implementation commit.
+13. Phase 12+: Continue in roadmap order.
 
 ## Phase 9 Proposed Files
 

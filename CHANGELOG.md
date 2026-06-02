@@ -42,11 +42,8 @@ This unreleased band tracks work landed on `development` after the v1.0.0 stable
 
 ### Added — Reforge roadmap Phase 10
 
-- **Phase 10: TUI Integration:**
-  - Added a unified `CockpitScreen` inside Textual to serve as a dashboard for the interactive shell.
-  - Added tabs for Chat, Files, Diff, Memory, Knowledge, Git Status, Tasks, and Model Status.
-  - Bridged the shell REPL loop directly into the TUI Chat tab using asynchronous worker threads.
-  - Added `/tui` slash command to launch the visual interface from the basic REPL.
+- **PHASE 10: TUI Integration**: Converted the shell into a Textual TUI (`CockpitScreen`) with tabs for Chat, Files, Diff, Memory, Knowledge, Tasks, and Model. The chat view runs the REPL output through `RichLog` and defers model inference to worker threads. Added the `/tui` command to trigger visual mode.
+- **PHASE 11: Legacy Command Demotion**: Suppressed legacy Mythic command documentation from the default `mythic --help` screen, emphasizing the `mythic` interactive shell. Added `mythic admin <cmd>` fallback for all suppressed commands, ensuring no workflow tools were destroyed while guiding operators into the conversation flow.
 
 ### Added — Reforge roadmap Phase 9
 
