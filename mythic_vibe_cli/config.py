@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import json
 import os
 from pathlib import Path
@@ -15,6 +15,7 @@ class AppConfig:
     method_source: str = "https://github.com/hrabanazviking/Mythic-Engineering"
     ai_provider: str = "copy-paste"
     ai_model: str = "manual"
+    knowledge_sources: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
@@ -57,6 +58,18 @@ class ConfigStore:
         codex = payload.get("codex", {}) if isinstance(payload.get("codex", {}), dict) else {}
         method = payload.get("method", {}) if isinstance(payload.get("method", {}), dict) else {}
         ai = payload.get("ai", {}) if isinstance(payload.get("ai", {}), dict) else {}
+        knowledge = payload.get("knowledge", {}) if isinstance(payload.get("knowledge", {}), dict) else {}
+        knowledge_sources = _parse_knowledge_sources(knowledge.get("sources", []))
+        env_knowledge_path = os.environ.get("MYTHIC_KNOWLEDGE_SQLITE_PATH", "").strip()
+        if env_knowledge_path:
+            knowledge_sources.append(
+                {
+                    "name": os.environ.get("MYTHIC_KNOWLEDGE_NAME", "env-sqlite").strip() or "env-sqlite",
+                    "type": "sqlite",
+                    "path": env_knowledge_path,
+                    "host": os.environ.get("MYTHIC_KNOWLEDGE_HOST", "").strip(),
+                }
+            )
 
         config = AppConfig(
             excerpt_limit=_parse_int_env(
@@ -84,6 +97,7 @@ class ConfigStore:
                 "MYTHIC_AI_MODEL",
                 ai.get("model", AppConfig.ai_model),
             ),
+            knowledge_sources=knowledge_sources,
         )
 
         return LoadedConfig(config=config, sources=sources)
@@ -139,6 +153,19 @@ def _set_dotted(payload: dict[str, Any], key: str, value: Any) -> None:
             target[part] = current
         target = current
     target[parts[-1]] = value
+
+
+def _parse_knowledge_sources(raw: object) -> list[dict[str, Any]]:
+    if not isinstance(raw, list):
+        return []
+    sources: list[dict[str, Any]] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        source = {str(key): value for key, value in item.items() if isinstance(key, str)}
+        if source:
+            sources.append(source)
+    return sources
 
 
 def _parse_int_env(name: str, fallback: int, minimum: int, maximum: int) -> int:

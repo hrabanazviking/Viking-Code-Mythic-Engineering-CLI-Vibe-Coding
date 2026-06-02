@@ -109,6 +109,18 @@ def _detect_shell_context(project_root: Path) -> ShellContext:
     knowledge_status = "not connected"
     if (root / "mythic" / "project_index.json").exists():
         knowledge_status = "local project index present"
+    try:
+        from .knowledge.reader import knowledge_status as _knowledge_status
+
+        statuses = _knowledge_status(root)
+        configured = [status for status in statuses if status.configured]
+        searchable = [status for status in statuses if status.searchable]
+        if searchable:
+            knowledge_status = f"{len(searchable)} private source(s) searchable"
+        elif configured:
+            knowledge_status = f"{len(configured)} private source(s) configured"
+    except Exception:
+        pass
 
     memory_status = "not initialized"
     if (root / "mythic" / "conversations").exists() or (root / ".mythic" / "memory.sqlite").exists():
@@ -253,6 +265,9 @@ def _answer_natural_prompt(prompt: str, stdout: IO[str], context: ShellContext) 
     normalized = prompt.lower()
     wants_project = any(token in normalized for token in ("project", "repo", "repository", "where am i", "what directory"))
     wants_model = "model" in normalized or "provider" in normalized
+    wants_knowledge = "knowledge" in normalized and any(
+        token in normalized for token in ("search", "find", "look up", "lookup", "earlier ideas", "ideas about")
+    )
     wants_last_time = any(
         token in normalized
         for token in (
@@ -264,6 +279,20 @@ def _answer_natural_prompt(prompt: str, stdout: IO[str], context: ShellContext) 
         )
     )
     wants_context_scan = any(token in normalized for token in ("find", "search", "inspect", "scan", "where is", "show me"))
+
+    if wants_knowledge:
+        try:
+            from .knowledge.reader import render_search, search_knowledge
+
+            query = _knowledge_query_from_prompt(prompt)
+            result = search_knowledge(context.project_root, query, limit=5)
+            rendered = render_search(result)
+            print(rendered, file=stdout)
+            _record_shell_memory(prompt, rendered, context, "knowledge")
+            return
+        except Exception as exc:  # noqa: BLE001 - private knowledge should degrade, not crash
+            print(f"Knowledge search failed: {exc}", file=stdout)
+            return
 
     if wants_last_time:
         try:
@@ -328,6 +357,24 @@ def _answer_natural_prompt(prompt: str, stdout: IO[str], context: ShellContext) 
     model_response = _answer_with_selected_model(prompt, stdout, context)
     response_text = "\n".join([*context_lines, model_response]).strip()
     _record_shell_memory(prompt, response_text, context, "conversation")
+
+
+def _knowledge_query_from_prompt(prompt: str) -> str:
+    text = prompt.strip()
+    lowered = text.lower()
+    markers = (
+        "knowledge database for",
+        "knowledge base for",
+        "knowledge for",
+        "knowledge search",
+        "search my knowledge database for",
+        "search knowledge for",
+    )
+    for marker in markers:
+        index = lowered.find(marker)
+        if index >= 0:
+            return text[index + len(marker):].strip(" .:?") or text
+    return text
 
 
 def _record_shell_memory(prompt: str, response: str, context: ShellContext, context_kind: str) -> None:

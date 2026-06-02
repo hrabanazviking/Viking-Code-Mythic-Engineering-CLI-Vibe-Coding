@@ -106,6 +106,8 @@ class CliKernelTests(unittest.TestCase):
             "drift",
             # PH-05 slices 5.5 + 5.6 — graph queries + visualize
             "graph",
+            # Reforge Phase 6 — private knowledge reader
+            "knowledge",
             # PH-15 slices 15.3 + 15.4 — memory show / list / compact / rehydrate
             "memory",
             # PH-06 slice 6.6 — hardware profile

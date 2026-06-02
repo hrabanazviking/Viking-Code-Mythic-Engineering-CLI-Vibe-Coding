@@ -50,7 +50,16 @@ class MythicCliRitualTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / ".mythic-vibe.json").write_text(
-                json.dumps({"ai": {"provider": "openai", "model": "gpt-4o-mini"}}),
+                json.dumps(
+                    {
+                        "ai": {"provider": "openai", "model": "gpt-4o-mini"},
+                        "knowledge": {
+                            "sources": [
+                                {"name": "notes", "type": "sqlite", "path": "knowledge.sqlite"}
+                            ]
+                        },
+                    }
+                ),
                 encoding="utf-8",
             )
 
@@ -60,6 +69,7 @@ class MythicCliRitualTests(unittest.TestCase):
 
         self.assertEqual(loaded.config.ai_provider, "openai")
         self.assertEqual(loaded.config.ai_model, "gpt-4o-mini")
+        self.assertEqual(loaded.config.knowledge_sources[0]["name"], "notes")
 
     def test_plunder_requires_token_env(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -2675,6 +2675,7 @@ def cmd_config(args: argparse.Namespace) -> int:
                     "method.source": loaded.config.method_source,
                     "ai.provider": loaded.config.ai_provider,
                     "ai.model": loaded.config.ai_model,
+                    "knowledge.sources": loaded.config.knowledge_sources,
                 },
             }
         )
@@ -2696,6 +2697,7 @@ def cmd_config(args: argparse.Namespace) -> int:
     write_key_value("method.source", loaded.config.method_source, indent=2)
     write_key_value("ai.provider", loaded.config.ai_provider, indent=2)
     write_key_value("ai.model", loaded.config.ai_model, indent=2)
+    write_key_value("knowledge.sources", len(loaded.config.knowledge_sources), indent=2)
     return SUCCESS
 
 
@@ -6846,6 +6848,81 @@ def cmd_graph_visualize(args: argparse.Namespace) -> int:
     return SUCCESS
 
 
+def cmd_knowledge_dispatch(args: argparse.Namespace) -> int:
+    sub = getattr(args, "knowledge_command", "")
+    if sub == "status":
+        return cmd_knowledge_status(args)
+    if sub == "sources":
+        return cmd_knowledge_sources(args)
+    if sub == "search":
+        return cmd_knowledge_search(args)
+    write_error(
+        f"Unknown knowledge subcommand: {sub!r}. "
+        "Valid: status | sources | search."
+    )
+    return USER_INPUT_ERROR
+
+
+def cmd_knowledge_status(args: argparse.Namespace) -> int:
+    from .knowledge.reader import knowledge_status, render_status
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    statuses = knowledge_status(root)
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "knowledge status",
+                "path": str(root),
+                "sources": [status.to_dict() for status in statuses],
+            }
+        )
+        return SUCCESS
+    write_line(render_status(statuses))
+    return SUCCESS
+
+
+def cmd_knowledge_sources(args: argparse.Namespace) -> int:
+    from .knowledge.reader import load_knowledge_sources, render_sources
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    sources = load_knowledge_sources(root)
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "knowledge sources",
+                "path": str(root),
+                "sources": [source.to_dict() for source in sources],
+            }
+        )
+        return SUCCESS
+    write_line(render_sources(root))
+    return SUCCESS
+
+
+def cmd_knowledge_search(args: argparse.Namespace) -> int:
+    from .knowledge.reader import render_search, search_knowledge
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    raw_query = getattr(args, "query", "")
+    if isinstance(raw_query, list):
+        query = " ".join(str(part) for part in raw_query).strip()
+    else:
+        query = str(raw_query).strip()
+    if not query:
+        write_error("Knowledge search requires a non-empty query.")
+        return USER_INPUT_ERROR
+    limit = int(getattr(args, "limit", 5) or 5)
+    result = search_knowledge(root, query, limit=limit)
+    if _flag(args, "json"):
+        payload = result.to_dict()
+        payload["command"] = "knowledge search"
+        payload["path"] = str(root)
+        write_json(payload)
+        return SUCCESS
+    write_line(render_search(result))
+    return SUCCESS
+
+
 def cmd_memory_dispatch(args: argparse.Namespace) -> int:
     """Dispatcher for `mythic-vibe memory` subactions."""
     sub = getattr(args, "memory_command", "")
@@ -7470,6 +7547,7 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "audit": cmd_audit,
     "drift": cmd_drift,
     "graph": cmd_graph_dispatch,
+    "knowledge": cmd_knowledge_dispatch,
     "memory": cmd_memory_dispatch,
     "hardware": cmd_hardware,
     "voice": cmd_voice_dispatch,
