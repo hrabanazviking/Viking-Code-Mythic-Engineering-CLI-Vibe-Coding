@@ -34,7 +34,8 @@ Implement the roadmap phases in order, starting with Phase 0 and advancing only 
 11. Phase 10: TUI Integration: making the TUI the core visual cockpit for the companion shell with a tabbed interface. Completed in the current Phase 10 implementation commit.
 12. Phase 11: Legacy Command Demotion: suppressing legacy commands from the main help screen to emphasize the shell. Completed in the current Phase 11 implementation commit.
 13. Phase 12: Documentation Rewrite: updating docs folder with new paradigm documents. Completed in the current Phase 12 implementation commit.
-14. Phase 13+: Continue in roadmap order.
+14. Phase 13: Quarantine Non-Code Debris: organized unused media, research, and old documents into graveyard/. Completed in the current Phase 13 implementation commit.
+15. Phase 14+: Continue in roadmap order.
 
 ## Phase 9 Proposed Files
 

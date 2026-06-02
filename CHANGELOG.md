@@ -8,6 +8,14 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 This unreleased band tracks work landed on `development` after the v1.0.0 stable launch on 2026-05-03. None of it changes any v1.0 documented contract; everything is strictly additive.
 
+### Added — Reforge roadmap Phase 13
+
+- Quarantined non-code debris (unused media, dead experiments, duplicates, and roleplay lore) into the `graveyard/` directory to clean up the repository root without deleting useful artifacts.
+
+### Added — Reforge roadmap Phase 12
+
+- Wrote new documentation describing the interactive coding companion shell, creating `docs/INTERACTIVE_SHELL.md`, `docs/SLASH_COMMANDS.md`, `docs/INTERNAL_TOOLS.md`, `docs/MEMORY.md`, `docs/KNOWLEDGE.md`, `docs/GITHUB_WORKSPACE.md`, `docs/TUI.md`, and `docs/DAILY_WORKFLOW.md`. Updated `docs/INDEX.md` and `README.md` to reflect the new primary entry points.
+
 ### Added — Reforge roadmap Phase 0
 
 - Added `docs/PRODUCT_INTENT.md` as the active product-intent record for the reforge roadmap. It states that Mythic is being corrected into a terminal-based coding companion CLI, with `mythic` as the primary interactive entrypoint, natural language as the main interaction, slash commands as secondary controls, and existing command code preserved as internal/admin machinery where useful. Linked the record from `docs/INDEX.md` and `README.md`.
