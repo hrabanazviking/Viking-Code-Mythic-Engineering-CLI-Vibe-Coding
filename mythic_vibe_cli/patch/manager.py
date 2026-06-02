@@ -59,17 +59,29 @@ class PatchManager:
             self.project_root = Path(project_root).resolve()
             
         self.state_file = self.project_root / ".mythic" / "active_patch.json"
+        self._active_loaded = False
+        self._active: PatchProposal | None = None
 
     def _read_active(self) -> PatchProposal | None:
+        if self._active_loaded:
+            return self._active
         if not self.state_file.exists():
+            self._active_loaded = True
+            self._active = None
             return None
         try:
             data = json.loads(self.state_file.read_text(encoding="utf-8"))
-            return PatchProposal.from_dict(data)
+            self._active = PatchProposal.from_dict(data)
+            self._active_loaded = True
+            return self._active
         except Exception:
+            self._active_loaded = True
+            self._active = None
             return None
 
     def _write_active(self, proposal: PatchProposal | None) -> None:
+        self._active = proposal
+        self._active_loaded = True
         self.state_file.parent.mkdir(parents=True, exist_ok=True)
         if proposal is None:
             if self.state_file.exists():
