@@ -41,7 +41,12 @@ from .plugins.api import PLUGIN_HOOKS
 from .plugins.dispatcher import PluginHookDispatcher
 from .plugins.loader import inspect_plugin
 from .plugins.registry import PluginRegistry
-from .runtime.slash_commands import BUILTIN_SLASH_COMMANDS, BuiltinSlashCommand, SlashCommandInfo
+from .runtime.command_catalog import (
+    SLASH_LOCAL_NAMES,
+    builtin_slash_by_name,
+    iter_builtin_slash_commands,
+)
+from .runtime.slash_commands import BuiltinSlashCommand, SlashCommandInfo
 from .core.state import PHASES, VerificationRecord, coerce_project_state, utc_now, validate_state_payload
 from .persistence.json_store import JsonStateStore, StateStoreError
 from .persistence.migrations import migrate_project_state
@@ -5993,7 +5998,8 @@ def cmd_slash_list(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
     source_filter = (getattr(args, "source", "") or "").strip().lower()
 
-    builtin_payload = [entry.to_dict() for entry in BUILTIN_SLASH_COMMANDS]
+    builtins = iter_builtin_slash_commands()
+    builtin_payload = [entry.to_dict() for entry in builtins]
 
     contributed: list[SlashCommandInfo] = []
     if source_filter != "builtin":
@@ -6020,7 +6026,7 @@ def cmd_slash_list(args: argparse.Namespace) -> int:
 
     if not source_filter or source_filter == "builtin":
         write_line("Builtin slash commands:")
-        for entry in BUILTIN_SLASH_COMMANDS:
+        for entry in builtins:
             write_bullet(f"/{entry.name} — {entry.description}", indent=2)
 
     if source_filter == "builtin":
@@ -6062,7 +6068,7 @@ def _resolve_argparse_subparser(name: str) -> argparse.ArgumentParser | None:
     return None
 
 
-SLASH_LOCALS_WITHOUT_ARGPARSE = {"help", "model", "reload", "quit"}
+SLASH_LOCALS_WITHOUT_ARGPARSE = set(SLASH_LOCAL_NAMES)
 
 
 def cmd_slash_inspect(args: argparse.Namespace) -> int:
@@ -6083,11 +6089,7 @@ def cmd_slash_inspect(args: argparse.Namespace) -> int:
     if name.startswith("/"):
         name = name[1:]
 
-    builtin_match: BuiltinSlashCommand | None = None
-    for entry in BUILTIN_SLASH_COMMANDS:
-        if entry.name == name:
-            builtin_match = entry
-            break
+    builtin_match: BuiltinSlashCommand | None = builtin_slash_by_name(name)
 
     contributed_match: SlashCommandInfo | None = None
     if builtin_match is None:
