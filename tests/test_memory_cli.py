@@ -63,6 +63,14 @@ class MemoryArgparseTests(unittest.TestCase):
         self.assertEqual(ns.memory_command, "rehydrate")
         self.assertEqual(ns.phase, "build")
 
+    def test_last_and_spine_subcommands_parse(self) -> None:
+        parser = build_parser()
+        last = parser.parse_args(["memory", "last"])
+        spine = parser.parse_args(["memory", "spine", "--limit", "5"])
+        self.assertEqual(last.memory_command, "last")
+        self.assertEqual(spine.memory_command, "spine")
+        self.assertEqual(spine.limit, 5)
+
 
 # ---- Dispatch + outputs ------------------------------------------------
 
@@ -178,6 +186,39 @@ class MemoryDispatchTests(unittest.TestCase):
                 dry_run=False,
             )
             self.assertEqual(cmd_memory_compact(ns), USER_INPUT_ERROR)
+
+    def test_memory_last_json_uses_sqlite_spine(self) -> None:
+        from mythic_vibe_cli.commands import cmd_memory_last
+        from mythic_vibe_cli.memory.spine import record_memory
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            record_memory(root, "session_summary", "Phase 5 was underway.")
+            ns = argparse.Namespace(path=str(root), json=True)
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                exit_code = cmd_memory_last(ns)
+            payload = json.loads(buf.getvalue())
+
+        self.assertEqual(exit_code, SUCCESS)
+        self.assertEqual(payload["command"], "memory last")
+        self.assertIn("Phase 5 was underway.", payload["answer"])
+
+    def test_memory_spine_text_initializes_database(self) -> None:
+        from mythic_vibe_cli.commands import cmd_memory_spine
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            ns = argparse.Namespace(path=str(root), limit=10, json=False)
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                exit_code = cmd_memory_spine(ns)
+            rendered = buf.getvalue()
+            db_exists = (root / ".mythic" / "memory.sqlite").is_file()
+
+        self.assertEqual(exit_code, SUCCESS)
+        self.assertIn("Memory spine", rendered)
+        self.assertTrue(db_exists)
 
 
 # ---- Slice 15.4: rehydrate --------------------------------------------

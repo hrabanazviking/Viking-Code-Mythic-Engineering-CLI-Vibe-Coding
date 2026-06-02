@@ -146,6 +146,54 @@ class ReplLoopTests(unittest.TestCase):
         self.assertIn("Tell me a short plan.", out)
         self.assertEqual(fake.calls, [])
 
+    def test_generic_natural_prompt_records_memory_spine(self) -> None:
+        from mythic_vibe_cli.memory.spine import list_memory
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            stdin = io.StringIO("Tell me a short plan.\n/quit\n")
+            stdout = io.StringIO()
+            fake = _FakeMain()
+
+            code = run_shell(
+                stdin=stdin,
+                stdout=stdout,
+                stderr=io.StringIO(),
+                main=fake,
+                project_root=root,
+            )
+            entries = list_memory(root)
+
+        self.assertEqual(code, SUCCESS)
+        self.assertTrue(any(entry.kind == "task" for entry in entries))
+        self.assertTrue(
+            any("Tell me a short plan." in entry.content for entry in entries)
+        )
+        self.assertEqual(fake.calls, [])
+
+    def test_last_time_question_uses_memory_spine(self) -> None:
+        from mythic_vibe_cli.memory.spine import record_memory
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            record_memory(root, "session_summary", "We were wiring Phase 5 memory.")
+            stdin = io.StringIO("What were we doing last time?\n/quit\n")
+            stdout = io.StringIO()
+            fake = _FakeMain()
+
+            code = run_shell(
+                stdin=stdin,
+                stdout=stdout,
+                stderr=io.StringIO(),
+                main=fake,
+                project_root=root,
+            )
+
+        self.assertEqual(code, SUCCESS)
+        self.assertIn("Last remembered work", stdout.getvalue())
+        self.assertIn("We were wiring Phase 5 memory.", stdout.getvalue())
+        self.assertEqual(fake.calls, [])
+
     def test_empty_lines_do_not_dispatch(self) -> None:
         fake = _FakeMain()
         code, _out, _err = self._drive(["\n", "\n", "\n", "/quit\n"], main=fake)
