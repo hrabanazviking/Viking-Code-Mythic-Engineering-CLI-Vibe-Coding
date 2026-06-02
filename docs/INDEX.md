@@ -65,13 +65,28 @@ mythic-vibe verify
 
 ---
 
+## Companion Shell
+
+Mythic operates primarily as an interactive coding companion. Read the following documentation to understand the shell workflow:
+
+- [Product Intent](PRODUCT_INTENT.md) — the reforge direction: coding companion CLI first, command catalog second.
+- [Interactive Shell](INTERACTIVE_SHELL.md) — the primary conversational loop.
+- [Slash Commands](SLASH_COMMANDS.md) — secondary explicit controls.
+- [Daily Workflow](DAILY_WORKFLOW.md) — a standard day using the companion.
+- [Project Memory](MEMORY.md) — how Mythic retains session context.
+- [Private Knowledge](KNOWLEDGE.md) — integrating external documents.
+- [GitHub Workspace](GITHUB_WORKSPACE.md) — conversational branch and PR management.
+- [Cockpit TUI](TUI.md) — the visual interface for the shell.
+- [Internal Tools](INTERNAL_TOOLS.md) — how legacy commands power the shell machinery.
+
+---
+
 ## Project shape
 
 The CLI is **architecture-first**: every command operates against a `mythic/` directory under your project that captures intent, decisions, verification results, and architectural anchors. The base CLI is **stdlib-only** — every external dependency is opt-in via an extras (`ai`, `tui`, `ux`, `otel`).
 
 For the full design rationale see:
 
-- [Product Intent](PRODUCT_INTENT.md) — the reforge direction: coding companion CLI first, command catalog second.
 - [Philosophy](PHILOSOPHY.md) — why the workflow looks the way it does.
 - [Architecture](ARCHITECTURE.md) — module boundaries, data flow, runtime invariants.
 - [System Vision](SYSTEM_VISION.md) — where the project is heading.
