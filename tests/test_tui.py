@@ -16,6 +16,7 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 textual_unavailable = False
@@ -263,6 +264,65 @@ class TuiHeadlessTests(unittest.TestCase):
 
         # Should complete without raising.
         asyncio.run(run_test())
+
+    def test_status_screen_degrades_when_status_data_refresh_fails(self) -> None:
+        from mythic_vibe_cli.tui.app import MythicTuiApp
+
+        async def run_test() -> tuple[str, str]:
+            with tempfile.TemporaryDirectory() as tmp:
+                app = MythicTuiApp(Path(tmp))
+                with mock.patch(
+                    "mythic_vibe_cli.tui.app.build_status_data",
+                    side_effect=RuntimeError("state unavailable"),
+                ):
+                    async with app.run_test() as pilot:
+                        await pilot.pause()
+                        status_bar = app.screen.query_one("#status-bar")
+                        footer_widget = app.screen.query_one("#footer-line")
+                        return str(status_bar.render()), str(footer_widget.render())
+
+        rendered_bar, rendered_footer = asyncio.run(run_test())
+        self.assertIn("Status unavailable", rendered_bar)
+        self.assertIn("state unavailable", rendered_bar)
+        self.assertIn("Last refresh: unavailable", rendered_footer)
+
+    def test_status_screen_degrades_when_diagnostics_poll_fails(self) -> None:
+        from mythic_vibe_cli.tui.app import MythicTuiApp
+
+        async def run_test() -> str:
+            with tempfile.TemporaryDirectory() as tmp:
+                app = MythicTuiApp(Path(tmp))
+                with mock.patch(
+                    "mythic_vibe_cli.tui.app.EventTailReader.poll",
+                    side_effect=OSError("event log unreadable"),
+                ):
+                    async with app.run_test() as pilot:
+                        await pilot.pause()
+                        panel = app.screen.query_one("#events-panel")
+                        return str(panel.render())
+
+        rendered = asyncio.run(run_test())
+        self.assertIn("Diagnostics unavailable", rendered)
+        self.assertIn("event log unreadable", rendered)
+
+    def test_status_screen_stops_refresh_timer_on_unmount(self) -> None:
+        from mythic_vibe_cli.tui.app import StatusScreen
+
+        class FakeTimer:
+            def __init__(self) -> None:
+                self.stopped = False
+
+            def stop(self) -> None:
+                self.stopped = True
+
+        with tempfile.TemporaryDirectory() as tmp:
+            screen = StatusScreen(Path(tmp))
+            timer = FakeTimer()
+            screen._refresh_timer = timer
+            screen.on_unmount()
+
+        self.assertTrue(timer.stopped)
+        self.assertIsNone(screen._refresh_timer)
 
 
 @unittest.skipIf(textual_unavailable, "textual not installed")
