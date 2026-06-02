@@ -16,6 +16,10 @@ This unreleased band tracks work landed on `development` after the v1.0.0 stable
 
 - Added `mythic_vibe_cli/interactive_shell.py` as the canonical interactive shell import surface while preserving the historical `repl` module. Bare `mythic` / `mythic-vibe` now opens the companion shell by default, and `mythic admin <command>` strips the `admin` prefix before dispatch so existing command-catalog workflows remain reachable during the reforge.
 
+### Added — Reforge roadmap Phase 2
+
+- Upgraded the companion shell startup to show project/repository path, Git branch, fallback model, memory status, and knowledge status. Added `/model` as a shell-local slash control and changed normal natural-language prompts that are not recognized commands to receive a local project-context response instead of falling into argparse errors.
+
 ### Added — Hermes Agent control plane (post-v1.0)
 
 - **Hermes Agent** — programmatic control plane for any external AI agent. Two access modes (TCL Python in-process + HTTP API) share one core (`mythic_vibe_cli/agent_api/`). 18 curated tools cover status, doctor, drift, packet creation/lint, verify, reflect, ai recommend, provenance verify, workflow lineage, persona, plugin doctor, artifact read/list, recent events. Every invocation audited via the existing event-log primitive. New `mythic-vibe surface hermes [--bind ADDR --port N --token TOKEN]` launches the token-protected HTTP API. New `mythic-vibe hermes tools|inspect|invoke` invokes the curated agent-tool surface from the CLI without HTTP. See `docs/HERMES_AGENT.md` (operator + author guide).

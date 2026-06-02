@@ -47,6 +47,10 @@ class ReplLoopTests(unittest.TestCase):
         self.assertEqual(code, SUCCESS)
         self.assertIn(BANNER, out)
         self.assertIn(PROMPT, out)
+        self.assertIn("Project:", out)
+        self.assertIn("Branch:", out)
+        self.assertIn("Model:", out)
+        self.assertIn("Knowledge:", out)
 
     def test_quit_exits_cleanly(self) -> None:
         code, out, _err = self._drive(["/quit\n"])
@@ -60,8 +64,22 @@ class ReplLoopTests(unittest.TestCase):
     def test_help_lists_builtin_catalog(self) -> None:
         code, out, _err = self._drive(["/help\n", "/quit\n"])
         self.assertEqual(code, SUCCESS)
-        for required in {"/help", "/status", "/scan", "/quit"}:
+        for required in {"/help", "/model", "/status", "/scan", "/quit"}:
             self.assertIn(required, out)
+
+    def test_model_local_reports_current_fallback_model(self) -> None:
+        code, out, _err = self._drive(["/model\n", "/quit\n"])
+        self.assertEqual(code, SUCCESS)
+        self.assertIn("Provider: copy-paste", out)
+        self.assertIn("Model: manual", out)
+
+    def test_natural_project_question_returns_context_without_dispatch(self) -> None:
+        fake = _FakeMain()
+        code, out, _err = self._drive(["What project am I in?\n", "/quit\n"], main=fake)
+        self.assertEqual(code, SUCCESS)
+        self.assertIn("You are in this project context", out)
+        self.assertIn("Project:", out)
+        self.assertEqual(fake.calls, [])
 
     def test_empty_lines_do_not_dispatch(self) -> None:
         fake = _FakeMain()

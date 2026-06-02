@@ -1307,7 +1307,7 @@ class CliKernelTests(unittest.TestCase):
                 sys.stdin = saved_stdin
 
             self.assertEqual(code, SUCCESS)
-            self.assertIn("mythic-vibe shell", output.getvalue())
+            self.assertIn("Mythic Vibe CLI", output.getvalue())
             self.assertIn("mythic-vibe>", output.getvalue())
 
     def test_zero_arg_entrypoint_opens_interactive_shell(self) -> None:
@@ -1322,7 +1322,7 @@ class CliKernelTests(unittest.TestCase):
             sys.stdin = saved_stdin
 
         self.assertEqual(code, SUCCESS)
-        self.assertIn("mythic-vibe shell", output.getvalue())
+        self.assertIn("Mythic Vibe CLI", output.getvalue())
         self.assertIn("mythic-vibe>", output.getvalue())
 
     def test_admin_prefix_runs_existing_command_catalog(self) -> None:

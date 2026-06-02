@@ -28,6 +28,16 @@ This turns the product correction from documentation into runtime behavior witho
 
 ---
 
+## 2026-06-02 - Reforge roadmap Phase 2: minimal shell context
+
+**Status:** The shell now starts with live local context: project/repository path, Git branch or non-repo status, fallback model, memory status, and knowledge status. `/model` is a shell-local slash control and appears in the slash catalog. Normal natural-language input that is not a known command now receives a local context answer, so "What project am I in?" returns useful project information instead of an argparse error.
+
+### Why it matters
+
+This completes the minimal useful companion loop without pretending Phase 4 model routing is already done. The shell can orient the user, route slash commands, preserve existing command dispatch, answer basic context questions, and exit cleanly.
+
+---
+
 ## 2026-05-03 — v1.0.0 launch (PH-19 + PH-20, 26 slices)
 
 **Sessions:** Two consecutive working days, chained through Volmarr's "go for all the rest of 19" then "go for phase 20" then "do a complete look over the README.md and all other project documents" directives.

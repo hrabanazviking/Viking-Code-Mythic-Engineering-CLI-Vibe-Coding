@@ -5960,7 +5960,7 @@ def _resolve_argparse_subparser(name: str) -> argparse.ArgumentParser | None:
     return None
 
 
-SLASH_LOCALS_WITHOUT_ARGPARSE = {"help", "reload", "quit"}
+SLASH_LOCALS_WITHOUT_ARGPARSE = {"help", "model", "reload", "quit"}
 
 
 def cmd_slash_inspect(args: argparse.Namespace) -> int:
