@@ -871,8 +871,7 @@ class MythicTuiApp(App):
         if self.narrow_mode:
             self.sub_title = f"{self.SUB_TITLE}  ·  narrow"
             
-        from .cockpit import CockpitScreen
-        self.push_screen(CockpitScreen(self.root))
+        self.push_screen(StatusScreen(self.root))
 
     def action_cycle_theme(self) -> None:
         """Advance to the next entry in :data:`THEME_CYCLE`. Bound to ``t``

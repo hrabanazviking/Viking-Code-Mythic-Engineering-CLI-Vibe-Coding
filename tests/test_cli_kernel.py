@@ -122,6 +122,7 @@ class CliKernelTests(unittest.TestCase):
             "ci",
             # PH-12 slice 12.2 — Docker scaffold
             "docker",
+            "patch",
             # PH-12 slice 12.3 — Release helper
             "release",
             # PH-12 slice 12.4 — Rollback summariser

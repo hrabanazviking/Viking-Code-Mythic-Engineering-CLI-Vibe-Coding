@@ -36,6 +36,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
 
+from ..runtime.output_guard import suspend_stdout_guard
+
 
 @dataclass(frozen=True)
 class SimulationOutcome:
@@ -101,7 +103,7 @@ def _run_handler(
     """Invoke a CLI handler with stdout/stderr captured."""
     out = io.StringIO()
     err = io.StringIO()
-    with redirect_stdout(out), redirect_stderr(err):
+    with suspend_stdout_guard(), redirect_stdout(out), redirect_stderr(err):
         exit_code = handler(namespace)
     return exit_code, out.getvalue(), err.getvalue()
 

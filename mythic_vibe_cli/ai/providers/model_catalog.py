@@ -668,7 +668,7 @@ __all__ = [
 #     (for tests) and returns a CatalogFreshness.
 # ---------------------------------------------------------------------------
 
-from datetime import date as _date_type, datetime as _datetime  # noqa: E402
+from datetime import UTC as _UTC, date as _date_type, datetime as _datetime  # noqa: E402
 
 STATIC_LAST_UPDATED = _STATIC_LAST_UPDATED
 
@@ -721,7 +721,7 @@ def evaluate_catalog_freshness(
     passing.
     """
     if today is None:
-        today = _datetime.utcnow().date()
+        today = _datetime.now(_UTC).date()
 
     try:
         parsed = _datetime.strptime(last_updated, "%Y-%m-%d").date()
