@@ -6897,9 +6897,15 @@ def cmd_workspace_dispatch(args: argparse.Namespace) -> int:
         return cmd_workspace_pr(args)
     if sub == "plan":
         return cmd_workspace_plan(args)
+    if sub == "diff":
+        return cmd_workspace_diff(args)
+    if sub == "commit":
+        return cmd_workspace_commit(args)
+    if sub == "push":
+        return cmd_workspace_push(args)
     write_error(
         f"Unknown workspace subcommand: {sub!r}. "
-        "Valid: status | clone | open | branch | track | pr | plan."
+        "Valid: status | clone | open | branch | track | pr | plan | diff | commit | push."
     )
     return USER_INPUT_ERROR
 
@@ -6926,6 +6932,62 @@ def cmd_workspace_status(args: argparse.Namespace) -> int:
     else:
         write_line("Tracked workspaces: none")
     return SUCCESS
+
+
+def cmd_workspace_diff(args: argparse.Namespace) -> int:
+    from .workspaces.manager import show_diff
+
+    action = show_diff(
+        Path(getattr(args, "path", ".")).resolve(),
+        workspace_root=_workspace_root_from_args(args),
+    )
+    if _flag(args, "json"):
+        write_json({"command": "workspace diff", "action": action.to_dict()})
+        return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+    _render_workspace_action(action)
+    if action.stdout:
+        write_line("")
+        write_line(action.stdout)
+    return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+
+
+def cmd_workspace_commit(args: argparse.Namespace) -> int:
+    from .workspaces.manager import commit_changes
+
+    action = commit_changes(
+        Path(getattr(args, "path", ".")).resolve(),
+        workspace_root=_workspace_root_from_args(args),
+        message=str(getattr(args, "message", "") or ""),
+        execute=bool(getattr(args, "yes", False)),
+    )
+    if _flag(args, "json"):
+        write_json({"command": "workspace commit", "action": action.to_dict()})
+        return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+    _render_workspace_action(action)
+    if action.stdout:
+        write_line("")
+        write_line(action.stdout)
+    return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+
+
+def cmd_workspace_push(args: argparse.Namespace) -> int:
+    from .workspaces.manager import push_branch
+
+    action = push_branch(
+        Path(getattr(args, "path", ".")).resolve(),
+        workspace_root=_workspace_root_from_args(args),
+        execute=bool(getattr(args, "yes", False)),
+    )
+    if _flag(args, "json"):
+        write_json({"command": "workspace push", "action": action.to_dict()})
+        return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+    _render_workspace_action(action)
+    if action.stdout:
+        write_line("")
+        write_line(action.stdout)
+    if action.stderr:
+        write_line(action.stderr)
+    return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
 
 
 def cmd_workspace_clone(args: argparse.Namespace) -> int:
