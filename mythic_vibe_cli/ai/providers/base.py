@@ -41,6 +41,8 @@ class PacketView:
     text: str
     packet_id: str
     source: str = "inline"
+    system_prompt: str | None = None
+    conversation_history: list[dict[str, Any]] | None = None
     tools: list[dict[str, Any]] | None = None
 
 
