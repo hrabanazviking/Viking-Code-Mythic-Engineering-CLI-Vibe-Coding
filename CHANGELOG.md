@@ -40,6 +40,13 @@ This unreleased band tracks work landed on `development` after the v1.0.0 stable
 
 - Added `mythic_vibe_cli/workspaces/manager.py`, a GitHub workspace manager rooted by default at `~/.mythic-vibe/workspaces/` and overridable through `MYTHIC_WORKSPACE_ROOT`. Added `mythic-vibe workspace status|clone|open|branch|track|pr|plan`, dry-run-by-default clone/branch planning with `--yes` as the mutation gate, PR draft writing gated by `--write`, `/workspace` slash-catalog visibility, and companion-shell natural prompts that propose clone/branch actions without touching local Git state.
 
+### Added — Reforge roadmap Phase 9
+
+- **Phase 9: Test Runner:** 
+  - Integrated `mythic_vibe_cli/verify/test_runner.py` into the REPL.
+  - Added `/test`, `/test last`, and `/test command <cmd>` slash commands.
+  - The shell now automatically feeds test failure summaries into the active LLM context to request patches.
+
 ### Added — Reforge roadmap Phase 8
 
 - Added `mythic_vibe_cli/patch/manager.py`, a Patch Proposal System. This subsystem handles staging proposed edits, generating diffs, and applying or rejecting them with explicit user consent. Added `/diff`, `/apply`, `/reject` slash commands to the interactive shell, establishing a conversational patch approval workflow.

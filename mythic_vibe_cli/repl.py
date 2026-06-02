@@ -44,6 +44,7 @@ QUIT_TOKENS = frozenset({"/quit", "/exit"})
 HELP_TOKENS = frozenset({"/help", "/?"})
 MODEL_TOKENS = frozenset({"/model"})
 PATCH_TOKENS = frozenset({"/diff", "/apply", "/reject"})
+TEST_TOKENS = frozenset({"/test"})
 
 
 @dataclass(frozen=True)
@@ -259,6 +260,80 @@ def _handle_patch_command(stripped: str, patch_manager: PatchManager, stdout: IO
             print("Patch rejected.", file=stdout)
         else:
             print("No active patch to reject.", file=stderr)
+
+
+def _handle_test_command(
+    stripped: str, 
+    stdout: IO[str], 
+    stderr: IO[str], 
+    context: ShellContext, 
+    last_test_result: dict[str, str]
+) -> None:
+    try:
+        from .verify.test_runner import run_default_commands, run_command
+    except ImportError:
+        print("Test runner not available.", file=stderr)
+        return
+
+    try:
+        argv = shlex.split(stripped)
+    except ValueError as exc:
+        print(f"Parse error: {exc}", file=stderr)
+        return
+
+    if len(argv) == 1:
+        print("Running default test suite...", file=stdout)
+        result = run_default_commands(context.project_root)
+        summary = result.summarize_failures()
+        last_test_result["summary"] = summary
+        
+        if result.ok:
+            print(summary, file=stdout)
+        else:
+            print("Tests failed! Summarizing failures for the model...", file=stdout)
+            print("-" * 40, file=stdout)
+            print(summary, file=stdout)
+            print("-" * 40, file=stdout)
+            print("Asking model for a fix...", file=stdout)
+            
+            prompt = f"The test suite failed. Here is the summary of failures:\n{summary}\nPlease analyze the failure, explain what went wrong, and propose a patch to fix it."
+            _answer_with_selected_model(prompt, stdout, context)
+            _record_shell_memory(prompt, "Model proposed fix based on test failures.", context, "conversation")
+        return
+
+    action = argv[1].lower()
+    if action == "last":
+        if "summary" in last_test_result:
+            print(last_test_result["summary"], file=stdout)
+        else:
+            print("No previous test run recorded in this session.", file=stderr)
+        return
+        
+    if action == "command":
+        if len(argv) < 3:
+            print("Usage: /test command <cmd...>", file=stderr)
+            return
+        cmd = argv[2:]
+        print(f"Running custom test command: {' '.join(cmd)}", file=stdout)
+        res = run_command(cmd, cwd=context.project_root)
+        
+        if res.exit_code == 0:
+            summary = "Custom test command passed."
+            last_test_result["summary"] = summary
+            print(summary, file=stdout)
+        else:
+            print(f"Command failed with exit code {res.exit_code}.", file=stdout)
+            combined = (res.stdout + "\n" + res.stderr).strip()
+            summary = f"Command '{' '.join(res.command)}' failed with exit code {res.exit_code}:\n{combined}"
+            last_test_result["summary"] = summary
+            
+            print("Summarizing output for the model...", file=stdout)
+            prompt = f"The custom test command '{' '.join(cmd)}' failed. Here is the output:\n{combined}\nPlease analyze the failure and propose a fix."
+            _answer_with_selected_model(prompt, stdout, context)
+            _record_shell_memory(prompt, "Model proposed fix based on custom test command failure.", context, "conversation")
+        return
+
+    print("Usage: /test [last|command <cmd>]", file=stderr)
 
 
 def _looks_like_command(stripped: str, main_commands: set[str]) -> bool:
@@ -541,6 +616,7 @@ def run_shell(
 
     shell_context = _detect_shell_context(project_path)
     patch_manager = PatchManager()
+    last_test_result: dict[str, str] = {}
     _print_banner(out_stream, shell_context)
 
     while True:
@@ -572,6 +648,10 @@ def run_shell(
 
         if stripped in PATCH_TOKENS:
             _handle_patch_command(stripped, patch_manager, out_stream, err_stream)
+            continue
+
+        if stripped in TEST_TOKENS or stripped.startswith("/test "):
+            _handle_test_command(stripped, out_stream, err_stream, shell_context, last_test_result)
             continue
 
         # /help <name> routes to `slash inspect <name>` so the operator
