@@ -28,6 +28,10 @@ This unreleased band tracks work landed on `development` after the v1.0.0 stable
 
 - Wired the companion shell to the existing provider registry and fallback runtime. `/model list` now reports available providers and configuration status, `/model set <provider> [model]` persists the selected provider/model to `<project>/.mythic-vibe.json`, and generic natural-language prompts run through the selected provider with `copy-paste` as the guaranteed fallback. The JSON config loader now understands `ai.provider` / `ai.model` plus `MYTHIC_AI_PROVIDER` / `MYTHIC_AI_MODEL` overrides.
 
+### Added — Reforge roadmap Phase 5
+
+- Added `mythic_vibe_cli/memory/spine.py`, a local SQLite memory spine at `.mythic/memory.sqlite`. Companion-shell natural prompts now append durable task/session memory, handoff creation folds summaries, decisions, files touched, failures, fixes, and next steps into the spine, and "What were we doing last time?" answers directly from local memory. Added `mythic-vibe memory last` and `mythic-vibe memory spine` for inspecting the same store.
+
 ### Added — Hermes Agent control plane (post-v1.0)
 
 - **Hermes Agent** — programmatic control plane for any external AI agent. Two access modes (TCL Python in-process + HTTP API) share one core (`mythic_vibe_cli/agent_api/`). 18 curated tools cover status, doctor, drift, packet creation/lint, verify, reflect, ai recommend, provenance verify, workflow lineage, persona, plugin doctor, artifact read/list, recent events. Every invocation audited via the existing event-log primitive. New `mythic-vibe surface hermes [--bind ADDR --port N --token TOKEN]` launches the token-protected HTTP API. New `mythic-vibe hermes tools|inspect|invoke` invokes the curated agent-tool surface from the CLI without HTTP. See `docs/HERMES_AGENT.md` (operator + author guide).

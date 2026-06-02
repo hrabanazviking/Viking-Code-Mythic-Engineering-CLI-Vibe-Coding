@@ -253,38 +253,100 @@ def _answer_natural_prompt(prompt: str, stdout: IO[str], context: ShellContext) 
     normalized = prompt.lower()
     wants_project = any(token in normalized for token in ("project", "repo", "repository", "where am i", "what directory"))
     wants_model = "model" in normalized or "provider" in normalized
+    wants_last_time = any(
+        token in normalized
+        for token in (
+            "last time",
+            "previous session",
+            "what were we doing",
+            "where did we leave off",
+            "resume memory",
+        )
+    )
     wants_context_scan = any(token in normalized for token in ("find", "search", "inspect", "scan", "where is", "show me"))
+
+    if wants_last_time:
+        try:
+            from .memory.spine import render_last_time
+
+            print(render_last_time(context.project_root), file=stdout)
+            return
+        except Exception as exc:  # noqa: BLE001 - memory recall should degrade, not crash
+            print(f"Memory recall failed: {exc}", file=stdout)
+            return
 
     if wants_context_scan:
         try:
             from .context.companion import build_companion_context, render_companion_context
+            from .memory.spine import record_shell_exchange
 
             summary = build_companion_context(context.project_root, prompt)
-            print(render_companion_context(summary), file=stdout)
+            rendered = render_companion_context(summary)
+            print(rendered, file=stdout)
+            record_shell_exchange(
+                context.project_root,
+                prompt=prompt,
+                response=rendered,
+                provider=context.model_provider,
+                model=context.model_name,
+                context_kind="inspection",
+            )
             return
         except Exception as exc:  # noqa: BLE001 - shell prompt handling should not crash
             print(f"Context scan failed: {exc}", file=stdout)
             return
 
     if wants_project:
-        print("You are in this project context:", file=stdout)
-        print(f"  Project: {context.display_project}", file=stdout)
-        print(f"  Branch: {context.display_branch}", file=stdout)
-        print(f"  Working directory: {context.project_root}", file=stdout)
+        lines = [
+            "You are in this project context:",
+            f"  Project: {context.display_project}",
+            f"  Branch: {context.display_branch}",
+            f"  Working directory: {context.project_root}",
+        ]
+        print("\n".join(lines), file=stdout)
+        _record_shell_memory(prompt, "\n".join(lines), context, "project")
         return
 
     if wants_model:
-        _print_model(stdout, context)
+        lines = [
+            "Model",
+            f"  Provider: {context.model_provider}",
+            f"  Model: {context.model_name}",
+            "  Routing: selected provider with copy-paste fallback",
+        ]
+        print("\n".join(lines), file=stdout)
+        _record_shell_memory(prompt, "\n".join(lines), context, "model")
         return
 
-    print("I can work from this local context:", file=stdout)
-    print(f"  Project: {context.display_project}", file=stdout)
-    print(f"  Branch: {context.display_branch}", file=stdout)
-    print(f"  Model: {context.display_model}", file=stdout)
-    _answer_with_selected_model(prompt, stdout, context)
+    context_lines = [
+        "I can work from this local context:",
+        f"  Project: {context.display_project}",
+        f"  Branch: {context.display_branch}",
+        f"  Model: {context.display_model}",
+    ]
+    print("\n".join(context_lines), file=stdout)
+    model_response = _answer_with_selected_model(prompt, stdout, context)
+    response_text = "\n".join([*context_lines, model_response]).strip()
+    _record_shell_memory(prompt, response_text, context, "conversation")
 
 
-def _answer_with_selected_model(prompt: str, stdout: IO[str], context: ShellContext) -> None:
+def _record_shell_memory(prompt: str, response: str, context: ShellContext, context_kind: str) -> None:
+    try:
+        from .memory.spine import record_shell_exchange
+
+        record_shell_exchange(
+            context.project_root,
+            prompt=prompt,
+            response=response,
+            provider=context.model_provider,
+            model=context.model_name,
+            context_kind=context_kind,
+        )
+    except Exception:
+        return
+
+
+def _answer_with_selected_model(prompt: str, stdout: IO[str], context: ShellContext) -> str:
     packet = {
         "text": prompt,
         "packet_id": "shell",
@@ -315,17 +377,22 @@ def _answer_with_selected_model(prompt: str, stdout: IO[str], context: ShellCont
             dry_run=False,
         )
     except Exception as exc:  # noqa: BLE001
-        print(f"Model call failed: {exc}", file=stdout)
-        return
+        rendered = f"Model call failed: {exc}"
+        print(rendered, file=stdout)
+        return rendered
 
     response = result.response
+    lines: list[str] = []
     if result.fell_back:
-        print(f"  Fallback: {result.primary_provider} -> {result.used_provider}", file=stdout)
+        lines.append(f"  Fallback: {result.primary_provider} -> {result.used_provider}")
     if response.provider == "copy-paste":
-        print("  Provider-ready prompt:", file=stdout)
+        lines.append("  Provider-ready prompt:")
     else:
-        print(f"  Response from {response.provider}/{response.model}:", file=stdout)
-    print(response.content, file=stdout)
+        lines.append(f"  Response from {response.provider}/{response.model}:")
+    lines.append(response.content)
+    rendered = "\n".join(lines)
+    print(rendered, file=stdout)
+    return rendered
 
 
 def _print_help(stdout: IO[str], project_root: Path) -> None:

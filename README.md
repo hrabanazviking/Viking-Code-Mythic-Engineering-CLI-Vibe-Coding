@@ -24,7 +24,7 @@ It enforces an explicit engineering loop that keeps your reasoning alive on disk
 mythic
 ```
 
-Bare `mythic` now opens the companion shell. The shell reports project, branch, selected model, memory, and knowledge status at startup; `/help`, `/status`, `/model`, `/model list`, `/model set <provider> [model]`, and `/exit` provide the first control surface. Natural inspection prompts like "Find the memory system in this repo" run a read-only context scan and surface likely files; generic natural-language prompts route through the selected provider with `copy-paste` as the guaranteed fallback. Existing command-catalog behavior remains reachable directly or through `mythic admin <command>` while the reforge phases move those tools behind the conversation-first workflow.
+Bare `mythic` now opens the companion shell. The shell reports project, branch, selected model, memory, and knowledge status at startup; `/help`, `/status`, `/model`, `/model list`, `/model set <provider> [model]`, and `/exit` provide the first control surface. Natural inspection prompts like "Find the memory system in this repo" run a read-only context scan and surface likely files; generic natural-language prompts route through the selected provider with `copy-paste` as the guaranteed fallback and are remembered in `.mythic/memory.sqlite`. Resume questions like "What were we doing last time?" answer directly from that local memory spine. Existing command-catalog behavior remains reachable directly or through `mythic admin <command>` while the reforge phases move those tools behind the conversation-first workflow.
 
 The hall is wide enough for a first-time builder finding their footing, and disciplined enough for a seasoned maintainer who cares about clean handoffs, repeatable process, and artifacts that outlive any single session.
 
@@ -160,7 +160,7 @@ Guides you through repeated, deliberate movement across the full loop:
 - verify
 - reflect
 
-Every pass through the loop deposits artifacts. Nothing important is left only in memory.
+Every pass through the loop deposits artifacts. Nothing important is left only in volatile memory; the reforge companion shell also keeps a local SQLite memory spine at `.mythic/memory.sqlite`.
 
 ### 3) Prompt bridge for ChatGPT/Codex workflows
 
@@ -545,7 +545,7 @@ Reflection handoff created.
 - Next recommended action: Wire up persistence in the next session
 ```
 
-That handoff is the bridge to your future self.
+That handoff is the bridge to your future self. It is also folded into the SQLite memory spine so session summaries, decisions, files touched, failures, fixes, and next steps are available to the companion shell.
 
 ---
 
@@ -558,6 +558,14 @@ mythic-vibe resume
 ```
 
 It reads the most recent handoff and tells you exactly what you said you'd do next, plus a suggested prompt packet to brief an assistant if you want one. No re-reading, no guessing, no archaeological dig through your terminal history.
+
+Inside the companion shell, you can ask:
+
+```text
+What were we doing last time?
+```
+
+The shell answers from `.mythic/memory.sqlite`. From the command catalog, `mythic-vibe memory last` renders the same resume answer and `mythic-vibe memory spine` shows database status plus recent entries.
 
 ---
 
@@ -781,6 +789,7 @@ Mythic Vibe CLI exposes the following command families. Run `mythic-vibe <comman
 - `reflect` — create a reflection handoff for the current session
 - `resume` — summarize the latest handoff and suggest the next step
 - `handoff` — create, inspect, or list session handoff records
+- `memory last|spine|list|show|compact|rehydrate` — inspect the SQLite memory spine and the older conversation-memory records
 - `weave` — record documentation synchronization checkpoint
 - `prune` — suggest dead-code pruning workflow
 - `heal` — guide a test-healing workflow

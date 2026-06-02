@@ -187,8 +187,8 @@ BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
     # --- Knowledge graph (PH-05 slices 5.5 + 5.6) ---
     BuiltinSlashCommand(name="graph", description="Read-only graph queries: query, entity, edges, brief, visualize"),
 
-    # --- Conversation memory (PH-15 slices 15.3 + 15.4) ---
-    BuiltinSlashCommand(name="memory", description="Conversation memory: list, show, compact, rehydrate"),
+    # --- Conversation memory + SQLite spine ---
+    BuiltinSlashCommand(name="memory", description="Memory: last, spine, list, show, compact, rehydrate"),
 
     # --- Hardware profile (PH-06 slice 6.6) ---
     BuiltinSlashCommand(name="hardware", description="Detect host hardware (CPU/RAM/OS); --write persists to docs/"),

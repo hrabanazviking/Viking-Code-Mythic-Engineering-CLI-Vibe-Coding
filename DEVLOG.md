@@ -58,6 +58,16 @@ Phase 4 connects the conversation-first shell to Mythic's provider-neutral AI ma
 
 ---
 
+## 2026-06-02 - Reforge roadmap Phase 5: SQLite memory spine
+
+**Status:** Added the project-local SQLite memory spine at `.mythic/memory.sqlite`. Companion-shell natural prompts now record task/session memory, handoff creation folds structured session data into the spine, `memory last` renders the resume answer, and `memory spine` shows database status and recent entries. The shell now answers "What were we doing last time?" from local memory before routing to a provider.
+
+### Why it matters
+
+Phase 5 closes the first real memory hole in the companion workflow. The shell can now preserve what happened across sessions without relying on remote model state, terminal scrollback, or the older conversation JSON files alone.
+
+---
+
 ## 2026-05-03 — v1.0.0 launch (PH-19 + PH-20, 26 slices)
 
 **Sessions:** Two consecutive working days, chained through Volmarr's "go for all the rest of 19" then "go for phase 20" then "do a complete look over the README.md and all other project documents" directives.
