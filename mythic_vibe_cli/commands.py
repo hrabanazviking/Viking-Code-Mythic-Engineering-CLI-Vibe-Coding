@@ -2866,6 +2866,12 @@ def _create_handoff(
         session_type=session_type,
     )
     json_path, md_path = write_handoff_record(root, record)
+    try:
+        from .memory.spine import record_handoff_memory
+
+        record_handoff_memory(root, record)
+    except Exception:
+        pass
     # PH-07 follow-up: TTS phase-transition hook. No-op unless
     # MYTHIC_VOICE_TTS_ENABLED is set.
     from .voice.notify import notify_phase as _notify_phase
@@ -6841,8 +6847,7 @@ def cmd_graph_visualize(args: argparse.Namespace) -> int:
 
 
 def cmd_memory_dispatch(args: argparse.Namespace) -> int:
-    """PH-15 slices 15.3 + 15.4: dispatcher for `mythic-vibe memory`
-    subactions (list / show / compact / rehydrate)."""
+    """Dispatcher for `mythic-vibe memory` subactions."""
     sub = getattr(args, "memory_command", "")
     if sub == "list":
         return cmd_memory_list(args)
@@ -6852,9 +6857,13 @@ def cmd_memory_dispatch(args: argparse.Namespace) -> int:
         return cmd_memory_compact(args)
     if sub == "rehydrate":
         return cmd_memory_rehydrate(args)
+    if sub == "last":
+        return cmd_memory_last(args)
+    if sub == "spine":
+        return cmd_memory_spine(args)
     write_error(
         f"Unknown memory subcommand: {sub!r}. "
-        "Valid: list | show | compact | rehydrate."
+        "Valid: list | show | compact | rehydrate | last | spine."
     )
     return USER_INPUT_ERROR
 
@@ -7033,6 +7042,61 @@ def cmd_memory_rehydrate(args: argparse.Namespace) -> int:
         )
     else:
         write_line("- Latest handoff: none.")
+    return SUCCESS
+
+
+def cmd_memory_last(args: argparse.Namespace) -> int:
+    """Render the project-level SQLite memory resume answer."""
+    from .memory.spine import build_memory_snapshot, render_last_time
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    if _flag(args, "json"):
+        snapshot = build_memory_snapshot(root)
+        write_json(
+            {
+                "command": "memory last",
+                "path": str(root),
+                "memory": snapshot.to_dict(),
+                "answer": render_last_time(root),
+            }
+        )
+        return SUCCESS
+    write_line(render_last_time(root))
+    return SUCCESS
+
+
+def cmd_memory_spine(args: argparse.Namespace) -> int:
+    """Show SQLite memory-spine status and recent entries."""
+    from .memory.spine import build_memory_snapshot, init_memory_spine
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    limit = int(getattr(args, "limit", 10) or 10)
+    db_path = init_memory_spine(root)
+    snapshot = build_memory_snapshot(root, limit=limit)
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "memory spine",
+                "path": str(root),
+                "memory": snapshot.to_dict(),
+            }
+        )
+        return SUCCESS
+
+    write_line("Memory spine")
+    write_key_value("SQLite", db_path)
+    write_line("Counts:")
+    for kind, count in snapshot.counts.items():
+        write_line(f"  {kind}: {count}")
+    if not snapshot.entries:
+        write_line("Recent entries: none")
+        return SUCCESS
+    write_line("Recent entries:")
+    for entry in snapshot.entries:
+        write_line(
+            f"  {entry.entry_id} [{entry.kind}] "
+            f"{entry.created_at} — {entry.content}"
+        )
     return SUCCESS
 
 
