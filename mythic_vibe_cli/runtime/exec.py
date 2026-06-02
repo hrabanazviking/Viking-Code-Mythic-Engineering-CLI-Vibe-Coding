@@ -29,7 +29,7 @@ from dataclasses import dataclass
 import os
 import subprocess
 import threading
-from typing import Sequence
+from typing import Literal, Sequence
 
 
 @dataclass(frozen=True)
@@ -57,6 +57,55 @@ class ExecResult:
 # rather than blocking the CLI indefinitely. Callers who genuinely
 # need a longer / shorter bound pass it explicitly.
 DEFAULT_EXEC_TIMEOUT_SECONDS = 300.0
+
+StdinMode = Literal["devnull", "pipe", "inherit"]
+OutputMode = Literal["pipe", "inherit", "discard"]
+
+
+def _stdin_target(mode: StdinMode) -> int | None:
+    if mode == "devnull":
+        return subprocess.DEVNULL
+    if mode == "pipe":
+        return subprocess.PIPE
+    return None
+
+
+def _output_target(mode: OutputMode) -> int | None:
+    if mode == "pipe":
+        return subprocess.PIPE
+    if mode == "discard":
+        return subprocess.DEVNULL
+    return None
+
+
+def spawn_process(
+    argv: Sequence[str],
+    cwd: str | os.PathLike[str] | None = None,
+    *,
+    stdin: StdinMode = "devnull",
+    stdout: OutputMode = "pipe",
+    stderr: OutputMode = "pipe",
+    text: bool = True,
+    bufsize: int = -1,
+) -> subprocess.Popen:
+    """Spawn a live subprocess through the canonical process boundary.
+
+    Use this when callers need an interactive/live handle rather than the
+    blocking :func:`exec_command` result. The same hard rules apply:
+    ``shell=False`` and caller-supplied argv tokens only.
+    """
+    if not argv:
+        raise ValueError("argv must contain at least the executable")
+    return subprocess.Popen(
+        list(argv),
+        cwd=str(cwd) if cwd is not None else None,
+        shell=False,
+        stdin=_stdin_target(stdin),
+        stdout=_output_target(stdout),
+        stderr=_output_target(stderr),
+        text=text,
+        bufsize=bufsize,
+    )
 
 
 def exec_command(

@@ -32,7 +32,7 @@ from .event_log import (
     read_recent,
     resolve_max_entries,
 )
-from .exec import ExecResult, exec_command
+from .exec import ExecResult, exec_command, spawn_process
 from .file_mutation_queue import file_mutation_queue, with_file_mutation_queue
 from .output_guard import (
     flush_raw_stdout,
@@ -88,6 +88,7 @@ __all__ = [
     "SourceScope",
     "synthetic_source_info",
     "exec_command",
+    "spawn_process",
     "ExecResult",
     "ARGPARSE_ONLY_NAMES",
     "CommandCatalogEntry",

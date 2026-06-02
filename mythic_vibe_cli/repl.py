@@ -25,7 +25,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import shlex
-import subprocess
 import sys
 from pathlib import Path
 from typing import IO, Callable
@@ -33,6 +32,7 @@ from typing import IO, Callable
 from .config import ConfigStore
 from .exit_codes import SUCCESS, USER_INPUT_ERROR
 from .patch import PatchManager
+from .runtime.exec import exec_command
 from .runtime.command_catalog import iter_builtin_slash_commands
 
 
@@ -74,18 +74,8 @@ class ShellContext:
 
 
 def _git_output(args: list[str], cwd: Path) -> str:
-    try:
-        result = subprocess.run(
-            ["git", *args],
-            cwd=str(cwd),
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=1.0,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return ""
-    if result.returncode != 0:
+    result = exec_command("git", args, cwd, timeout=1.0)
+    if result.code != 0:
         return ""
     return result.stdout.strip()
 

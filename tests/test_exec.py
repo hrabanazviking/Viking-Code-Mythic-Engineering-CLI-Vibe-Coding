@@ -17,7 +17,7 @@ import threading
 import time
 import unittest
 
-from mythic_vibe_cli.runtime.exec import ExecResult, exec_command
+from mythic_vibe_cli.runtime.exec import ExecResult, exec_command, spawn_process
 
 
 def _sleep_script(seconds: float) -> str:
@@ -149,6 +149,36 @@ class ExecCommandTests(unittest.TestCase):
             payload,
             {"stdout": "out", "stderr": "err", "code": 0, "killed": False},
         )
+
+
+class SpawnProcessTests(unittest.TestCase):
+    def test_spawn_process_returns_live_handle_with_captured_output(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            proc = spawn_process(
+                [sys.executable, "-c", "print('spawned')"],
+                cwd=tmp,
+                stdin="devnull",
+                stdout="pipe",
+                stderr="pipe",
+                text=True,
+            )
+            stdout, stderr = proc.communicate(timeout=5.0)
+
+        self.assertEqual(proc.returncode, 0)
+        self.assertIn("spawned", stdout)
+        self.assertEqual(stderr, "")
+
+    def test_spawn_process_rejects_empty_argv(self) -> None:
+        with self.assertRaises(ValueError):
+            spawn_process([])
+
+    def test_spawn_process_missing_executable_raises_file_not_found(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(FileNotFoundError):
+                spawn_process(
+                    ["this_command_definitely_does_not_exist_anywhere"],
+                    cwd=tmp,
+                )
 
 
 # ---- Phase 19.0 / BS-3 (audit remediation 2026-05-02) ----------------
