@@ -33,7 +33,7 @@ from typing import IO, Callable
 from .config import ConfigStore
 from .exit_codes import SUCCESS, USER_INPUT_ERROR
 from .patch import PatchManager
-from .runtime.slash_commands import BUILTIN_SLASH_COMMANDS
+from .runtime.command_catalog import iter_builtin_slash_commands
 
 
 PROMPT = "mythic-vibe> "
@@ -569,7 +569,7 @@ def _answer_with_selected_model(prompt: str, stdout: IO[str], context: ShellCont
 def _print_help(stdout: IO[str], project_root: Path) -> None:
     """Print the slash-command catalog (builtin + plugin-contributed)."""
     print("Builtin slash commands:", file=stdout)
-    for entry in BUILTIN_SLASH_COMMANDS:
+    for entry in iter_builtin_slash_commands():
         print(f"  /{entry.name}\t{entry.description}", file=stdout)
 
     # Late-import the dispatcher so the REPL module stays cheap to import.

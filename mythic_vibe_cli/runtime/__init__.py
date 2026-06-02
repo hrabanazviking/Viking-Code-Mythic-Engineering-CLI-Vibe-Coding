@@ -11,6 +11,16 @@ Currently exposes:
 - ``exec`` — subprocess execution primitive with timeout and cancel-event.
 """
 
+from .command_catalog import (
+    ARGPARSE_ONLY_NAMES,
+    CommandCatalogEntry,
+    CommandCatalogValidation,
+    SLASH_LOCAL_NAMES,
+    build_command_catalog,
+    builtin_slash_by_name,
+    iter_builtin_slash_commands,
+    validate_command_catalog,
+)
 from .event_bus import EventBus, EventBusController, create_event_bus
 from .event_log import (
     DEFAULT_EVENT_LOG_FILENAME,
@@ -79,4 +89,12 @@ __all__ = [
     "synthetic_source_info",
     "exec_command",
     "ExecResult",
+    "ARGPARSE_ONLY_NAMES",
+    "CommandCatalogEntry",
+    "CommandCatalogValidation",
+    "SLASH_LOCAL_NAMES",
+    "build_command_catalog",
+    "builtin_slash_by_name",
+    "iter_builtin_slash_commands",
+    "validate_command_catalog",
 ]
