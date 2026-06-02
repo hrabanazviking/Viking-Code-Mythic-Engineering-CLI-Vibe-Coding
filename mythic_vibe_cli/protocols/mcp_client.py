@@ -4,8 +4,8 @@ Stdlib JSON-RPC 2.0 client that spawns an MCP server subprocess
 and invokes its tools. Used by forge plugins (and slice 16.1
 self-tests) to integrate external MCPs.
 
-Cross-platform: pure stdlib (``subprocess`` + ``json`` +
-``threading``).
+Cross-platform: pure stdlib through ``runtime.exec.spawn_process`` plus
+``json`` and ``threading``.
 """
 
 from __future__ import annotations
@@ -14,10 +14,12 @@ import itertools
 import json
 import os
 import queue
-import subprocess
 import threading
 from dataclasses import dataclass, field
+from subprocess import TimeoutExpired
 from typing import Any, IO
+
+from ..runtime.exec import spawn_process
 
 
 JsonRpcMessage = dict[str, Any]
@@ -93,7 +95,7 @@ class McpClient:
 
     stdin: IO[str]
     stdout: IO[str]
-    process: subprocess.Popen | None = None
+    process: Any | None = None
     # Phase 19.0 / BS-2 (additive): bounds on the JSON-RPC pump.
     read_timeout_seconds: float = field(
         default_factory=lambda: _env_float(
@@ -128,14 +130,13 @@ class McpClient:
         attached to the parent for diagnostic output."""
         if not argv:
             raise ValueError("argv must contain at least the server binary")
-        proc = subprocess.Popen(
+        proc = spawn_process(
             argv,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=None,
-            shell=False,
+            stdin="pipe",
+            stdout="pipe",
+            stderr="inherit",
             text=True,
-            bufsize=1,  # line-buffered
+            bufsize=1,
         )
         if proc.stdin is None or proc.stdout is None:  # pragma: no cover — Popen contract
             raise McpClientError("Popen did not provide stdin/stdout pipes")
@@ -394,7 +395,7 @@ class McpClient:
         if self.process is not None:
             try:
                 self.process.wait(timeout=2.0)
-            except subprocess.TimeoutExpired:
+            except TimeoutExpired:
                 self.process.kill()
             except OSError:
                 pass

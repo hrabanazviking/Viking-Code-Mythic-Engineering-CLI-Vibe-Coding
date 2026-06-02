@@ -10,15 +10,16 @@ The helper **never** reverts anything, never invokes
 ``git diff --name-only`` and renders the result. Operators run
 the actual revert manually.
 
-Cross-platform: pure stdlib + ``subprocess``.
+Cross-platform: pure stdlib + ``runtime.exec_command``.
 """
 
 from __future__ import annotations
 
-import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+
+from ..runtime.exec import DEFAULT_EXEC_TIMEOUT_SECONDS, exec_command
 
 
 @dataclass(frozen=True)
@@ -70,22 +71,12 @@ def _run_git(args: list[str], *, cwd: Path) -> tuple[bool, str, str]:
     """Wrapper for git subprocess. Returns ``(ok, stdout, stderr)``.
     Never raises; missing git → ``ok=False`` with stderr describing
     the issue."""
-    try:
-        proc = subprocess.run(
-            ["git", *args],
-            cwd=str(cwd),
-            shell=False,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    except FileNotFoundError:
+    result = exec_command("git", args, cwd, timeout=DEFAULT_EXEC_TIMEOUT_SECONDS)
+    if result.code == 127:
         return False, "", "git binary not found on PATH"
-    except OSError as exc:
-        return False, "", f"OSError: {exc}"
-    if proc.returncode != 0:
-        return False, proc.stdout, (proc.stderr or "git command failed").strip()
-    return True, proc.stdout, ""
+    if result.code != 0:
+        return False, result.stdout, (result.stderr or "git command failed").strip()
+    return True, result.stdout, ""
 
 
 def _resolve_head(root: Path) -> str:

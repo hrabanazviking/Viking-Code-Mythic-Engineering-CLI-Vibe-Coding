@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import io
 from pathlib import Path
-import subprocess
 
 from textual.app import ComposeResult
 from textual.containers import Vertical, Horizontal
@@ -21,6 +20,7 @@ from textual.widgets import (
 from textual import work
 
 from ..patch import PatchManager
+from ..runtime.exec import exec_command
 from ..repl import (
     _detect_shell_context,
     _answer_natural_prompt,
@@ -102,11 +102,11 @@ class CockpitScreen(Screen):
         self.knowledge_view.update(f"Knowledge Status: {self.context.knowledge_status}")
 
         # Refresh Git Status
-        try:
-            res = subprocess.run(["git", "status"], cwd=self.root, capture_output=True, text=True)
+        res = exec_command("git", ["status"], self.root, timeout=5.0)
+        if res.code == 0:
             self.git_view.update(res.stdout)
-        except Exception as e:
-            self.git_view.update(f"Git status failed: {e}")
+        else:
+            self.git_view.update(f"Git status failed: {res.stderr or res.stdout}")
 
         # Refresh Tasks
         tasks_file = self.root / "tasks" / "current_GOALS.md"
@@ -171,4 +171,3 @@ class CockpitScreen(Screen):
 
     def _append_to_log(self, text: str) -> None:
         self.chat_log.write(text)
-
