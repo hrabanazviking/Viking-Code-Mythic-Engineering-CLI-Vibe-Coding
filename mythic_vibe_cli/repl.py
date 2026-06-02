@@ -30,6 +30,7 @@ import sys
 from pathlib import Path
 from typing import IO, Callable
 
+from .config import ConfigStore
 from .exit_codes import SUCCESS, USER_INPUT_ERROR
 from .runtime.slash_commands import BUILTIN_SLASH_COMMANDS
 
@@ -93,13 +94,14 @@ def _detect_shell_context(project_root: Path) -> ShellContext:
     if not git_branch and git_root is not None:
         git_branch = _git_output(["rev-parse", "--short", "HEAD"], root)
 
-    model_provider = "copy-paste"
-    model_name = "manual"
+    loaded_config = ConfigStore(root).load()
+    model_provider = loaded_config.config.ai_provider or "copy-paste"
+    model_name = loaded_config.config.ai_model or "manual"
     try:
         from .ai.registry import ProviderRegistry
 
         provider = ProviderRegistry(root=root).providers().get(model_provider)
-        if provider is not None:
+        if provider is not None and model_name == "manual" and model_provider != "copy-paste":
             model_name = str(getattr(provider, "model", model_name) or model_name)
     except Exception:  # noqa: BLE001 - shell startup should degrade, not crash
         pass
@@ -136,7 +138,97 @@ def _print_model(stdout: IO[str], context: ShellContext) -> None:
     print("Model", file=stdout)
     print(f"  Provider: {context.model_provider}", file=stdout)
     print(f"  Model: {context.model_name}", file=stdout)
-    print("  Routing: local shell fallback until the model router phase is wired", file=stdout)
+    print("  Routing: selected provider with copy-paste fallback", file=stdout)
+
+
+def _print_model_list(stdout: IO[str], context: ShellContext) -> None:
+    print("Model providers", file=stdout)
+    try:
+        from .ai.registry import ProviderRegistry
+
+        providers = ProviderRegistry(root=context.project_root).providers()
+    except Exception as exc:  # noqa: BLE001 - listing should degrade, not crash
+        print(f"  Provider registry unavailable: {exc}", file=stdout)
+        return
+
+    for name, provider in providers.items():
+        try:
+            status = provider.validate_config()
+        except Exception as exc:  # noqa: BLE001
+            configured = False
+            details = [f"status check failed: {exc}"]
+        else:
+            configured = status.configured
+            details = status.details
+        model = str(getattr(provider, "model", "") or "")
+        marker = " *" if name == context.model_provider else ""
+        state = "configured" if configured else "not configured"
+        print(f"  {name}{marker}: {state} ({model or 'default'})", file=stdout)
+        for detail in details[:2]:
+            print(f"    - {detail}", file=stdout)
+
+
+def _set_model_selection(provider_name: str, model_name: str, context: ShellContext, stdout: IO[str], stderr: IO[str]) -> ShellContext:
+    try:
+        from .ai.registry import ProviderRegistry
+
+        providers = ProviderRegistry(root=context.project_root).providers()
+    except Exception as exc:  # noqa: BLE001
+        print(f"Provider registry unavailable: {exc}", file=stderr)
+        return context
+
+    if provider_name not in providers:
+        print(f"Unknown provider: {provider_name}", file=stderr)
+        return context
+
+    provider = providers[provider_name]
+    resolved_model = model_name or str(getattr(provider, "model", "") or "")
+    if not resolved_model:
+        resolved_model = "manual" if provider_name == "copy-paste" else "default"
+
+    try:
+        path = ConfigStore(context.project_root).save_project_values(
+            {
+                "ai.provider": provider_name,
+                "ai.model": resolved_model,
+            }
+        )
+    except Exception as exc:  # noqa: BLE001
+        print(f"Could not save model selection: {exc}", file=stderr)
+        return context
+
+    print(f"Model set to {provider_name}/{resolved_model}", file=stdout)
+    print(f"Saved: {path}", file=stdout)
+    return _detect_shell_context(context.project_root)
+
+
+def _handle_model_command(stripped: str, stdout: IO[str], stderr: IO[str], context: ShellContext) -> ShellContext:
+    try:
+        argv = shlex.split(stripped)
+    except ValueError as exc:
+        print(f"Parse error: {exc}", file=stderr)
+        return context
+    if not argv:
+        return context
+
+    if len(argv) == 1:
+        _print_model(stdout, context)
+        return context
+
+    action = argv[1].lower()
+    if action == "list":
+        _print_model_list(stdout, context)
+        return context
+    if action == "set":
+        if len(argv) < 3:
+            print("Usage: /model set <provider> [model]", file=stderr)
+            return context
+        provider_name = argv[2]
+        model_name = argv[3] if len(argv) > 3 else ""
+        return _set_model_selection(provider_name, model_name, context, stdout, stderr)
+
+    print("Usage: /model [list|set <provider> [model]]", file=stderr)
+    return context
 
 
 def _looks_like_command(stripped: str, main_commands: set[str]) -> bool:
@@ -189,7 +281,51 @@ def _answer_natural_prompt(prompt: str, stdout: IO[str], context: ShellContext) 
     print(f"  Project: {context.display_project}", file=stdout)
     print(f"  Branch: {context.display_branch}", file=stdout)
     print(f"  Model: {context.display_model}", file=stdout)
-    print("Ask about the project, or use /help to inspect available controls.", file=stdout)
+    _answer_with_selected_model(prompt, stdout, context)
+
+
+def _answer_with_selected_model(prompt: str, stdout: IO[str], context: ShellContext) -> None:
+    packet = {
+        "text": prompt,
+        "packet_id": "shell",
+        "source": "companion-shell",
+    }
+    try:
+        from .ai.router import RouteDecision
+        from .ai.routing_runtime import run_with_fallback
+        from .ai.registry import ProviderRegistry
+
+        providers = ProviderRegistry(root=context.project_root).providers()
+        selected = providers.get(context.model_provider)
+        if selected is not None and hasattr(selected, "model"):
+            setattr(selected, "model", context.model_name)
+
+        result = run_with_fallback(
+            RouteDecision(
+                provider=context.model_provider,
+                model=context.model_name,
+                rule_matched=None,
+                fallbacks=("copy-paste",),
+                role="Companion Shell",
+                task_type="conversation",
+            ),
+            packet,
+            resolver=lambda name: providers.get(name),
+            root=context.project_root,
+            dry_run=False,
+        )
+    except Exception as exc:  # noqa: BLE001
+        print(f"Model call failed: {exc}", file=stdout)
+        return
+
+    response = result.response
+    if result.fell_back:
+        print(f"  Fallback: {result.primary_provider} -> {result.used_provider}", file=stdout)
+    if response.provider == "copy-paste":
+        print("  Provider-ready prompt:", file=stdout)
+    else:
+        print(f"  Response from {response.provider}/{response.model}:", file=stdout)
+    print(response.content, file=stdout)
 
 
 def _print_help(stdout: IO[str], project_root: Path) -> None:
@@ -283,8 +419,8 @@ def run_shell(
             _print_help(out_stream, project_path)
             continue
 
-        if stripped in MODEL_TOKENS:
-            _print_model(out_stream, shell_context)
+        if stripped in MODEL_TOKENS or stripped.startswith("/model "):
+            shell_context = _handle_model_command(stripped, out_stream, err_stream, shell_context)
             continue
 
         # /help <name> routes to `slash inspect <name>` so the operator

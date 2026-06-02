@@ -7,6 +7,7 @@ also injected so the loop can be tested without re-entering the real CLI."""
 from __future__ import annotations
 
 import io
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -74,6 +75,34 @@ class ReplLoopTests(unittest.TestCase):
         self.assertIn("Provider: copy-paste", out)
         self.assertIn("Model: manual", out)
 
+    def test_model_list_reports_provider_registry(self) -> None:
+        code, out, _err = self._drive(["/model list\n", "/quit\n"])
+        self.assertEqual(code, SUCCESS)
+        self.assertIn("Model providers", out)
+        self.assertIn("copy-paste", out)
+
+    def test_model_set_persists_project_json_config(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            stdin = io.StringIO("/model set openai gpt-4o-mini\n/model\n/quit\n")
+            stdout = io.StringIO()
+
+            code = run_shell(
+                stdin=stdin,
+                stdout=stdout,
+                stderr=io.StringIO(),
+                main=_FakeMain(),
+                project_root=root,
+            )
+
+            payload = json.loads((root / ".mythic-vibe.json").read_text(encoding="utf-8"))
+
+        self.assertEqual(code, SUCCESS)
+        self.assertEqual(payload["ai"]["provider"], "openai")
+        self.assertEqual(payload["ai"]["model"], "gpt-4o-mini")
+        self.assertIn("Provider: openai", stdout.getvalue())
+        self.assertIn("Model: gpt-4o-mini", stdout.getvalue())
+
     def test_natural_project_question_returns_context_without_dispatch(self) -> None:
         fake = _FakeMain()
         code, out, _err = self._drive(["What project am I in?\n", "/quit\n"], main=fake)
@@ -106,6 +135,15 @@ class ReplLoopTests(unittest.TestCase):
         self.assertEqual(code, SUCCESS)
         self.assertIn("Repository context", stdout.getvalue())
         self.assertIn("mythic_vibe_cli/memory/store.py", stdout.getvalue())
+        self.assertEqual(fake.calls, [])
+
+    def test_generic_natural_prompt_uses_selected_model_fallback(self) -> None:
+        fake = _FakeMain()
+        code, out, _err = self._drive(["Tell me a short plan.\n", "/quit\n"], main=fake)
+        self.assertEqual(code, SUCCESS)
+        self.assertIn("Model: copy-paste/manual", out)
+        self.assertIn("Provider-ready prompt", out)
+        self.assertIn("Tell me a short plan.", out)
         self.assertEqual(fake.calls, [])
 
     def test_empty_lines_do_not_dispatch(self) -> None:

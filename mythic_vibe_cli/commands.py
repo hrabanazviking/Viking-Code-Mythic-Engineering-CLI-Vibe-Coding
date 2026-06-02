@@ -2673,6 +2673,8 @@ def cmd_config(args: argparse.Namespace) -> int:
                     "codex.packet_char_budget": loaded.config.packet_char_budget,
                     "codex.auto_compact": loaded.config.auto_compact,
                     "method.source": loaded.config.method_source,
+                    "ai.provider": loaded.config.ai_provider,
+                    "ai.model": loaded.config.ai_model,
                 },
             }
         )
@@ -2692,6 +2694,8 @@ def cmd_config(args: argparse.Namespace) -> int:
     write_key_value("codex.packet_char_budget", loaded.config.packet_char_budget, indent=2)
     write_key_value("codex.auto_compact", str(loaded.config.auto_compact).lower(), indent=2)
     write_key_value("method.source", loaded.config.method_source, indent=2)
+    write_key_value("ai.provider", loaded.config.ai_provider, indent=2)
+    write_key_value("ai.model", loaded.config.ai_model, indent=2)
     return SUCCESS
 
 

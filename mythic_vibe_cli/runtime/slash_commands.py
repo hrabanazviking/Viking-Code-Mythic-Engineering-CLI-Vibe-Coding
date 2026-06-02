@@ -90,7 +90,7 @@ class SlashCommandInfo:
 BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
     # --- Interactive-session locals (REPL/TUI handles directly) ---
     BuiltinSlashCommand(name="help", description="List available slash commands and their sources"),
-    BuiltinSlashCommand(name="model", description="Show the active shell model/provider fallback"),
+    BuiltinSlashCommand(name="model", description="Show, list, or set the active shell model/provider"),
     BuiltinSlashCommand(name="reload", description="Reload plugins, skills, prompts, and method cache"),
     BuiltinSlashCommand(name="quit", description="Exit the interactive session"),
 
