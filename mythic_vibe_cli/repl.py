@@ -268,6 +268,8 @@ def _answer_natural_prompt(prompt: str, stdout: IO[str], context: ShellContext) 
     wants_knowledge = "knowledge" in normalized and any(
         token in normalized for token in ("search", "find", "look up", "lookup", "earlier ideas", "ideas about")
     )
+    wants_workspace = any(token in normalized for token in ("clone", "workspace", "github", "branch", "pull request", " pr "))
+    wants_workspace = wants_workspace and any(token in normalized for token in ("clone", "branch", "workspace", "repo", "repository", "github"))
     wants_last_time = any(
         token in normalized
         for token in (
@@ -279,6 +281,18 @@ def _answer_natural_prompt(prompt: str, stdout: IO[str], context: ShellContext) 
         )
     )
     wants_context_scan = any(token in normalized for token in ("find", "search", "inspect", "scan", "where is", "show me"))
+
+    if wants_workspace:
+        try:
+            from .workspaces.manager import default_workspace_root, propose_workspace_plan
+
+            rendered = propose_workspace_plan(prompt, workspace_root=default_workspace_root())
+            print(rendered, file=stdout)
+            _record_shell_memory(prompt, rendered, context, "workspace")
+            return
+        except Exception as exc:  # noqa: BLE001 - workspace planning should degrade, not crash
+            print(f"Workspace planning failed: {exc}", file=stdout)
+            return
 
     if wants_knowledge:
         try:

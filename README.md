@@ -24,7 +24,7 @@ It enforces an explicit engineering loop that keeps your reasoning alive on disk
 mythic
 ```
 
-Bare `mythic` now opens the companion shell. The shell reports project, branch, selected model, memory, and knowledge status at startup; `/help`, `/status`, `/model`, `/model list`, `/model set <provider> [model]`, `/knowledge status`, `/knowledge search <query>`, and `/exit` provide the first control surface. Natural inspection prompts like "Find the memory system in this repo" run a read-only context scan and surface likely files; generic natural-language prompts route through the selected provider with `copy-paste` as the guaranteed fallback and are remembered in `.mythic/memory.sqlite`. Resume questions like "What were we doing last time?" answer directly from that local memory spine. Private-knowledge prompts like "Search my knowledge database for earlier ideas about Hermes memory" search configured read-only SQLite knowledge sources and summarize matching entries. Existing command-catalog behavior remains reachable directly or through `mythic admin <command>` while the reforge phases move those tools behind the conversation-first workflow.
+Bare `mythic` now opens the companion shell. The shell reports project, branch, selected model, memory, and knowledge status at startup; `/help`, `/status`, `/model`, `/model list`, `/model set <provider> [model]`, `/knowledge status`, `/knowledge search <query>`, `/workspace ...`, and `/exit` provide the first control surface. Natural inspection prompts like "Find the memory system in this repo" run a read-only context scan and surface likely files; generic natural-language prompts route through the selected provider with `copy-paste` as the guaranteed fallback and are remembered in `.mythic/memory.sqlite`. Resume questions like "What were we doing last time?" answer directly from that local memory spine. Private-knowledge prompts like "Search my knowledge database for earlier ideas about Hermes memory" search configured read-only SQLite knowledge sources and summarize matching entries. Workspace prompts like "Clone my Hermes fork and make a branch for fixing memory" produce an approval-oriented Git plan without mutating local repositories. Existing command-catalog behavior remains reachable directly or through `mythic admin <command>` while the reforge phases move those tools behind the conversation-first workflow.
 
 The hall is wide enough for a first-time builder finding their footing, and disciplined enough for a seasoned maintainer who cares about clean handoffs, repeatable process, and artifacts that outlive any single session.
 
@@ -672,6 +672,7 @@ These environment variables override any file-based value at runtime:
 - `MYTHIC_KNOWLEDGE_SQLITE_PATH` — add one read-only private SQLite knowledge source, useful for a Tailscale-mounted database path
 - `MYTHIC_KNOWLEDGE_NAME` — optional display name for the env-configured SQLite knowledge source
 - `MYTHIC_KNOWLEDGE_HOST` — optional Tailscale/private host label for the env-configured knowledge source
+- `MYTHIC_WORKSPACE_ROOT` — override the GitHub workspace root used by `workspace` commands (default: `~/.mythic-vibe/workspaces/`)
 - `MYTHIC_TIMING` — when set to `1` / `true` / `yes` / `on`, prints a startup-and-command profile to stderr
 - `MYTHIC_RICH` — opt-in rich-text rendering when the `[ux]` extra is installed
 - `MYTHIC_EVENT_LOG_LIMIT` — positive int overrides the 200-entry event-log default
@@ -800,6 +801,7 @@ Mythic Vibe CLI exposes the following command families. Run `mythic-vibe <comman
 ### Context + packets
 - `scan` — build a local project index for AI context
 - `knowledge status|sources|search` — inspect and search configured read-only private knowledge sources
+- `workspace status|clone|open|branch|track|pr|plan` — manage local GitHub working directories under the Mythic workspace; clone/branch mutations require `--yes`, PR draft writes require `--write`
 - `import-md` — import all Markdown files from the Mythic Engineering repo
 - `codex-pack` / `evoke` — legacy aliases for prompt-packet generation
 - `codex-log` — record a check-in update after receiving an AI response

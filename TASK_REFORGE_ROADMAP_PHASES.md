@@ -11,7 +11,7 @@ Implement the roadmap phases in order, starting with Phase 0 and advancing only 
 
 ## Current State
 
-- The repository is on `development`; Phase 6 implementation has passed focused verification and is ready to commit.
+- The repository is on `development` with Phase 7 implemented and verification passing locally.
 - `TODO.md` is historical and points at older v1.0 planning surfaces.
 - `Mythic_Vibe_CLI_Reforge_Roadmap.md` defines the new rebirth direction: Mythic should become a terminal-based coding companion CLI, not primarily a DevOps-style command catalog.
 - `docs/PRODUCT_INTENT.md` records the companion-shell product intent.
@@ -28,7 +28,22 @@ Implement the roadmap phases in order, starting with Phase 0 and advancing only 
 5. Phase 4: Wire model selection and provider-backed natural prompts into the companion shell. Completed in commit `8c76eec`.
 6. Phase 5: Add the local SQLite memory spine at `.mythic/memory.sqlite`, wire companion-shell natural prompts into it, and answer "What were we doing last time?" from durable memory. Completed in the current Phase 5 implementation commits.
 7. Phase 6: Add a read-only configurable private knowledge reader with SQLite-first support, shell `/knowledge` access, and natural knowledge-search prompts. Completed in the current Phase 6 implementation commit.
-8. Phase 7+: Continue in roadmap order after verification of the prior phase.
+8. Phase 7: Add the GitHub workspace system: default workspace root, clone/open/status, branch creation/tracking, PR draft preparation, and natural clone/branch proposal prompts. Completed in the current Phase 7 implementation commit.
+9. Phase 8+: Continue in roadmap order after Phase 7 is committed and pushed.
+
+## Phase 7 Proposed Files
+
+- `mythic_vibe_cli/workspaces/__init__.py`
+- `mythic_vibe_cli/workspaces/manager.py`
+- `mythic_vibe_cli/workspaces/README_AI.md`
+- `mythic_vibe_cli/app.py`
+- `mythic_vibe_cli/commands.py`
+- `mythic_vibe_cli/repl.py`
+- `mythic_vibe_cli/runtime/slash_commands.py`
+- `tests/test_workspace_manager.py`
+- `tests/test_workspace_cli.py`
+- `tests/test_repl.py`
+- Documentation records (`CHANGELOG.md`, `DEVLOG.md`, `README.md`, `docs/COMMAND_CONTRACTS.md`, this task brief)
 
 ## Phase 6 Proposed Files
 
@@ -77,6 +92,12 @@ Implement the roadmap phases in order, starting with Phase 0 and advancing only 
 - For code phases: run targeted unit tests for the entrypoint, REPL, slash routing, and status/model behavior.
 - Run broader tests only after scoped changes pass or when shared command behavior is touched.
 
+## Phase 7 Verification
+
+- Focused tests: `python -m pytest tests/test_workspace_manager.py tests/test_workspace_cli.py tests/test_repl.py tests/test_cli_kernel.py`
+- Lint: `ruff check mythic_vibe_cli/workspaces mythic_vibe_cli/app.py mythic_vibe_cli/commands.py mythic_vibe_cli/repl.py mythic_vibe_cli/runtime/slash_commands.py tests/test_workspace_manager.py tests/test_workspace_cli.py tests/test_repl.py tests/test_cli_kernel.py`
+- Broad regression subset: `python -m pytest tests/test_repl.py tests/test_cli.py tests/test_cli_kernel.py tests/test_slash_commands.py tests/test_slash_parity.py tests/test_slash_inspect.py tests/test_docs_site.py tests/test_memory_cli.py tests/test_memory_spine.py tests/test_knowledge_reader.py tests/test_knowledge_cli.py tests/test_workspace_manager.py tests/test_workspace_cli.py tests/test_ai_route_cli.py tests/test_ai_models_cli.py`
+
 ## Next Step
 
-Complete Phase 6 verification and then begin Phase 7 GitHub workspace-system work.
+Commit and push Phase 7, then begin Phase 8 patch proposal-system work.

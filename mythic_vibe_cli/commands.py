@@ -6848,6 +6848,192 @@ def cmd_graph_visualize(args: argparse.Namespace) -> int:
     return SUCCESS
 
 
+def _workspace_root_from_args(args: argparse.Namespace):
+    from .workspaces.manager import resolve_workspace_root
+
+    return resolve_workspace_root(getattr(args, "workspace_root", "") or None)
+
+
+def _workspace_action_payload(action: object) -> dict[str, object]:
+    return action.to_dict()  # type: ignore[attr-defined]
+
+
+def _render_workspace_action(action: object) -> None:
+    payload = _workspace_action_payload(action)
+    write_line(f"Workspace {payload['action']}")
+    write_key_value("Message", payload.get("message", ""))
+    if payload.get("repo_url"):
+        write_key_value("Repo", payload["repo_url"])
+    if payload.get("target_path"):
+        write_key_value("Path", payload["target_path"])
+    if payload.get("branch"):
+        write_key_value("Branch", payload["branch"])
+    if payload.get("base_branch"):
+        write_key_value("Base", payload["base_branch"])
+    write_key_value("Executed", str(payload.get("executed", False)).lower())
+    if payload.get("command"):
+        write_key_value("Command", " ".join(str(part) for part in payload["command"]))
+    if payload.get("exit_code"):
+        write_key_value("Exit code", payload["exit_code"])
+    metadata = payload.get("metadata")
+    if isinstance(metadata, dict) and metadata.get("draft"):
+        write_line("")
+        write_line(str(metadata["draft"]).rstrip())
+
+
+def cmd_workspace_dispatch(args: argparse.Namespace) -> int:
+    sub = getattr(args, "workspace_command", "")
+    if sub == "status":
+        return cmd_workspace_status(args)
+    if sub == "clone":
+        return cmd_workspace_clone(args)
+    if sub == "open":
+        return cmd_workspace_open(args)
+    if sub == "branch":
+        return cmd_workspace_branch(args)
+    if sub == "track":
+        return cmd_workspace_track(args)
+    if sub == "pr":
+        return cmd_workspace_pr(args)
+    if sub == "plan":
+        return cmd_workspace_plan(args)
+    write_error(
+        f"Unknown workspace subcommand: {sub!r}. "
+        "Valid: status | clone | open | branch | track | pr | plan."
+    )
+    return USER_INPUT_ERROR
+
+
+def cmd_workspace_status(args: argparse.Namespace) -> int:
+    from .workspaces.manager import workspace_status
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    workspace_root = _workspace_root_from_args(args)
+    status = workspace_status(root, workspace_root)
+    if _flag(args, "json"):
+        write_json({"command": "workspace status", "status": status.to_dict()})
+        return SUCCESS
+    write_line("Workspace status")
+    write_key_value("Workspace root", status.workspace_root)
+    write_key_value("Current repo", status.current_repo or "(none)")
+    write_key_value("Current branch", status.current_branch or "(none)")
+    write_key_value("Remote", status.remote or "(none)")
+    write_key_value("Dirty", str(status.dirty).lower())
+    if status.tracked:
+        write_line("Tracked workspaces:")
+        for record in status.tracked:
+            write_line(f"  {record.name}: {record.path} ({record.branch or '-'})")
+    else:
+        write_line("Tracked workspaces: none")
+    return SUCCESS
+
+
+def cmd_workspace_clone(args: argparse.Namespace) -> int:
+    from .workspaces.manager import clone_repo
+
+    action = clone_repo(
+        str(getattr(args, "repo_url", "")),
+        workspace_root=_workspace_root_from_args(args),
+        name=str(getattr(args, "name", "") or ""),
+        execute=bool(getattr(args, "yes", False)),
+    )
+    if _flag(args, "json"):
+        write_json({"command": "workspace clone", "action": action.to_dict()})
+        return SUCCESS if action.exit_code == 0 else OPERATIONAL_FAILURE
+    _render_workspace_action(action)
+    return SUCCESS if action.exit_code == 0 else OPERATIONAL_FAILURE
+
+
+def cmd_workspace_open(args: argparse.Namespace) -> int:
+    from .workspaces.manager import open_workspace
+
+    action = open_workspace(
+        Path(getattr(args, "repo_path", ".")).resolve(),
+        workspace_root=_workspace_root_from_args(args),
+        name=str(getattr(args, "name", "") or ""),
+    )
+    if _flag(args, "json"):
+        write_json({"command": "workspace open", "action": action.to_dict()})
+        return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+    _render_workspace_action(action)
+    return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+
+
+def cmd_workspace_branch(args: argparse.Namespace) -> int:
+    from .workspaces.manager import create_branch
+
+    try:
+        action = create_branch(
+            Path(getattr(args, "path", ".")).resolve(),
+            str(getattr(args, "branch", "")),
+            workspace_root=_workspace_root_from_args(args),
+            execute=bool(getattr(args, "yes", False)),
+        )
+    except ValueError as exc:
+        write_error(str(exc))
+        return USER_INPUT_ERROR
+    if _flag(args, "json"):
+        write_json({"command": "workspace branch", "action": action.to_dict()})
+        return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+    _render_workspace_action(action)
+    return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+
+
+def cmd_workspace_track(args: argparse.Namespace) -> int:
+    from .workspaces.manager import track_branch
+
+    try:
+        action = track_branch(
+            Path(getattr(args, "path", ".")).resolve(),
+            workspace_root=_workspace_root_from_args(args),
+            branch=str(getattr(args, "branch", "") or ""),
+        )
+    except ValueError as exc:
+        write_error(str(exc))
+        return USER_INPUT_ERROR
+    if _flag(args, "json"):
+        write_json({"command": "workspace track", "action": action.to_dict()})
+        return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+    _render_workspace_action(action)
+    return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+
+
+def cmd_workspace_pr(args: argparse.Namespace) -> int:
+    from .workspaces.manager import prepare_pr_draft
+
+    try:
+        action = prepare_pr_draft(
+            Path(getattr(args, "path", ".")).resolve(),
+            workspace_root=_workspace_root_from_args(args),
+            title=str(getattr(args, "title", "") or ""),
+            body=str(getattr(args, "body", "") or ""),
+            base_branch=str(getattr(args, "base", "main") or "main"),
+            write=bool(getattr(args, "write", False)),
+        )
+    except ValueError as exc:
+        write_error(str(exc))
+        return USER_INPUT_ERROR
+    if _flag(args, "json"):
+        write_json({"command": "workspace pr", "action": action.to_dict()})
+        return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+    _render_workspace_action(action)
+    return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+
+
+def cmd_workspace_plan(args: argparse.Namespace) -> int:
+    from .workspaces.manager import propose_workspace_plan
+
+    raw_request = getattr(args, "request", "")
+    request = " ".join(str(part) for part in raw_request) if isinstance(raw_request, list) else str(raw_request)
+    workspace_root = _workspace_root_from_args(args)
+    rendered = propose_workspace_plan(request, workspace_root=workspace_root)
+    if _flag(args, "json"):
+        write_json({"command": "workspace plan", "workspace_root": str(workspace_root), "proposal": rendered})
+        return SUCCESS
+    write_line(rendered)
+    return SUCCESS
+
+
 def cmd_knowledge_dispatch(args: argparse.Namespace) -> int:
     sub = getattr(args, "knowledge_command", "")
     if sub == "status":
@@ -7546,6 +7732,7 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "provider": cmd_provider,
     "audit": cmd_audit,
     "drift": cmd_drift,
+    "workspace": cmd_workspace_dispatch,
     "graph": cmd_graph_dispatch,
     "knowledge": cmd_knowledge_dispatch,
     "memory": cmd_memory_dispatch,

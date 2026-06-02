@@ -36,6 +36,10 @@ This unreleased band tracks work landed on `development` after the v1.0.0 stable
 
 - Added `mythic_vibe_cli/knowledge/reader.py`, a read-only private knowledge-source reader. SQLite sources configured under `knowledge.sources` or `MYTHIC_KNOWLEDGE_SQLITE_PATH` open with read-only SQLite mode and search via parameterized text queries; PostgreSQL sources are reported as configured but not searched until an explicit adapter lands. Added `mythic-vibe knowledge status|sources|search`, `/knowledge ...` shell dispatch, startup knowledge-source status, and natural prompts like "Search my knowledge database for earlier ideas about Hermes memory."
 
+### Added — Reforge roadmap Phase 7
+
+- Added `mythic_vibe_cli/workspaces/manager.py`, a GitHub workspace manager rooted by default at `~/.mythic-vibe/workspaces/` and overridable through `MYTHIC_WORKSPACE_ROOT`. Added `mythic-vibe workspace status|clone|open|branch|track|pr|plan`, dry-run-by-default clone/branch planning with `--yes` as the mutation gate, PR draft writing gated by `--write`, `/workspace` slash-catalog visibility, and companion-shell natural prompts that propose clone/branch actions without touching local Git state.
+
 ### Added — Hermes Agent control plane (post-v1.0)
 
 - **Hermes Agent** — programmatic control plane for any external AI agent. Two access modes (TCL Python in-process + HTTP API) share one core (`mythic_vibe_cli/agent_api/`). 18 curated tools cover status, doctor, drift, packet creation/lint, verify, reflect, ai recommend, provenance verify, workflow lineage, persona, plugin doctor, artifact read/list, recent events. Every invocation audited via the existing event-log primitive. New `mythic-vibe surface hermes [--bind ADDR --port N --token TOKEN]` launches the token-protected HTTP API. New `mythic-vibe hermes tools|inspect|invoke` invokes the curated agent-tool surface from the CLI without HTTP. See `docs/HERMES_AGENT.md` (operator + author guide).
