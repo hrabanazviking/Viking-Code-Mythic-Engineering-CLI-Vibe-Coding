@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import json
 import os
 from pathlib import Path
+from typing import Any
 
 
 @dataclass
@@ -12,6 +13,8 @@ class AppConfig:
     packet_char_budget: int = 12000
     auto_compact: bool = True
     method_source: str = "https://github.com/hrabanazviking/Mythic-Engineering"
+    ai_provider: str = "copy-paste"
+    ai_model: str = "manual"
 
 
 @dataclass
@@ -53,6 +56,7 @@ class ConfigStore:
 
         codex = payload.get("codex", {}) if isinstance(payload.get("codex", {}), dict) else {}
         method = payload.get("method", {}) if isinstance(payload.get("method", {}), dict) else {}
+        ai = payload.get("ai", {}) if isinstance(payload.get("ai", {}), dict) else {}
 
         config = AppConfig(
             excerpt_limit=_parse_int_env(
@@ -72,9 +76,45 @@ class ConfigStore:
                 "MYTHIC_METHOD_SOURCE",
                 method.get("source", AppConfig.method_source),
             ),
+            ai_provider=_parse_str_env(
+                "MYTHIC_AI_PROVIDER",
+                ai.get("provider", AppConfig.ai_provider),
+            ),
+            ai_model=_parse_str_env(
+                "MYTHIC_AI_MODEL",
+                ai.get("model", AppConfig.ai_model),
+            ),
         )
 
         return LoadedConfig(config=config, sources=sources)
+
+    def save_project_values(self, updates: dict[str, Any]) -> Path:
+        """Merge dotted-key updates into ``<project>/.mythic-vibe.json``.
+
+        This is the JSON config path :meth:`load` already reads. The
+        legacy ``config set`` command still writes ``mythic/config.toml``
+        for compatibility; companion-shell model selection uses this
+        method so the saved values actually participate in runtime
+        resolution.
+        """
+        if self.project_root is None:
+            raise ValueError("project_root is required to save project config")
+
+        path = self.project_root / ".mythic-vibe.json"
+        payload: dict[str, Any] = {}
+        if path.exists():
+            try:
+                raw = json.loads(path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                raw = {}
+            if isinstance(raw, dict):
+                payload = raw
+
+        for key, value in updates.items():
+            _set_dotted(payload, key, value)
+
+        path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        return path
 
 
 def _deep_merge(base: dict, incoming: dict) -> dict:
@@ -85,6 +125,20 @@ def _deep_merge(base: dict, incoming: dict) -> dict:
         else:
             out[key] = value
     return out
+
+
+def _set_dotted(payload: dict[str, Any], key: str, value: Any) -> None:
+    parts = [part for part in key.split(".") if part]
+    if not parts:
+        return
+    target = payload
+    for part in parts[:-1]:
+        current = target.get(part)
+        if not isinstance(current, dict):
+            current = {}
+            target[part] = current
+        target = current
+    target[parts[-1]] = value
 
 
 def _parse_int_env(name: str, fallback: int, minimum: int, maximum: int) -> int:

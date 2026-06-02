@@ -48,6 +48,16 @@ Phase 3 moves repo inspection out of manual command use and into natural convers
 
 ---
 
+## 2026-06-02 - Reforge roadmap Phase 4: model router surface
+
+**Status:** The companion shell now uses the existing AI provider registry and fallback runtime for generic natural-language prompts. `/model list` surfaces provider status, `/model set <provider> [model]` persists selection to project JSON config, and the shell reads `ai.provider` / `ai.model` plus env overrides on startup. The default remains `copy-paste/manual`, so the shell is useful without keys while configured providers can be selected when available.
+
+### Why it matters
+
+Phase 4 connects the conversation-first shell to Mythic's provider-neutral AI machinery without locking the product to one backend. It also makes model choice a shell-level operation rather than a detached admin command, which matches the reforge roadmap's primary UX.
+
+---
+
 ## 2026-05-03 — v1.0.0 launch (PH-19 + PH-20, 26 slices)
 
 **Sessions:** Two consecutive working days, chained through Volmarr's "go for all the rest of 19" then "go for phase 20" then "do a complete look over the README.md and all other project documents" directives.

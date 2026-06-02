@@ -24,7 +24,7 @@ It enforces an explicit engineering loop that keeps your reasoning alive on disk
 mythic
 ```
 
-Bare `mythic` now opens the companion shell. The shell reports project, branch, model fallback, memory, and knowledge status at startup; `/help`, `/status`, `/model`, and `/exit` provide the first control surface. Natural inspection prompts like "Find the memory system in this repo" run a read-only context scan and surface likely files. Existing command-catalog behavior remains reachable directly or through `mythic admin <command>` while the reforge phases move those tools behind the conversation-first workflow.
+Bare `mythic` now opens the companion shell. The shell reports project, branch, selected model, memory, and knowledge status at startup; `/help`, `/status`, `/model`, `/model list`, `/model set <provider> [model]`, and `/exit` provide the first control surface. Natural inspection prompts like "Find the memory system in this repo" run a read-only context scan and surface likely files; generic natural-language prompts route through the selected provider with `copy-paste` as the guaranteed fallback. Existing command-catalog behavior remains reachable directly or through `mythic admin <command>` while the reforge phases move those tools behind the conversation-first workflow.
 
 The hall is wide enough for a first-time builder finding their footing, and disciplined enough for a seasoned maintainer who cares about clean handoffs, repeatable process, and artifacts that outlive any single session.
 
@@ -196,12 +196,12 @@ Plugins register via a manifest under `~/.mythic-vibe/grimoire/` (or per-project
 
 ### 11) Interactive surfaces — REPL + TUI
 
-- `mythic-vibe shell` opens a minimal REPL that dispatches each typed line back through the full CLI stack. Handles `/help`, `/quit`, EOF, Ctrl+C; bare commands without a leading `/` work too.
+- `mythic-vibe shell` opens the companion REPL that dispatches slash and known bare commands back through the full CLI stack. It handles `/help`, `/model`, `/model list`, `/model set <provider> [model]`, `/quit`, EOF, Ctrl+C; generic natural-language prompts run through the selected AI provider with `copy-paste` fallback, and bare commands without a leading `/` work too.
 - `mythic-vibe tui` (requires the `[tui]` extra) opens a Textual-based four-panel grid (status / verification / latest handoff / plugins) with a Recent Events feed below, `r` to refresh, `q` to quit, and `/` to open a filterable slash-command picker. From the picker preview, `r` or Enter runs a builtin slash command in a subprocess and shows live elapsed time + final exit code.
 
 ### 12) Six AI provider adapters (optional)
 
-`mythic_vibe_cli/ai/providers/` contains adapters for `copy-paste`, `local`, `openai`, `anthropic`, `gemini`, and `openrouter`. The `copy-paste` provider always works (it just renders the packet you would have shipped). The model adapters are gated behind the `[ai]` extra and pick up credentials from environment variables.
+`mythic_vibe_cli/ai/providers/` contains adapters for `copy-paste`, `local`, `openai`, `anthropic`, `gemini`, `openrouter`, `ollama`, and island adapters exposed through the provider registry. The `copy-paste` provider always works (it renders the prompt for manual use). The companion shell can list and select providers with `/model list` and `/model set <provider> [model]`; network providers pick up credentials from environment variables and fall back to `copy-paste` when unavailable.
 
 ### 13) Method excerpt embedding
 
@@ -659,6 +659,8 @@ These environment variables override any file-based value at runtime:
 - `MYTHIC_PACKET_CHAR_BUDGET` — char cap for full-packet output
 - `MYTHIC_AUTO_COMPACT` — auto-compact recent events into the context window
 - `MYTHIC_METHOD_SOURCE` — override the Mythic Engineering method-source URL
+- `MYTHIC_AI_PROVIDER` — override the companion shell AI provider selection
+- `MYTHIC_AI_MODEL` — override the companion shell AI model selection
 - `MYTHIC_TIMING` — when set to `1` / `true` / `yes` / `on`, prints a startup-and-command profile to stderr
 - `MYTHIC_RICH` — opt-in rich-text rendering when the `[ux]` extra is installed
 - `MYTHIC_EVENT_LOG_LIMIT` — positive int overrides the 200-entry event-log default

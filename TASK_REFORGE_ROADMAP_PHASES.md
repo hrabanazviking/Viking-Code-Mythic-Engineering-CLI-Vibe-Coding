@@ -11,10 +11,10 @@ Implement the roadmap phases in order, starting with Phase 0 and advancing only 
 
 ## Current State
 
-- The repository is on `development` at commit `e6e91cd`.
+- The repository is on `development`; Phase 4 implementation has passed focused verification and is ready to commit.
 - `TODO.md` is historical and points at older v1.0 planning surfaces.
 - `Mythic_Vibe_CLI_Reforge_Roadmap.md` defines the new rebirth direction: Mythic should become a terminal-based coding companion CLI, not primarily a DevOps-style command catalog.
-- `docs/PRODUCT_INTENT.md` does not exist yet.
+- `docs/PRODUCT_INTENT.md` records the companion-shell product intent.
 - `mythic_vibe_cli/cli.py` is a thin public re-export into `mythic_vibe_cli/app.py`.
 - The console scripts `mythic` and `mythic-vibe` both currently target `mythic_vibe_cli.cli:main`.
 - A prior REPL exists in `mythic_vibe_cli/repl.py`, and older docs/devlog entries mention `mythic-vibe shell`.
@@ -24,8 +24,9 @@ Implement the roadmap phases in order, starting with Phase 0 and advancing only 
 1. Phase 0: Create `docs/PRODUCT_INTENT.md` and make product intent unambiguous. Completed in commit `68de233`.
 2. Phase 1: Rebuild the default `mythic` entrypoint so it launches the companion shell by default while preserving admin access to older commands. Completed in commit `9ce2e25`.
 3. Phase 2: Ensure the minimal interactive shell includes startup banner, repo detection, model display, input loop, slash routing, normal prompt routing, and `/help`, `/status`, `/model`, `/exit`. Completed in commit `4c529eb`.
-4. Phase 3: Make natural-language shell requests trigger repository context inspection. Completed in the next Phase 3 implementation commit after `4c529eb`.
-5. Phase 4+: Continue in roadmap order after verification of the prior phase.
+4. Phase 3: Make natural-language shell requests trigger repository context inspection. Completed in commit `e581afd`.
+5. Phase 4: Wire model selection and provider-backed natural prompts into the companion shell. Completed in the current Phase 4 implementation commit.
+6. Phase 5+: Continue in roadmap order after verification of the prior phase.
 
 ## Phase 0 Proposed Files
 
@@ -51,4 +52,4 @@ Implement the roadmap phases in order, starting with Phase 0 and advancing only 
 
 ## Next Step
 
-Complete Phase 2 verification and then begin Phase 3 context-builder work.
+Complete Phase 4 verification and then begin Phase 5 context engineering work.
