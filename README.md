@@ -380,228 +380,86 @@ The `[dev]` extra pulls every contributor toolchain (pytest + hypothesis + ruff 
 
 ## Quick start
 
-Speak your intent and let the scaffold rise. This walkthrough takes you from an empty folder to a working Mythic project, your first reflection handoff, and a clear next step — in roughly five minutes, *zero* prior knowledge of Mythic Engineering required.
+Speak your intent and let the shell handle the rest. This walkthrough takes you from an empty folder to a working Mythic project and your first reflection handoff, entirely through conversation.
 
-### Before you begin
+### Step 1 — Enter the Shell
 
-You need only one thing: an **empty folder** that will hold your project. It can be brand new (`mkdir my-first-app`) or an existing repository where you want Mythic to live alongside your code.
-
-> **Tip — try it without committing first.** Every command supports `--dry-run`, which prints what *would* happen without writing anything. If you want to scout before you swing, append `--dry-run` to any of the commands below.
-
-> **`--noob` mode** turns on extra explanatory output and conservative defaults. It's the right setting for your first few sessions. Drop the flag once the rhythm clicks.
-
----
-
-### Step 1 — Create the project
+You need only one thing: an **empty folder** that will hold your project. 
 
 ```bash
 cd my-first-app
-mythic-vibe init --goal "Build a beginner-friendly TODO app" --noob
+mythic
 ```
 
-What just happened? The CLI scaffolded the **full Mythic skeleton** into your folder. Here's the actual file list, grouped by what each one is *for*:
+This drops you into the **Mythic companion shell**. From here on out, you just talk to it.
 
-**Vision and method (root)**
-- `MYTHIC_ENGINEERING.md` — your local copy of the Mythic Engineering method headline
-- `SYSTEM_VISION.md` — the north-star document: *what is this thing, for whom, and why?*
+### Step 2 — Initialize the Project
 
-**Operator-facing docs** (`docs/`)
-- `docs/PHILOSOPHY.md` — design values; what you optimize for
-- `docs/ARCHITECTURE.md` — system shape; the boxes-and-arrows record
-- `docs/DOMAIN_MAP.md` — ownership boundaries; what concept lives where
-- `docs/DATA_FLOW.md` — how information moves through the system
-- `docs/DEVLOG.md` — the living chronicle (auto-appended on every `checkin`)
-- `docs/INDEX.md` — your docs map; where everything lives
-- `docs/COMMAND_CONTRACTS.md` — durable contract surface for any commands you add
-
-**Tasks and runtime state**
-- `tasks/current_GOALS.md` — your current goals, written in your own words
-- `mythic/plan.md` — the phase-by-phase plan
-- `mythic/loop.md` — the active workflow loop
-- `mythic/status.json` — *machine-readable* project state; never edit by hand
-
-You should now see all 13 files in your folder. Open `SYSTEM_VISION.md` and `tasks/current_GOALS.md` first — those are the two files you will *actually edit* as a human; the rest are read-mostly until you have something to record.
-
----
-
-### Step 2 — Ask the CLI where to go next
-
-Mythic Vibe CLI is *advisory*: it always knows what phase you're in and what the next move is. Ask:
-
-```bash
-mythic-vibe next
-```
-
-You'll get something like:
-
-```
-Next recommended action
-- What happened: Resolved the next phase as `intent`.
-- What should I do next: Run `mythic-vibe checkin --phase intent --update "Goal and user clarified"`.
-- How do I verify it: Check that SYSTEM_VISION.md and tasks/current_GOALS.md tell the same story.
-```
-
-Three pieces of information, every time: **what phase**, **what command**, **how you'll know it worked**. That is the loop.
-
----
-
-### Step 3 — Edit your two human files
-
-Open `SYSTEM_VISION.md` in your editor and write a real paragraph or two answering: *what is this product, for whom, and what feeling does it create?* Then open `tasks/current_GOALS.md` and list two or three concrete things you want to ship in this session.
-
-You can use any editor. The CLI does not care.
-
----
-
-### Step 4 — Record your first phase check-in
-
-Now tell the CLI you completed the intent phase:
-
-```bash
-mythic-vibe checkin --phase intent --update "Captured the goal and the first user we want to help — a non-coder who wants a calm TODO list"
-```
-
-This **writes one line to `docs/DEVLOG.md`**, **bumps `mythic/status.json`** to mark the `intent` phase as touched, and prints a short summary:
-
-```
-Mythic check-in recorded.
-- Status: mythic/status.json
-- Devlog: docs/DEVLOG.md
-- Summary:
-  Goal: Build a beginner-friendly TODO app
-  Current phase: intent
-  Progress: 14% (1/7 phases touched)
-  Next suggested phase: constraints
-```
-
-The seven phases are `intent → constraints → architecture → plan → build → verify → reflect`. Each one corresponds to a real engineering activity, and `mythic-vibe checkin --phase <name> --update "..."` is how you mark progress.
-
----
-
-### Step 5 — See where you stand
-
-At any point in any session, this command tells you the truth:
-
-```bash
-mythic-vibe status
-```
-
-It reads `mythic/status.json`, the latest verification record, the most recent handoff, and your plugin counts, then prints a concise summary. There is no hidden state. If `status` says you're 14% through the loop, you are 14% through the loop.
-
-If you want a richer interactive view, run `mythic-vibe tui` (requires the `[tui]` extra). It opens a four-panel grid that auto-refreshes every two seconds; press `/` to open a slash-command picker that runs commands directly from inside the TUI.
-
----
-
-### Step 6 — Do the actual work (and let the CLI help you brief an AI)
-
-When you start touching code, you can ask Mythic Vibe to **scan your project context** and **package it into a prompt** ready to send to ChatGPT, Codex, Claude, Aider, Goose, Gemini, or Roo.
-
-```bash
-# 1. Build a local index of your project (writes mythic/project_index.json)
-mythic-vibe scan
-
-# 2. Generate a prompt packet for the assistant of your choice
-mythic-vibe packet create \
-  --task "Implement the first TODO list view" \
-  --phase build \
-  --role "Forge Worker" \
-  --format claude
-```
-
-The packet lands as a Markdown file under `mythic/packets/` and a matching JSON record. Open it, paste the rendered prompt into your assistant of choice, do the work, then come back and check in again.
-
-For a single-shot ChatGPT/Codex round trip, see the **ChatGPT Plus / Codex bridge workflow** section below — it's the same idea with the older `codex-pack` / `codex-log` aliases.
-
----
-
-### Step 7 — Verify before you reflect
-
-Mythic Engineering's unbreakable rule: *do not reflect on work that has not been verified.* Run:
-
-```bash
-mythic-vibe verify --commands --docs --invariants --record
-```
-
-This runs your discovered test commands, checks that active docs are reachable, evaluates project invariants, and writes a durable verification record to `mythic/verifications/`. The `--record` flag promotes the artifact to `latest.json` so future `next` / `resume` calls can read it. If any gate fails, the command exits non-zero and tells you what broke.
-
----
-
-### Step 8 — Close the session with a reflection handoff
-
-When you're ready to stop for the day:
-
-```bash
-mythic-vibe reflect \
-  --summary "Implemented the first TODO list view and got tests passing" \
-  --next-step "Wire up persistence in the next session"
-```
-
-This writes a permanent **handoff record** to `mythic/handoffs/` (Markdown + JSON) and prints something like:
-
-```
-Reflection handoff created.
-- Handoff ID: HND-20260429142054-DEB333
-- Markdown: mythic/handoffs/HND-20260429142054-DEB333.md
-- Next recommended action: Wire up persistence in the next session
-```
-
-That handoff is the bridge to your future self. It is also folded into the SQLite memory spine so session summaries, decisions, files touched, failures, fixes, and next steps are available to the companion shell.
-
----
-
-### Step 9 — Pick the thread back up next time
-
-When you sit down at the keyboard again — tomorrow, next week, six months from now — your first command is:
-
-```bash
-mythic-vibe resume
-```
-
-It reads the most recent handoff and tells you exactly what you said you'd do next, plus a suggested prompt packet to brief an assistant if you want one. No re-reading, no guessing, no archaeological dig through your terminal history.
-
-Inside the companion shell, you can ask:
+Inside the shell, just type your intent:
 
 ```text
-What were we doing last time?
+> Initialize a new Mythic project. The goal is to build a beginner-friendly TODO app.
 ```
 
-The shell answers from `.mythic/memory.sqlite`. From the command catalog, `mythic-vibe memory last` renders the same resume answer and `mythic-vibe memory spine` shows database status plus recent entries.
+The shell will interpret your intent, map it to the underlying `init` primitive, and scaffold the **full Mythic skeleton** into your folder. It will create `SYSTEM_VISION.md` and your goals.
+
+### Step 3 — Ask what's next
+
+Mythic Vibe is *advisory*: it always knows what phase you're in and what the next move is. Ask:
+
+```text
+> What's next?
+```
+
+The shell will tell you exactly what phase you're in, what you should do next, and how to verify it.
+
+### Step 4 — Work and Check In
+
+Instead of remembering command-line flags for `checkin`, just tell the shell you're done with a phase:
+
+```text
+> I've finished the intent phase. We captured the goal and the target user. Record a check-in.
+```
+
+The shell will record a phase update to `docs/DEVLOG.md` and advance `mythic/status.json` automatically.
+
+### Step 5 — Verify and Reflect
+
+When you're done for the day, tell the shell to wrap up:
+
+```text
+> Run verification on the project, and then create a reflection handoff. My summary is: "Set up the initial TODO app structure". Next step is: "Wire up persistence".
+```
+
+The shell will run the project's tests, assert invariants, and record a permanent handoff.
+
+### Step 6 — Pick the thread back up next time
+
+When you sit down at the keyboard again, start the shell and ask:
+
+```text
+> What were we doing last time?
+```
+
+The shell reads the SQLite memory spine and the last handoff, bringing you instantly back up to speed.
 
 ---
 
-### What to edit by hand vs what to leave alone
+### TUI mode
 
-| File | Edit by hand? | Why |
-|---|---|---|
-| `SYSTEM_VISION.md` | **Yes** | It is your statement of intent — keep it current |
-| `tasks/current_GOALS.md` | **Yes** | This is your live to-do list |
-| `docs/PHILOSOPHY.md`, `docs/ARCHITECTURE.md`, `docs/DOMAIN_MAP.md`, `docs/DATA_FLOW.md` | **Yes, when the system changes** | Treat doc drift as a functional bug |
-| `docs/DEVLOG.md` | Append only via `checkin` | The CLI maintains chronological order |
-| `mythic/status.json`, `mythic/plan.md`, `mythic/loop.md` | **No** | Owned by the CLI; let `checkin` / `next` manage them |
-| `mythic/handoffs/`, `mythic/verifications/`, `mythic/packets/` | **No** | Append-only artifacts; never delete |
+If you prefer a visual dashboard, type `/tui` in the companion shell (or run `mythic tui` from the terminal). It opens a rich Textual-based interface with a persistent chat tab alongside file trees, Git status, and project memory.
 
----
+### Legacy Command Catalog
 
-### Three commands you should know exist
+If you are an advanced operator who prefers the v1.0 strict phase commands, they are all still available via the `admin` namespace:
 
 ```bash
-mythic-vibe examples   # Copy-paste examples for the most common moves
-mythic-vibe guide      # The compact operator guide (the seven phases at a glance)
-mythic-vibe tutorial   # The full first-session walkthrough, in CLI form
-mythic-vibe doctor     # Validate project structure and surface any drift
+mythic admin init --goal "..."
+mythic admin checkin --phase intent
+mythic admin reflect
 ```
 
-Run them whenever you forget what's possible. The CLI is designed to teach you itself.
-
----
-
-### Common first-day situations
-
-- **"I made a mess. How do I undo?"** — Mythic Vibe writes append-only records. You can manually delete files under `mythic/` if you really want to start over, but more often you just run `mythic-vibe checkin` again with a corrected `--update` and move on. The DEVLOG keeps the trail honest.
-- **"I want to try the loop without committing real work."** — Append `--dry-run` to any command. It will print what it would do and write nothing.
-- **"I'm not sure which phase I'm in."** — Run `mythic-vibe status`. The CLI is the source of truth.
-- **"I want to add a feature to the CLI itself."** — Read `docs/COMMAND_CONTRACTS.md` and `docs/api.md` first. The plugin system (see `docs/plugins.md`) is usually the right extension surface.
-- **"I want a visual instead of text."** — `mythic-vibe tui` (after `pip install -e ".[tui]"` or the equivalent extras install above).
+For the full command surface, run `mythic admin --help` or see `docs/COMMAND_CONTRACTS.md`.
 
 ---
 
