@@ -23,7 +23,9 @@ Design notes:
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import shlex
+import subprocess
 import sys
 from pathlib import Path
 from typing import IO, Callable
@@ -34,10 +36,148 @@ from .runtime.slash_commands import BUILTIN_SLASH_COMMANDS
 
 PROMPT = "mythic-vibe> "
 BANNER = (
-    "mythic-vibe shell — type a command or /help. /quit or Ctrl+D exits."
+    "Mythic Vibe CLI — companion shell. Type naturally, or use /help."
 )
 QUIT_TOKENS = frozenset({"/quit", "/exit"})
 HELP_TOKENS = frozenset({"/help", "/?"})
+MODEL_TOKENS = frozenset({"/model"})
+
+
+@dataclass(frozen=True)
+class ShellContext:
+    project_root: Path
+    git_root: Path | None
+    git_branch: str
+    model_provider: str
+    model_name: str
+    knowledge_status: str
+    memory_status: str
+
+    @property
+    def display_project(self) -> str:
+        if self.git_root is not None:
+            return str(self.git_root)
+        return str(self.project_root)
+
+    @property
+    def display_branch(self) -> str:
+        return self.git_branch or "(not a git repo)"
+
+    @property
+    def display_model(self) -> str:
+        return f"{self.model_provider}/{self.model_name}"
+
+
+def _git_output(args: list[str], cwd: Path) -> str:
+    try:
+        result = subprocess.run(
+            ["git", *args],
+            cwd=str(cwd),
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=1.0,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    if result.returncode != 0:
+        return ""
+    return result.stdout.strip()
+
+
+def _detect_shell_context(project_root: Path) -> ShellContext:
+    root = project_root.resolve()
+    git_root_raw = _git_output(["rev-parse", "--show-toplevel"], root)
+    git_root = Path(git_root_raw).resolve() if git_root_raw else None
+    git_branch = _git_output(["branch", "--show-current"], root)
+    if not git_branch and git_root is not None:
+        git_branch = _git_output(["rev-parse", "--short", "HEAD"], root)
+
+    model_provider = "copy-paste"
+    model_name = "manual"
+    try:
+        from .ai.registry import ProviderRegistry
+
+        provider = ProviderRegistry(root=root).providers().get(model_provider)
+        if provider is not None:
+            model_name = str(getattr(provider, "model", model_name) or model_name)
+    except Exception:  # noqa: BLE001 - shell startup should degrade, not crash
+        pass
+
+    knowledge_status = "not connected"
+    if (root / "mythic" / "project_index.json").exists():
+        knowledge_status = "local project index present"
+
+    memory_status = "not initialized"
+    if (root / "mythic" / "conversations").exists() or (root / ".mythic" / "memory.sqlite").exists():
+        memory_status = "local memory present"
+
+    return ShellContext(
+        project_root=root,
+        git_root=git_root,
+        git_branch=git_branch,
+        model_provider=model_provider,
+        model_name=model_name,
+        knowledge_status=knowledge_status,
+        memory_status=memory_status,
+    )
+
+
+def _print_banner(stdout: IO[str], context: ShellContext) -> None:
+    print(BANNER, file=stdout)
+    print(f"Project: {context.display_project}", file=stdout)
+    print(f"Branch: {context.display_branch}", file=stdout)
+    print(f"Model: {context.display_model}", file=stdout)
+    print(f"Memory: {context.memory_status}", file=stdout)
+    print(f"Knowledge: {context.knowledge_status}", file=stdout)
+
+
+def _print_model(stdout: IO[str], context: ShellContext) -> None:
+    print("Model", file=stdout)
+    print(f"  Provider: {context.model_provider}", file=stdout)
+    print(f"  Model: {context.model_name}", file=stdout)
+    print("  Routing: local shell fallback until the model router phase is wired", file=stdout)
+
+
+def _looks_like_command(stripped: str, main_commands: set[str]) -> bool:
+    if stripped.startswith("/"):
+        return True
+    try:
+        argv = shlex.split(stripped)
+    except ValueError:
+        return True
+    return bool(argv and argv[0] in main_commands)
+
+
+def _known_command_names(_main: Callable[[list[str]], int]) -> set[str]:
+    try:
+        from .commands import COMMAND_HANDLERS
+    except Exception:  # noqa: BLE001 - natural prompts should still work
+        return set()
+    return set(COMMAND_HANDLERS)
+
+
+def _answer_natural_prompt(prompt: str, stdout: IO[str], context: ShellContext) -> None:
+    normalized = prompt.lower()
+    wants_project = any(token in normalized for token in ("project", "repo", "repository", "where am i", "what directory"))
+    wants_model = "model" in normalized or "provider" in normalized
+
+    if wants_project:
+        print("You are in this project context:", file=stdout)
+        print(f"  Project: {context.display_project}", file=stdout)
+        print(f"  Branch: {context.display_branch}", file=stdout)
+        print(f"  Working directory: {context.project_root}", file=stdout)
+        return
+
+    if wants_model:
+        _print_model(stdout, context)
+        return
+
+    print("I can work from this local context:", file=stdout)
+    print(f"  Project: {context.display_project}", file=stdout)
+    print(f"  Branch: {context.display_branch}", file=stdout)
+    print(f"  Model: {context.display_model}", file=stdout)
+    print("Ask about the project, or use /help to inspect available controls.", file=stdout)
 
 
 def _print_help(stdout: IO[str], project_root: Path) -> None:
@@ -105,7 +245,8 @@ def run_shell(
 
         main = app_main
 
-    print(BANNER, file=out_stream)
+    shell_context = _detect_shell_context(project_path)
+    _print_banner(out_stream, shell_context)
 
     while True:
         print(PROMPT, end="", file=out_stream, flush=True)
@@ -130,6 +271,10 @@ def run_shell(
             _print_help(out_stream, project_path)
             continue
 
+        if stripped in MODEL_TOKENS:
+            _print_model(out_stream, shell_context)
+            continue
+
         # /help <name> routes to `slash inspect <name>` so the operator
         # sees the canonical introspection output (description, source,
         # argparse --help) rather than just the catalog.
@@ -143,6 +288,10 @@ def run_shell(
                 project_root=project_path,
                 main=main,
             )
+            continue
+
+        if not _looks_like_command(stripped, _known_command_names(main)):
+            _answer_natural_prompt(stripped, out_stream, shell_context)
             continue
 
         # Strip a single leading slash if present so /scan and scan are equivalent.

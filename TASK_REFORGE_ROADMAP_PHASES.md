@@ -22,8 +22,8 @@ Implement the roadmap phases in order, starting with Phase 0 and advancing only 
 ## Phase Order
 
 1. Phase 0: Create `docs/PRODUCT_INTENT.md` and make product intent unambiguous. Completed in commit `68de233`.
-2. Phase 1: Rebuild the default `mythic` entrypoint so it launches the companion shell by default while preserving admin access to older commands. In progress.
-3. Phase 2: Ensure the minimal interactive shell includes startup banner, repo detection, model display, input loop, slash routing, normal prompt routing, and `/help`, `/status`, `/model`, `/exit`.
+2. Phase 1: Rebuild the default `mythic` entrypoint so it launches the companion shell by default while preserving admin access to older commands. Completed in commit `9ce2e25`.
+3. Phase 2: Ensure the minimal interactive shell includes startup banner, repo detection, model display, input loop, slash routing, normal prompt routing, and `/help`, `/status`, `/model`, `/exit`. Completed in the next Phase 2 implementation commit after `9ce2e25`.
 4. Phase 3+: Continue in roadmap order after verification of the prior phase.
 
 ## Phase 0 Proposed Files
@@ -50,4 +50,4 @@ Implement the roadmap phases in order, starting with Phase 0 and advancing only 
 
 ## Next Step
 
-Complete Phase 0 by adding `docs/PRODUCT_INTENT.md` as the authoritative product-intent document for the reforge roadmap.
+Complete Phase 2 verification and then begin Phase 3 context-builder work.
