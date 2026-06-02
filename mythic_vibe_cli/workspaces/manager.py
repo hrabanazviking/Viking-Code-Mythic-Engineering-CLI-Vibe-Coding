@@ -452,6 +452,136 @@ def prepare_pr_draft(
     )
 
 
+def show_diff(path: Path, *, workspace_root: Path) -> WorkspaceAction:
+    repo, branch, remote, dirty = detect_repo(path)
+    if not repo:
+        return WorkspaceAction(
+            action="diff",
+            workspace_root=str(workspace_root),
+            target_path=str(path.resolve()),
+            exit_code=1,
+            message="No Git repository detected at this path.",
+        )
+    command = ("git", "diff", "HEAD")
+    result = exec_command(command, cwd=repo)
+    return WorkspaceAction(
+        action="diff",
+        workspace_root=str(workspace_root),
+        target_path=repo,
+        branch=branch,
+        executed=True,
+        command=command,
+        exit_code=result.code,
+        stdout=result.stdout,
+        stderr=result.stderr,
+        message="Diff generated." if result.code == 0 else "Failed to generate diff.",
+    )
+
+
+def commit_changes(path: Path, *, workspace_root: Path, message: str, execute: bool = False) -> WorkspaceAction:
+    repo, branch, remote, dirty = detect_repo(path)
+    if not repo:
+        return WorkspaceAction(
+            action="commit",
+            workspace_root=str(workspace_root),
+            target_path=str(path.resolve()),
+            exit_code=1,
+            message="No Git repository detected at this path.",
+        )
+    if not dirty:
+        return WorkspaceAction(
+            action="commit",
+            workspace_root=str(workspace_root),
+            target_path=repo,
+            branch=branch,
+            exit_code=0,
+            message="Working tree is clean, nothing to commit.",
+        )
+    if not message:
+        return WorkspaceAction(
+            action="commit",
+            workspace_root=str(workspace_root),
+            target_path=repo,
+            branch=branch,
+            exit_code=1,
+            message="A commit message is required.",
+        )
+    
+    command = ("git", "commit", "-am", message)
+    if not execute:
+        return WorkspaceAction(
+            action="commit",
+            workspace_root=str(workspace_root),
+            target_path=repo,
+            branch=branch,
+            executed=False,
+            command=command,
+            message="Commit prepared; pass --yes to execute.",
+        )
+    
+    result = exec_command(command, cwd=repo)
+    return WorkspaceAction(
+        action="commit",
+        workspace_root=str(workspace_root),
+        target_path=repo,
+        branch=branch,
+        executed=True,
+        command=command,
+        exit_code=result.code,
+        stdout=result.stdout,
+        stderr=result.stderr,
+        message="Changes committed." if result.code == 0 else "Commit failed.",
+        metadata={"dirty": False} if result.code == 0 else {"dirty": True},
+    )
+
+
+def push_branch(path: Path, *, workspace_root: Path, execute: bool = False) -> WorkspaceAction:
+    repo, branch, remote, dirty = detect_repo(path)
+    if not repo:
+        return WorkspaceAction(
+            action="push",
+            workspace_root=str(workspace_root),
+            target_path=str(path.resolve()),
+            exit_code=1,
+            message="No Git repository detected at this path.",
+        )
+    if not remote:
+        return WorkspaceAction(
+            action="push",
+            workspace_root=str(workspace_root),
+            target_path=repo,
+            branch=branch,
+            exit_code=1,
+            message="No remote configured for this repository.",
+        )
+    
+    command = ("git", "push", "origin", branch)
+    if not execute:
+        return WorkspaceAction(
+            action="push",
+            workspace_root=str(workspace_root),
+            target_path=repo,
+            branch=branch,
+            executed=False,
+            command=command,
+            message="Push prepared; pass --yes to execute.",
+        )
+    
+    result = exec_command(command, cwd=repo)
+    return WorkspaceAction(
+        action="push",
+        workspace_root=str(workspace_root),
+        target_path=repo,
+        branch=branch,
+        executed=True,
+        command=command,
+        exit_code=result.code,
+        stdout=result.stdout,
+        stderr=result.stderr,
+        message="Branch pushed successfully." if result.code == 0 else "Push failed.",
+    )
+
+
 def propose_workspace_plan(prompt: str, *, workspace_root: Path) -> str:
     text = prompt.strip()
     repo_url = _extract_repo_url(text)
@@ -505,6 +635,7 @@ __all__ = [
     "WorkspaceRecord",
     "WorkspaceStatus",
     "clone_repo",
+    "commit_changes",
     "create_branch",
     "default_workspace_root",
     "detect_repo",
@@ -512,9 +643,11 @@ __all__ = [
     "open_workspace",
     "prepare_pr_draft",
     "propose_workspace_plan",
+    "push_branch",
     "registry_path",
     "resolve_workspace_root",
     "save_registry",
+    "show_diff",
     "track_branch",
     "workspace_status",
 ]

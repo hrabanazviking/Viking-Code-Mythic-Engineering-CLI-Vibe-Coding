@@ -1967,6 +1967,9 @@ def build_parser(admin_mode: bool = False) -> argparse.ArgumentParser:
             """
             Examples:
               mythic-vibe workspace status
+              mythic-vibe workspace diff
+              mythic-vibe workspace commit --message "Add memory feature" --yes
+              mythic-vibe workspace push --yes
               mythic-vibe workspace clone https://github.com/owner/repo --yes
               mythic-vibe workspace open ./repo
               mythic-vibe workspace branch feature/memory --yes
@@ -2020,6 +2023,24 @@ def build_parser(admin_mode: bool = False) -> argparse.ArgumentParser:
     workspace_plan.add_argument("request", nargs="+")
     workspace_plan.add_argument("--workspace-root", default="")
     add_runtime_options(workspace_plan, json_output=True)
+
+    workspace_diff = workspace_sub.add_parser("diff", help=_help("Show changes in the current workspace"))
+    workspace_diff.add_argument("--path", default=".")
+    workspace_diff.add_argument("--workspace-root", default="")
+    add_runtime_options(workspace_diff, json_output=True)
+
+    workspace_commit = workspace_sub.add_parser("commit", help=_help("Commit changes in the current workspace"))
+    workspace_commit.add_argument("--path", default=".")
+    workspace_commit.add_argument("--message", "-m", default="", help="Commit message")
+    workspace_commit.add_argument("--workspace-root", default="")
+    workspace_commit.add_argument("--yes", action="store_true", help="Actually run git commit")
+    add_runtime_options(workspace_commit, json_output=True)
+
+    workspace_push = workspace_sub.add_parser("push", help=_help("Push the current branch to origin"))
+    workspace_push.add_argument("--path", default=".")
+    workspace_push.add_argument("--workspace-root", default="")
+    workspace_push.add_argument("--yes", action="store_true", help="Actually run git push")
+    add_runtime_options(workspace_push, json_output=True)
 
     # --- PH-05 slice 5.5 / 5.6: graph query + visualize ---
     graph_cmd = sub.add_parser(
