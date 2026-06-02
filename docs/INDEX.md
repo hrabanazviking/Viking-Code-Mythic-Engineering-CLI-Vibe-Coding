@@ -4,6 +4,8 @@
 
 Mythic Vibe is an opinionated developer-workflow tool. It gives operators a structured surface for capturing intent, verifying changes against architecture rules, and handing off work between sessions — all while staying out of the way for the routine cases.
 
+> **Reforge direction:** Mythic is being corrected into a terminal-based coding companion CLI. The primary entrypoint is `mythic`, which should open an interactive shell where the user talks naturally to the model. See [Product Intent](PRODUCT_INTENT.md).
+
 ```bash
 # Install:
 pipx install mythic-vibe-cli
@@ -69,6 +71,7 @@ The CLI is **architecture-first**: every command operates against a `mythic/` di
 
 For the full design rationale see:
 
+- [Product Intent](PRODUCT_INTENT.md) — the reforge direction: coding companion CLI first, command catalog second.
 - [Philosophy](PHILOSOPHY.md) — why the workflow looks the way it does.
 - [Architecture](ARCHITECTURE.md) — module boundaries, data flow, runtime invariants.
 - [System Vision](SYSTEM_VISION.md) — where the project is heading.

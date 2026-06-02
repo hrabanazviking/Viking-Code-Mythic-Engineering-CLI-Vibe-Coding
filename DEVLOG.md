@@ -7,6 +7,17 @@
 
 ---
 
+## 2026-06-02 - Reforge roadmap Phase 0: product intent
+
+**Session:** Started the `Mythic_Vibe_CLI_Reforge_Roadmap.md` phase implementation on `development`.
+**Status:** Phase 0 documentation is in progress. The planning artifact `TASK_REFORGE_ROADMAP_PHASES.md` was created, committed, and pushed before product changes. `docs/PRODUCT_INTENT.md` now records the corrected product definition: Mythic is being reforged into a terminal-based coding companion CLI where `mythic` opens the natural-language companion shell, slash commands are secondary controls, and older command-catalog features are preserved as internal/admin machinery where useful.
+
+### Why it matters
+
+The existing v1.0 documentation still frames Mythic primarily as a structured command-line workflow tool. The reforge roadmap changes the product center of gravity. This entry records that shift explicitly so later implementation phases do not accidentally optimize the old command-catalog UX.
+
+---
+
 ## 2026-05-03 — v1.0.0 launch (PH-19 + PH-20, 26 slices)
 
 **Sessions:** Two consecutive working days, chained through Volmarr's "go for all the rest of 19" then "go for phase 20" then "do a complete look over the README.md and all other project documents" directives.
