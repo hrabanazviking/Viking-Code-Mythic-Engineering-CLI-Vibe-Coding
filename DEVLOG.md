@@ -7,6 +7,16 @@
 
 ---
 
+## 2026-06-02 - Reforge roadmap Phase 10: TUI Integration
+
+**Status:** A new unified `CockpitScreen` was introduced using `textual`, featuring `TabbedContent` with tabs for Chat, Files, Diff, Memory, Knowledge, Git Status, Tasks, and Model Status. The Chat tab natively bridges the REPL loop into the TUI using background worker threads, allowing the user to converse with the AI model seamlessly. The `/tui` slash command was added to the standard companion shell to easily launch the cockpit.
+
+### Why it matters
+
+Phase 10 turns the `mythic-vibe tui` from a read-only 4-panel dashboard into a fully functional workspace where users can chat, browse files, and review Git/Patch diffs in one interface. This fulfills the roadmap's goal of making the TUI the visual cockpit of the companion shell rather than an optional detached DevOps dashboard.
+
+---
+
 ## 2026-06-02 - Reforge roadmap Phase 0: product intent
 
 **Session:** Started the `Mythic_Vibe_CLI_Reforge_Roadmap.md` phase implementation on `development`.

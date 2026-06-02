@@ -45,6 +45,7 @@ HELP_TOKENS = frozenset({"/help", "/?"})
 MODEL_TOKENS = frozenset({"/model"})
 PATCH_TOKENS = frozenset({"/diff", "/apply", "/reject"})
 TEST_TOKENS = frozenset({"/test"})
+TUI_TOKENS = frozenset({"/tui"})
 
 
 @dataclass(frozen=True)
@@ -652,6 +653,19 @@ def run_shell(
 
         if stripped in TEST_TOKENS or stripped.startswith("/test "):
             _handle_test_command(stripped, out_stream, err_stream, shell_context, last_test_result)
+            continue
+
+        if stripped in TUI_TOKENS:
+            try:
+                from .tui.app import run_tui
+                print("Launching TUI...", file=out_stream)
+                run_tui(project_path)
+                print("Returned from TUI.", file=out_stream)
+                _print_banner(out_stream, shell_context)
+            except ImportError:
+                print("TUI not available. Install textual.", file=err_stream)
+            except Exception as exc:
+                print(f"TUI crashed: {exc}", file=err_stream)
             continue
 
         # /help <name> routes to `slash inspect <name>` so the operator

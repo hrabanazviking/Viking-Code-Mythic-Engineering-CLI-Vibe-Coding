@@ -31,7 +31,8 @@ Implement the roadmap phases in order, starting with Phase 0 and advancing only 
 8. Phase 7: Add the GitHub workspace system: default workspace root, clone/open/status, branch creation/tracking, PR draft preparation, and natural clone/branch proposal prompts. Completed in the current Phase 7 implementation commit.
 9. Phase 8: Add the Patch Proposal System: in-memory patch staging, generating diffs, applying patches, rejecting patches, and `/diff`, `/apply`, `/reject` slash commands. Completed in the current Phase 8 implementation commit.
 10. Phase 9: Test Runner: integrating test execution into the companion shell, summarizing failures, and feeding failures into the model for self-healing. Completed in the current Phase 9 implementation commit.
-11. Phase 10+: Continue in roadmap order after Phase 9 is committed and pushed.
+11. Phase 10: TUI Integration: making the TUI the core visual cockpit for the companion shell with a tabbed interface. Completed in the current Phase 10 implementation commit.
+12. Phase 11+: Continue in roadmap order.
 
 ## Phase 9 Proposed Files
 
