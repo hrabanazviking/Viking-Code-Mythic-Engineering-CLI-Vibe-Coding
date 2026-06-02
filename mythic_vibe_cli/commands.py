@@ -46,6 +46,7 @@ from .runtime.command_catalog import (
     builtin_slash_by_name,
     iter_builtin_slash_commands,
 )
+from .runtime.paths import paths_for
 from .runtime.slash_commands import BuiltinSlashCommand, SlashCommandInfo
 from .core.state import PHASES, VerificationRecord, coerce_project_state, utc_now, validate_state_payload
 from .persistence.json_store import JsonStateStore, StateStoreError
@@ -408,8 +409,9 @@ def cmd_codex_pack(args: argparse.Namespace) -> int:
 
 def cmd_packet_create(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
+    runtime_paths = paths_for(root)
     default_ext = ".json" if args.format == "json" else ".md"
-    out_path = Path(args.out).resolve() if args.out else root / "mythic" / f"codex_prompt{default_ext}"
+    out_path = Path(args.out).resolve() if args.out else runtime_paths.project_state_dir / f"codex_prompt{default_ext}"
     if _flag(args, "dry_run"):
         payload = {
             "command": _command_name(args, "packet create"),
@@ -896,6 +898,7 @@ def cmd_packet_lint(args: argparse.Namespace) -> int:
 
 def cmd_workflow_plan(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
+    runtime_paths = paths_for(root)
     role_sequence = tuple(getattr(args, "role", []) or DEFAULT_ROLE_SEQUENCE)
     engine = WorkflowEngine(root)
     output_format = getattr(args, "format", "markdown")
@@ -907,7 +910,7 @@ def cmd_workflow_plan(args: argparse.Namespace) -> int:
         return USER_INPUT_ERROR
 
     out_file = Path(args.out).resolve() if getattr(args, "out", "") else None
-    output_path = out_file or root / "mythic" / WORKFLOW_PLAN_FILENAME
+    output_path = out_file or runtime_paths.workflow_plan_file
     packet_requests = plan.packet_requests(audience=args.audience)
     for request in packet_requests:
         request.output_format = output_format

@@ -7,6 +7,9 @@ import os
 from pathlib import Path
 from typing import Any
 
+from .runtime.atomic_write import atomic_write_text
+from .runtime.paths import config_candidates, paths_for
+
 
 @dataclass
 class AppConfig:
@@ -40,28 +43,7 @@ class ConfigStore:
         self.project_root = project_root.resolve() if project_root else None
 
     def _candidate_paths(self) -> list[Path]:
-        home = Path(os.environ.get("HOME") or Path.home())
-        xdg_home = Path(os.environ.get("XDG_CONFIG_HOME", home / ".config"))
-
-        paths = [
-            home / ".mythic-vibe.json",
-            home / ".mythic-vibe.yaml",
-            home / ".mythic-vibe.yml",
-            xdg_home / "mythic-vibe" / "config.json",
-            xdg_home / "mythic-vibe" / "config.yaml",
-            xdg_home / "mythic-vibe" / "config.yml",
-        ]
-        if self.project_root:
-            paths.extend(
-                [
-                    self.project_root / "config.yaml",
-                    self.project_root / "config.yml",
-                    self.project_root / ".mythic-vibe.json",
-                    self.project_root / ".mythic-vibe.yaml",
-                    self.project_root / ".mythic-vibe.yml",
-                ]
-            )
-        return paths
+        return list(config_candidates(self.project_root))
 
     def load(self) -> LoadedConfig:
         payload: dict = {}
@@ -190,7 +172,7 @@ class ConfigStore:
         if self.project_root is None:
             raise ValueError("project_root is required to save project config")
 
-        path = self.project_root / ".mythic-vibe.json"
+        path = paths_for(self.project_root).project_config_file
         payload: dict[str, Any] = {}
         if path.exists():
             try:
@@ -203,7 +185,7 @@ class ConfigStore:
         for key, value in updates.items():
             _set_dotted(payload, key, value)
 
-        path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        atomic_write_text(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
         return path
 
 

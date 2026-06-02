@@ -10,6 +10,8 @@ import sys
 import traceback
 from typing import Any
 
+from .paths import script_crash_reports_root, state_root
+
 
 def guarded_main(
     func: Callable[[], object],
@@ -56,7 +58,7 @@ def guarded_main(
 
 def write_crash_report(exc: BaseException, *, script_name: str) -> Path | None:
     try:
-        root = _state_root() / "script-crashes"
+        root = script_crash_reports_root()
         root.mkdir(parents=True, exist_ok=True)
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         safe_name = "".join(
@@ -84,16 +86,7 @@ def write_crash_report(exc: BaseException, *, script_name: str) -> Path | None:
 
 
 def _state_root() -> Path:
-    raw = os.environ.get("MYTHIC_STATE_HOME", "").strip()
-    if raw:
-        return Path(raw).expanduser()
-    xdg_state = os.environ.get("XDG_STATE_HOME", "").strip()
-    if xdg_state:
-        return Path(xdg_state).expanduser() / "mythic-vibe"
-    local_appdata = os.environ.get("LOCALAPPDATA", "").strip()
-    if local_appdata:
-        return Path(local_appdata).expanduser() / "MythicVibeCLI"
-    return Path.home() / ".local" / "state" / "mythic-vibe"
+    return state_root()
 
 
 def _coerce_exit_code(value: object) -> int:

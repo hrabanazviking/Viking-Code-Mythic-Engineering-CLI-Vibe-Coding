@@ -10,6 +10,8 @@ from typing import Iterator, Protocol, Any, runtime_checkable
 
 from urllib import request as urllib_request
 
+from ...runtime.paths import paths_for
+
 
 @dataclass
 class ProviderStatus:
@@ -323,7 +325,7 @@ def extract_request_id(payload: dict[str, Any]) -> str | None:
 def provider_log_path(root: Path | None) -> Path | None:
     if root is None:
         return None
-    return root / "mythic" / "ai" / "provider_calls.jsonl"
+    return paths_for(root).provider_calls_log
 
 
 def write_provider_log(root: Path | None, payload: dict[str, Any]) -> None:

@@ -9,6 +9,7 @@ Currently exposes:
 - ``slash_commands`` — typed catalog of slash commands (no dispatcher).
 - ``source_info`` — provenance type for contributed artifacts.
 - ``exec`` — subprocess execution primitive with timeout and cancel-event.
+- ``paths`` — canonical config, state, cache, log, and project path resolver.
 """
 
 from .command_catalog import (
@@ -41,6 +42,20 @@ from .output_guard import (
     restore_stdout,
     take_over_stdout,
     write_raw_stdout,
+)
+from .paths import (
+    PathOwnershipError,
+    RuntimePaths,
+    cache_root,
+    config_candidates,
+    config_root,
+    crash_reports_root,
+    log_root,
+    paths_for,
+    resolve_within,
+    script_crash_reports_root,
+    state_root,
+    workspace_root,
 )
 from .slash_commands import (
     BUILTIN_SLASH_COMMANDS,
@@ -90,6 +105,18 @@ __all__ = [
     "exec_command",
     "spawn_process",
     "ExecResult",
+    "PathOwnershipError",
+    "RuntimePaths",
+    "cache_root",
+    "config_candidates",
+    "config_root",
+    "crash_reports_root",
+    "log_root",
+    "paths_for",
+    "resolve_within",
+    "script_crash_reports_root",
+    "state_root",
+    "workspace_root",
     "ARGPARSE_ONLY_NAMES",
     "CommandCatalogEntry",
     "CommandCatalogValidation",

@@ -32,14 +32,14 @@ def migrate_project_state(root: Path, *, default_goal: str = "unspecified goal")
 
     if not store.exists():
         state = ProjectState(goal=default_goal)
-        store.write_state(state)
+        store.write_state(state, preserve_backup=False)
         return MigrationResult(status_path=store.status_path, backup_path=None, created=True)
 
     try:
         payload = store.read_payload()
     except StateStoreError:
         backup = store.backup_status()
-        store.write_state(ProjectState(goal=default_goal))
+        store.write_state(ProjectState(goal=default_goal), preserve_backup=False)
         return MigrationResult(
             status_path=store.status_path,
             backup_path=backup,
@@ -49,7 +49,7 @@ def migrate_project_state(root: Path, *, default_goal: str = "unspecified goal")
 
     if payload is None:
         state = ProjectState(goal=default_goal)
-        store.write_state(state)
+        store.write_state(state, preserve_backup=False)
         return MigrationResult(status_path=store.status_path, backup_path=None, created=True)
 
     if payload.get("schema_version") == CURRENT_STATE_SCHEMA_VERSION:
@@ -57,5 +57,5 @@ def migrate_project_state(root: Path, *, default_goal: str = "unspecified goal")
 
     backup = store.backup_status()
     state = coerce_project_state(payload)
-    store.write_state(state)
+    store.write_state(state, preserve_backup=False)
     return MigrationResult(status_path=store.status_path, backup_path=backup, migrated=True)

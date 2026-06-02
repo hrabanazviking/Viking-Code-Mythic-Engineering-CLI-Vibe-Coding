@@ -23,6 +23,8 @@ import tempfile
 from pathlib import Path
 from typing import Any, Iterable
 
+from .paths import paths_for
+
 DEFAULT_EVENT_LOG_FILENAME = "events.jsonl"
 DEFAULT_MAX_ENTRIES = 200
 
@@ -181,7 +183,7 @@ def _rewrite_with_tail(path: Path, keep: int) -> None:
 
 
 def event_log_path_for(root: Path) -> Path:
-    return Path(root) / "mythic" / DEFAULT_EVENT_LOG_FILENAME
+    return paths_for(root).events_log
 
 
 def write_entries(log_path: Path, entries: Iterable[EventLogEntry]) -> None:
