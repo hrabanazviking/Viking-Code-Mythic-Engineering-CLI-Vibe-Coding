@@ -175,6 +175,37 @@ class CmdAiRouteTests(unittest.TestCase):
         self.assertEqual(payload["decision"]["provider"], "openrouter")
         self.assertEqual(payload["decision"]["model"], "openai/gpt-4o")
 
+    def test_config_yaml_routing_rule_takes_effect(self) -> None:
+        from mythic_vibe_cli.commands import cmd_ai_route
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "config.yaml").write_text(
+                """
+ai:
+  router:
+    routing_rules:
+      - role: "Forge Worker"
+        task_type: "build"
+        provider: "gemini"
+        model: "gemini-2.5-pro"
+        fallbacks:
+          - "openrouter"
+          - "copy-paste"
+        description: "yaml route override"
+""",
+                encoding="utf-8",
+            )
+            ns = self._ns(path=str(root), no_hardware=True)
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                cmd_ai_route(ns)
+            payload = json.loads(buf.getvalue())
+
+        self.assertEqual(payload["decision"]["provider"], "gemini")
+        self.assertEqual(payload["decision"]["model"], "gemini-2.5-pro")
+        self.assertEqual(payload["decision"]["fallbacks"], ["openrouter", "copy-paste"])
+
 
 class AiDispatchUpdateTests(unittest.TestCase):
     def test_route_routed_through_dispatch(self) -> None:

@@ -1,6 +1,13 @@
 import sys
 import os
 import json
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from mythic_vibe_cli.runtime.script_guard import guarded_main
 
 # Add the directory containing this script to sys.path
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -26,10 +33,15 @@ try:
     from edda_translations import heroic_poems_2
     from edda_translations import heroic_poems_3
 except ImportError as e:
-    print(f"Import error: {e}")
-    sys.exit(1)
+    IMPORT_ERROR: ImportError | None = e
+else:
+    IMPORT_ERROR = None
 
 def main():
+    if IMPORT_ERROR is not None:
+        print(f"Import error: {IMPORT_ERROR}", file=sys.stderr)
+        return 1
+
     edda_data = {
         "metadata": {
             "title": "The Poetic Edda",
@@ -87,6 +99,13 @@ def main():
         json.dump(edda_data, f, indent=2, ensure_ascii=False)
 
     print(f"Successfully wrote Poetic Edda translation to {output_path}")
+    return 0
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(
+        guarded_main(
+            main,
+            script_name=Path(__file__).name,
+            json_mode=False,
+        )
+    )

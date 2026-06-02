@@ -42,6 +42,12 @@ import json as _json
 import sys
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from mythic_vibe_cli.runtime.script_guard import guarded_main
+
 
 # Python 3.12 stdlib top-level modules. Maintained as a snapshot
 # rather than computed at runtime so the audit is reproducible
@@ -325,4 +331,10 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(
+        guarded_main(
+            lambda: main(),
+            script_name=Path(__file__).name,
+            json_mode="--json" in sys.argv,
+        )
+    )

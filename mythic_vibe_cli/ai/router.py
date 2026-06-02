@@ -279,29 +279,42 @@ class RoutingTable:
     def load(cls, root: Path) -> "RoutingTable":
         """Build a table from the project's
         ``mythic/ai/routing.json`` overlay (if present), prepended
-        to the default rules so overrides take precedence.
+        to the default rules so overrides take precedence. The
+        project ``config.yaml`` can also provide
+        ``ai.router.routing_rules``; those rules are prepended before
+        the JSON overlay so the human-edited root config wins.
 
         Errors are best-effort: missing file → defaults only;
         unparseable file → defaults only with no warning to avoid
         crashing the CLI. Future PH-14 (Policy Engine) might add a
         loud config-validation surface."""
         table = cls.from_default()
+        config_overrides: list[RoutingRule] = []
+        try:
+            from ..config import ConfigStore
+
+            loaded = ConfigStore(root).load()
+            for entry in loaded.config.ai_routing_rules:
+                config_overrides.append(RoutingRule.from_dict(entry))
+        except Exception:  # noqa: BLE001 - routing should degrade to defaults
+            config_overrides = []
+
         path = Path(root).joinpath(*ROUTING_FILE_DIR, ROUTING_FILENAME)
         if not path.is_file():
-            return table
+            return cls(rules=config_overrides + table.rules)
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
-            return table
+            return cls(rules=config_overrides + table.rules)
         if not isinstance(payload, list):
-            return table
+            return cls(rules=config_overrides + table.rules)
         overrides: list[RoutingRule] = []
         for entry in payload:
             if isinstance(entry, dict):
                 overrides.append(RoutingRule.from_dict(entry))
         # Overrides come first so a user rule shadows a default with
         # the same predicates.
-        return cls(rules=overrides + table.rules)
+        return cls(rules=config_overrides + overrides + table.rules)
 
     def to_dict(self) -> dict[str, Any]:
         return {"rules": [rule.to_dict() for rule in self.rules]}

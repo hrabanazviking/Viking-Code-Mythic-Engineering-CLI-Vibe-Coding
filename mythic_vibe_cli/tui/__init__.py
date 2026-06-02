@@ -5,8 +5,6 @@ rest of the CLI does not pay the import cost or fail when textual is not
 installed.
 """
 
-from .app import build_status_data
-
 __all__ = ["build_status_data"]
 
 
@@ -21,6 +19,10 @@ def __getattr__(name: str):
         "gather_picker_entries",
     }
     runner_names = {"RunningCommandScreen", "RunSpec", "command_for_builtin"}
+    if name == "build_status_data":
+        from .app import build_status_data
+
+        return build_status_data
     if name in picker_names:
         from . import picker
 
