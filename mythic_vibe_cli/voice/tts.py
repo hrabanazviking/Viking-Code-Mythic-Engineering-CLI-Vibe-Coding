@@ -34,7 +34,7 @@ import tempfile
 from dataclasses import dataclass, field
 from typing import Any, Protocol, runtime_checkable
 
-from .transcribe import MissingExtraError, _import_external_package
+from .transcribe import MissingExtraError, _try_import_package
 
 
 TTS_ENABLED_ENV = "MYTHIC_VOICE_TTS_ENABLED"
@@ -168,7 +168,7 @@ class ChatterboxEngine:
 
     def __post_init__(self) -> None:
         try:
-            self._module = _import_external_package("chatterbox")
+            self._module = _try_import_package("chatterbox")
         except ImportError as exc:
             raise MissingExtraError(
                 "chatterbox",
