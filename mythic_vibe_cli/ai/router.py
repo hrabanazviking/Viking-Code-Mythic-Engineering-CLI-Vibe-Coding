@@ -146,8 +146,8 @@ class RoutingRule:
         return cls(
             role=str(payload.get("role", "*")),
             task_type=str(payload.get("task_type", "*")),
-            min_ram_mb=int(payload.get("min_ram_mb", 0) or 0),
-            min_logical_cpus=int(payload.get("min_logical_cpus", 0) or 0),
+            min_ram_mb=_safe_int(payload.get("min_ram_mb", 0), 0),
+            min_logical_cpus=_safe_int(payload.get("min_logical_cpus", 0), 0),
             prefer_local=bool(payload.get("prefer_local", False)),
             provider=str(payload.get("provider", "copy-paste")),
             model=str(payload.get("model", "")),
@@ -296,7 +296,10 @@ class RoutingTable:
 
             loaded = ConfigStore(root).load()
             for entry in loaded.config.ai_routing_rules:
-                config_overrides.append(RoutingRule.from_dict(entry))
+                try:
+                    config_overrides.append(RoutingRule.from_dict(entry))
+                except (TypeError, ValueError):
+                    continue
         except Exception:  # noqa: BLE001 - routing should degrade to defaults
             config_overrides = []
 
@@ -312,7 +315,10 @@ class RoutingTable:
         overrides: list[RoutingRule] = []
         for entry in payload:
             if isinstance(entry, dict):
-                overrides.append(RoutingRule.from_dict(entry))
+                try:
+                    overrides.append(RoutingRule.from_dict(entry))
+                except (TypeError, ValueError):
+                    continue
         # Overrides come first so a user rule shadows a default with
         # the same predicates.
         return cls(rules=config_overrides + overrides + table.rules)
@@ -373,3 +379,10 @@ __all__ = [
     "RoutingTable",
     "route",
 ]
+
+
+def _safe_int(raw: object, fallback: int) -> int:
+    try:
+        return max(0, int(raw or fallback))
+    except (TypeError, ValueError):
+        return fallback

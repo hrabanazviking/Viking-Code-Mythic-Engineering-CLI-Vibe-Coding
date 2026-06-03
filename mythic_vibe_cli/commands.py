@@ -1232,7 +1232,12 @@ def cmd_ai_run(args: argparse.Namespace) -> int:
             projected = float(getattr(estimate, "cost_usd", 0.0) or 0.0)
         except Exception:  # noqa: BLE001 — estimator failure shouldn't block the call
             projected = 0.0
-        budget = check_budget(root, projected)
+        cap_override = (
+            loaded_config.config.ai_daily_cost_cap_usd
+            if loaded_config.config.ai_daily_cost_cap_usd > 0.0
+            else None
+        )
+        budget = check_budget(root, projected, cap_usd_override=cap_override)
         if not budget.allowed:
             write_error(f"Daily AI cost cap blocked the call: {budget.reason}")
             return OPERATIONAL_FAILURE
@@ -2721,6 +2726,8 @@ def cmd_config(args: argparse.Namespace) -> int:
                     "ai.context_window_tokens": loaded.config.ai_context_window_tokens,
                     "ai.max_output_tokens": loaded.config.ai_max_output_tokens,
                     "ai.request_timeout_seconds": loaded.config.ai_request_timeout_seconds,
+                    "ai.retry_attempts": loaded.config.ai_retry_attempts,
+                    "ai.daily_cost_cap_usd": loaded.config.ai_daily_cost_cap_usd,
                     "ai.temperature": loaded.config.ai_temperature,
                     "ai.top_p": loaded.config.ai_top_p,
                     "ai.router": loaded.config.ai_router,
@@ -2730,6 +2737,8 @@ def cmd_config(args: argparse.Namespace) -> int:
                     "prompts": loaded.config.ai_prompts,
                     "knowledge.sources": loaded.config.knowledge_sources,
                 },
+                "diagnostics": [item.to_dict() for item in loaded.diagnostics],
+                "ok": loaded.ok,
             }
         )
         return SUCCESS
@@ -2753,6 +2762,8 @@ def cmd_config(args: argparse.Namespace) -> int:
     write_key_value("ai.context_window_tokens", loaded.config.ai_context_window_tokens, indent=2)
     write_key_value("ai.max_output_tokens", loaded.config.ai_max_output_tokens, indent=2)
     write_key_value("ai.request_timeout_seconds", loaded.config.ai_request_timeout_seconds, indent=2)
+    write_key_value("ai.retry_attempts", loaded.config.ai_retry_attempts, indent=2)
+    write_key_value("ai.daily_cost_cap_usd", loaded.config.ai_daily_cost_cap_usd, indent=2)
     write_key_value("ai.temperature", loaded.config.ai_temperature, indent=2)
     write_key_value("ai.top_p", loaded.config.ai_top_p, indent=2)
     write_key_value("ai.services", len(loaded.config.ai_services), indent=2)
@@ -2760,6 +2771,13 @@ def cmd_config(args: argparse.Namespace) -> int:
     write_key_value("ai.routing_rules", len(loaded.config.ai_routing_rules), indent=2)
     write_key_value("prompts", len(loaded.config.ai_prompts), indent=2)
     write_key_value("knowledge.sources", len(loaded.config.knowledge_sources), indent=2)
+    if loaded.diagnostics:
+        write_line("- Diagnostics:")
+        for item in loaded.diagnostics:
+            write_bullet(
+                f"{item.severity}: {item.code} at {item.path}: {item.message}",
+                indent=2,
+            )
     return SUCCESS
 
 
