@@ -57,6 +57,12 @@ Use this checklist before tagging or publishing Mythic Vibe CLI.
 - [ ] If a new attack surface landed (network endpoint, persisted state, credential input, plugin extension point): `docs/security/threat_model.md` §5 has a new row for it (per its §8 update procedure).
 - [ ] `docs/security/sbom.json` regenerated and committed for this release.
 
+## Hardening Contracts (v1.0+)
+
+- [ ] **Config Schema Migration**: Verify that any changes to `config.yaml` schema elements have a documented migration path and don't break old configs silently.
+- [ ] **Crash-Boundary Checks**: Ensure any new fatal error paths gracefully degrade and emit structured JSON errors when in `--json` mode rather than raw tracebacks.
+- [ ] **Security Baseline Review**: Review the active-runtime security audit JSON report in CI. Verify any new false-positive overrides have been documented and no new real vulnerabilities have leaked into the release branch.
+
 ## Release Notes
 
 - [ ] Summarize user-facing changes.
