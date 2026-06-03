@@ -86,6 +86,25 @@ jobs:
       - name: Contract audit gate
         run: python tools/contract_audit.py --strict
 
+      - name: Quality gate
+        run: python scripts/quality_gate.py
+
+      - name: JSON output audit
+        run: python -m mythic_vibe_cli simulate --json | python -m json.tool
+
+      - name: Active runtime security audit
+        run: python -m mythic_vibe_cli security audit --path . --json > security-audit.json
+
+      - name: Upload security audit artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-audit
+          path: security-audit.json
+
+      - name: Boundary audit
+        run: python -m mythic_vibe_cli doctor --repo-boundary
+
       - name: Build package
         run: python -m build
 

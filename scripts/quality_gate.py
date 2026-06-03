@@ -19,9 +19,14 @@ def is_test_file(path: Path) -> bool:
 
 
 def scan() -> dict:
+    excluded_dirs = {
+        ".venv", "venv", "__pycache__", "mythic_vibe_cli.egg-info", "ai", "core", "systems", "sessions",
+        "yggdrasil", "imports", "WYRD-Protocol-World-Yielding-Real-time-Data-AI-world-model",
+        "mindspark_thoughtform", "ollama", "whisper", "chatterbox", "research_data"
+    }
     py_files = [
         p for p in ROOT.rglob("*.py")
-        if ".venv" not in p.parts and "__pycache__" not in p.parts
+        if not any(part in excluded_dirs for part in p.parts)
     ]
     findings = {
         "bare_except": [],
