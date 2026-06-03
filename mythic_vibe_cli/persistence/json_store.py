@@ -126,6 +126,8 @@ class JsonStateStore:
             payload = json.loads(self.status_path.read_text(encoding="utf-8"))
         except json.JSONDecodeError as exc:
             raise StateStoreError(f"Invalid JSON in {self.status_path}: {exc.msg}") from exc
+        except UnicodeDecodeError as exc:
+            raise StateStoreError(f"Invalid text encoding in {self.status_path}: {exc}") from exc
         except OSError as exc:
             raise StateStoreError(f"Cannot read {self.status_path}: {exc}") from exc
         if not isinstance(payload, dict):
@@ -151,9 +153,28 @@ class JsonStateStore:
         shutil.copy2(self.status_path, backup)
         return backup
 
+    def quarantine_status(self) -> Path | None:
+        """Move an unreadable/corrupt status file out of the live path.
+
+        The quarantined file keeps its original bytes for manual
+        inspection. A recovered state write can then create a clean
+        ``status.json`` without overwriting evidence of the failure.
+        """
+        if not self.status_path.exists():
+            return None
+        self.backup_dir.mkdir(parents=True, exist_ok=True)
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+        quarantine = self.backup_dir / f"status.json.{stamp}.corrupt"
+        suffix = 1
+        while quarantine.exists():
+            quarantine = self.backup_dir / f"status.json.{stamp}.{suffix}.corrupt"
+            suffix += 1
+        shutil.move(str(self.status_path), str(quarantine))
+        return quarantine
+
     def write_state(self, state: ProjectState, *, preserve_backup: bool = True) -> Path:
         self.mythic_dir.mkdir(parents=True, exist_ok=True)
-        with FileLock(self.lock_path):
+        with FileLock(self.lock_path, cross_process=True):
             if preserve_backup and self.status_path.exists():
                 self.backup_status()
             atomic_write_text(

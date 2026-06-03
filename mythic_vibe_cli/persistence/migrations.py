@@ -38,7 +38,7 @@ def migrate_project_state(root: Path, *, default_goal: str = "unspecified goal")
     try:
         payload = store.read_payload()
     except StateStoreError:
-        backup = store.backup_status()
+        backup = store.quarantine_status()
         store.write_state(ProjectState(goal=default_goal), preserve_backup=False)
         return MigrationResult(
             status_path=store.status_path,

@@ -10,6 +10,7 @@ from mythic_vibe_cli.memory.spine import (
     build_memory_snapshot,
     list_memory,
     memory_db_path,
+    quarantine_memory_db,
     record_memory,
     record_session_summary,
     record_shell_exchange,
@@ -81,6 +82,24 @@ class MemorySpineStorageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             rendered = render_last_time(Path(tmp))
         self.assertIn("No recorded session memory yet", rendered)
+
+    def test_corrupt_memory_database_is_quarantined_and_recreated(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = memory_db_path(root)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("not a sqlite database", encoding="utf-8")
+
+            entry = record_memory(root, "task", "recover memory")
+            backups = list((root / ".mythic" / "backups").glob("memory.sqlite.*.corrupt"))
+
+            self.assertEqual(entry.content, "recover memory")
+            self.assertEqual(len(backups), 1)
+            self.assertEqual(backups[0].read_text(encoding="utf-8"), "not a sqlite database")
+
+    def test_quarantine_memory_db_returns_none_when_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertIsNone(quarantine_memory_db(Path(tmp)))
 
 
 if __name__ == "__main__":
