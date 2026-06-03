@@ -34,7 +34,7 @@ import tempfile
 from dataclasses import dataclass, field
 from typing import Any, Protocol, runtime_checkable
 
-from .transcribe import MissingExtraError
+from .transcribe import MissingExtraError, _import_external_package
 
 
 TTS_ENABLED_ENV = "MYTHIC_VOICE_TTS_ENABLED"
@@ -168,13 +168,12 @@ class ChatterboxEngine:
 
     def __post_init__(self) -> None:
         try:
-            import chatterbox  # type: ignore[import-not-found]
+            self._module = _import_external_package("chatterbox")
         except ImportError as exc:
             raise MissingExtraError(
                 "chatterbox",
                 "Install with `pip install chatterbox` (open-source TTS).",
             ) from exc
-        self._module = chatterbox
 
     # ---- Additive 2026-05-02: Modern Chatterbox API adapter ------------
     #
