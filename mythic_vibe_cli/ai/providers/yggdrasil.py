@@ -23,8 +23,11 @@ Cross-platform: stdlib only on the must-work path.
 
 from __future__ import annotations
 
+import importlib
 import os
+import sys
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from .base import (
@@ -38,6 +41,48 @@ from .base import (
 
 ISLAND_ENABLED_ENV = "MYTHIC_ISLAND_YGGDRASIL_ENABLED"
 _TRUTHY = {"1", "true", "yes", "on"}
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
+
+def _module_is_from_dormant_repo_path(module: Any, package_name: str) -> bool:
+    raw_path = getattr(module, "__file__", "") or ""
+    if not raw_path:
+        return False
+    try:
+        path = Path(raw_path).resolve()
+        return path.is_relative_to(_REPO_ROOT / package_name)
+    except (OSError, ValueError):
+        return False
+
+
+def _import_external_package(package_name: str) -> Any:
+    existing = sys.modules.get(package_name)
+    if existing is not None:
+        if _module_is_from_dormant_repo_path(existing, package_name):
+            raise ImportError(
+                f"{package_name} resolves to dormant repo path, not an external package"
+            )
+        return existing
+
+    spec = importlib.util.find_spec(package_name)
+    if spec is None:
+        raise ImportError(f"{package_name} package not found")
+    origin = spec.origin or ""
+    search_locations = list(spec.submodule_search_locations or [])
+    for raw_path in [origin, *search_locations]:
+        if not raw_path:
+            continue
+        try:
+            path = Path(raw_path).resolve()
+        except (OSError, ValueError):
+            continue
+        if path == _REPO_ROOT / package_name or path.is_relative_to(
+            _REPO_ROOT / package_name
+        ):
+            raise ImportError(
+                f"{package_name} resolves to dormant repo path, not an external package"
+            )
+    return importlib.import_module(package_name)
 
 
 def is_island_enabled() -> bool:
@@ -62,10 +107,9 @@ def _try_import_yggdrasil() -> Any | None:
     available so the operator can install whichever one their
     deployment ships."""
     try:
-        import yggdrasil  # type: ignore[import-not-found]
+        return _import_external_package("yggdrasil")
     except ImportError:
         return None
-    return yggdrasil
 
 
 def _try_import_wyrdforge() -> Any | None:
@@ -73,10 +117,9 @@ def _try_import_wyrdforge() -> Any | None:
     package. Returns the ``wyrdforge`` module object, or ``None``
     when the package isn't on ``sys.path``. Phase F.2 (additive)."""
     try:
-        import wyrdforge  # type: ignore[import-not-found]
+        return _import_external_package("wyrdforge")
     except ImportError:
         return None
-    return wyrdforge
 
 
 @dataclass

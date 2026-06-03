@@ -25,7 +25,9 @@ Cross-platform: stdlib only on the must-work path.
 
 from __future__ import annotations
 
+import importlib
 import os
+import sys
 import tempfile
 import wave
 from dataclasses import dataclass, field
@@ -41,6 +43,7 @@ KNOWN_ENGINES: tuple[str, ...] = ("stub", "whisper")
 DEFAULT_MIC_SAMPLE_RATE = 16_000
 DEFAULT_MIC_CHANNELS = 1
 DEFAULT_MIC_DURATION = 5.0
+_REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 class MissingExtraError(RuntimeError):
@@ -54,6 +57,48 @@ class MissingExtraError(RuntimeError):
         )
         self.extra = extra
         self.install_hint = install_hint
+
+
+def _module_is_from_dormant_repo_path(module: Any, package_name: str) -> bool:
+    raw_path = getattr(module, "__file__", "") or ""
+    if not raw_path:
+        return False
+    try:
+        path = Path(raw_path).resolve()
+        return path.is_relative_to(_REPO_ROOT / package_name)
+    except (OSError, ValueError):
+        return False
+
+
+def _import_external_package(package_name: str) -> Any:
+    existing = sys.modules.get(package_name)
+    if existing is not None:
+        if _module_is_from_dormant_repo_path(existing, package_name):
+            raise ImportError(
+                f"{package_name} resolves to dormant repo path, not an external package"
+            )
+        return existing
+
+    spec = importlib.util.find_spec(package_name)
+    if spec is None:
+        raise ImportError(f"{package_name} package not found")
+    origin = spec.origin or ""
+    search_locations = list(spec.submodule_search_locations or [])
+    candidate_paths = [origin, *search_locations]
+    for raw_path in candidate_paths:
+        if not raw_path:
+            continue
+        try:
+            path = Path(raw_path).resolve()
+        except (OSError, ValueError):
+            continue
+        if path == _REPO_ROOT / package_name or path.is_relative_to(
+            _REPO_ROOT / package_name
+        ):
+            raise ImportError(
+                f"{package_name} resolves to dormant repo path, not an external package"
+            )
+    return importlib.import_module(package_name)
 
 
 @dataclass(frozen=True)
@@ -189,14 +234,13 @@ class WhisperTranscriber:
 
     def __post_init__(self) -> None:
         try:
-            import whisper  # type: ignore[import-not-found]
+            self._module = _import_external_package("whisper")
         except ImportError as exc:
             raise MissingExtraError(
                 "openai-whisper",
                 "Install with `pip install openai-whisper`. "
                 "Note: whisper requires ffmpeg on PATH for audio decoding.",
             ) from exc
-        self._module = whisper
 
     def transcribe(self, request: TranscriptionRequest) -> TranscriptionResult:
         if self._module is None:  # pragma: no cover — __post_init__ guards
