@@ -10,8 +10,10 @@ Currently exposes:
 - ``source_info`` — provenance type for contributed artifacts.
 - ``exec`` — subprocess execution primitive with timeout and cancel-event.
 - ``paths`` — canonical config, state, cache, log, and project path resolver.
+- ``atomic_write`` — canonical crash-resistant text write helper.
 """
 
+from .atomic_write import atomic_write_text
 from .command_catalog import (
     ARGPARSE_ONLY_NAMES,
     CommandCatalogEntry,
@@ -73,6 +75,7 @@ from .timings import print_timings, record, reset_timings
 
 __all__ = [
     "file_mutation_queue",
+    "atomic_write_text",
     "with_file_mutation_queue",
     "take_over_stdout",
     "restore_stdout",
