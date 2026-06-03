@@ -969,6 +969,17 @@ def build_parser(admin_mode: bool = False) -> argparse.ArgumentParser:
         choices=("suggest", "auto", "partial"),
         help="Override approval mode for this run",
     )
+    security_audit.add_argument(
+        "--scope",
+        default="active",
+        choices=("active", "tests", "docs", "vendored", "full"),
+        help="Scan scope: active runtime by default; use full for forensic sweeps",
+    )
+    security_audit.add_argument(
+        "--sarif",
+        action="store_true",
+        help="Emit SARIF 2.1.0 JSON suitable for CI security artifacts",
+    )
     add_runtime_options(security_audit, json_output=True)
 
     config = sub.add_parser("config", help=_help("Show or manage configuration values"))

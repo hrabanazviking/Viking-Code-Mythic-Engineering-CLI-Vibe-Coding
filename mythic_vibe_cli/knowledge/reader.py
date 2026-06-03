@@ -289,7 +289,8 @@ def _discover_tables(conn: sqlite3.Connection) -> list[str]:
 
 
 def _table_columns(conn: sqlite3.Connection, table: str) -> list[tuple[str, str]]:
-    rows = conn.execute(f"PRAGMA table_info({_quote_identifier(table)})").fetchall()
+    pragma_sql = "PRAGMA table_info(" + _quote_identifier(table) + ")"
+    rows = conn.execute(pragma_sql).fetchall()
     columns: list[tuple[str, str]] = []
     for row in rows:
         name = str(row["name"])

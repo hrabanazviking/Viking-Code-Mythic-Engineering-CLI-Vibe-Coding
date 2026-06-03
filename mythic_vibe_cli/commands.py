@@ -4266,25 +4266,8 @@ def cmd_security_audit(args: argparse.Namespace) -> int:
     sandbox_policy = resolve_sandbox_policy(root)
     approval_mode = resolve_mode(root, cli_override=getattr(args, "approval", None))
 
-    # Walk the repo (best-effort) and gather scannable paths.
-    candidates: list[Path] = []
-    skip_dirs = {".git", "__pycache__", "node_modules", ".mypy_cache", ".ruff_cache", "dist", "build", "mythic"}
-    text_extensions = {
-        ".py", ".js", ".ts", ".tsx", ".jsx", ".html", ".sql",
-        ".md", ".toml", ".yaml", ".yml", ".json", ".cfg", ".ini",
-        ".env",  # included so the scanner reports it as forbidden
-    }
-    for path in root.rglob("*"):
-        try:
-            relative = path.relative_to(root)
-        except ValueError:
-            continue
-        if any(part in skip_dirs for part in relative.parts):
-            continue
-        if not path.is_file():
-            continue
-        if path.suffix.lower() in text_extensions or path.name in {".env"}:
-            candidates.append(path)
+    scope = str(getattr(args, "scope", "active") or "active")
+    candidates = _security_audit_candidates(root, scope=scope)
 
     secret_result = scan_secret_paths(
         candidates, root=root, engine=redaction_engine
@@ -4307,6 +4290,7 @@ def cmd_security_audit(args: argparse.Namespace) -> int:
     payload = {
         "command": "security audit",
         "path": str(root),
+        "scope": scope,
         "approval_mode": approval_mode,
         "redaction": redaction_engine.to_dict(),
         "privacy": privacy_policy.to_dict(),
@@ -4316,7 +4300,12 @@ def cmd_security_audit(args: argparse.Namespace) -> int:
         "severity_counts": severity_counts,
         "blocking": has_blocking,
         "files_audited": len(candidates),
+        "report_format": "json",
     }
+
+    if bool(getattr(args, "sarif", False)):
+        write_json(_security_audit_sarif(payload))
+        return OPERATIONAL_FAILURE if has_blocking else SUCCESS
 
     if _flag(args, "json"):
         write_json(payload)
@@ -4324,6 +4313,7 @@ def cmd_security_audit(args: argparse.Namespace) -> int:
 
     write_line("Mythic security audit")
     write_key_value("Path", root)
+    write_key_value("Scope", scope)
     write_key_value("Approval mode", approval_mode)
     write_key_value("Privacy enabled", privacy_policy.enabled)
     write_key_value("Sandbox enabled", sandbox_policy.enabled)
@@ -4345,6 +4335,168 @@ def cmd_security_audit(args: argparse.Namespace) -> int:
         )
         return OPERATIONAL_FAILURE
     return SUCCESS
+
+
+_SECURITY_TEXT_EXTENSIONS = {
+    ".cfg",
+    ".env",
+    ".html",
+    ".ini",
+    ".json",
+    ".jsx",
+    ".md",
+    ".py",
+    ".sql",
+    ".toml",
+    ".ts",
+    ".tsx",
+    ".yaml",
+    ".yml",
+}
+
+_SECURITY_ALWAYS_SKIP_DIRS = {
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+}
+
+_SECURITY_GENERATED_DIRS = {"mythic", ".mythic", "htmlcov", "site"}
+_SECURITY_ARCHIVE_DIRS = {"graveyard"}
+_SECURITY_RESEARCH_DIRS = {"research_data"}
+_SECURITY_VENDOR_DIRS = {
+    "WYRD-Protocol-World-Yielding-Real-time-Data-AI-world-model",
+    "chatterbox",
+    "mindspark_thoughtform",
+    "ollama",
+    "whisper",
+}
+_SECURITY_ACTIVE_DIRS = {"mythic_vibe_cli", "scripts", "tools", "packaging"}
+_SECURITY_ACTIVE_ROOT_FILES = {
+    "install_linux.sh",
+    "install_macos.sh",
+    "install_windows.bat",
+    "pyproject.toml",
+    "config.yaml",
+}
+
+
+def _security_audit_candidates(root: Path, *, scope: str) -> list[Path]:
+    candidates: list[Path] = []
+    has_active_tree = (root / "mythic_vibe_cli").is_dir()
+    for path in root.rglob("*"):
+        try:
+            relative = path.relative_to(root)
+        except ValueError:
+            continue
+        if not path.is_file():
+            continue
+        if not _security_scannable_file(path):
+            continue
+        if not _security_path_in_scope(relative, scope=scope, has_active_tree=has_active_tree):
+            continue
+        candidates.append(path)
+    return sorted(candidates)
+
+
+def _security_scannable_file(path: Path) -> bool:
+    return path.suffix.lower() in _SECURITY_TEXT_EXTENSIONS or path.name in {".env"}
+
+
+def _security_path_in_scope(relative: Path, *, scope: str, has_active_tree: bool) -> bool:
+    parts = relative.parts
+    if any(part in _SECURITY_ALWAYS_SKIP_DIRS for part in parts):
+        return False
+    if scope != "full" and any(part in _SECURITY_GENERATED_DIRS for part in parts):
+        return False
+    top = parts[0] if parts else ""
+    if scope == "active":
+        if has_active_tree:
+            return top in _SECURITY_ACTIVE_DIRS or relative.as_posix() in _SECURITY_ACTIVE_ROOT_FILES
+        return top not in _SECURITY_VENDOR_DIRS | _SECURITY_ARCHIVE_DIRS | _SECURITY_RESEARCH_DIRS
+    if scope == "tests":
+        return top == "tests"
+    if scope == "docs":
+        return top in {"docs", "research_data"} or relative.suffix.lower() == ".md"
+    if scope == "vendored":
+        return top in _SECURITY_VENDOR_DIRS | _SECURITY_ARCHIVE_DIRS
+    if scope == "full":
+        return True
+    return False
+
+
+def _security_audit_sarif(payload: dict[str, object]) -> dict[str, object]:
+    rules: dict[str, dict[str, object]] = {}
+    results: list[dict[str, object]] = []
+    scans = (
+        ("secret", payload.get("secret_scan", {})),
+        ("dangerous", payload.get("dangerous_pattern_scan", {})),
+    )
+    for category, scan in scans:
+        if not isinstance(scan, dict):
+            continue
+        for finding in scan.get("findings", []):
+            if not isinstance(finding, dict):
+                continue
+            rule_id = f"{category}.{finding.get('pattern', 'unknown')}"
+            rules.setdefault(
+                rule_id,
+                {
+                    "id": rule_id,
+                    "shortDescription": {"text": str(finding.get("pattern", rule_id))},
+                    "properties": {"security-severity": str(finding.get("severity", "advisory"))},
+                },
+            )
+            results.append(
+                {
+                    "ruleId": rule_id,
+                    "level": _sarif_level(str(finding.get("severity", "advisory"))),
+                    "message": {"text": str(finding.get("snippet") or finding.get("remediation") or rule_id)},
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {"uri": str(finding.get("location", ""))},
+                                "region": {"startLine": int(finding.get("line") or 1)},
+                            }
+                        }
+                    ],
+                }
+            )
+    return {
+        "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+        "version": "2.1.0",
+        "runs": [
+            {
+                "tool": {
+                    "driver": {
+                        "name": "mythic-vibe security audit",
+                        "rules": list(rules.values()),
+                    }
+                },
+                "results": results,
+                "properties": {
+                    "scope": payload.get("scope"),
+                    "blocking": payload.get("blocking"),
+                    "severity_counts": payload.get("severity_counts"),
+                    "files_audited": payload.get("files_audited"),
+                },
+            }
+        ],
+    }
+
+
+def _sarif_level(severity: str) -> str:
+    if severity in {"critical", "high"}:
+        return "error"
+    if severity == "medium":
+        return "warning"
+    return "note"
 
 
 def cmd_ci_scaffold(args: argparse.Namespace) -> int:
