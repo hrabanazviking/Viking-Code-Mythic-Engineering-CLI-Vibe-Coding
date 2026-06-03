@@ -18,6 +18,7 @@ set "REPO_ABS="
 set "INSTALL_BIN=%LOCALAPPDATA%\Programs\MythicVibeCLI\bin"
 set "PYTHON_CMD="
 set "PYTHON_VERSION="
+set "NEEDS_VENV_CREATE=0"
 
 :parse_args
 if "%~1"=="" goto :main
@@ -128,7 +129,15 @@ if "!PY_MAJOR!"=="3" (
 echo [STEP 2] Creating virtual environment in !VENV_DIR!\ ...
 echo.
 
-if not exist "!VENV_DIR!\Scripts\python.exe" (
+set "NEEDS_VENV_CREATE=0"
+if not exist "!VENV_DIR!\Scripts\python.exe" set "NEEDS_VENV_CREATE=1"
+if not exist "!VENV_DIR!\Scripts\activate.bat" set "NEEDS_VENV_CREATE=1"
+
+if "!NEEDS_VENV_CREATE!"=="1" (
+    if exist "!VENV_DIR!\" (
+        call :quarantine_venv
+        if !errorlevel! neq 0 exit /b 1
+    )
     !PYTHON_CMD! -m venv "!VENV_DIR!"
     if !errorlevel! neq 0 (
         echo [ERROR] Failed to create virtual environment.
@@ -289,7 +298,7 @@ set "LAUNCHER_PATH=!INSTALL_BIN!\!LAUNCHER_NAME!.cmd"
 >> "!LAUNCHER_PATH!" echo call :repair "command exited with status %%STATUS%%"
 >> "!LAUNCHER_PATH!" echo "%%VENV_COMMAND%%" %%*
 >> "!LAUNCHER_PATH!" echo set "STATUS=%%ERRORLEVEL%%"
->> "!LAUNCHER_PATH!" echo exit /b 0
+>> "!LAUNCHER_PATH!" echo exit /b %%STATUS%%
 >> "!LAUNCHER_PATH!" echo.
 >> "!LAUNCHER_PATH!" echo :repair
 >> "!LAUNCHER_PATH!" echo echo %%DATE%% %%TIME%% repair requested for !LAUNCHER_NAME!: %%~1 ^>^> "%%LOG_FILE%%" 2^>nul
@@ -326,3 +335,19 @@ for /f "tokens=2" %%v in ('%_TRY_CMD% --version 2^>^&1') do set "_VER=%%v"
 set "PYTHON_CMD=%_TRY_CMD%"
 set "PYTHON_VERSION=!_VER!"
 goto :eof
+
+REM ============================================================
+REM SUBROUTINE: quarantine_venv
+REM Moves an incomplete existing venv aside before rebuilding.
+REM ============================================================
+:quarantine_venv
+set "BROKEN_VENV=!VENV_ABS!.broken.%RANDOM%"
+if exist "!BROKEN_VENV!" set "BROKEN_VENV=!VENV_ABS!.broken.%RANDOM%.%RANDOM%"
+echo [WARN] Existing virtual environment is incomplete.
+echo        Moving it to !BROKEN_VENV! and creating a fresh one.
+move "!VENV_DIR!" "!BROKEN_VENV!" >nul
+if !errorlevel! neq 0 (
+    echo [ERROR] Could not move broken virtual environment out of the way.
+    exit /b 1
+)
+exit /b 0
