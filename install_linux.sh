@@ -6,14 +6,17 @@
 #   sh install_linux.sh --dev        # install editable checkout with dev extra
 #   sh install_linux.sh --extras tui,ai,ux
 #   sh install_linux.sh --venv /path/to/.venv
+#   sh install_linux.sh --install-bin /path/to/bin
 
 set -eu
 
 EXTRAS="tui"
 VENV_DIR=".venv"
+INSTALL_BIN="${HOME}/.local/bin"
+PYTHON_CMD=""
 
 usage() {
-    sed -n '2,8p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 while [ "$#" -gt 0 ]; do
@@ -38,6 +41,14 @@ while [ "$#" -gt 0 ]; do
             VENV_DIR="$2"
             shift 2
             ;;
+        --install-bin)
+            if [ "$#" -lt 2 ]; then
+                echo "ERROR: --install-bin requires a directory path" >&2
+                exit 1
+            fi
+            INSTALL_BIN="$2"
+            shift 2
+            ;;
         --help|-h)
             usage
             exit 0
@@ -55,8 +66,17 @@ echo "  Mythic Vibe CLI - Linux Setup"
 echo "================================================"
 echo
 
-if ! command -v python3 >/dev/null 2>&1; then
-    echo "ERROR: Python 3 not found!"
+for candidate in python3.14 python3.13 python3.12 python3.11 python3.10 python3; do
+    if command -v "$candidate" >/dev/null 2>&1; then
+        if "$candidate" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)' >/dev/null 2>&1; then
+            PYTHON_CMD="$candidate"
+            break
+        fi
+    fi
+done
+
+if [ -z "$PYTHON_CMD" ]; then
+    echo "ERROR: Python 3.10 or newer not found!"
     echo "Please install Python 3.10+ using your package manager:"
     echo "  Ubuntu/Debian: sudo apt install python3 python3-venv python3-pip"
     echo "  Fedora: sudo dnf install python3 python3-pip"
@@ -64,16 +84,10 @@ if ! command -v python3 >/dev/null 2>&1; then
     exit 1
 fi
 
-if ! python3 -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)' >/dev/null 2>&1; then
-    echo "ERROR: Python 3.10 or newer is required."
-    echo "Found: $(python3 --version 2>&1)"
-    exit 1
-fi
+PYTHON_VERSION="$($PYTHON_CMD --version 2>&1)"
+echo "Found Python: $PYTHON_VERSION via $PYTHON_CMD"
 
-PYTHON_VERSION="$(python3 --version 2>&1)"
-echo "Found Python: $PYTHON_VERSION"
-
-if python3 -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 14) else 1)' >/dev/null 2>&1; then
+if "$PYTHON_CMD" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 14) else 1)' >/dev/null 2>&1; then
     echo "WARNING: Python 3.14+ is newer than the documented tested range."
     echo "If dependency installation fails, retry with Python 3.12 or 3.13."
 fi
@@ -84,10 +98,31 @@ if [ ! -f "pyproject.toml" ] || [ ! -d "mythic_vibe_cli" ]; then
     exit 1
 fi
 
+create_venv() {
+    "$PYTHON_CMD" -m venv "$VENV_DIR"
+}
+
+quarantine_broken_venv() {
+    stamp="$(date -u '+%Y%m%d%H%M%S' 2>/dev/null || date '+%Y%m%d%H%M%S')"
+    broken="${VENV_DIR}.broken.${stamp}"
+    suffix=1
+    while [ -e "$broken" ]; do
+        broken="${VENV_DIR}.broken.${stamp}.${suffix}"
+        suffix=$((suffix + 1))
+    done
+    echo "WARNING: Existing virtual environment is incomplete."
+    echo "Moving it to $broken and creating a fresh one."
+    mv "$VENV_DIR" "$broken"
+}
+
 echo "Creating virtual environment in $VENV_DIR..."
 if [ ! -d "$VENV_DIR" ]; then
-    python3 -m venv "$VENV_DIR"
+    create_venv
     echo "Virtual environment created."
+elif [ ! -f "$VENV_DIR/bin/activate" ] || [ ! -x "$VENV_DIR/bin/python" ]; then
+    quarantine_broken_venv
+    create_venv
+    echo "Virtual environment repaired."
 else
     echo "Virtual environment already exists."
 fi
@@ -127,7 +162,6 @@ case "$VENV_DIR" in
 esac
 REPO_PATH="$(pwd -P)"
 
-INSTALL_BIN="${HOME}/.local/bin"
 echo "Installing user commands in $INSTALL_BIN..."
 mkdir -p "$INSTALL_BIN"
 
@@ -187,6 +221,9 @@ EOF
 done
 
 PATH_LINE='export PATH="$HOME/.local/bin:$PATH"'
+if [ "$INSTALL_BIN" != "$HOME/.local/bin" ]; then
+    PATH_LINE="export PATH=\"$INSTALL_BIN:\$PATH\""
+fi
 for rc_file in "$HOME/.profile" "$HOME/.bash_profile" "$HOME/.bashrc" "$HOME/.zshrc"; do
     if [ -f "$rc_file" ]; then
         if ! grep -F "$PATH_LINE" "$rc_file" >/dev/null 2>&1; then

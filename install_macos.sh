@@ -102,10 +102,31 @@ if [ ! -f "pyproject.toml" ] || [ ! -d "mythic_vibe_cli" ]; then
     exit 1
 fi
 
+create_venv() {
+    "$PYTHON_CMD" -m venv "$VENV_DIR"
+}
+
+quarantine_broken_venv() {
+    stamp="$(date -u '+%Y%m%d%H%M%S' 2>/dev/null || date '+%Y%m%d%H%M%S')"
+    broken="${VENV_DIR}.broken.${stamp}"
+    suffix=1
+    while [ -e "$broken" ]; do
+        broken="${VENV_DIR}.broken.${stamp}.${suffix}"
+        suffix=$((suffix + 1))
+    done
+    echo "WARNING: Existing virtual environment is incomplete."
+    echo "Moving it to $broken and creating a fresh one."
+    mv "$VENV_DIR" "$broken"
+}
+
 echo "Creating virtual environment in $VENV_DIR..."
 if [ ! -d "$VENV_DIR" ]; then
-    "$PYTHON_CMD" -m venv "$VENV_DIR"
+    create_venv
     echo "Virtual environment created."
+elif [ ! -f "$VENV_DIR/bin/activate" ] || [ ! -x "$VENV_DIR/bin/python" ]; then
+    quarantine_broken_venv
+    create_venv
+    echo "Virtual environment repaired."
 else
     echo "Virtual environment already exists."
 fi
