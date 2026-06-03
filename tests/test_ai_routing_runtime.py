@@ -494,6 +494,48 @@ class CmdAiRunFallbackTests(unittest.TestCase):
         self.assertTrue(payload["fallback_attempts"][0]["succeeded"])
         self.assertEqual(payload["response"]["provider"], "anthropic")
 
+    def test_config_daily_cost_cap_is_passed_to_budget_guard(self) -> None:
+        from mythic_vibe_cli import commands as cmd_module
+        from mythic_vibe_cli.ai.cost_guard import BudgetCheck
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "config.yaml").write_text(
+                """
+ai:
+  daily_cost_cap_usd: 0.25
+""",
+                encoding="utf-8",
+            )
+            registry = _FakeRegistry(
+                {
+                    "anthropic": _RealResponseProvider("anthropic"),
+                    "copy-paste": _RealResponseProvider("copy-paste"),
+                }
+            )
+            ns = _ai_run_namespace(path=str(root), no_record=True)
+            guard_result = BudgetCheck(
+                allowed=True,
+                today_spent_usd=0.0,
+                cap_usd=0.25,
+                projected_cost_usd=0.0,
+                reason="test",
+            )
+            buf = io.StringIO()
+            with mock.patch.object(cmd_module, "_ai_registry", return_value=registry):
+                with mock.patch(
+                    "mythic_vibe_cli.ai.cost_guard.check_budget",
+                    return_value=guard_result,
+                ) as check_budget:
+                    with redirect_stdout(buf):
+                        exit_code = cmd_module.cmd_ai_run(ns)
+
+            payload = json.loads(buf.getvalue())
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(payload["used_provider"], "anthropic")
+        self.assertEqual(check_budget.call_args.kwargs["cap_usd_override"], 0.25)
+
     def test_primary_failure_falls_forward_to_copy_paste(self) -> None:
         from mythic_vibe_cli import commands as cmd_module
 

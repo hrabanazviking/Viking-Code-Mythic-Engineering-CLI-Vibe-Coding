@@ -217,6 +217,141 @@ prompts:
         self.assertEqual(loaded.config.ai_model_routes["general"][0]["id"], "manual")
         self.assertEqual(loaded.config.ai_prompts["system_default"], "Editable system prompt.")
 
+    def test_config_diagnostics_report_corrupt_config_without_crashing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "config.yaml").write_text("ai:\n  provider", encoding="utf-8")
+
+            loaded = ConfigStore(root).load()
+
+        self.assertEqual(loaded.config.ai_provider, "copy-paste")
+        self.assertFalse(loaded.ok)
+        self.assertIn(
+            "config.file.parse_error",
+            {item.code for item in loaded.diagnostics},
+        )
+
+    def test_partial_and_old_config_get_safe_defaults_and_schema_warning(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "config.yaml").write_text(
+                """
+schema_version: 0
+ai:
+  provider: "openai"
+""",
+                encoding="utf-8",
+            )
+
+            loaded = ConfigStore(root).load()
+
+        self.assertEqual(loaded.config.ai_provider, "openai")
+        self.assertEqual(loaded.config.ai_max_output_tokens, 8192)
+        self.assertIn("config.schema.old", {item.code for item in loaded.diagnostics})
+
+    def test_invalid_prompt_placeholder_is_not_loaded(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "config.yaml").write_text(
+                """
+prompts:
+  good: "Hello {name}"
+  bad: "Hello {not valid"
+""",
+                encoding="utf-8",
+            )
+
+            loaded = ConfigStore(root).load()
+
+        self.assertIn("good", loaded.config.ai_prompts)
+        self.assertNotIn("bad", loaded.config.ai_prompts)
+        self.assertIn(
+            "config.prompts.template.invalid",
+            {item.code for item in loaded.diagnostics},
+        )
+
+    def test_router_routes_skip_disabled_services_and_clamp_model_limits(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "config.yaml").write_text(
+                """
+ai:
+  context_window_tokens: 32000
+  max_output_tokens: 4096
+  router:
+    model_types:
+      coding:
+        service_order:
+          - "openai"
+          - "anthropic"
+    routing_rules:
+      - role: "Forge Worker"
+        task_type: "coding"
+        provider: "openai"
+        model: "gpt-test"
+        fallbacks:
+          - "anthropic|claude-test"
+          - "copy-paste"
+  services:
+    openai:
+      enabled: false
+      model_types:
+        coding:
+          - id: "gpt-test"
+    anthropic:
+      model_types:
+        coding:
+          - id: "claude-test"
+            context_window_tokens: 999999
+            max_output_tokens: 999999
+""",
+                encoding="utf-8",
+            )
+
+            loaded = ConfigStore(root).load()
+
+        route_ids = [item["id"] for item in loaded.config.ai_model_routes["coding"]]
+        self.assertEqual(route_ids, ["claude-test"])
+        self.assertEqual(
+            loaded.config.ai_model_routes["coding"][0]["context_window_tokens"],
+            32000,
+        )
+        self.assertEqual(
+            loaded.config.ai_model_routes["coding"][0]["max_output_tokens"],
+            4096,
+        )
+        self.assertEqual(loaded.config.ai_routing_rules[0]["provider"], "copy-paste")
+        self.assertEqual(loaded.config.ai_routing_rules[0]["model"], "manual")
+        self.assertIn(
+            "config.ai.router.rule.provider_disabled",
+            {item.code for item in loaded.diagnostics},
+        )
+
+    def test_config_json_includes_diagnostics(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "config.yaml").write_text(
+                """
+ai:
+  temperature: 9
+""",
+                encoding="utf-8",
+            )
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(["config", "--path", tmp, "--json"])
+
+            payload = json.loads(output.getvalue())
+
+        self.assertEqual(code, 0)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["config"]["ai.temperature"], 2.0)
+        self.assertIn(
+            "config.value.clamped",
+            {item["code"] for item in payload["diagnostics"]},
+        )
+
     def test_codex_bridge_auto_compacts_sections(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
