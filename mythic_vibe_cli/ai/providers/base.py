@@ -332,6 +332,20 @@ def write_provider_log(root: Path | None, payload: dict[str, Any]) -> None:
     path = provider_log_path(root)
     if path is None:
         return
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as fh:
-        fh.write(json.dumps(redact_value(payload), ensure_ascii=False) + "\n")
+    try:
+        line = json.dumps(redact_value(payload), ensure_ascii=False) + "\n"
+    except (TypeError, ValueError):
+        line = json.dumps(
+            {"provider_log_error": "payload was not JSON serializable"},
+            ensure_ascii=False,
+        ) + "\n"
+    try:
+        from ...runtime.cross_process_lock import cross_process_lock
+
+        path.parent.mkdir(parents=True, exist_ok=True)
+        lock_path = path.with_suffix(path.suffix + ".lock")
+        with cross_process_lock(lock_path, deadline=5.0):
+            with path.open("a", encoding="utf-8") as fh:
+                fh.write(line)
+    except OSError:
+        return

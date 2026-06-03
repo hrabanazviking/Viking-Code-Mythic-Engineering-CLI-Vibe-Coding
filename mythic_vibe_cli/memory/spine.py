@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+import shutil
 import sqlite3
 from typing import Any, Iterable
 
@@ -44,6 +45,36 @@ def _utc_now_iso() -> str:
 
 def memory_db_path(root: Path) -> Path:
     return paths_for(root).memory_db
+
+
+def memory_backup_dir(root: Path) -> Path:
+    return paths_for(root).private_state_dir / "backups"
+
+
+def quarantine_memory_db(root: Path) -> Path | None:
+    path = memory_db_path(root)
+    if not path.exists():
+        return None
+    backup_dir = memory_backup_dir(root)
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+    target = backup_dir / f"memory.sqlite.{stamp}.corrupt"
+    suffix = 1
+    while target.exists():
+        target = backup_dir / f"memory.sqlite.{stamp}.{suffix}.corrupt"
+        suffix += 1
+    shutil.move(str(path), str(target))
+    for sidecar in (
+        path.with_name(path.name + "-wal"),
+        path.with_name(path.name + "-shm"),
+    ):
+        if sidecar.exists():
+            sidecar_target = target.with_name(target.name + sidecar.name.removeprefix(path.name))
+            try:
+                shutil.move(str(sidecar), str(sidecar_target))
+            except OSError:
+                pass
+    return target
 
 
 @dataclass(frozen=True)
@@ -90,13 +121,21 @@ class MemorySnapshot:
         }
 
 
-def _connect(root: Path) -> sqlite3.Connection:
+def _connect_once(root: Path) -> sqlite3.Connection:
     path = memory_db_path(root)
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(path))
     conn.row_factory = sqlite3.Row
     _ensure_schema(conn)
     return conn
+
+
+def _connect(root: Path) -> sqlite3.Connection:
+    try:
+        return _connect_once(root)
+    except sqlite3.DatabaseError:
+        quarantine_memory_db(root)
+        return _connect_once(root)
 
 
 def _ensure_schema(conn: sqlite3.Connection) -> None:

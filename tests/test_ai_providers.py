@@ -6,10 +6,12 @@ import json
 import os
 from pathlib import Path
 import tempfile
+import threading
 import unittest
 from unittest.mock import patch
 
 from mythic_vibe_cli import app
+from mythic_vibe_cli.ai.providers.base import write_provider_log
 from mythic_vibe_cli.ai.registry import ProviderRegistry
 from mythic_vibe_cli.exit_codes import SUCCESS
 
@@ -123,6 +125,39 @@ class AIProviderTests(unittest.TestCase):
                     os.environ.pop("OPENAI_API_KEY", None)
                 else:
                     os.environ["OPENAI_API_KEY"] = old
+
+    def test_provider_log_serializes_non_json_payload_without_crashing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+
+            write_provider_log(root, {"bad": object()})
+
+            log_path = root / "mythic" / "ai" / "provider_calls.jsonl"
+            payload = json.loads(log_path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                payload["provider_log_error"],
+                "payload was not JSON serializable",
+            )
+
+    def test_provider_log_concurrent_writes_remain_valid_jsonl(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+
+            def worker(index: int) -> None:
+                write_provider_log(root, {"provider": "test", "index": index})
+
+            threads = [threading.Thread(target=worker, args=(index,)) for index in range(25)]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join(timeout=3.0)
+
+            log_path = root / "mythic" / "ai" / "provider_calls.jsonl"
+            lines = log_path.read_text(encoding="utf-8").splitlines()
+            entries = [json.loads(line) for line in lines]
+
+            self.assertEqual(len(entries), 25)
+            self.assertEqual({entry["index"] for entry in entries}, set(range(25)))
 
     def test_ai_test_resolves_packet_id_from_project_store(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
