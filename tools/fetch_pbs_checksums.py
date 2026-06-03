@@ -25,6 +25,14 @@ import re
 import sys
 import urllib.error
 import urllib.request
+from pathlib import Path
+
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from mythic_vibe_cli.runtime.script_guard import guarded_main
 
 
 # Default values — must match the PYTHON_VERSION + PBS_RELEASE_TAG
@@ -72,8 +80,7 @@ def fetch_sha256sums(tag: str) -> str:
         with urllib.request.urlopen(url, timeout=30) as resp:
             return resp.read().decode("utf-8")
     except urllib.error.URLError as exc:
-        print(f"ERROR: failed to fetch {url}: {exc}", file=sys.stderr)
-        sys.exit(2)
+        raise RuntimeError(f"failed to fetch {url}: {exc}") from exc
 
 
 def parse_sums(body: str) -> dict[str, str]:
@@ -135,7 +142,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    body = fetch_sha256sums(args.tag)
+    try:
+        body = fetch_sha256sums(args.tag)
+    except RuntimeError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
     sums = parse_sums(body)
 
     if not sums:
@@ -158,4 +169,10 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(
+        guarded_main(
+            lambda: main(),
+            script_name=Path(__file__).name,
+            json_mode=False,
+        )
+    )

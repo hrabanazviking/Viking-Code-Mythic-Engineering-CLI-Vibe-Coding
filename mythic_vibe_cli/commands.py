@@ -41,7 +41,13 @@ from .plugins.api import PLUGIN_HOOKS
 from .plugins.dispatcher import PluginHookDispatcher
 from .plugins.loader import inspect_plugin
 from .plugins.registry import PluginRegistry
-from .runtime.slash_commands import BUILTIN_SLASH_COMMANDS, BuiltinSlashCommand, SlashCommandInfo
+from .runtime.command_catalog import (
+    SLASH_LOCAL_NAMES,
+    builtin_slash_by_name,
+    iter_builtin_slash_commands,
+)
+from .runtime.paths import paths_for
+from .runtime.slash_commands import BuiltinSlashCommand, SlashCommandInfo
 from .core.state import PHASES, VerificationRecord, coerce_project_state, utc_now, validate_state_payload
 from .persistence.json_store import JsonStateStore, StateStoreError
 from .persistence.migrations import migrate_project_state
@@ -403,8 +409,9 @@ def cmd_codex_pack(args: argparse.Namespace) -> int:
 
 def cmd_packet_create(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
+    runtime_paths = paths_for(root)
     default_ext = ".json" if args.format == "json" else ".md"
-    out_path = Path(args.out).resolve() if args.out else root / "mythic" / f"codex_prompt{default_ext}"
+    out_path = Path(args.out).resolve() if args.out else runtime_paths.project_state_dir / f"codex_prompt{default_ext}"
     if _flag(args, "dry_run"):
         payload = {
             "command": _command_name(args, "packet create"),
@@ -891,6 +898,7 @@ def cmd_packet_lint(args: argparse.Namespace) -> int:
 
 def cmd_workflow_plan(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
+    runtime_paths = paths_for(root)
     role_sequence = tuple(getattr(args, "role", []) or DEFAULT_ROLE_SEQUENCE)
     engine = WorkflowEngine(root)
     output_format = getattr(args, "format", "markdown")
@@ -902,7 +910,7 @@ def cmd_workflow_plan(args: argparse.Namespace) -> int:
         return USER_INPUT_ERROR
 
     out_file = Path(args.out).resolve() if getattr(args, "out", "") else None
-    output_path = out_file or root / "mythic" / WORKFLOW_PLAN_FILENAME
+    output_path = out_file or runtime_paths.workflow_plan_file
     packet_requests = plan.packet_requests(audience=args.audience)
     for request in packet_requests:
         request.output_format = output_format
@@ -1193,6 +1201,7 @@ def cmd_ai_run(args: argparse.Namespace) -> int:
     from .memory.conversation import new_conversation_id, record_turn
 
     root = Path(getattr(args, "path", ".")).resolve()
+    loaded_config = ConfigStore(root).load()
     registry = _ai_registry(root)
     provider = registry.providers().get(args.provider)
     if provider is None:
@@ -1223,7 +1232,12 @@ def cmd_ai_run(args: argparse.Namespace) -> int:
             projected = float(getattr(estimate, "cost_usd", 0.0) or 0.0)
         except Exception:  # noqa: BLE001 — estimator failure shouldn't block the call
             projected = 0.0
-        budget = check_budget(root, projected)
+        cap_override = (
+            loaded_config.config.ai_daily_cost_cap_usd
+            if loaded_config.config.ai_daily_cost_cap_usd > 0.0
+            else None
+        )
+        budget = check_budget(root, projected, cap_usd_override=cap_override)
         if not budget.allowed:
             write_error(f"Daily AI cost cap blocked the call: {budget.reason}")
             return OPERATIONAL_FAILURE
@@ -1233,14 +1247,48 @@ def cmd_ai_run(args: argparse.Namespace) -> int:
     attempts_payload: list[dict[str, object]] = []
 
     if use_fallback:
+        route_type = str(
+            loaded_config.config.ai_router.get("default_model_type", "general")
+            if isinstance(loaded_config.config.ai_router, dict)
+            else "general"
+        )
+        configured_attempts = loaded_config.config.ai_model_routes.get(route_type, [])
+        primary_model = ""
+        fallback_specs: list[str] = []
+        start_index = -1
+        for index, attempt in enumerate(configured_attempts):
+            if str(attempt.get("provider", "")) == args.provider:
+                start_index = index
+                primary_model = str(attempt.get("id", "") or "")
+                break
+        if start_index >= 0:
+            for attempt in configured_attempts[start_index + 1:]:
+                attempt_provider = str(attempt.get("provider", "") or "")
+                attempt_model = str(attempt.get("id", "") or "")
+                if attempt_provider:
+                    fallback_specs.append(
+                        f"{attempt_provider}|{attempt_model}"
+                        if attempt_model
+                        else attempt_provider
+                    )
+        elif configured_attempts:
+            for attempt in configured_attempts:
+                attempt_provider = str(attempt.get("provider", "") or "")
+                attempt_model = str(attempt.get("id", "") or "")
+                if attempt_provider:
+                    fallback_specs.append(
+                        f"{attempt_provider}|{attempt_model}"
+                        if attempt_model
+                        else attempt_provider
+                    )
         decision = RouteDecision(
             provider=args.provider,
-            model="",
+            model=primary_model,
             rule_matched=None,
-            fallbacks=(),
+            fallbacks=tuple(fallback_specs),
             reasons=(),
             role="",
-            task_type="*",
+            task_type=route_type,
         )
         result = run_with_fallback(
             decision,
@@ -2673,7 +2721,24 @@ def cmd_config(args: argparse.Namespace) -> int:
                     "codex.packet_char_budget": loaded.config.packet_char_budget,
                     "codex.auto_compact": loaded.config.auto_compact,
                     "method.source": loaded.config.method_source,
+                    "ai.provider": loaded.config.ai_provider,
+                    "ai.model": loaded.config.ai_model,
+                    "ai.context_window_tokens": loaded.config.ai_context_window_tokens,
+                    "ai.max_output_tokens": loaded.config.ai_max_output_tokens,
+                    "ai.request_timeout_seconds": loaded.config.ai_request_timeout_seconds,
+                    "ai.retry_attempts": loaded.config.ai_retry_attempts,
+                    "ai.daily_cost_cap_usd": loaded.config.ai_daily_cost_cap_usd,
+                    "ai.temperature": loaded.config.ai_temperature,
+                    "ai.top_p": loaded.config.ai_top_p,
+                    "ai.router": loaded.config.ai_router,
+                    "ai.services": loaded.config.ai_services,
+                    "ai.model_routes": loaded.config.ai_model_routes,
+                    "ai.routing_rules": loaded.config.ai_routing_rules,
+                    "prompts": loaded.config.ai_prompts,
+                    "knowledge.sources": loaded.config.knowledge_sources,
                 },
+                "diagnostics": [item.to_dict() for item in loaded.diagnostics],
+                "ok": loaded.ok,
             }
         )
         return SUCCESS
@@ -2692,6 +2757,27 @@ def cmd_config(args: argparse.Namespace) -> int:
     write_key_value("codex.packet_char_budget", loaded.config.packet_char_budget, indent=2)
     write_key_value("codex.auto_compact", str(loaded.config.auto_compact).lower(), indent=2)
     write_key_value("method.source", loaded.config.method_source, indent=2)
+    write_key_value("ai.provider", loaded.config.ai_provider, indent=2)
+    write_key_value("ai.model", loaded.config.ai_model, indent=2)
+    write_key_value("ai.context_window_tokens", loaded.config.ai_context_window_tokens, indent=2)
+    write_key_value("ai.max_output_tokens", loaded.config.ai_max_output_tokens, indent=2)
+    write_key_value("ai.request_timeout_seconds", loaded.config.ai_request_timeout_seconds, indent=2)
+    write_key_value("ai.retry_attempts", loaded.config.ai_retry_attempts, indent=2)
+    write_key_value("ai.daily_cost_cap_usd", loaded.config.ai_daily_cost_cap_usd, indent=2)
+    write_key_value("ai.temperature", loaded.config.ai_temperature, indent=2)
+    write_key_value("ai.top_p", loaded.config.ai_top_p, indent=2)
+    write_key_value("ai.services", len(loaded.config.ai_services), indent=2)
+    write_key_value("ai.model_routes", len(loaded.config.ai_model_routes), indent=2)
+    write_key_value("ai.routing_rules", len(loaded.config.ai_routing_rules), indent=2)
+    write_key_value("prompts", len(loaded.config.ai_prompts), indent=2)
+    write_key_value("knowledge.sources", len(loaded.config.knowledge_sources), indent=2)
+    if loaded.diagnostics:
+        write_line("- Diagnostics:")
+        for item in loaded.diagnostics:
+            write_bullet(
+                f"{item.severity}: {item.code} at {item.path}: {item.message}",
+                indent=2,
+            )
     return SUCCESS
 
 
@@ -2862,6 +2948,12 @@ def _create_handoff(
         session_type=session_type,
     )
     json_path, md_path = write_handoff_record(root, record)
+    try:
+        from .memory.spine import record_handoff_memory
+
+        record_handoff_memory(root, record)
+    except Exception:
+        pass
     # PH-07 follow-up: TTS phase-transition hook. No-op unless
     # MYTHIC_VOICE_TTS_ENABLED is set.
     from .voice.notify import notify_phase as _notify_phase
@@ -4192,25 +4284,8 @@ def cmd_security_audit(args: argparse.Namespace) -> int:
     sandbox_policy = resolve_sandbox_policy(root)
     approval_mode = resolve_mode(root, cli_override=getattr(args, "approval", None))
 
-    # Walk the repo (best-effort) and gather scannable paths.
-    candidates: list[Path] = []
-    skip_dirs = {".git", "__pycache__", "node_modules", ".mypy_cache", ".ruff_cache", "dist", "build", "mythic"}
-    text_extensions = {
-        ".py", ".js", ".ts", ".tsx", ".jsx", ".html", ".sql",
-        ".md", ".toml", ".yaml", ".yml", ".json", ".cfg", ".ini",
-        ".env",  # included so the scanner reports it as forbidden
-    }
-    for path in root.rglob("*"):
-        try:
-            relative = path.relative_to(root)
-        except ValueError:
-            continue
-        if any(part in skip_dirs for part in relative.parts):
-            continue
-        if not path.is_file():
-            continue
-        if path.suffix.lower() in text_extensions or path.name in {".env"}:
-            candidates.append(path)
+    scope = str(getattr(args, "scope", "active") or "active")
+    candidates = _security_audit_candidates(root, scope=scope)
 
     secret_result = scan_secret_paths(
         candidates, root=root, engine=redaction_engine
@@ -4233,6 +4308,7 @@ def cmd_security_audit(args: argparse.Namespace) -> int:
     payload = {
         "command": "security audit",
         "path": str(root),
+        "scope": scope,
         "approval_mode": approval_mode,
         "redaction": redaction_engine.to_dict(),
         "privacy": privacy_policy.to_dict(),
@@ -4242,7 +4318,12 @@ def cmd_security_audit(args: argparse.Namespace) -> int:
         "severity_counts": severity_counts,
         "blocking": has_blocking,
         "files_audited": len(candidates),
+        "report_format": "json",
     }
+
+    if bool(getattr(args, "sarif", False)):
+        write_json(_security_audit_sarif(payload))
+        return OPERATIONAL_FAILURE if has_blocking else SUCCESS
 
     if _flag(args, "json"):
         write_json(payload)
@@ -4250,6 +4331,7 @@ def cmd_security_audit(args: argparse.Namespace) -> int:
 
     write_line("Mythic security audit")
     write_key_value("Path", root)
+    write_key_value("Scope", scope)
     write_key_value("Approval mode", approval_mode)
     write_key_value("Privacy enabled", privacy_policy.enabled)
     write_key_value("Sandbox enabled", sandbox_policy.enabled)
@@ -4271,6 +4353,168 @@ def cmd_security_audit(args: argparse.Namespace) -> int:
         )
         return OPERATIONAL_FAILURE
     return SUCCESS
+
+
+_SECURITY_TEXT_EXTENSIONS = {
+    ".cfg",
+    ".env",
+    ".html",
+    ".ini",
+    ".json",
+    ".jsx",
+    ".md",
+    ".py",
+    ".sql",
+    ".toml",
+    ".ts",
+    ".tsx",
+    ".yaml",
+    ".yml",
+}
+
+_SECURITY_ALWAYS_SKIP_DIRS = {
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+}
+
+_SECURITY_GENERATED_DIRS = {"mythic", ".mythic", "htmlcov", "site"}
+_SECURITY_ARCHIVE_DIRS = {"graveyard"}
+_SECURITY_RESEARCH_DIRS = {"research_data"}
+_SECURITY_VENDOR_DIRS = {
+    "WYRD-Protocol-World-Yielding-Real-time-Data-AI-world-model",
+    "chatterbox",
+    "mindspark_thoughtform",
+    "ollama",
+    "whisper",
+}
+_SECURITY_ACTIVE_DIRS = {"mythic_vibe_cli", "scripts", "tools", "packaging"}
+_SECURITY_ACTIVE_ROOT_FILES = {
+    "install_linux.sh",
+    "install_macos.sh",
+    "install_windows.bat",
+    "pyproject.toml",
+    "config.yaml",
+}
+
+
+def _security_audit_candidates(root: Path, *, scope: str) -> list[Path]:
+    candidates: list[Path] = []
+    has_active_tree = (root / "mythic_vibe_cli").is_dir()
+    for path in root.rglob("*"):
+        try:
+            relative = path.relative_to(root)
+        except ValueError:
+            continue
+        if not path.is_file():
+            continue
+        if not _security_scannable_file(path):
+            continue
+        if not _security_path_in_scope(relative, scope=scope, has_active_tree=has_active_tree):
+            continue
+        candidates.append(path)
+    return sorted(candidates)
+
+
+def _security_scannable_file(path: Path) -> bool:
+    return path.suffix.lower() in _SECURITY_TEXT_EXTENSIONS or path.name in {".env"}
+
+
+def _security_path_in_scope(relative: Path, *, scope: str, has_active_tree: bool) -> bool:
+    parts = relative.parts
+    if any(part in _SECURITY_ALWAYS_SKIP_DIRS for part in parts):
+        return False
+    if scope != "full" and any(part in _SECURITY_GENERATED_DIRS for part in parts):
+        return False
+    top = parts[0] if parts else ""
+    if scope == "active":
+        if has_active_tree:
+            return top in _SECURITY_ACTIVE_DIRS or relative.as_posix() in _SECURITY_ACTIVE_ROOT_FILES
+        return top not in _SECURITY_VENDOR_DIRS | _SECURITY_ARCHIVE_DIRS | _SECURITY_RESEARCH_DIRS
+    if scope == "tests":
+        return top == "tests"
+    if scope == "docs":
+        return top in {"docs", "research_data"} or relative.suffix.lower() == ".md"
+    if scope == "vendored":
+        return top in _SECURITY_VENDOR_DIRS | _SECURITY_ARCHIVE_DIRS
+    if scope == "full":
+        return True
+    return False
+
+
+def _security_audit_sarif(payload: dict[str, object]) -> dict[str, object]:
+    rules: dict[str, dict[str, object]] = {}
+    results: list[dict[str, object]] = []
+    scans = (
+        ("secret", payload.get("secret_scan", {})),
+        ("dangerous", payload.get("dangerous_pattern_scan", {})),
+    )
+    for category, scan in scans:
+        if not isinstance(scan, dict):
+            continue
+        for finding in scan.get("findings", []):
+            if not isinstance(finding, dict):
+                continue
+            rule_id = f"{category}.{finding.get('pattern', 'unknown')}"
+            rules.setdefault(
+                rule_id,
+                {
+                    "id": rule_id,
+                    "shortDescription": {"text": str(finding.get("pattern", rule_id))},
+                    "properties": {"security-severity": str(finding.get("severity", "advisory"))},
+                },
+            )
+            results.append(
+                {
+                    "ruleId": rule_id,
+                    "level": _sarif_level(str(finding.get("severity", "advisory"))),
+                    "message": {"text": str(finding.get("snippet") or finding.get("remediation") or rule_id)},
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {"uri": str(finding.get("location", ""))},
+                                "region": {"startLine": int(finding.get("line") or 1)},
+                            }
+                        }
+                    ],
+                }
+            )
+    return {
+        "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+        "version": "2.1.0",
+        "runs": [
+            {
+                "tool": {
+                    "driver": {
+                        "name": "mythic-vibe security audit",
+                        "rules": list(rules.values()),
+                    }
+                },
+                "results": results,
+                "properties": {
+                    "scope": payload.get("scope"),
+                    "blocking": payload.get("blocking"),
+                    "severity_counts": payload.get("severity_counts"),
+                    "files_audited": payload.get("files_audited"),
+                },
+            }
+        ],
+    }
+
+
+def _sarif_level(severity: str) -> str:
+    if severity in {"critical", "high"}:
+        return "error"
+    if severity == "medium":
+        return "warning"
+    return "note"
 
 
 def cmd_ci_scaffold(args: argparse.Namespace) -> int:
@@ -4375,6 +4619,42 @@ def cmd_docker_dispatch(args: argparse.Namespace) -> int:
     write_error(
         f"Unknown docker subcommand: {sub!r}. Try `mythic-vibe docker scaffold --help`."
     )
+    return USER_INPUT_ERROR
+
+
+def cmd_patch_propose(args: argparse.Namespace) -> int:
+    from .patch.manager import PatchManager
+    
+    root = Path(getattr(args, "path", ".")).resolve()
+    target_file = getattr(args, "file", "")
+    content = getattr(args, "content", "")
+    
+    if not target_file or not content:
+        write_error("--file and --content are required.")
+        return USER_INPUT_ERROR
+        
+    pm = PatchManager(project_root=root)
+    proposal = pm.propose(target_file, content)
+    
+    payload = {
+        "command": "patch propose",
+        "target_file": proposal.target_file,
+        "status": "staged",
+    }
+    
+    if _flag(args, "json"):
+        write_json(payload)
+        return SUCCESS
+        
+    write_line(f"Patch proposed for {proposal.target_file}. Use `/patch apply` in the companion shell to apply.")
+    return SUCCESS
+
+
+def cmd_patch_dispatch(args: argparse.Namespace) -> int:
+    sub = getattr(args, "patch_command", "")
+    if sub == "propose":
+        return cmd_patch_propose(args)
+    write_error(f"Unknown patch subcommand: {sub!r}")
     return USER_INPUT_ERROR
 
 
@@ -5891,7 +6171,8 @@ def cmd_slash_list(args: argparse.Namespace) -> int:
     root = Path(args.path).resolve()
     source_filter = (getattr(args, "source", "") or "").strip().lower()
 
-    builtin_payload = [entry.to_dict() for entry in BUILTIN_SLASH_COMMANDS]
+    builtins = iter_builtin_slash_commands()
+    builtin_payload = [entry.to_dict() for entry in builtins]
 
     contributed: list[SlashCommandInfo] = []
     if source_filter != "builtin":
@@ -5918,7 +6199,7 @@ def cmd_slash_list(args: argparse.Namespace) -> int:
 
     if not source_filter or source_filter == "builtin":
         write_line("Builtin slash commands:")
-        for entry in BUILTIN_SLASH_COMMANDS:
+        for entry in builtins:
             write_bullet(f"/{entry.name} — {entry.description}", indent=2)
 
     if source_filter == "builtin":
@@ -5960,7 +6241,7 @@ def _resolve_argparse_subparser(name: str) -> argparse.ArgumentParser | None:
     return None
 
 
-SLASH_LOCALS_WITHOUT_ARGPARSE = {"help", "reload", "quit"}
+SLASH_LOCALS_WITHOUT_ARGPARSE = set(SLASH_LOCAL_NAMES)
 
 
 def cmd_slash_inspect(args: argparse.Namespace) -> int:
@@ -5981,11 +6262,7 @@ def cmd_slash_inspect(args: argparse.Namespace) -> int:
     if name.startswith("/"):
         name = name[1:]
 
-    builtin_match: BuiltinSlashCommand | None = None
-    for entry in BUILTIN_SLASH_COMMANDS:
-        if entry.name == name:
-            builtin_match = entry
-            break
+    builtin_match: BuiltinSlashCommand | None = builtin_slash_by_name(name)
 
     contributed_match: SlashCommandInfo | None = None
     if builtin_match is None:
@@ -6063,10 +6340,10 @@ def cmd_slash_dispatch(args: argparse.Namespace) -> int:
 
 
 def cmd_shell(args: argparse.Namespace) -> int:
-    from .repl import run_shell
+    from .interactive_shell import run_interactive_shell
 
     project_root = Path(getattr(args, "path", ".")).resolve()
-    return run_shell(project_root=project_root)
+    return run_interactive_shell(project_root=project_root)
 
 
 def cmd_tui(args: argparse.Namespace) -> int:
@@ -6836,9 +7113,331 @@ def cmd_graph_visualize(args: argparse.Namespace) -> int:
     return SUCCESS
 
 
+def _workspace_root_from_args(args: argparse.Namespace):
+    from .workspaces.manager import resolve_workspace_root
+
+    return resolve_workspace_root(getattr(args, "workspace_root", "") or None)
+
+
+def _workspace_action_payload(action: object) -> dict[str, object]:
+    return action.to_dict()  # type: ignore[attr-defined]
+
+
+def _render_workspace_action(action: object) -> None:
+    payload = _workspace_action_payload(action)
+    write_line(f"Workspace {payload['action']}")
+    write_key_value("Message", payload.get("message", ""))
+    if payload.get("repo_url"):
+        write_key_value("Repo", payload["repo_url"])
+    if payload.get("target_path"):
+        write_key_value("Path", payload["target_path"])
+    if payload.get("branch"):
+        write_key_value("Branch", payload["branch"])
+    if payload.get("base_branch"):
+        write_key_value("Base", payload["base_branch"])
+    write_key_value("Executed", str(payload.get("executed", False)).lower())
+    if payload.get("command"):
+        write_key_value("Command", " ".join(str(part) for part in payload["command"]))
+    if payload.get("exit_code"):
+        write_key_value("Exit code", payload["exit_code"])
+    metadata = payload.get("metadata")
+    if isinstance(metadata, dict) and metadata.get("draft"):
+        write_line("")
+        write_line(str(metadata["draft"]).rstrip())
+
+
+def cmd_workspace_dispatch(args: argparse.Namespace) -> int:
+    sub = getattr(args, "workspace_command", "")
+    if sub == "status":
+        return cmd_workspace_status(args)
+    if sub == "clone":
+        return cmd_workspace_clone(args)
+    if sub == "open":
+        return cmd_workspace_open(args)
+    if sub == "branch":
+        return cmd_workspace_branch(args)
+    if sub == "track":
+        return cmd_workspace_track(args)
+    if sub == "pr":
+        return cmd_workspace_pr(args)
+    if sub == "plan":
+        return cmd_workspace_plan(args)
+    if sub == "diff":
+        return cmd_workspace_diff(args)
+    if sub == "commit":
+        return cmd_workspace_commit(args)
+    if sub == "push":
+        return cmd_workspace_push(args)
+    write_error(
+        f"Unknown workspace subcommand: {sub!r}. "
+        "Valid: status | clone | open | branch | track | pr | plan | diff | commit | push."
+    )
+    return USER_INPUT_ERROR
+
+
+def cmd_workspace_status(args: argparse.Namespace) -> int:
+    from .workspaces.manager import workspace_status
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    workspace_root = _workspace_root_from_args(args)
+    status = workspace_status(root, workspace_root)
+    if _flag(args, "json"):
+        write_json({"command": "workspace status", "status": status.to_dict()})
+        return SUCCESS
+    write_line("Workspace status")
+    write_key_value("Workspace root", status.workspace_root)
+    write_key_value("Current repo", status.current_repo or "(none)")
+    write_key_value("Current branch", status.current_branch or "(none)")
+    write_key_value("Remote", status.remote or "(none)")
+    write_key_value("Dirty", str(status.dirty).lower())
+    if status.tracked:
+        write_line("Tracked workspaces:")
+        for record in status.tracked:
+            write_line(f"  {record.name}: {record.path} ({record.branch or '-'})")
+    else:
+        write_line("Tracked workspaces: none")
+    return SUCCESS
+
+
+def cmd_workspace_diff(args: argparse.Namespace) -> int:
+    from .workspaces.manager import show_diff
+
+    action = show_diff(
+        Path(getattr(args, "path", ".")).resolve(),
+        workspace_root=_workspace_root_from_args(args),
+    )
+    if _flag(args, "json"):
+        write_json({"command": "workspace diff", "action": action.to_dict()})
+        return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+    _render_workspace_action(action)
+    if action.stdout:
+        write_line("")
+        write_line(action.stdout)
+    return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+
+
+def cmd_workspace_commit(args: argparse.Namespace) -> int:
+    from .workspaces.manager import commit_changes
+
+    action = commit_changes(
+        Path(getattr(args, "path", ".")).resolve(),
+        workspace_root=_workspace_root_from_args(args),
+        message=str(getattr(args, "message", "") or ""),
+        execute=bool(getattr(args, "yes", False)),
+    )
+    if _flag(args, "json"):
+        write_json({"command": "workspace commit", "action": action.to_dict()})
+        return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+    _render_workspace_action(action)
+    if action.stdout:
+        write_line("")
+        write_line(action.stdout)
+    return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+
+
+def cmd_workspace_push(args: argparse.Namespace) -> int:
+    from .workspaces.manager import push_branch
+
+    action = push_branch(
+        Path(getattr(args, "path", ".")).resolve(),
+        workspace_root=_workspace_root_from_args(args),
+        execute=bool(getattr(args, "yes", False)),
+    )
+    if _flag(args, "json"):
+        write_json({"command": "workspace push", "action": action.to_dict()})
+        return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+    _render_workspace_action(action)
+    if action.stdout:
+        write_line("")
+        write_line(action.stdout)
+    if action.stderr:
+        write_line(action.stderr)
+    return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+
+
+def cmd_workspace_clone(args: argparse.Namespace) -> int:
+    from .workspaces.manager import clone_repo
+
+    action = clone_repo(
+        str(getattr(args, "repo_url", "")),
+        workspace_root=_workspace_root_from_args(args),
+        name=str(getattr(args, "name", "") or ""),
+        execute=bool(getattr(args, "yes", False)),
+    )
+    if _flag(args, "json"):
+        write_json({"command": "workspace clone", "action": action.to_dict()})
+        return SUCCESS if action.exit_code == 0 else OPERATIONAL_FAILURE
+    _render_workspace_action(action)
+    return SUCCESS if action.exit_code == 0 else OPERATIONAL_FAILURE
+
+
+def cmd_workspace_open(args: argparse.Namespace) -> int:
+    from .workspaces.manager import open_workspace
+
+    action = open_workspace(
+        Path(getattr(args, "repo_path", ".")).resolve(),
+        workspace_root=_workspace_root_from_args(args),
+        name=str(getattr(args, "name", "") or ""),
+    )
+    if _flag(args, "json"):
+        write_json({"command": "workspace open", "action": action.to_dict()})
+        return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+    _render_workspace_action(action)
+    return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+
+
+def cmd_workspace_branch(args: argparse.Namespace) -> int:
+    from .workspaces.manager import create_branch
+
+    try:
+        action = create_branch(
+            Path(getattr(args, "path", ".")).resolve(),
+            str(getattr(args, "branch", "")),
+            workspace_root=_workspace_root_from_args(args),
+            execute=bool(getattr(args, "yes", False)),
+        )
+    except ValueError as exc:
+        write_error(str(exc))
+        return USER_INPUT_ERROR
+    if _flag(args, "json"):
+        write_json({"command": "workspace branch", "action": action.to_dict()})
+        return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+    _render_workspace_action(action)
+    return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+
+
+def cmd_workspace_track(args: argparse.Namespace) -> int:
+    from .workspaces.manager import track_branch
+
+    try:
+        action = track_branch(
+            Path(getattr(args, "path", ".")).resolve(),
+            workspace_root=_workspace_root_from_args(args),
+            branch=str(getattr(args, "branch", "") or ""),
+        )
+    except ValueError as exc:
+        write_error(str(exc))
+        return USER_INPUT_ERROR
+    if _flag(args, "json"):
+        write_json({"command": "workspace track", "action": action.to_dict()})
+        return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+    _render_workspace_action(action)
+    return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+
+
+def cmd_workspace_pr(args: argparse.Namespace) -> int:
+    from .workspaces.manager import prepare_pr_draft
+
+    try:
+        action = prepare_pr_draft(
+            Path(getattr(args, "path", ".")).resolve(),
+            workspace_root=_workspace_root_from_args(args),
+            title=str(getattr(args, "title", "") or ""),
+            body=str(getattr(args, "body", "") or ""),
+            base_branch=str(getattr(args, "base", "main") or "main"),
+            write=bool(getattr(args, "write", False)),
+        )
+    except ValueError as exc:
+        write_error(str(exc))
+        return USER_INPUT_ERROR
+    if _flag(args, "json"):
+        write_json({"command": "workspace pr", "action": action.to_dict()})
+        return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+    _render_workspace_action(action)
+    return SUCCESS if action.exit_code == 0 else USER_INPUT_ERROR
+
+
+def cmd_workspace_plan(args: argparse.Namespace) -> int:
+    from .workspaces.manager import propose_workspace_plan
+
+    raw_request = getattr(args, "request", "")
+    request = " ".join(str(part) for part in raw_request) if isinstance(raw_request, list) else str(raw_request)
+    workspace_root = _workspace_root_from_args(args)
+    rendered = propose_workspace_plan(request, workspace_root=workspace_root)
+    if _flag(args, "json"):
+        write_json({"command": "workspace plan", "workspace_root": str(workspace_root), "proposal": rendered})
+        return SUCCESS
+    write_line(rendered)
+    return SUCCESS
+
+
+def cmd_knowledge_dispatch(args: argparse.Namespace) -> int:
+    sub = getattr(args, "knowledge_command", "")
+    if sub == "status":
+        return cmd_knowledge_status(args)
+    if sub == "sources":
+        return cmd_knowledge_sources(args)
+    if sub == "search":
+        return cmd_knowledge_search(args)
+    write_error(
+        f"Unknown knowledge subcommand: {sub!r}. "
+        "Valid: status | sources | search."
+    )
+    return USER_INPUT_ERROR
+
+
+def cmd_knowledge_status(args: argparse.Namespace) -> int:
+    from .knowledge.reader import knowledge_status, render_status
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    statuses = knowledge_status(root)
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "knowledge status",
+                "path": str(root),
+                "sources": [status.to_dict() for status in statuses],
+            }
+        )
+        return SUCCESS
+    write_line(render_status(statuses))
+    return SUCCESS
+
+
+def cmd_knowledge_sources(args: argparse.Namespace) -> int:
+    from .knowledge.reader import load_knowledge_sources, render_sources
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    sources = load_knowledge_sources(root)
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "knowledge sources",
+                "path": str(root),
+                "sources": [source.to_dict() for source in sources],
+            }
+        )
+        return SUCCESS
+    write_line(render_sources(root))
+    return SUCCESS
+
+
+def cmd_knowledge_search(args: argparse.Namespace) -> int:
+    from .knowledge.reader import render_search, search_knowledge
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    raw_query = getattr(args, "query", "")
+    if isinstance(raw_query, list):
+        query = " ".join(str(part) for part in raw_query).strip()
+    else:
+        query = str(raw_query).strip()
+    if not query:
+        write_error("Knowledge search requires a non-empty query.")
+        return USER_INPUT_ERROR
+    limit = int(getattr(args, "limit", 5) or 5)
+    result = search_knowledge(root, query, limit=limit)
+    if _flag(args, "json"):
+        payload = result.to_dict()
+        payload["command"] = "knowledge search"
+        payload["path"] = str(root)
+        write_json(payload)
+        return SUCCESS
+    write_line(render_search(result))
+    return SUCCESS
+
+
 def cmd_memory_dispatch(args: argparse.Namespace) -> int:
-    """PH-15 slices 15.3 + 15.4: dispatcher for `mythic-vibe memory`
-    subactions (list / show / compact / rehydrate)."""
+    """Dispatcher for `mythic-vibe memory` subactions."""
     sub = getattr(args, "memory_command", "")
     if sub == "list":
         return cmd_memory_list(args)
@@ -6848,9 +7447,13 @@ def cmd_memory_dispatch(args: argparse.Namespace) -> int:
         return cmd_memory_compact(args)
     if sub == "rehydrate":
         return cmd_memory_rehydrate(args)
+    if sub == "last":
+        return cmd_memory_last(args)
+    if sub == "spine":
+        return cmd_memory_spine(args)
     write_error(
         f"Unknown memory subcommand: {sub!r}. "
-        "Valid: list | show | compact | rehydrate."
+        "Valid: list | show | compact | rehydrate | last | spine."
     )
     return USER_INPUT_ERROR
 
@@ -7029,6 +7632,61 @@ def cmd_memory_rehydrate(args: argparse.Namespace) -> int:
         )
     else:
         write_line("- Latest handoff: none.")
+    return SUCCESS
+
+
+def cmd_memory_last(args: argparse.Namespace) -> int:
+    """Render the project-level SQLite memory resume answer."""
+    from .memory.spine import build_memory_snapshot, render_last_time
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    if _flag(args, "json"):
+        snapshot = build_memory_snapshot(root)
+        write_json(
+            {
+                "command": "memory last",
+                "path": str(root),
+                "memory": snapshot.to_dict(),
+                "answer": render_last_time(root),
+            }
+        )
+        return SUCCESS
+    write_line(render_last_time(root))
+    return SUCCESS
+
+
+def cmd_memory_spine(args: argparse.Namespace) -> int:
+    """Show SQLite memory-spine status and recent entries."""
+    from .memory.spine import build_memory_snapshot, init_memory_spine
+
+    root = Path(getattr(args, "path", ".")).resolve()
+    limit = int(getattr(args, "limit", 10) or 10)
+    db_path = init_memory_spine(root)
+    snapshot = build_memory_snapshot(root, limit=limit)
+    if _flag(args, "json"):
+        write_json(
+            {
+                "command": "memory spine",
+                "path": str(root),
+                "memory": snapshot.to_dict(),
+            }
+        )
+        return SUCCESS
+
+    write_line("Memory spine")
+    write_key_value("SQLite", db_path)
+    write_line("Counts:")
+    for kind, count in snapshot.counts.items():
+        write_line(f"  {kind}: {count}")
+    if not snapshot.entries:
+        write_line("Recent entries: none")
+        return SUCCESS
+    write_line("Recent entries:")
+    for entry in snapshot.entries:
+        write_line(
+            f"  {entry.entry_id} [{entry.kind}] "
+            f"{entry.created_at} — {entry.content}"
+        )
     return SUCCESS
 
 
@@ -7363,6 +8021,7 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "security": cmd_security_dispatch,
     "ci": cmd_ci_dispatch,
     "docker": cmd_docker_dispatch,
+    "patch": cmd_patch_dispatch,
     "release": cmd_release,
     "rollback": cmd_rollback,
     "policy": cmd_policy_dispatch,
@@ -7401,7 +8060,9 @@ COMMAND_HANDLERS: dict[str, CommandHandler] = {
     "provider": cmd_provider,
     "audit": cmd_audit,
     "drift": cmd_drift,
+    "workspace": cmd_workspace_dispatch,
     "graph": cmd_graph_dispatch,
+    "knowledge": cmd_knowledge_dispatch,
     "memory": cmd_memory_dispatch,
     "hardware": cmd_hardware,
     "voice": cmd_voice_dispatch,

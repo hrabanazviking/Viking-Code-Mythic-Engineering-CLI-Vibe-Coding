@@ -263,12 +263,13 @@ class DataclassTests(unittest.TestCase):
 
 
 class SelfAuditTests(unittest.TestCase):
-    def test_live_repo_audit_completes(self) -> None:
+    def test_live_repo_audit_is_clean(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
         result = audit_api_surfaces(repo_root)
         self.assertGreater(result.files_scanned, 50)
         payload = result.to_dict()
         self.assertIn("findings", payload)
+        self.assertEqual(result.findings, [])
 
 
 if __name__ == "__main__":

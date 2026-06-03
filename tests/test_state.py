@@ -10,6 +10,7 @@ import unittest
 from mythic_vibe_cli import app
 from mythic_vibe_cli.core.state import CURRENT_STATE_SCHEMA_VERSION, ProjectState, validate_state_payload
 from mythic_vibe_cli.exit_codes import SUCCESS, VERIFICATION_FAILURE
+from mythic_vibe_cli.persistence.json_store import JsonStateStore
 from mythic_vibe_cli.persistence.migrations import migrate_project_state
 
 
@@ -58,7 +59,25 @@ class ProjectStateTests(unittest.TestCase):
             self.assertTrue(result.recovered_corrupt)
             self.assertIsNotNone(result.backup_path)
             self.assertEqual(result.backup_path.read_text(encoding="utf-8"), "{broken")
+            self.assertEqual(result.backup_path.suffix, ".corrupt")
             self.assertEqual(payload["schema_version"], CURRENT_STATE_SCHEMA_VERSION)
+            self.assertEqual(validate_state_payload(payload).errors, [])
+
+    def test_invalid_encoding_status_migration_quarantines_and_recovers(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            mythic = root / "mythic"
+            mythic.mkdir()
+            status = mythic / "status.json"
+            status.write_bytes(b"\xff\xfe\x00\x00")
+
+            result = migrate_project_state(root, default_goal="Recovered")
+            payload = json.loads(status.read_text(encoding="utf-8"))
+
+            self.assertTrue(result.recovered_corrupt)
+            self.assertIsNotNone(result.backup_path)
+            self.assertEqual(result.backup_path.read_bytes(), b"\xff\xfe\x00\x00")
+            self.assertEqual(payload["goal"], "Recovered")
             self.assertEqual(validate_state_payload(payload).errors, [])
 
     def test_state_validate_fails_invalid_phase(self) -> None:
@@ -90,6 +109,34 @@ class ProjectStateTests(unittest.TestCase):
             self.assertEqual(code, SUCCESS)
             self.assertTrue(body["state_migration"]["created"])
             self.assertEqual(payload["schema_version"], CURRENT_STATE_SCHEMA_VERSION)
+
+    def test_state_write_preserves_backup_by_default(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            store = JsonStateStore(root)
+            first = ProjectState(goal="first")
+            second = ProjectState(goal="second")
+
+            store.write_state(first)
+            store.write_state(second)
+
+            backups = list((root / "mythic" / "backups").glob("status.json.*.bak"))
+            self.assertEqual(len(backups), 1)
+            backup_payload = json.loads(backups[0].read_text(encoding="utf-8"))
+            current_payload = json.loads((root / "mythic" / "status.json").read_text(encoding="utf-8"))
+            self.assertEqual(backup_payload["goal"], "first")
+            self.assertEqual(current_payload["goal"], "second")
+
+    def test_state_write_uses_recoverable_cross_process_lock(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            store = JsonStateStore(root)
+
+            store.write_state(ProjectState(goal="cross-process lock"))
+
+            self.assertTrue((root / "mythic" / "status.json.lock").exists())
+            payload = json.loads((root / "mythic" / "status.json").read_text(encoding="utf-8"))
+            self.assertEqual(payload["goal"], "cross-process lock")
 
 
 if __name__ == "__main__":

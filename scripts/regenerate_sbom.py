@@ -31,6 +31,11 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from mythic_vibe_cli.runtime.script_guard import guarded_main
+
 DEFAULT_OUTPUT = REPO_ROOT / "docs" / "security" / "sbom.json"
 EXTRAS = "ai,otel,ux,tui"
 
@@ -109,4 +114,10 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(
+        guarded_main(
+            lambda: main(),
+            script_name=Path(__file__).name,
+            json_mode="--json" in sys.argv,
+        )
+    )

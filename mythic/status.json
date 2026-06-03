@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "project_id": "4f987268-c3ee-41bf-a70b-b9e59e07e081",
+  "goal": "unspecified goal",
+  "created_at": "2026-06-02T10:17:55Z",
+  "updated_at": "2026-06-02T10:21:16Z",
+  "current_phase": "build",
+  "completed_phases": [
+    "build"
+  ],
+  "active_task_id": null,
+  "open_risks": [],
+  "open_decisions": [],
+  "last_packet_id": null,
+  "last_verification_id": null,
+  "history": [
+    {
+      "schema_version": 1,
+      "checkin_id": "CHK-000001",
+      "timestamp": "2026-06-02T10:17:55Z",
+      "phase": "build",
+      "task_id": null,
+      "summary": "Completed Phase 11: Legacy Command Demotion. Suppressed legacy commands from main help and updated README.md to emphasize companion shell workflow.",
+      "files_changed": [],
+      "decisions": [],
+      "risks": [],
+      "next_phase": "intent"
+    },
+    {
+      "schema_version": 1,
+      "checkin_id": "CHK-000002",
+      "timestamp": "2026-06-02T10:21:16Z",
+      "phase": "build",
+      "task_id": null,
+      "summary": "Completed Phase 12: Documentation Rewrite. Created core shell documentation files and updated INDEX.md.",
+      "files_changed": [],
+      "decisions": [],
+      "risks": [],
+      "next_phase": "intent"
+    }
+  ]
+}

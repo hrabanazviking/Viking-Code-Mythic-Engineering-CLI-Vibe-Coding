@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+import re
 from typing import Any, Iterable
 
 from .redaction import RedactionEngine
@@ -91,6 +92,59 @@ def _truncate(text: str, *, limit: int = 80) -> str:
     return text[: limit - 3] + "..."
 
 
+_PLACEHOLDER_VALUES = {
+    "api_key",
+    "apikey",
+    "key",
+    "none",
+    "null",
+    "password",
+    "secret",
+    "token",
+    "value",
+    "your-key",
+    "your-token",
+}
+
+
+def _looks_like_literal_secret(match: re.Match[str]) -> bool:
+    """Return True when a regex hit carries credential-shaped value text.
+
+    Provider-specific prefixes such as ``sk-`` and ``AIza`` are high
+    confidence. Broad keyword rules are intentionally stricter so source
+    variables like ``token = token`` or ``api_key: str`` do not bury real
+    leaks in false positives.
+    """
+    text = match.group(0)
+    lowered = text.lower()
+    if "sk-" in lowered or "aiza" in lowered:
+        return True
+    if lowered.startswith("bearer"):
+        parts = text.split(maxsplit=1)
+        return len(parts) == 2 and _value_has_secret_shape(parts[1])
+    if match.lastindex and match.lastindex >= 2:
+        return _value_has_secret_shape(match.group(2))
+    return False
+
+
+def _value_has_secret_shape(value: str) -> bool:
+    cleaned = value.strip().strip("\"'`),]}").strip("({[")
+    if not cleaned:
+        return False
+    lowered = cleaned.lower()
+    if lowered in _PLACEHOLDER_VALUES:
+        return False
+    if any(token in lowered for token in ("os.environ", "getenv", "getattr", "token_urlsafe", "str(", "input(")):
+        return False
+    if "(" in cleaned or ")" in cleaned:
+        return False
+    if len(cleaned) >= 16 and any(ch.isalnum() for ch in cleaned):
+        return True
+    if len(cleaned) >= 6 and any(ch.isdigit() for ch in cleaned) and any(ch.isalpha() for ch in cleaned):
+        return True
+    return False
+
+
 def scan_text(
     text: str,
     *,
@@ -112,6 +166,8 @@ def scan_text(
         for pattern in eng.patterns:
             match = pattern.search(line)
             if not match:
+                continue
+            if not _looks_like_literal_secret(match):
                 continue
             key = (pattern.pattern, line_idx, match.group(0))
             if key in seen:

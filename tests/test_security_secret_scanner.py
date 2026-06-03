@@ -82,6 +82,15 @@ class ScanTextTests(unittest.TestCase):
         findings = scan_text("sk-AAAABBBBCCCCDDDD", location="custom.py")
         self.assertEqual(findings[0].location, "custom.py")
 
+    def test_token_variable_assignment_is_not_a_secret(self) -> None:
+        self.assertEqual(scan_text('token = str(getattr(args, "token", "") or "").strip()'), [])
+        self.assertEqual(scan_text("token = token"), [])
+        self.assertEqual(scan_text("api_key: str"), [])
+
+    def test_broad_keyword_requires_secret_shaped_literal(self) -> None:
+        findings = scan_text('password = "hunter2"')
+        self.assertGreaterEqual(len(findings), 1)
+
 
 # ---- scan_paths ------------------------------------------------------
 

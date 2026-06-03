@@ -8,6 +8,63 @@ The format is inspired by Keep a Changelog and uses explicit dates for continuit
 
 This unreleased band tracks work landed on `development` after the v1.0.0 stable launch on 2026-05-03. None of it changes any v1.0 documented contract; everything is strictly additive.
 
+### Added — Reforge roadmap Phase 13
+
+- Quarantined non-code debris (unused media, dead experiments, duplicates, and roleplay lore) into the `graveyard/` directory to clean up the repository root without deleting useful artifacts.
+
+### Added — Reforge roadmap Phase 12
+
+- Wrote new documentation describing the interactive coding companion shell, creating `docs/INTERACTIVE_SHELL.md`, `docs/SLASH_COMMANDS.md`, `docs/INTERNAL_TOOLS.md`, `docs/MEMORY.md`, `docs/KNOWLEDGE.md`, `docs/GITHUB_WORKSPACE.md`, `docs/TUI.md`, and `docs/DAILY_WORKFLOW.md`. Updated `docs/INDEX.md` and `README.md` to reflect the new primary entry points.
+
+### Added — Reforge roadmap Phase 0
+
+- Added `docs/PRODUCT_INTENT.md` as the active product-intent record for the reforge roadmap. It states that Mythic is being corrected into a terminal-based coding companion CLI, with `mythic` as the primary interactive entrypoint, natural language as the main interaction, slash commands as secondary controls, and existing command code preserved as internal/admin machinery where useful. Linked the record from `docs/INDEX.md` and `README.md`.
+
+### Added — Reforge roadmap Phase 1
+
+- Added `mythic_vibe_cli/interactive_shell.py` as the canonical interactive shell import surface while preserving the historical `repl` module. Bare `mythic` / `mythic-vibe` now opens the companion shell by default, and `mythic admin <command>` strips the `admin` prefix before dispatch so existing command-catalog workflows remain reachable during the reforge.
+
+### Added — Reforge roadmap Phase 2
+
+- Upgraded the companion shell startup to show project/repository path, Git branch, fallback model, memory status, and knowledge status. Added `/model` as a shell-local slash control and changed normal natural-language prompts that are not recognized commands to receive a local project-context response instead of falling into argparse errors.
+
+### Added — Reforge roadmap Phase 3
+
+- Added `mythic_vibe_cli/context/companion.py`, a shell-facing repository context adapter over the existing scanner. Natural inspection prompts in the companion shell now build a read-only repository summary and rank relevant files, so requests like "Find the memory system in this repo" surface likely matching files instead of requiring the user to run `scan` manually.
+
+### Added — Reforge roadmap Phase 4
+
+- Wired the companion shell to the existing provider registry and fallback runtime. `/model list` now reports available providers and configuration status, `/model set <provider> [model]` persists the selected provider/model to `<project>/.mythic-vibe.json`, and generic natural-language prompts run through the selected provider with `copy-paste` as the guaranteed fallback. The JSON config loader now understands `ai.provider` / `ai.model` plus `MYTHIC_AI_PROVIDER` / `MYTHIC_AI_MODEL` overrides.
+
+### Added — Reforge roadmap Phase 5
+
+- Added `mythic_vibe_cli/memory/spine.py`, a local SQLite memory spine at `.mythic/memory.sqlite`. Companion-shell natural prompts now append durable task/session memory, handoff creation folds summaries, decisions, files touched, failures, fixes, and next steps into the spine, and "What were we doing last time?" answers directly from local memory. Added `mythic-vibe memory last` and `mythic-vibe memory spine` for inspecting the same store.
+
+### Added — Reforge roadmap Phase 6
+
+- Added `mythic_vibe_cli/knowledge/reader.py`, a read-only private knowledge-source reader. SQLite sources configured under `knowledge.sources` or `MYTHIC_KNOWLEDGE_SQLITE_PATH` open with read-only SQLite mode and search via parameterized text queries; PostgreSQL sources are reported as configured but not searched until an explicit adapter lands. Added `mythic-vibe knowledge status|sources|search`, `/knowledge ...` shell dispatch, startup knowledge-source status, and natural prompts like "Search my knowledge database for earlier ideas about Hermes memory."
+
+### Added — Reforge roadmap Phase 7
+
+- Added `mythic_vibe_cli/workspaces/manager.py`, a GitHub workspace manager rooted by default at `~/.mythic-vibe/workspaces/` and overridable through `MYTHIC_WORKSPACE_ROOT`. Added `mythic-vibe workspace status|clone|open|branch|track|pr|plan`, dry-run-by-default clone/branch planning with `--yes` as the mutation gate, PR draft writing gated by `--write`, `/workspace` slash-catalog visibility, and companion-shell natural prompts that propose clone/branch actions without touching local Git state.
+
+### Added — Reforge roadmap Phase 10
+
+- **PHASE 10: TUI Integration**: Converted the shell into a Textual TUI (`CockpitScreen`) with tabs for Chat, Files, Diff, Memory, Knowledge, Tasks, and Model. The chat view runs the REPL output through `RichLog` and defers model inference to worker threads. Added the `/tui` command to trigger visual mode.
+- **PHASE 11: Legacy Command Demotion**: Suppressed legacy Mythic command documentation from the default `mythic --help` screen, emphasizing the `mythic` interactive shell. Added `mythic admin <cmd>` fallback for all suppressed commands, ensuring no workflow tools were destroyed while guiding operators into the conversation flow.
+- **PHASE 12: Documentation Rewrite**: Authored foundational interactive shell documentation including `INTERACTIVE_SHELL.md`, `SLASH_COMMANDS.md`, `INTERNAL_TOOLS.md`, `MEMORY.md`, `KNOWLEDGE.md`, `GITHUB_WORKSPACE.md`, `TUI.md`, and `DAILY_WORKFLOW.md`. Updated `INDEX.md` to point users to the companion shell path first.
+
+### Added — Reforge roadmap Phase 9
+
+- **Phase 9: Test Runner:** 
+  - Integrated `mythic_vibe_cli/verify/test_runner.py` into the REPL.
+  - Added `/test`, `/test last`, and `/test command <cmd>` slash commands.
+  - The shell now automatically feeds test failure summaries into the active LLM context to request patches.
+
+### Added — Reforge roadmap Phase 8
+
+- Added `mythic_vibe_cli/patch/manager.py`, a Patch Proposal System. This subsystem handles staging proposed edits, generating diffs, and applying or rejecting them with explicit user consent. Added `/diff`, `/apply`, `/reject` slash commands to the interactive shell, establishing a conversational patch approval workflow.
+
 ### Added — Hermes Agent control plane (post-v1.0)
 
 - **Hermes Agent** — programmatic control plane for any external AI agent. Two access modes (TCL Python in-process + HTTP API) share one core (`mythic_vibe_cli/agent_api/`). 18 curated tools cover status, doctor, drift, packet creation/lint, verify, reflect, ai recommend, provenance verify, workflow lineage, persona, plugin doctor, artifact read/list, recent events. Every invocation audited via the existing event-log primitive. New `mythic-vibe surface hermes [--bind ADDR --port N --token TOKEN]` launches the token-protected HTTP API. New `mythic-vibe hermes tools|inspect|invoke` invokes the curated agent-tool surface from the CLI without HTTP. See `docs/HERMES_AGENT.md` (operator + author guide).
@@ -272,4 +329,3 @@ See `RELEASE_v1_0_0_2026-05-03.md` in the repo root for the full closeout memo.
 ### Changed
 
 - Multiple core docs were rewritten and expanded for clarity, durability, and contributor onboarding.
-

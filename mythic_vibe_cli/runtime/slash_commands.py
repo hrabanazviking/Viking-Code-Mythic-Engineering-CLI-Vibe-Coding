@@ -90,6 +90,7 @@ class SlashCommandInfo:
 BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
     # --- Interactive-session locals (REPL/TUI handles directly) ---
     BuiltinSlashCommand(name="help", description="List available slash commands and their sources"),
+    BuiltinSlashCommand(name="model", description="Show, list, or set the active shell model/provider"),
     BuiltinSlashCommand(name="reload", description="Reload plugins, skills, prompts, and method cache"),
     BuiltinSlashCommand(name="quit", description="Exit the interactive session"),
 
@@ -183,11 +184,15 @@ BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
     # --- Drift detection (PH-13 slice 13.1) ---
     BuiltinSlashCommand(name="drift", description="Scan for drift between docs, code, and decisions (heuristic v1)"),
 
+    # --- Git/GitHub workspaces ---
+    BuiltinSlashCommand(name="workspace", description="GitHub workspace operations: status, clone, open, branch, track, pr"),
+
     # --- Knowledge graph (PH-05 slices 5.5 + 5.6) ---
     BuiltinSlashCommand(name="graph", description="Read-only graph queries: query, entity, edges, brief, visualize"),
+    BuiltinSlashCommand(name="knowledge", description="Private knowledge sources: status, sources, search"),
 
-    # --- Conversation memory (PH-15 slices 15.3 + 15.4) ---
-    BuiltinSlashCommand(name="memory", description="Conversation memory: list, show, compact, rehydrate"),
+    # --- Conversation memory + SQLite spine ---
+    BuiltinSlashCommand(name="memory", description="Memory: last, spine, list, show, compact, rehydrate"),
 
     # --- Hardware profile (PH-06 slice 6.6) ---
     BuiltinSlashCommand(name="hardware", description="Detect host hardware (CPU/RAM/OS); --write persists to docs/"),
@@ -203,6 +208,9 @@ BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
 
     # --- Docker scaffolding (PH-12 slice 12.2) ---
     BuiltinSlashCommand(name="docker", description="Docker scaffolding (Dockerfile + .dockerignore + docker-compose.yml)"),
+
+    # --- Patch Proposal System (PH-08) ---
+    BuiltinSlashCommand(name="patch", description="Manage patch proposals: propose a safe file edit for explicit review"),
 
     # --- Release helper (PH-12 slice 12.3) ---
     BuiltinSlashCommand(name="release", description="Semver-aware release helper — version bump + CHANGELOG stub + optional local tag (never pushes)"),
@@ -221,4 +229,5 @@ BUILTIN_SLASH_COMMANDS: tuple[BuiltinSlashCommand, ...] = (
 
     # --- Multi-surface access (PH-17) ---
     BuiltinSlashCommand(name="surface", description="Web terminal / SSH-readiness check / chat bridge — multi-surface access"),
+
 )

@@ -7,19 +7,24 @@ import logging
 # Add the parent directory to sys.path so we can import from the main project
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from ai.openrouter import OpenRouterClient
+from mythic_vibe_cli.runtime.script_guard import guarded_main
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 async def main():
     logger.info("Starting arxiv AI theories integration report generation...")
+    try:
+        from ai.openrouter import OpenRouterClient
+    except ImportError as exc:
+        logger.error("Could not import OpenRouter client: %s", exc)
+        return 1
 
     # Check for arxiv_results.json
     results_path = Path("arxiv_results.json")
     if not results_path.exists():
         logger.error("arxiv_results.json not found. Please run fetch_arxiv.py first.")
-        sys.exit(1)
+        return 1
 
     with open(results_path, 'r', encoding='utf-8') as f:
         papers = json.load(f)
@@ -29,7 +34,7 @@ async def main():
     api_key = os.environ.get("OPENROUTER_API_KEY")
     if not api_key:
         logger.error("OPENROUTER_API_KEY environment variable not set.")
-        sys.exit(1)
+        return 1
 
     client = OpenRouterClient(api_key=api_key)
 
@@ -66,7 +71,7 @@ async def main():
 
     except Exception as e:
         logger.error(f"Failed to generate report: {e}")
-        sys.exit(1)
+        return 1
 
     out_dir = Path("data/txt_data_files")
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -76,7 +81,14 @@ async def main():
         f.write(report_content)
 
     logger.info(f"Successfully generated and saved report to {out_path}")
+    return 0
 
 if __name__ == "__main__":
     import asyncio
-    asyncio.run(main())
+    raise SystemExit(
+        guarded_main(
+            lambda: asyncio.run(main()),
+            script_name=Path(__file__).name,
+            json_mode=False,
+        )
+    )

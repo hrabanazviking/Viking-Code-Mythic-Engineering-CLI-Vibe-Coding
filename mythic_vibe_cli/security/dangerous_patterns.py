@@ -60,6 +60,7 @@ class DangerFinding:
     line: int
     snippet: str
     remediation: str
+    baseline_reason: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -69,12 +70,14 @@ class DangerFinding:
             "line": self.line,
             "snippet": self.snippet,
             "remediation": self.remediation,
+            "baseline_reason": self.baseline_reason,
         }
 
 
 @dataclass
 class DangerScanResult:
     findings: list[DangerFinding] = field(default_factory=list)
+    baselined_findings: list[DangerFinding] = field(default_factory=list)
     files_scanned: int = 0
 
     @property
@@ -84,8 +87,10 @@ class DangerScanResult:
     def to_dict(self) -> dict[str, Any]:
         return {
             "findings": [f.to_dict() for f in self.findings],
+            "baselined_findings": [f.to_dict() for f in self.baselined_findings],
             "files_scanned": self.files_scanned,
             "count": len(self.findings),
+            "baselined_count": len(self.baselined_findings),
             "ok": self.ok,
         }
 
@@ -97,7 +102,7 @@ DANGEROUS_PATTERNS: tuple[DangerousPattern, ...] = (
     DangerousPattern(
         name="python.eval",
         severity="critical",
-        regex=re.compile(r"\beval\s*\("),
+        regex=re.compile(r"(?<!\.)\beval\s*\("),
         remediation=(
             "eval() executes arbitrary code. Replace with ast.literal_eval "
             "for trusted literal data, or a strict parser for untrusted input."
@@ -179,6 +184,14 @@ DANGEROUS_PATTERNS: tuple[DangerousPattern, ...] = (
     ),
 )
 
+DANGEROUS_PATTERN_BASELINES: tuple[tuple[str, str, str], ...] = (
+    (
+        "mythic_vibe_cli/security/dangerous_patterns.py",
+        "*",
+        "rule catalogue intentionally contains literal dangerous-pattern examples",
+    ),
+)
+
 
 def _truncate(text: str, *, limit: int = 80) -> str:
     if len(text) <= limit:
@@ -254,14 +267,35 @@ def scan_paths(
             continue
         result.files_scanned += 1
         language = extension_to_language.get(path_obj.suffix.lower())
-        result.findings.extend(
-            scan_code(body, language=language, location=rel)
-        )
+        for finding in scan_code(body, language=language, location=rel):
+            baseline_reason = _baseline_reason(finding)
+            if baseline_reason:
+                result.baselined_findings.append(
+                    DangerFinding(
+                        pattern=finding.pattern,
+                        severity=finding.severity,
+                        location=finding.location,
+                        line=finding.line,
+                        snippet=finding.snippet,
+                        remediation=finding.remediation,
+                        baseline_reason=baseline_reason,
+                    )
+                )
+            else:
+                result.findings.append(finding)
     return result
+
+
+def _baseline_reason(finding: DangerFinding) -> str:
+    for location, pattern, reason in DANGEROUS_PATTERN_BASELINES:
+        if finding.location == location and (pattern == "*" or pattern == finding.pattern):
+            return reason
+    return ""
 
 
 __all__ = [
     "DANGEROUS_PATTERNS",
+    "DANGEROUS_PATTERN_BASELINES",
     "DangerFinding",
     "DangerScanResult",
     "DangerousPattern",

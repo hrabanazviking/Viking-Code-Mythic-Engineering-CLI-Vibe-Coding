@@ -39,6 +39,7 @@ class _FakeProvider:
     configured: bool = True
     raise_on_run: BaseException | None = None
     response_content: str = ""
+    model: str = ""
 
     def validate_config(self) -> ProviderStatus:
         return ProviderStatus(
@@ -51,7 +52,7 @@ class _FakeProvider:
             raise self.raise_on_run
         return ProviderResponse(
             provider=self.name,
-            model=f"{self.name}-test",
+            model=self.model or f"{self.name}-test",
             content=self.response_content or f"reply from {self.name}",
             packet_id="PKT-TEST",
             dry_run=dry_run,
@@ -99,22 +100,52 @@ class RouteChainTests(unittest.TestCase):
     def test_chain_starts_with_primary_then_fallbacks(self) -> None:
         decision = _decision("anthropic", ("openai", "copy-paste"))
         chain = list(_route_chain(decision))
-        self.assertEqual(chain, ["anthropic", "openai", "copy-paste"])
+        self.assertEqual(
+            chain,
+            [
+                ("anthropic", "anthropic-test"),
+                ("openai", ""),
+                ("copy-paste", ""),
+            ],
+        )
 
-    def test_chain_dedupes_repeated_entries(self) -> None:
+    def test_chain_dedupes_repeated_provider_model_entries(self) -> None:
         decision = _decision("anthropic", ("anthropic", "openai", "openai"))
         chain = list(_route_chain(decision))
-        self.assertEqual(chain, ["anthropic", "openai", "copy-paste"])
+        self.assertEqual(
+            chain,
+            [
+                ("anthropic", "anthropic-test"),
+                ("anthropic", ""),
+                ("openai", ""),
+                ("copy-paste", "manual"),
+            ],
+        )
 
     def test_chain_appends_copy_paste_when_missing(self) -> None:
         decision = _decision("anthropic", ("openai",))
         chain = list(_route_chain(decision))
-        self.assertEqual(chain[-1], "copy-paste")
+        self.assertEqual(chain[-1], ("copy-paste", "manual"))
 
     def test_chain_does_not_double_append_copy_paste(self) -> None:
         decision = _decision("copy-paste", ())
         chain = list(_route_chain(decision))
-        self.assertEqual(chain, ["copy-paste"])
+        self.assertEqual(chain, [("copy-paste", "copy-paste-test")])
+
+    def test_chain_splits_provider_model_specs(self) -> None:
+        decision = _decision(
+            "anthropic",
+            ("openrouter|anthropic/claude-sonnet-4-6", "copy-paste|manual"),
+        )
+        chain = list(_route_chain(decision))
+        self.assertEqual(
+            chain,
+            [
+                ("anthropic", "anthropic-test"),
+                ("openrouter", "anthropic/claude-sonnet-4-6"),
+                ("copy-paste", "manual"),
+            ],
+        )
 
 
 # ---- run_with_fallback happy paths -----------------------------------
@@ -138,6 +169,8 @@ class RunWithFallbackHappyPathTests(unittest.TestCase):
         self.assertEqual(len(result.attempts), 1)
         self.assertTrue(result.attempts[0].succeeded)
         self.assertEqual(result.response.provider, "anthropic")
+        self.assertEqual(result.response.model, "anthropic-test")
+        self.assertEqual(result.attempts[0].model, "anthropic-test")
 
     def test_falls_through_unconfigured_to_next(self) -> None:
         resolver = _build_resolver(
@@ -156,10 +189,37 @@ class RunWithFallbackHappyPathTests(unittest.TestCase):
         # Two attempts: anthropic skipped, openai succeeded.
         self.assertEqual(len(result.attempts), 2)
         self.assertFalse(result.attempts[0].succeeded)
+        self.assertEqual(result.attempts[0].model, "anthropic-test")
         self.assertEqual(
             result.attempts[0].skipped_reason, "provider not configured"
         )
         self.assertTrue(result.attempts[1].succeeded)
+
+    def test_fallback_model_spec_sets_provider_model(self) -> None:
+        resolver = _build_resolver(
+            _FakeProvider(
+                name="anthropic",
+                configured=True,
+                raise_on_run=ConnectionError("offline"),
+            ),
+            _FakeProvider(name="openrouter", configured=True),
+        )
+        decision = _decision(
+            "anthropic",
+            ("openrouter|anthropic/claude-sonnet-4-6", "copy-paste"),
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            result = run_with_fallback(
+                decision,
+                packet={"text": "hi"},
+                resolver=resolver,
+                root=Path(tmp),
+            )
+
+        self.assertEqual(result.used_provider, "openrouter")
+        self.assertTrue(result.fell_back)
+        self.assertEqual(result.response.model, "anthropic/claude-sonnet-4-6")
+        self.assertEqual(result.attempts[1].model, "anthropic/claude-sonnet-4-6")
 
     def test_falls_through_run_exception_to_next(self) -> None:
         resolver = _build_resolver(
@@ -263,7 +323,9 @@ class FallbackTelemetryTests(unittest.TestCase):
             self.assertTrue(entry.get("routing_attempt"))
             self.assertEqual(entry["from_provider"], "anthropic")
         self.assertEqual(entries[0]["to_provider"], "anthropic")
+        self.assertEqual(entries[0]["model"], "anthropic-test")
         self.assertEqual(entries[1]["to_provider"], "openai")
+        self.assertEqual(entries[1]["model"], "")
         self.assertTrue(entries[1]["succeeded"])
 
     def test_packet_id_recorded_on_success(self) -> None:
@@ -298,10 +360,11 @@ class FallbackTelemetryTests(unittest.TestCase):
 class FallbackResultDataclassTests(unittest.TestCase):
     def test_attempt_to_dict(self) -> None:
         a = FallbackAttempt(
-            provider="x", succeeded=False, error="oops", skipped_reason=""
+            provider="x", model="m", succeeded=False, error="oops", skipped_reason=""
         )
         payload = a.to_dict()
         self.assertEqual(payload["provider"], "x")
+        self.assertEqual(payload["model"], "m")
         self.assertFalse(payload["succeeded"])
         self.assertEqual(payload["error"], "oops")
 
@@ -319,7 +382,14 @@ class FallbackResultDataclassTests(unittest.TestCase):
             response=response,
             used_provider="ollama",
             primary_provider="anthropic",
-            attempts=(FallbackAttempt(provider="anthropic", succeeded=False, error="boom"),),
+            attempts=(
+                FallbackAttempt(
+                    provider="anthropic",
+                    model="claude",
+                    succeeded=False,
+                    error="boom",
+                ),
+            ),
         )
         payload = result.to_dict()
         self.assertTrue(payload["fell_back"])
@@ -327,6 +397,7 @@ class FallbackResultDataclassTests(unittest.TestCase):
         self.assertEqual(payload["used_provider"], "ollama")
         self.assertEqual(payload["response"]["provider"], "ollama")
         self.assertEqual(len(payload["attempts"]), 1)
+        self.assertEqual(payload["attempts"][0]["model"], "claude")
 
 
 # ---- cmd_ai_run integration (PH-08 follow-up) ------------------------
@@ -422,6 +493,48 @@ class CmdAiRunFallbackTests(unittest.TestCase):
         self.assertEqual(len(payload["fallback_attempts"]), 1)
         self.assertTrue(payload["fallback_attempts"][0]["succeeded"])
         self.assertEqual(payload["response"]["provider"], "anthropic")
+
+    def test_config_daily_cost_cap_is_passed_to_budget_guard(self) -> None:
+        from mythic_vibe_cli import commands as cmd_module
+        from mythic_vibe_cli.ai.cost_guard import BudgetCheck
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "config.yaml").write_text(
+                """
+ai:
+  daily_cost_cap_usd: 0.25
+""",
+                encoding="utf-8",
+            )
+            registry = _FakeRegistry(
+                {
+                    "anthropic": _RealResponseProvider("anthropic"),
+                    "copy-paste": _RealResponseProvider("copy-paste"),
+                }
+            )
+            ns = _ai_run_namespace(path=str(root), no_record=True)
+            guard_result = BudgetCheck(
+                allowed=True,
+                today_spent_usd=0.0,
+                cap_usd=0.25,
+                projected_cost_usd=0.0,
+                reason="test",
+            )
+            buf = io.StringIO()
+            with mock.patch.object(cmd_module, "_ai_registry", return_value=registry):
+                with mock.patch(
+                    "mythic_vibe_cli.ai.cost_guard.check_budget",
+                    return_value=guard_result,
+                ) as check_budget:
+                    with redirect_stdout(buf):
+                        exit_code = cmd_module.cmd_ai_run(ns)
+
+            payload = json.loads(buf.getvalue())
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(payload["used_provider"], "anthropic")
+        self.assertEqual(check_budget.call_args.kwargs["cap_usd_override"], 0.25)
 
     def test_primary_failure_falls_forward_to_copy_paste(self) -> None:
         from mythic_vibe_cli import commands as cmd_module

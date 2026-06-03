@@ -23,6 +23,7 @@ Cross-platform: stdlib only on the must-work path.
 
 from __future__ import annotations
 
+import importlib
 import os
 from dataclasses import dataclass, field
 from typing import Any
@@ -62,10 +63,9 @@ def _try_import_yggdrasil() -> Any | None:
     available so the operator can install whichever one their
     deployment ships."""
     try:
-        import yggdrasil  # type: ignore[import-not-found]
+        return importlib.import_module("yggdrasil")
     except ImportError:
         return None
-    return yggdrasil
 
 
 def _try_import_wyrdforge() -> Any | None:
@@ -73,10 +73,9 @@ def _try_import_wyrdforge() -> Any | None:
     package. Returns the ``wyrdforge`` module object, or ``None``
     when the package isn't on ``sys.path``. Phase F.2 (additive)."""
     try:
-        import wyrdforge  # type: ignore[import-not-found]
+        return importlib.import_module("wyrdforge")
     except ImportError:
         return None
-    return wyrdforge
 
 
 @dataclass

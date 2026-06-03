@@ -159,7 +159,7 @@ graph TD
 
 **Observed break:** `core/emotional.py` and `core/dream_system.py` import `yggdrasil_core` — a package that is **not present** anywhere in this repo (the closest thing is `yggdrasil/core/`, a different name). Island B will not import cleanly as-is.
 
-**Docstring mention:** multiple NSE files reference being v4–v8 of the Norse Saga Engine. The `config.yaml` at repo root is headered "Norse Saga Engine Configuration v8.0.0". These files were extracted from NSE but not rewired.
+**Docstring mention:** multiple NSE files reference being v4–v8 of the Norse Saga Engine. Those files were extracted from NSE but not rewired. The root `config.yaml` is now a working Mythic Vibe CLI runtime configuration file; `.mythic-vibe.json` files and `MYTHIC_*` environment variables remain supported override layers.
 
 ---
 

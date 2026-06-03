@@ -93,6 +93,12 @@ Dormant islands are **quarantined for product stability**.
 - **Owns:** remote markdown sync, cache persistence, fallback behavior.
 - **Contract:** isolate network calls; no CLI presentation logic inside this domain.
 
+### 4.6 Internal API Boundary Contract
+- **Files:** `mythic_vibe_cli/*/__init__.py`, `mythic_vibe_cli/robustness/api_audit.py`
+- **Owns:** public package-level imports between active runtime subpackages.
+- **Contract:** code crossing a top-level `mythic_vibe_cli` subpackage boundary imports from that subpackage's public `__init__.py`, not from implementation modules. Stable cross-domain utility APIs are exported explicitly, such as `mythic_vibe_cli.core` for state contracts and `mythic_vibe_cli.runtime` for atomic writes, process execution, path resolution, event logs, and command catalog helpers.
+- **Allowed flow:** persistence may depend on public core state contracts and public runtime filesystem utilities. Runtime must not depend on persistence. Init wizard may use public runtime write helpers for crash-resistant scaffold writes.
+
 ---
 
 ## 5. Structural drift currently observed

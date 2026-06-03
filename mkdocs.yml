@@ -84,6 +84,7 @@ nav:
   - Home: INDEX.md
 
   - Getting Started:
+      - Product Intent: PRODUCT_INTENT.md
       - Quickstart: quickstart.md
       - Install Guide: INSTALL.md
 

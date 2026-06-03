@@ -1,9 +1,16 @@
 from __future__ import annotations
 
 import json
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from mythic_vibe_cli.runtime.script_guard import guarded_main
 
 
 @dataclass(frozen=True)
@@ -123,4 +130,10 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(
+        guarded_main(
+            main,
+            script_name=Path(__file__).name,
+            json_mode=False,
+        )
+    )

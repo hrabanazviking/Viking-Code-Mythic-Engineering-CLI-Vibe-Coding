@@ -1,14 +1,19 @@
-# ᚱ RUNA'S BOUNDARIES (Forbidden Zones)
+# Roo context boundaries for Mythic Vibe CLI
 
-# Prevent searching the entire drive (The absolute path killers)
-C:/**
-D:/**
-/Users/**
-C:/NorseSagaEngine/CURRENT version to upload for upgrades TEMP/VS_Code_DEVELOPMENT_BRANCH_MIRROR/
-C:/NorseSagaEngine/CURRENT version to upload for upgrades TEMP/
-C:/NorseSagaEngine/
+# Keep Roo focused on the active product, not dormant imported islands.
+ai/
+core/
+systems/
+sessions/
+yggdrasil/
+imports/
+mindspark_thoughtform/
+ollama/
+whisper/
+chatterbox/
+WYRD-Protocol-*/
 
-# Ignore common bloat to save OpenRouter gold
+# Ignore generated and dependency-heavy paths.
 node_modules/
 __pycache__/
 *.exe
@@ -16,6 +21,9 @@ __pycache__/
 .git/
 .venv/
 venv/
+dist/
+build/
+target/
 
 # Protect your secrets
 .env

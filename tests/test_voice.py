@@ -109,15 +109,10 @@ class StubTranscriberTests(unittest.TestCase):
 
 class WhisperTranscriberTests(unittest.TestCase):
     def test_missing_whisper_dep_raises_missing_extra(self) -> None:
-        # Patch the import to fail; constructor should raise.
-        real_import = __builtins__["__import__"] if isinstance(__builtins__, dict) else __builtins__.__import__
-
-        def fake_import(name, *args, **kwargs):
-            if name == "whisper":
-                raise ImportError("simulated absence")
-            return real_import(name, *args, **kwargs)
-
-        with mock.patch("builtins.__import__", side_effect=fake_import):
+        with mock.patch(
+            "mythic_vibe_cli.voice.transcribe._try_import_package",
+            side_effect=ImportError("simulated absence"),
+        ):
             with self.assertRaises(MissingExtraError) as ctx:
                 WhisperTranscriber()
         self.assertEqual(ctx.exception.extra, "openai-whisper")
@@ -303,14 +298,10 @@ class StubTTSEngineTests(unittest.TestCase):
 
 class ChatterboxEngineTests(unittest.TestCase):
     def test_missing_chatterbox_raises_missing_extra(self) -> None:
-        real_import = __builtins__["__import__"] if isinstance(__builtins__, dict) else __builtins__.__import__
-
-        def fake_import(name, *args, **kwargs):
-            if name == "chatterbox":
-                raise ImportError("simulated")
-            return real_import(name, *args, **kwargs)
-
-        with mock.patch("builtins.__import__", side_effect=fake_import):
+        with mock.patch(
+            "mythic_vibe_cli.voice.tts._try_import_package",
+            side_effect=ImportError("simulated"),
+        ):
             with self.assertRaises(MissingExtraError) as ctx:
                 ChatterboxEngine()
         self.assertEqual(ctx.exception.extra, "chatterbox")

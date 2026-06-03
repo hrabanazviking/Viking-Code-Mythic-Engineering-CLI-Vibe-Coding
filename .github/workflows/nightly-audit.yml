@@ -1,0 +1,56 @@
+name: Nightly Full-Repository Audit
+
+on:
+  schedule:
+    # Run every night at 02:00 UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  audit:
+    name: Full Repository Scans
+    runs-on: ubuntu-latest
+    
+    # We want this to report but NOT fail the overall nightly run 
+    # if it finds issues in dormant/research code, so we use continue-on-error
+    # for the scan steps.
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Full Repository Security Audit
+        id: security_audit
+        continue-on-error: true
+        # --scope full runs the scanner on all directories, not just the active runtime
+        run: python -m mythic_vibe_cli security audit --path . --scope full --json > full-security-audit.json
+
+      - name: Upload Security Audit Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: full-security-audit
+          path: full-security-audit.json
+          retention-days: 14
+
+      - name: Full Boundary Audit
+        id: boundary_audit
+        continue-on-error: true
+        run: python -m mythic_vibe_cli doctor --repo-boundary > full-boundary-audit.txt
+
+      - name: Upload Boundary Audit Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: full-boundary-audit
+          path: full-boundary-audit.txt
+          retention-days: 14

@@ -114,7 +114,12 @@ class SummariseRollbackTests(unittest.TestCase):
         rather than the raw FileNotFoundError. Both shapes are
         equivalent for operators — the helper signals failure
         cleanly without raising."""
-        with mock.patch("subprocess.run", side_effect=FileNotFoundError("git")):
+        from mythic_vibe_cli.runtime.exec import ExecResult
+
+        with mock.patch(
+            "mythic_vibe_cli.cicd.rollback.exec_command",
+            return_value=ExecResult(stdout="", stderr="git", code=127, killed=False),
+        ):
             with tempfile.TemporaryDirectory() as tmp:
                 report = summarise_rollback(Path(tmp), since_ref="v1.0.0")
         self.assertFalse(report.ok)

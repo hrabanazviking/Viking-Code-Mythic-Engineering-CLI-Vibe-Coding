@@ -174,6 +174,30 @@ class RoutingTableTests(unittest.TestCase):
             table = RoutingTable.load(root)
         self.assertEqual(len(table.rules), len(DEFAULT_RULES))
 
+    def test_load_overlay_tolerates_bad_numeric_fields(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            overlay_dir = root.joinpath(*ROUTING_FILE_DIR)
+            overlay_dir.mkdir(parents=True, exist_ok=True)
+            overlay = [
+                {
+                    "role": "Forge Worker",
+                    "task_type": "build",
+                    "min_ram_mb": "not-an-int",
+                    "provider": "openai",
+                    "model": "gpt-test",
+                    "fallbacks": ["copy-paste"],
+                }
+            ]
+            (overlay_dir / ROUTING_FILENAME).write_text(
+                json.dumps(overlay), encoding="utf-8"
+            )
+
+            table = RoutingTable.load(root)
+
+        self.assertEqual(table.rules[0].provider, "openai")
+        self.assertEqual(table.rules[0].min_ram_mb, 0)
+
 
 # ---- route() ----------------------------------------------------------
 

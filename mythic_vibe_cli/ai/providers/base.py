@@ -10,6 +10,8 @@ from typing import Iterator, Protocol, Any, runtime_checkable
 
 from urllib import request as urllib_request
 
+from ...runtime.paths import paths_for
+
 
 @dataclass
 class ProviderStatus:
@@ -33,6 +35,7 @@ class ProviderResponse:
     dry_run: bool = True
     usage: dict[str, int] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
+    tool_calls: list[dict[str, Any]] | None = None
 
 
 @dataclass
@@ -40,6 +43,9 @@ class PacketView:
     text: str
     packet_id: str
     source: str = "inline"
+    system_prompt: str | None = None
+    conversation_history: list[dict[str, Any]] | None = None
+    tools: list[dict[str, Any]] | None = None
 
 
 class AIProvider(Protocol):
@@ -193,6 +199,7 @@ def normalize_packet(packet: object) -> PacketView:
             text=str(packet.get("text", "")),
             packet_id=str(packet.get("packet_id", "inline")),
             source=str(packet.get("source", "inline")),
+            tools=packet.get("tools"),
         )
     return PacketView(text=str(packet), packet_id="inline", source="inline")
 
@@ -318,13 +325,27 @@ def extract_request_id(payload: dict[str, Any]) -> str | None:
 def provider_log_path(root: Path | None) -> Path | None:
     if root is None:
         return None
-    return root / "mythic" / "ai" / "provider_calls.jsonl"
+    return paths_for(root).provider_calls_log
 
 
 def write_provider_log(root: Path | None, payload: dict[str, Any]) -> None:
     path = provider_log_path(root)
     if path is None:
         return
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as fh:
-        fh.write(json.dumps(redact_value(payload), ensure_ascii=False) + "\n")
+    try:
+        line = json.dumps(redact_value(payload), ensure_ascii=False) + "\n"
+    except (TypeError, ValueError):
+        line = json.dumps(
+            {"provider_log_error": "payload was not JSON serializable"},
+            ensure_ascii=False,
+        ) + "\n"
+    try:
+        from ...runtime.cross_process_lock import cross_process_lock
+
+        path.parent.mkdir(parents=True, exist_ok=True)
+        lock_path = path.with_suffix(path.suffix + ".lock")
+        with cross_process_lock(lock_path, deadline=5.0):
+            with path.open("a", encoding="utf-8") as fh:
+                fh.write(line)
+    except OSError:
+        return

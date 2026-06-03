@@ -109,6 +109,249 @@ class ConfigAndBridgeTests(unittest.TestCase):
             self.assertEqual(code, 0)
             self.assertEqual(payload["config"]["method.source"], "https://github.com/project/method")
 
+    def test_save_project_values_uses_canonical_atomic_project_config(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+
+            path = ConfigStore(root).save_project_values({"ai.provider": "ollama"})
+
+            self.assertEqual(path, root / ".mythic-vibe.json")
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(payload["ai"]["provider"], "ollama")
+            self.assertEqual(list(root.glob("*.tmp")), [])
+
+    def test_config_yaml_loads_router_models_and_prompts(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "config.yaml").write_text(
+                """
+codex:
+  excerpt_limit: 1400
+ai:
+  provider: "openrouter"
+  model: "auto"
+  context_window_tokens: 200000
+  max_output_tokens: 12000
+  request_timeout_seconds: 180
+  temperature: 0.7
+  top_p: 0.9
+  router:
+    model_types:
+      coding:
+        service_order:
+          - "openrouter"
+          - "anthropic"
+    routing_rules:
+      - role: "Forge Worker"
+        task_type: "build"
+        provider: "openrouter"
+        model: "anthropic/claude-sonnet-4-6"
+        fallbacks:
+          - "anthropic"
+          - "copy-paste"
+        description: "test yaml route"
+  services:
+    openrouter:
+      model_types:
+        coding:
+          - id: "anthropic/claude-sonnet-4-6"
+            context_window_tokens: 200000
+            max_output_tokens: 8192
+    anthropic:
+      model_types:
+        coding:
+          - id: "claude-sonnet-4-6"
+            context_window_tokens: 200000
+            max_output_tokens: 8192
+prompts:
+  system_default: |
+    First line.
+    Second line.
+""",
+                encoding="utf-8",
+            )
+
+            loaded = ConfigStore(root).load()
+
+        self.assertEqual(loaded.config.excerpt_limit, 1400)
+        self.assertEqual(loaded.config.ai_provider, "openrouter")
+        self.assertEqual(loaded.config.ai_context_window_tokens, 200000)
+        self.assertEqual(loaded.config.ai_max_output_tokens, 12000)
+        self.assertEqual(loaded.config.ai_request_timeout_seconds, 180)
+        self.assertEqual(loaded.config.ai_temperature, 0.7)
+        self.assertEqual(loaded.config.ai_top_p, 0.9)
+        self.assertEqual(
+            [item["id"] for item in loaded.config.ai_model_routes["coding"]],
+            ["anthropic/claude-sonnet-4-6", "claude-sonnet-4-6"],
+        )
+        self.assertEqual(loaded.config.ai_routing_rules[0]["provider"], "openrouter")
+        self.assertIn("Second line.", loaded.config.ai_prompts["system_default"])
+
+    def test_config_json_reports_yaml_sections(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "config.yaml").write_text(
+                """
+ai:
+  context_window_tokens: 64000
+  router:
+    model_types:
+      general:
+        service_order:
+          - "copy-paste"
+  services:
+    copy-paste:
+      model_types:
+        general:
+          - id: "manual"
+prompts:
+  system_default: |
+    Editable system prompt.
+""",
+                encoding="utf-8",
+            )
+
+            loaded = ConfigStore(root).load()
+
+        self.assertEqual(loaded.config.ai_context_window_tokens, 64000)
+        self.assertEqual(loaded.config.ai_model_routes["general"][0]["id"], "manual")
+        self.assertEqual(loaded.config.ai_prompts["system_default"], "Editable system prompt.")
+
+    def test_config_diagnostics_report_corrupt_config_without_crashing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "config.yaml").write_text("ai:\n  provider", encoding="utf-8")
+
+            loaded = ConfigStore(root).load()
+
+        self.assertEqual(loaded.config.ai_provider, "copy-paste")
+        self.assertFalse(loaded.ok)
+        self.assertIn(
+            "config.file.parse_error",
+            {item.code for item in loaded.diagnostics},
+        )
+
+    def test_partial_and_old_config_get_safe_defaults_and_schema_warning(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "config.yaml").write_text(
+                """
+schema_version: 0
+ai:
+  provider: "openai"
+""",
+                encoding="utf-8",
+            )
+
+            loaded = ConfigStore(root).load()
+
+        self.assertEqual(loaded.config.ai_provider, "openai")
+        self.assertEqual(loaded.config.ai_max_output_tokens, 8192)
+        self.assertIn("config.schema.old", {item.code for item in loaded.diagnostics})
+
+    def test_invalid_prompt_placeholder_is_not_loaded(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "config.yaml").write_text(
+                """
+prompts:
+  good: "Hello {name}"
+  bad: "Hello {not valid"
+""",
+                encoding="utf-8",
+            )
+
+            loaded = ConfigStore(root).load()
+
+        self.assertIn("good", loaded.config.ai_prompts)
+        self.assertNotIn("bad", loaded.config.ai_prompts)
+        self.assertIn(
+            "config.prompts.template.invalid",
+            {item.code for item in loaded.diagnostics},
+        )
+
+    def test_router_routes_skip_disabled_services_and_clamp_model_limits(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "config.yaml").write_text(
+                """
+ai:
+  context_window_tokens: 32000
+  max_output_tokens: 4096
+  router:
+    model_types:
+      coding:
+        service_order:
+          - "openai"
+          - "anthropic"
+    routing_rules:
+      - role: "Forge Worker"
+        task_type: "coding"
+        provider: "openai"
+        model: "gpt-test"
+        fallbacks:
+          - "anthropic|claude-test"
+          - "copy-paste"
+  services:
+    openai:
+      enabled: false
+      model_types:
+        coding:
+          - id: "gpt-test"
+    anthropic:
+      model_types:
+        coding:
+          - id: "claude-test"
+            context_window_tokens: 999999
+            max_output_tokens: 999999
+""",
+                encoding="utf-8",
+            )
+
+            loaded = ConfigStore(root).load()
+
+        route_ids = [item["id"] for item in loaded.config.ai_model_routes["coding"]]
+        self.assertEqual(route_ids, ["claude-test"])
+        self.assertEqual(
+            loaded.config.ai_model_routes["coding"][0]["context_window_tokens"],
+            32000,
+        )
+        self.assertEqual(
+            loaded.config.ai_model_routes["coding"][0]["max_output_tokens"],
+            4096,
+        )
+        self.assertEqual(loaded.config.ai_routing_rules[0]["provider"], "copy-paste")
+        self.assertEqual(loaded.config.ai_routing_rules[0]["model"], "manual")
+        self.assertIn(
+            "config.ai.router.rule.provider_disabled",
+            {item.code for item in loaded.diagnostics},
+        )
+
+    def test_config_json_includes_diagnostics(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "config.yaml").write_text(
+                """
+ai:
+  temperature: 9
+""",
+                encoding="utf-8",
+            )
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(["config", "--path", tmp, "--json"])
+
+            payload = json.loads(output.getvalue())
+
+        self.assertEqual(code, 0)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["config"]["ai.temperature"], 2.0)
+        self.assertIn(
+            "config.value.clamped",
+            {item["code"] for item in payload["diagnostics"]},
+        )
+
     def test_codex_bridge_auto_compacts_sections(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -18,17 +18,17 @@ own the publish step. Per the global Claude Code "risky
 actions" rule, force-push / push-to-shared-branch operations
 are kept out of the release helper entirely.
 
-Cross-platform: pure stdlib + ``subprocess`` (the same
-``runtime.exec_command`` shell-false contract).
+Cross-platform: pure stdlib + ``runtime.exec_command``.
 """
 
 from __future__ import annotations
 
 import re
-import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
+
+from ..runtime.exec import DEFAULT_EXEC_TIMEOUT_SECONDS, exec_command
 
 
 BumpKind = Literal["major", "minor", "patch"]
@@ -165,27 +165,17 @@ def create_git_tag(root: Path, tag: str, *, message: str = "") -> GitTagResult:
     typed :class:`GitTagResult`; never raises into callers. The
     helper does **not** push the tag — operators own the publish
     step (defense in depth)."""
-    argv = ["git", "tag", tag]
+    args = ["tag", tag]
     if message:
-        argv += ["-a", "-m", message]
-    try:
-        proc = subprocess.run(
-            argv,
-            cwd=str(root),
-            shell=False,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    except FileNotFoundError:
+        args += ["-a", "-m", message]
+    result = exec_command("git", args, root, timeout=DEFAULT_EXEC_TIMEOUT_SECONDS)
+    if result.code == 127:
         return GitTagResult(tag=tag, created=False, error="git binary not found on PATH")
-    except OSError as exc:
-        return GitTagResult(tag=tag, created=False, error=f"OSError: {exc}")
-    if proc.returncode != 0:
+    if result.code != 0:
         return GitTagResult(
             tag=tag,
             created=False,
-            error=(proc.stderr or proc.stdout or "git tag failed").strip(),
+            error=(result.stderr or result.stdout or "git tag failed").strip(),
         )
     return GitTagResult(tag=tag, created=True)
 
