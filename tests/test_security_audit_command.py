@@ -19,6 +19,8 @@ def _ns(path: str, **overrides: object) -> argparse.Namespace:
         path=path,
         approval=None,
         json=True,
+        sarif=False,
+        scope="active",
     )
     base.update(overrides)
     return argparse.Namespace(**base)
@@ -86,6 +88,50 @@ class CmdSecurityAuditFindingsTests(unittest.TestCase):
         # The .env file should not have been opened/scanned for findings.
         for finding in payload["secret_scan"]["findings"]:
             self.assertNotEqual(finding["location"], ".env")
+
+    def test_default_active_scope_excludes_tests(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "mythic_vibe_cli").mkdir()
+            (root / "mythic_vibe_cli" / "ok.py").write_text("x = 1\n", encoding="utf-8")
+            (root / "tests").mkdir()
+            (root / "tests" / "danger.py").write_text("eval(user_input)\n", encoding="utf-8")
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                exit_code = cmd_security_audit(_ns(str(root)))
+            payload = json.loads(buf.getvalue())
+        self.assertEqual(exit_code, SUCCESS)
+        self.assertEqual(payload["scope"], "active")
+        self.assertFalse(payload["blocking"])
+        self.assertEqual(payload["dangerous_pattern_scan"]["count"], 0)
+
+    def test_tests_scope_scans_tests(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "mythic_vibe_cli").mkdir()
+            (root / "mythic_vibe_cli" / "ok.py").write_text("x = 1\n", encoding="utf-8")
+            (root / "tests").mkdir()
+            (root / "tests" / "danger.py").write_text("eval(user_input)\n", encoding="utf-8")
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                exit_code = cmd_security_audit(_ns(str(root), scope="tests"))
+            payload = json.loads(buf.getvalue())
+        self.assertEqual(exit_code, OPERATIONAL_FAILURE)
+        self.assertEqual(payload["scope"], "tests")
+        self.assertGreater(payload["dangerous_pattern_scan"]["count"], 0)
+
+    def test_sarif_output_shape(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "main.py").write_text("eval(user_input)\n", encoding="utf-8")
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                exit_code = cmd_security_audit(_ns(str(root), sarif=True))
+            payload = json.loads(buf.getvalue())
+        self.assertEqual(exit_code, OPERATIONAL_FAILURE)
+        self.assertEqual(payload["version"], "2.1.0")
+        self.assertEqual(payload["runs"][0]["tool"]["driver"]["name"], "mythic-vibe security audit")
+        self.assertGreater(len(payload["runs"][0]["results"]), 0)
 
 
 class CmdSecurityAuditPolicyReportingTests(unittest.TestCase):
@@ -165,10 +211,12 @@ class SecurityArgparseTests(unittest.TestCase):
         from mythic_vibe_cli.app import build_parser
 
         parser = build_parser()
-        ns = parser.parse_args(["security", "audit", "--path", ".", "--json"])
+        ns = parser.parse_args(["security", "audit", "--path", ".", "--scope", "tests", "--sarif", "--json"])
         self.assertEqual(ns.command, "security")
         self.assertEqual(ns.security_command, "audit")
         self.assertEqual(ns.path, ".")
+        self.assertEqual(ns.scope, "tests")
+        self.assertTrue(ns.sarif)
 
     def test_approval_choices_enforced(self) -> None:
         from mythic_vibe_cli.app import build_parser

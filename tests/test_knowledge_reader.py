@@ -103,6 +103,52 @@ class KnowledgeReaderTests(unittest.TestCase):
         self.assertEqual(len(result.results), 1)
         self.assertEqual(result.results[0].table, "notes")
 
+    def test_malicious_configured_table_identifier_is_ignored(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            db_path = root / "knowledge.sqlite"
+            _seed_knowledge_db(db_path)
+            (root / ".mythic-vibe.json").write_text(
+                json.dumps(
+                    {
+                        "knowledge": {
+                            "sources": [
+                                {
+                                    "name": "bad-table",
+                                    "type": "sqlite",
+                                    "path": str(db_path),
+                                    "table": 'notes"); DROP TABLE notes; --',
+                                }
+                            ]
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            result = search_knowledge(root, "Hermes", limit=2)
+            with sqlite3.connect(db_path) as conn:
+                remaining = conn.execute("SELECT COUNT(*) FROM notes").fetchone()[0]
+
+        self.assertEqual(result.results, ())
+        self.assertEqual(remaining, 2)
+
+    def test_malicious_table_name_is_not_discovered(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            db_path = root / "knowledge.sqlite"
+            with sqlite3.connect(db_path) as conn:
+                conn.execute('CREATE TABLE "notes;DROP" (body TEXT)')
+                conn.execute('INSERT INTO "notes;DROP"(body) VALUES (?)', ("Hermes memory",))
+            (root / ".mythic-vibe.json").write_text(
+                json.dumps({"knowledge": {"sources": [{"name": "auto", "type": "sqlite", "path": str(db_path)}]}}),
+                encoding="utf-8",
+            )
+
+            result = search_knowledge(root, "Hermes", limit=2)
+
+        self.assertEqual(result.results, ())
+
     def test_postgres_source_is_reported_not_searched(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
