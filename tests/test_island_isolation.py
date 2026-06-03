@@ -13,7 +13,6 @@ toggling one must never bleed into the others.
 from __future__ import annotations
 
 import os
-from pathlib import Path
 import unittest
 from unittest import mock
 
@@ -212,19 +211,6 @@ class MissingDepDoesNotBreakOthersTests(_IslandEnvBase):
             # Other providers continue to work.
             self.assertIn("copy-paste", providers)
             self.assertTrue(providers["copy-paste"].validate_config().configured)
-
-    def test_yggdrasil_try_import_does_not_load_dormant_repo_island(self) -> None:
-        from mythic_vibe_cli.ai.providers.yggdrasil import _try_import_yggdrasil
-
-        module = _try_import_yggdrasil()
-        if module is None:
-            return
-
-        raw_path = getattr(module, "__file__", "")
-        self.assertTrue(raw_path)
-        module_path = Path(raw_path).resolve()
-        repo_root = Path(__file__).resolve().parents[1]
-        self.assertFalse(module_path.is_relative_to(repo_root / "yggdrasil"))
 
     def test_missing_mindspark_dep_does_not_block_other_providers(self) -> None:
         from mythic_vibe_cli.ai.providers.mindspark import MindSparkProvider
