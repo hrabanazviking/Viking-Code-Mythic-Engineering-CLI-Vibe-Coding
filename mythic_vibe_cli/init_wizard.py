@@ -255,7 +255,7 @@ def write_project_settings(
     Returns the path written. Raises :class:`WizardAbortedError`
     when refusing to overwrite.
     """
-    from mythic_vibe_cli.runtime.atomic_write import atomic_write_text
+    from mythic_vibe_cli.runtime import atomic_write_text
 
     settings_path = root / "mythic" / SETTINGS_FILENAME
     if settings_path.exists() and not force:
@@ -280,7 +280,7 @@ def scaffold_sample_artifacts(
     if not answers.scaffold_samples:
         return []
 
-    from mythic_vibe_cli.runtime.atomic_write import atomic_write_text
+    from mythic_vibe_cli.runtime import atomic_write_text
 
     created: list[Path] = []
     targets = (

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from mythic_vibe_cli.core.state import CURRENT_STATE_SCHEMA_VERSION, ProjectState, coerce_project_state
+from mythic_vibe_cli.core import CURRENT_STATE_SCHEMA_VERSION, ProjectState, coerce_project_state
 from mythic_vibe_cli.persistence.json_store import JsonStateStore, StateStoreError
 
 
