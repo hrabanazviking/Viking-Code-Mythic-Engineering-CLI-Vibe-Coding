@@ -104,8 +104,12 @@ class CliKernelTests(unittest.TestCase):
             "audit",
             # PH-13 slice 13.1 — drift detection
             "drift",
+            # Reforge Phase 7 — GitHub workspace system
+            "workspace",
             # PH-05 slices 5.5 + 5.6 — graph queries + visualize
             "graph",
+            # Reforge Phase 6 — private knowledge reader
+            "knowledge",
             # PH-15 slices 15.3 + 15.4 — memory show / list / compact / rehydrate
             "memory",
             # PH-06 slice 6.6 — hardware profile
@@ -118,6 +122,7 @@ class CliKernelTests(unittest.TestCase):
             "ci",
             # PH-12 slice 12.2 — Docker scaffold
             "docker",
+            "patch",
             # PH-12 slice 12.3 — Release helper
             "release",
             # PH-12 slice 12.4 — Rollback summariser
@@ -1307,8 +1312,58 @@ class CliKernelTests(unittest.TestCase):
                 sys.stdin = saved_stdin
 
             self.assertEqual(code, SUCCESS)
-            self.assertIn("mythic-vibe shell", output.getvalue())
+            self.assertIn("Mythic Vibe CLI", output.getvalue())
             self.assertIn("mythic-vibe>", output.getvalue())
+
+    def test_zero_arg_entrypoint_opens_interactive_shell(self) -> None:
+        """Reforge Phase 1: bare `mythic` / `mythic-vibe` enters the shell."""
+        saved_stdin = sys.stdin
+        sys.stdin = io.StringIO("")
+        output = io.StringIO()
+        try:
+            with redirect_stdout(output):
+                code = app.main([])
+        finally:
+            sys.stdin = saved_stdin
+
+        self.assertEqual(code, SUCCESS)
+        self.assertIn("Mythic Vibe CLI", output.getvalue())
+        self.assertIn("mythic-vibe>", output.getvalue())
+
+    def test_admin_prefix_runs_existing_command_catalog(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "mythic").mkdir()
+            (root / "mythic" / "status.json").write_text(
+                json.dumps(
+                    {
+                        "goal": "Keep old commands reachable",
+                        "current_phase": "plan",
+                        "completed_phases": ["intent"],
+                        "last_update": "2026-06-02 00:00:00Z",
+                        "history": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = app.main(["admin", "status", "--path", tmp, "--json"])
+
+            payload = json.loads(output.getvalue())
+            self.assertEqual(code, SUCCESS)
+            self.assertTrue(payload["status_found"])
+            self.assertEqual(payload["goal"], "Keep old commands reachable")
+
+    def test_admin_prefix_without_command_shows_help(self) -> None:
+        output = io.StringIO()
+        with redirect_stdout(output):
+            code = app.main(["admin"])
+
+        self.assertEqual(code, SUCCESS)
+        self.assertIn("companion shell", output.getvalue())
+        self.assertIn("status", output.getvalue())
 
     def test_slash_list_shows_builtin_commands(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

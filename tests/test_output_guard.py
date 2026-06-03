@@ -19,6 +19,7 @@ from mythic_vibe_cli.runtime.output_guard import (
     is_stdout_taken_over,
     json_output_guard,
     restore_stdout,
+    suspend_stdout_guard,
     take_over_stdout,
     write_raw_stdout,
 )
@@ -150,6 +151,20 @@ class OutputGuardTests(unittest.TestCase):
 
         self.assertFalse(is_stdout_taken_over())
         self.assertIs(sys.stdout, self.fake_stdout)
+
+    def test_suspend_stdout_guard_captures_raw_writes_then_restores(self) -> None:
+        take_over_stdout()
+        nested = io.StringIO()
+
+        with suspend_stdout_guard():
+            self.assertFalse(is_stdout_taken_over())
+            sys.stdout = nested
+            write_raw_stdout("nested payload\n")
+            sys.stdout = self.fake_stdout
+
+        self.assertTrue(is_stdout_taken_over())
+        self.assertEqual(nested.getvalue(), "nested payload\n")
+        self.assertEqual(self.fake_stdout.getvalue(), "")
 
 
 # PH-23.8 — coverage push for output_guard's _ProxyStream

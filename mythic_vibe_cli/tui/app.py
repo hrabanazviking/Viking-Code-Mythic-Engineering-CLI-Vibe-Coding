@@ -29,6 +29,7 @@ from ..runtime.event_log import (
     EventTailReader,
     event_log_path_for,
 )
+from ..runtime.paths import paths_for
 from ..verify import load_latest_verification
 
 
@@ -379,11 +380,12 @@ def _select_packet_path(root: Path) -> Path | None:
     Returns ``None`` when neither exists. Defensive against ``OSError``
     while iterating the packets dir.
     """
-    current = root / "mythic" / "codex_prompt.md"
+    runtime_paths = paths_for(root)
+    current = runtime_paths.current_packet_markdown
     if current.is_file():
         return current
 
-    packets_dir = root / "mythic" / "packets"
+    packets_dir = runtime_paths.packets_dir
     if not packets_dir.is_dir():
         return None
     try:
@@ -773,6 +775,7 @@ class StatusScreen(Screen):
         # Warm-starts from any existing entries so the panel populates
         # immediately, but only counts truly-new events as "live".
         self._event_reader = EventTailReader(event_log_path_for(self.root))
+        self._refresh_timer: Any | None = None
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -789,7 +792,14 @@ class StatusScreen(Screen):
 
     def on_mount(self) -> None:
         self._refresh_panels()
-        self.set_interval(REFRESH_INTERVAL_SECONDS, self._refresh_panels)
+        self._refresh_timer = self.set_interval(REFRESH_INTERVAL_SECONDS, self._refresh_panels)
+
+    def on_unmount(self) -> None:
+        timer = self._refresh_timer
+        self._refresh_timer = None
+        stop = getattr(timer, "stop", None)
+        if callable(stop):
+            stop()
 
     def action_refresh_now(self) -> None:
         self._refresh_panels()
@@ -812,24 +822,58 @@ class StatusScreen(Screen):
         self.app.push_screen(DriftScreen(self.root))
 
     def _refresh_panels(self) -> None:
-        data = build_status_data(self.root)
-        loop_nav_data = build_loop_navigator_data(self.root)
-        artifact_data = build_artifact_viewer_data(self.root, loop_nav_data.current_phase)
-        packet_data = build_packet_viewer_data(self.root)
-        diagnostics = self._event_reader.poll()
+        try:
+            data = build_status_data(self.root)
+            status_text = _format_status_bar(data)
+            footer_text = _format_footer_line(data)
+        except Exception as exc:  # noqa: BLE001 - TUI must degrade per panel
+            status_text = _format_panel_error("Status", exc)
+            footer_text = "Last refresh: unavailable"
+
+        try:
+            loop_nav_data = build_loop_navigator_data(self.root)
+            loop_text = _format_loop_navigator(loop_nav_data)
+            current_phase = loop_nav_data.current_phase
+        except Exception as exc:  # noqa: BLE001 - TUI must degrade per panel
+            loop_text = _format_panel_error("Loop", exc)
+            current_phase = ""
+
+        try:
+            artifact_data = build_artifact_viewer_data(self.root, current_phase)
+            artifact_text = _format_artifact_viewer(artifact_data)
+            artifact_phase = artifact_data.phase or "(none)"
+        except Exception as exc:  # noqa: BLE001 - TUI must degrade per panel
+            artifact_text = _format_panel_error("Artefacts", exc)
+            artifact_phase = current_phase or "(none)"
+
+        try:
+            packet_data = build_packet_viewer_data(self.root)
+            packet_text = _format_packet_viewer(packet_data)
+            packet_title = f"Packet ({packet_data.packet_id})" if packet_data.packet_id else "Packet"
+        except Exception as exc:  # noqa: BLE001 - TUI must degrade per panel
+            packet_text = _format_panel_error("Packet", exc)
+            packet_title = "Packet"
+
+        try:
+            diagnostics = self._event_reader.poll()
+            diagnostics_text = _format_diagnostics_panel(diagnostics)
+        except Exception as exc:  # noqa: BLE001 - TUI must degrade per panel
+            diagnostics_text = _format_panel_error("Diagnostics", exc)
+
         self._loop_nav_widget.border_title = "Loop"
         self._events_widget.border_title = "Diagnostics"
-        artifact_phase = artifact_data.phase or "(none)"
         self._artifact_widget.border_title = f"Artefacts ({artifact_phase})"
-        self._packet_widget.border_title = (
-            f"Packet ({packet_data.packet_id})" if packet_data.packet_id else "Packet"
-        )
-        self._loop_nav_widget.update(_format_loop_navigator(loop_nav_data))
-        self._events_widget.update(_format_diagnostics_panel(diagnostics))
-        self._artifact_widget.update(_format_artifact_viewer(artifact_data))
-        self._packet_widget.update(_format_packet_viewer(packet_data))
-        self._status_bar_widget.update(_format_status_bar(data))
-        self._footer_widget.update(_format_footer_line(data))
+        self._packet_widget.border_title = packet_title
+        self._loop_nav_widget.update(loop_text)
+        self._events_widget.update(diagnostics_text)
+        self._artifact_widget.update(artifact_text)
+        self._packet_widget.update(packet_text)
+        self._status_bar_widget.update(status_text)
+        self._footer_widget.update(footer_text)
+
+
+def _format_panel_error(label: str, exc: BaseException) -> str:
+    return f"[yellow]{label} unavailable[/yellow]\n[dim]{type(exc).__name__}: {exc}[/dim]"
 
 
 class MythicTuiApp(App):
@@ -870,6 +914,7 @@ class MythicTuiApp(App):
         # glance which layout the TUI is rendering for.
         if self.narrow_mode:
             self.sub_title = f"{self.SUB_TITLE}  ·  narrow"
+            
         self.push_screen(StatusScreen(self.root))
 
     def action_cycle_theme(self) -> None:

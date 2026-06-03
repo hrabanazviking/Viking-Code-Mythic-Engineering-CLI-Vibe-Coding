@@ -96,6 +96,10 @@ class ScanCodeTests(unittest.TestCase):
         self.assertEqual(findings[0].severity, "critical")
         self.assertIn("eval(", findings[0].snippet)
 
+    def test_method_named_eval_is_not_python_eval_builtin(self) -> None:
+        findings = scan_code("model.eval()", language="python")
+        self.assertEqual(findings, [])
+
     def test_exec_detected(self) -> None:
         findings = scan_code("exec(payload)", language="python")
         self.assertTrue(any(f.pattern == "python.exec" for f in findings))
@@ -172,6 +176,13 @@ class ScanPathsTests(unittest.TestCase):
             ghost = Path(tmp) / "ghost.py"
             result = scan_paths([ghost], root=tmp)
         self.assertEqual(result.files_scanned, 0)
+
+    def test_rule_catalogue_findings_are_baselined(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        target = repo_root / "mythic_vibe_cli" / "security" / "dangerous_patterns.py"
+        result = scan_paths([target], root=repo_root)
+        self.assertEqual(result.findings, [])
+        self.assertGreaterEqual(result.to_dict()["baselined_count"], 1)
 
 
 # ---- DangerScanResult / DangerFinding --------------------------------

@@ -45,7 +45,41 @@ class ScanModuleTests(unittest.TestCase):
             findings = _scan_module(path, path.read_text(), relative="x.py")
         self.assertEqual(len(findings), 1)
         self.assertIn("mythic/checkins", findings[0].matched_literal)
+        self.assertEqual(findings[0].kind, "runtime")
         self.assertIn("hardcoded", findings[0].detail)
+
+    def test_help_text_classified_as_documentation(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "x.py"
+            path.write_text(
+                'parser.add_argument("--out", help="default: mythic/checkins/foo.md")\n',
+                encoding="utf-8",
+            )
+            findings = _scan_module(path, path.read_text(), relative="x.py")
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].kind, "documentation")
+
+    def test_docstring_classified_as_documentation(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "x.py"
+            path.write_text(
+                '"""Reads mythic/status.json for display only."""\n',
+                encoding="utf-8",
+            )
+            findings = _scan_module(path, path.read_text(), relative="x.py")
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].kind, "documentation")
+
+    def test_reviewed_metadata_classified_as_reviewed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "x.py"
+            path.write_text(
+                'PHASE_ARTEFACTS = {"build": ["mythic/codex_prompt.md"]}\n',
+                encoding="utf-8",
+            )
+            findings = _scan_module(path, path.read_text(), relative="x.py")
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].kind, "reviewed")
 
     def test_allow_listed_module_skipped(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -166,6 +200,22 @@ class DataclassTests(unittest.TestCase):
 
     def test_result_ok_when_empty(self) -> None:
         self.assertTrue(PathAuditResult().ok)
+
+    def test_result_ok_ignores_documentation_findings(self) -> None:
+        result = PathAuditResult(
+            findings=[
+                PathFinding(
+                    location="a.py",
+                    line=1,
+                    column=0,
+                    snippet="x",
+                    matched_literal="mythic/status.json",
+                    kind="documentation",
+                )
+            ]
+        )
+        self.assertTrue(result.ok)
+        self.assertEqual(result.runtime_findings, [])
 
 
 # ---- Allow-list invariants -------------------------------------------

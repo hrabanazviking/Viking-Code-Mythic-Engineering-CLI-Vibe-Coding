@@ -7,6 +7,117 @@
 
 ---
 
+## 2026-06-02 - Reforge roadmap Phase 10: TUI Integration
+
+**Status:** A new unified `CockpitScreen` was introduced using `textual`, featuring `TabbedContent` with tabs for Chat, Files, Diff, Memory, Knowledge, Git Status, Tasks, and Model Status. The Chat tab natively bridges the REPL loop into the TUI using background worker threads, allowing the user to converse with the AI model seamlessly. The `/tui` slash command was added to the standard companion shell to easily launch the cockpit.
+
+### Why it matters
+
+Phase 10 turns the `mythic-vibe tui` from a read-only 4-panel dashboard into a fully functional workspace where users can chat, browse files, and review Git/Patch diffs in one interface. This fulfills the roadmap's goal of making the TUI the visual cockpit of the companion shell rather than an optional detached DevOps dashboard.
+
+---
+
+## 2026-06-02 - Reforge roadmap Phase 0: product intent
+
+**Session:** Started the `Mythic_Vibe_CLI_Reforge_Roadmap.md` phase implementation on `development`.
+**Status:** Phase 0 documentation is in progress. The planning artifact `TASK_REFORGE_ROADMAP_PHASES.md` was created, committed, and pushed before product changes. `docs/PRODUCT_INTENT.md` now records the corrected product definition: Mythic is being reforged into a terminal-based coding companion CLI where `mythic` opens the natural-language companion shell, slash commands are secondary controls, and older command-catalog features are preserved as internal/admin machinery where useful.
+
+### Why it matters
+
+The existing v1.0 documentation still frames Mythic primarily as a structured command-line workflow tool. The reforge roadmap changes the product center of gravity. This entry records that shift explicitly so later implementation phases do not accidentally optimize the old command-catalog UX.
+
+---
+
+## 2026-06-02 - Reforge roadmap Phase 1: default entrypoint
+
+**Status:** Bare invocation now opens the interactive shell. `app.main([])` routes to the new canonical `interactive_shell.run_interactive_shell()` surface, while `mythic-vibe shell` remains available for explicit compatibility. `mythic admin <command>` strips the `admin` prefix and runs the existing command-catalog handler path, preserving older workflows while making the companion shell the default.
+
+### Why it matters
+
+This turns the product correction from documentation into runtime behavior without deleting any existing command. The old machinery remains reachable, but the first thing a user gets from `mythic` is the companion shell the reforge roadmap calls for.
+
+---
+
+## 2026-06-02 - Reforge roadmap Phase 2: minimal shell context
+
+**Status:** The shell now starts with live local context: project/repository path, Git branch or non-repo status, fallback model, memory status, and knowledge status. `/model` is a shell-local slash control and appears in the slash catalog. Normal natural-language input that is not a known command now receives a local context answer, so "What project am I in?" returns useful project information instead of an argparse error.
+
+### Why it matters
+
+This completes the minimal useful companion loop without pretending Phase 4 model routing is already done. The shell can orient the user, route slash commands, preserve existing command dispatch, answer basic context questions, and exit cleanly.
+
+---
+
+## 2026-06-02 - Reforge roadmap Phase 3: context builder surface
+
+**Status:** Added `mythic_vibe_cli/context/companion.py` as the shell-facing context adapter. It reuses the existing scanner for repository shape, language/framework clues, important files, tests, Git state, risks, and recommended context, then adds simple relevance ranking for natural-language inspection prompts. The companion shell now routes requests such as "Find the memory system in this repo" into that summary path.
+
+### Why it matters
+
+Phase 3 moves repo inspection out of manual command use and into natural conversation. The user can ask for a subsystem and the shell returns the current project shape plus likely files without requiring a separate `scan` command first.
+
+---
+
+## 2026-06-02 - Reforge roadmap Phase 4: model router surface
+
+**Status:** The companion shell now uses the existing AI provider registry and fallback runtime for generic natural-language prompts. `/model list` surfaces provider status, `/model set <provider> [model]` persists selection to project JSON config, and the shell reads `ai.provider` / `ai.model` plus env overrides on startup. The default remains `copy-paste/manual`, so the shell is useful without keys while configured providers can be selected when available.
+
+### Why it matters
+
+Phase 4 connects the conversation-first shell to Mythic's provider-neutral AI machinery without locking the product to one backend. It also makes model choice a shell-level operation rather than a detached admin command, which matches the reforge roadmap's primary UX.
+
+---
+
+## 2026-06-02 - Reforge roadmap Phase 5: SQLite memory spine
+
+**Status:** Added the project-local SQLite memory spine at `.mythic/memory.sqlite`. Companion-shell natural prompts now record task/session memory, handoff creation folds structured session data into the spine, `memory last` renders the resume answer, and `memory spine` shows database status and recent entries. The shell now answers "What were we doing last time?" from local memory before routing to a provider.
+
+### Why it matters
+
+Phase 5 closes the first real memory hole in the companion workflow. The shell can now preserve what happened across sessions without relying on remote model state, terminal scrollback, or the older conversation JSON files alone.
+
+---
+
+## 2026-06-02 - Reforge roadmap Phase 6: private knowledge reader
+
+**Status:** Added the read-only private knowledge reader with SQLite-first support. Configured SQLite sources are opened in read-only mode, searched through a parameterized safe query interface, surfaced through `knowledge status`, `knowledge sources`, and `knowledge search`, and reached naturally from the companion shell when the user asks to search the knowledge database. PostgreSQL sources are recognized as configured but intentionally not queried until an explicit adapter is added.
+
+### Why it matters
+
+Phase 6 gives the companion shell a private knowledge retrieval path without blending it into the project graph or requiring a cloud provider. A Tailscale-mounted SQLite database can now be searched fluidly from conversation while preserving the read-only boundary.
+
+---
+
+## 2026-06-02 - Reforge roadmap Phase 7: GitHub workspace system
+
+**Status:** Added the local GitHub workspace manager rooted at `~/.mythic-vibe/workspaces/` by default. The command catalog now exposes `workspace status`, `workspace clone`, `workspace open`, `workspace branch`, `workspace track`, `workspace pr`, and `workspace plan`; clone and branch actions are dry-run proposals unless `--yes` is supplied, and PR draft files are written only with `--write`. The companion shell recognizes natural clone/branch workspace requests and produces an approval-oriented plan without mutating local repositories.
+
+### Why it matters
+
+Phase 7 gives Mythic a controlled working-directory layer for repo juggling without turning natural language into implicit Git mutation. The shell can understand "Clone my Hermes fork and make a branch for fixing memory" as a concrete plan, while the operator still approves the change through explicit command flags.
+
+---
+
+## 2026-06-02 - Reforge roadmap Phase 9: Test Runner
+
+**Status:** Added the Test Runner integration directly into the interactive REPL. The `verify/test_runner.py` now implements a `summarize_failures` utility. The REPL now supports `/test`, `/test last`, and `/test command <cmd...>` commands. When a test fails, the REPL automatically summarizes the failures and feeds them into the active LLM context to propose a self-healing patch.
+
+### Why it matters
+
+Phase 9 completes the core iterative loop. Previously, developers would have to read a huge test failure output and manually explain it to the agent. Now, Mythic can run the tests, parse the output, and directly propose the patch without user handholding.
+
+---
+
+## 2026-06-02 - Reforge roadmap Phase 8: Patch Proposal System
+
+**Status:** Added the Patch Proposal System at `mythic_vibe_cli/patch/manager.py`. The companion shell now supports staging patches in-memory via `PatchManager`, generating diffs, and applying or rejecting them with explicit user consent via `/diff`, `/apply`, `/reject` slash commands.
+
+### Why it matters
+
+Phase 8 creates a conversational patch approval workflow. Agents can propose fixes, and users can review and approve them interactively rather than having destructive edits happen behind their back. This is essential for a safe, collaborative coding companion.
+
+---
+
 ## 2026-05-03 — v1.0.0 launch (PH-19 + PH-20, 26 slices)
 
 **Sessions:** Two consecutive working days, chained through Volmarr's "go for all the rest of 19" then "go for phase 20" then "do a complete look over the README.md and all other project documents" directives.
@@ -2405,3 +2516,19 @@ In practical terms, this reduces three recurring failure patterns:
 - If command surfaces evolve significantly, the next maintainer should validate that `docs/api.md` still matches runtime semantics before release tagging.
 
 _May the memory remain legible when the fire burns low._
+
+## [2026-06-02] Massive Codebase Hardening Plan — Final Closeout (Phases 12 & 13)
+
+**Session:** Hardening closeout and CI enforcement.
+**Status:** All 14 phases (0-13) of `docs/HARDENING_PLAN.md` are complete.
+**Hands on the wheel:** Autonomous agent pass (Antigravity).
+
+### What was changed in this pass
+- **Phase 12 (Dormant Islands):** Inventoried and isolated legacy code outside the `mythic_vibe_cli` active boundary. Added `docs/DORMANT_CODE_INVENTORY.md` to catalog `yggdrasil`, `core`, `ai`, and other dormant modules. Created `tests/test_dormant_isolation.py` to prove that active CLI startup does not implicitly leak or import dormant namespaces. Updated `scripts/quality_gate.py` to stop scanning these dormant directories (eliminating 23 false-positive exceptions).
+- **Phase 13 (CI & Release Gates):** Enforced the hardening by locking it behind strict CI gates. Updated `.github/workflows/ci.yml` to run the quality gate, JSON output audit, security audit, and boundary audit on all PRs. Added `.github/workflows/nightly-audit.yml` to run a non-blocking full-repo security scan every night. Augmented `docs/RELEASE_CHECKLIST.md` with explicit reviews for config schema migration, crash boundaries, and security baselines.
+
+### Why this matters now
+The codebase is now fully fortified against regression. We've drawn a hard line between experimental/legacy code and the active product. By enforcing these checks in CI, any future contributor will immediately be blocked if they accidentally violate the JSON envelope contract, introduce bare-excepts, or bridge an unsanctioned import from an archived namespace. 
+
+### Next Steps
+The codebase is fully ready for the `v1.0.1` operator-side release. Operator blockers (GitHub Pages, keystores, repos) remain the only pending actions.

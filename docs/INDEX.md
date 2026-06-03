@@ -4,6 +4,8 @@
 
 Mythic Vibe is an opinionated developer-workflow tool. It gives operators a structured surface for capturing intent, verifying changes against architecture rules, and handing off work between sessions — all while staying out of the way for the routine cases.
 
+> **Reforge direction:** Mythic is being corrected into a terminal-based coding companion CLI. The primary entrypoint is `mythic`, which should open an interactive shell where the user talks naturally to the model. See [Product Intent](PRODUCT_INTENT.md).
+
 ```bash
 # Install:
 pipx install mythic-vibe-cli
@@ -60,6 +62,22 @@ mythic-vibe verify
     [:octicons-arrow-right-24: Verifying Artifacts](security/verifying_artifacts.md)
 
 </div>
+
+---
+
+## Companion Shell
+
+Mythic operates primarily as an interactive coding companion. Read the following documentation to understand the shell workflow:
+
+- [Product Intent](PRODUCT_INTENT.md) — the reforge direction: coding companion CLI first, command catalog second.
+- [Interactive Shell](INTERACTIVE_SHELL.md) — the primary conversational loop.
+- [Slash Commands](SLASH_COMMANDS.md) — secondary explicit controls.
+- [Daily Workflow](DAILY_WORKFLOW.md) — a standard day using the companion.
+- [Project Memory](MEMORY.md) — how Mythic retains session context.
+- [Private Knowledge](KNOWLEDGE.md) — integrating external documents.
+- [GitHub Workspace](GITHUB_WORKSPACE.md) — conversational branch and PR management.
+- [Cockpit TUI](TUI.md) — the visual interface for the shell.
+- [Internal Tools](INTERNAL_TOOLS.md) — how legacy commands power the shell machinery.
 
 ---
 

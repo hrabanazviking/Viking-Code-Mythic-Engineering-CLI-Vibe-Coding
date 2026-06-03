@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import os
+import json
+from typing import Any
 
 from .base import (
     Estimate,
@@ -86,9 +88,36 @@ class GeminiProvider:
         if not key:
             raise ValueError("GEMINI_API_KEY is required")
 
-        payload = {
-            "contents": [{"role": "user", "parts": [{"text": view.text}]}],
+        contents = []
+        if view.conversation_history:
+            for msg in view.conversation_history:
+                role = msg.get("role", "user")
+                # map openai roles to gemini
+                if role == "assistant":
+                    role = "model"
+                elif role == "system":
+                    continue # system is handled via systemInstruction
+                elif role == "tool":
+                    role = "user" # Treat tool output as user feeding data back
+                
+                content = msg.get("content", "")
+                if content:
+                    contents.append({"role": role, "parts": [{"text": content}]})
+
+        contents.append({"role": "user", "parts": [{"text": view.text}]})
+
+        payload: dict[str, Any] = {
+            "contents": contents,
         }
+        if view.system_prompt:
+            payload["systemInstruction"] = {"parts": [{"text": view.system_prompt}]}
+        if view.tools:
+            function_declarations = []
+            for tool in view.tools:
+                if tool.get("type") == "function" and "function" in tool:
+                    function_declarations.append(tool["function"])
+            if function_declarations:
+                payload["tools"] = [{"functionDeclarations": function_declarations}]
         response_payload, latency_ms = timed_post_json(
             f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent?key={key}",
             payload,
@@ -99,9 +128,27 @@ class GeminiProvider:
         )
         candidates = response_payload.get("candidates", [])
         text = ""
+        tool_calls = None
         if candidates:
             parts = candidates[0].get("content", {}).get("parts", [])
-            text = "".join(part.get("text", "") for part in parts if isinstance(part, dict))
+            text_parts = []
+            calls = []
+            for part in parts:
+                if isinstance(part, dict):
+                    if "text" in part:
+                        text_parts.append(part["text"])
+                    if "functionCall" in part:
+                        fc = part["functionCall"]
+                        calls.append({
+                            "type": "function",
+                            "function": {
+                                "name": fc.get("name"),
+                                "arguments": json.dumps(fc.get("args", {})),
+                            }
+                        })
+            text = "".join(text_parts)
+            if calls:
+                tool_calls = calls
         usage = extract_usage(self.name, response_payload)
         if not usage:
             usage = {
@@ -127,6 +174,7 @@ class GeminiProvider:
                     usage.get("output_tokens", estimate.output_tokens),
                 ),
             },
+            tool_calls=tool_calls,
         )
         log_payload["response"] = response_payload
         log_payload["latency_ms"] = latency_ms

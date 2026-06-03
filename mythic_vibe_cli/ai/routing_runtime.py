@@ -40,12 +40,14 @@ class FallbackAttempt:
 
     provider: str
     succeeded: bool
+    model: str = ""
     error: str = ""
     skipped_reason: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "provider": self.provider,
+            "model": self.model,
             "succeeded": self.succeeded,
             "error": self.error,
             "skipped_reason": self.skipped_reason,
@@ -91,17 +93,29 @@ ProviderResolver = Callable[[str], AIProvider | None]
 ``None`` if the name isn't recognised."""
 
 
-def _coerce_chain(decision: RouteDecision) -> tuple[str, ...]:
+def _split_provider_model(raw: str) -> tuple[str, str]:
+    if "|" not in raw:
+        return raw, ""
+    provider, model = raw.split("|", 1)
+    return provider, model
+
+
+def _coerce_chain(decision: RouteDecision) -> tuple[tuple[str, str], ...]:
     """Build the ordered "try-this" list: primary → fallbacks.
     Always appends ``copy-paste`` at the very end if it isn't
     already present so a complete failure is impossible (the
     copy-paste provider needs no keys / no daemon)."""
-    chain: list[str] = [decision.provider]
-    for name in decision.fallbacks:
-        if name and name not in chain:
-            chain.append(name)
-    if "copy-paste" not in chain:
-        chain.append("copy-paste")
+    chain: list[tuple[str, str]] = [(decision.provider, decision.model)]
+    seen: set[tuple[str, str]] = set(chain)
+    for raw in decision.fallbacks:
+        if not raw:
+            continue
+        item = _split_provider_model(raw)
+        if item not in seen:
+            chain.append(item)
+            seen.add(item)
+    if not any(provider == "copy-paste" for provider, _model in chain):
+        chain.append(("copy-paste", "manual"))
     return tuple(chain)
 
 
@@ -121,6 +135,7 @@ def _record_attempt(
             "routing_attempt": True,
             "from_provider": decision.provider,
             "to_provider": attempt.provider,
+            "model": attempt.model,
             "role": decision.role,
             "task_type": decision.task_type,
             "packet_id": packet_id,
@@ -160,11 +175,12 @@ def run_with_fallback(
     last_response: ProviderResponse | None = None
     used_provider = ""
 
-    for name in chain:
+    for name, model in chain:
         provider = resolver(name)
         if provider is None:
             attempt = FallbackAttempt(
                 provider=name,
+                model=model,
                 succeeded=False,
                 skipped_reason="unknown provider name",
             )
@@ -180,6 +196,7 @@ def run_with_fallback(
         except Exception as exc:  # noqa: BLE001 — provider misbehaving shouldn't crash routing
             attempt = FallbackAttempt(
                 provider=name,
+                model=model,
                 succeeded=False,
                 error=f"validate_config raised: {exc}",
             )
@@ -189,6 +206,7 @@ def run_with_fallback(
         if not status.configured and name != "copy-paste":
             attempt = FallbackAttempt(
                 provider=name,
+                model=model,
                 succeeded=False,
                 skipped_reason="provider not configured",
             )
@@ -197,10 +215,13 @@ def run_with_fallback(
             continue
 
         try:
+            if model and hasattr(provider, "model"):
+                setattr(provider, "model", model)
             response = provider.run(packet, dry_run=dry_run)
         except Exception as exc:  # noqa: BLE001 — by design: any failure falls forward
             attempt = FallbackAttempt(
                 provider=name,
+                model=model,
                 succeeded=False,
                 error=str(exc) or type(exc).__name__,
             )
@@ -209,7 +230,7 @@ def run_with_fallback(
             continue
 
         # Success.
-        attempt = FallbackAttempt(provider=name, succeeded=True)
+        attempt = FallbackAttempt(provider=name, model=model, succeeded=True)
         attempts.append(attempt)
         _record_attempt(root, decision, attempt, packet_id=response.packet_id)
         last_response = response
@@ -252,7 +273,7 @@ __all__ = [
 
 
 # Internal helper used elsewhere in the codebase.
-def _route_chain(decision: RouteDecision) -> Iterable[str]:
+def _route_chain(decision: RouteDecision) -> Iterable[tuple[str, str]]:
     """Public-ish helper for tests / introspection — returns the
     ordered chain :func:`run_with_fallback` would walk."""
     return _coerce_chain(decision)

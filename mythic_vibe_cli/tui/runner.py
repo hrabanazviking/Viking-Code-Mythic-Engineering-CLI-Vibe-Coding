@@ -1,10 +1,9 @@
 """Running-command screen with live elapsed time.
 
-Spawns the requested command via ``subprocess.Popen`` (cross-platform stdlib
-— no Unix-only signal handlers, no platform branches) and refreshes a panel
-every 0.2 seconds with elapsed time and the latest output tail. When the
-process exits, the screen renders the final exit code plus a longer tail
-and waits for the user to press Esc.
+Spawns the requested command through ``runtime.exec.spawn_process`` and
+refreshes a panel every 0.2 seconds with elapsed time and the latest output
+tail. When the process exits, the screen renders the final exit code plus a
+longer tail and waits for the user to press Esc.
 
 Plugin-contributed slash commands are intentionally **not dispatched** in
 this slice — that contract belongs to a follow-on. The preview screen sends
@@ -15,8 +14,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import ClassVar
-import subprocess
+from subprocess import TimeoutExpired
+from typing import Any, ClassVar
 import sys
 import time
 
@@ -24,6 +23,8 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.screen import Screen
 from textual.widgets import Footer, Header, Static
+
+from ..runtime.exec import spawn_process
 
 
 @dataclass(frozen=True)
@@ -93,7 +94,7 @@ class RunningCommandScreen(Screen):
         super().__init__()
         self.spec = spec
         self.cwd = cwd
-        self._proc: subprocess.Popen[str] | None = None
+        self._proc: Any | None = None
         self._started_at = 0.0
         self._exit_code: int | None = None
         self._captured_stdout = ""
@@ -126,7 +127,7 @@ class RunningCommandScreen(Screen):
             proc.terminate()
             try:
                 proc.wait(timeout=1.0)
-            except subprocess.TimeoutExpired:
+            except TimeoutExpired:
                 proc.kill()
                 proc.wait(timeout=1.0)
         except OSError:
@@ -135,13 +136,12 @@ class RunningCommandScreen(Screen):
 
     def _launch(self) -> None:
         try:
-            self._proc = subprocess.Popen(
+            self._proc = spawn_process(
                 self.spec.argv,
                 cwd=str(self.cwd),
-                shell=False,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                stdin=subprocess.DEVNULL,
+                stdin="devnull",
+                stdout="pipe",
+                stderr="pipe",
                 text=True,
             )
             self._started_at = time.perf_counter()
@@ -162,7 +162,7 @@ class RunningCommandScreen(Screen):
         # Process has exited — drain stdout/stderr.
         try:
             stdout, stderr = self._proc.communicate(timeout=1.0)
-        except subprocess.TimeoutExpired:
+        except TimeoutExpired:
             self._proc.kill()
             stdout, stderr = self._proc.communicate()
         self._captured_stdout = stdout or ""

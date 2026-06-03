@@ -172,7 +172,12 @@ class CreateGitTagTests(unittest.TestCase):
         self.assertEqual(result.tag, "v1.0.0")
 
     def test_missing_git_returns_clean_error(self) -> None:
-        with mock.patch("subprocess.run", side_effect=FileNotFoundError("git")):
+        from mythic_vibe_cli.runtime.exec import ExecResult
+
+        with mock.patch(
+            "mythic_vibe_cli.cicd.release.exec_command",
+            return_value=ExecResult(stdout="", stderr="git", code=127, killed=False),
+        ):
             with tempfile.TemporaryDirectory() as tmp:
                 result = create_git_tag(Path(tmp), "v1.0.0")
         self.assertFalse(result.created)

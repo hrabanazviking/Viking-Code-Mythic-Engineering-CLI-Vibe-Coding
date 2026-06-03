@@ -46,6 +46,31 @@ class MythicCliRitualTests(unittest.TestCase):
             self.assertTrue(cfg.exists())
             self.assertIn('core.default_model = "gpt-5"', cfg.read_text(encoding="utf-8"))
 
+    def test_json_config_loads_ai_provider_and_model(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / ".mythic-vibe.json").write_text(
+                json.dumps(
+                    {
+                        "ai": {"provider": "openai", "model": "gpt-4o-mini"},
+                        "knowledge": {
+                            "sources": [
+                                {"name": "notes", "type": "sqlite", "path": "knowledge.sqlite"}
+                            ]
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            from mythic_vibe_cli.config import ConfigStore
+
+            loaded = ConfigStore(root).load()
+
+        self.assertEqual(loaded.config.ai_provider, "openai")
+        self.assertEqual(loaded.config.ai_model, "gpt-4o-mini")
+        self.assertEqual(loaded.config.knowledge_sources[0]["name"], "notes")
+
     def test_plunder_requires_token_env(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             code = main(

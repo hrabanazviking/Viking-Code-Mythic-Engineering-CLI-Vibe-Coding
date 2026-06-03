@@ -121,6 +121,24 @@ def flush_raw_stdout() -> None:
 
 
 @contextmanager
+def suspend_stdout_guard() -> Iterator[None]:
+    """Temporarily restore normal stdout while preserving guard state.
+
+    This is for in-process command nesting where the outer command owns a
+    protocol stream, but must capture a child handler's stdout instead of
+    letting :func:`write_raw_stdout` bypass ``redirect_stdout``.
+    """
+    if _state is None:
+        yield
+        return
+    restore_stdout()
+    try:
+        yield
+    finally:
+        take_over_stdout()
+
+
+@contextmanager
 def json_output_guard(active: bool) -> Iterator[None]:
     """Optionally activate the stdout guard for the duration of a ``with`` block.
 

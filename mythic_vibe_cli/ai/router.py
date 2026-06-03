@@ -50,6 +50,7 @@ from pathlib import Path
 from typing import Any
 
 from ..hardware import HardwareProfile
+from ..runtime.paths import paths_for
 
 
 ROUTING_FILE_DIR = ("mythic", "ai")
@@ -145,8 +146,8 @@ class RoutingRule:
         return cls(
             role=str(payload.get("role", "*")),
             task_type=str(payload.get("task_type", "*")),
-            min_ram_mb=int(payload.get("min_ram_mb", 0) or 0),
-            min_logical_cpus=int(payload.get("min_logical_cpus", 0) or 0),
+            min_ram_mb=_safe_int(payload.get("min_ram_mb", 0), 0),
+            min_logical_cpus=_safe_int(payload.get("min_logical_cpus", 0), 0),
             prefer_local=bool(payload.get("prefer_local", False)),
             provider=str(payload.get("provider", "copy-paste")),
             model=str(payload.get("model", "")),
@@ -279,29 +280,48 @@ class RoutingTable:
     def load(cls, root: Path) -> "RoutingTable":
         """Build a table from the project's
         ``mythic/ai/routing.json`` overlay (if present), prepended
-        to the default rules so overrides take precedence.
+        to the default rules so overrides take precedence. The
+        project ``config.yaml`` can also provide
+        ``ai.router.routing_rules``; those rules are prepended before
+        the JSON overlay so the human-edited root config wins.
 
         Errors are best-effort: missing file → defaults only;
         unparseable file → defaults only with no warning to avoid
         crashing the CLI. Future PH-14 (Policy Engine) might add a
         loud config-validation surface."""
         table = cls.from_default()
-        path = Path(root).joinpath(*ROUTING_FILE_DIR, ROUTING_FILENAME)
+        config_overrides: list[RoutingRule] = []
+        try:
+            from ..config import ConfigStore
+
+            loaded = ConfigStore(root).load()
+            for entry in loaded.config.ai_routing_rules:
+                try:
+                    config_overrides.append(RoutingRule.from_dict(entry))
+                except (TypeError, ValueError):
+                    continue
+        except Exception:  # noqa: BLE001 - routing should degrade to defaults
+            config_overrides = []
+
+        path = paths_for(root).routing_file
         if not path.is_file():
-            return table
+            return cls(rules=config_overrides + table.rules)
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
-            return table
+            return cls(rules=config_overrides + table.rules)
         if not isinstance(payload, list):
-            return table
+            return cls(rules=config_overrides + table.rules)
         overrides: list[RoutingRule] = []
         for entry in payload:
             if isinstance(entry, dict):
-                overrides.append(RoutingRule.from_dict(entry))
+                try:
+                    overrides.append(RoutingRule.from_dict(entry))
+                except (TypeError, ValueError):
+                    continue
         # Overrides come first so a user rule shadows a default with
         # the same predicates.
-        return cls(rules=overrides + table.rules)
+        return cls(rules=config_overrides + overrides + table.rules)
 
     def to_dict(self) -> dict[str, Any]:
         return {"rules": [rule.to_dict() for rule in self.rules]}
@@ -359,3 +379,10 @@ __all__ = [
     "RoutingTable",
     "route",
 ]
+
+
+def _safe_int(raw: object, fallback: int) -> int:
+    try:
+        return max(0, int(raw or fallback))
+    except (TypeError, ValueError):
+        return fallback

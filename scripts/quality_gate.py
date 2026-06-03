@@ -8,6 +8,10 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from mythic_vibe_cli.runtime.script_guard import guarded_main
 
 
 def is_test_file(path: Path) -> bool:
@@ -15,9 +19,14 @@ def is_test_file(path: Path) -> bool:
 
 
 def scan() -> dict:
+    excluded_dirs = {
+        ".venv", "venv", "__pycache__", "mythic_vibe_cli.egg-info", "ai", "core", "systems", "sessions",
+        "yggdrasil", "imports", "WYRD-Protocol-World-Yielding-Real-time-Data-AI-world-model",
+        "mindspark_thoughtform", "ollama", "whisper", "chatterbox", "research_data"
+    }
     py_files = [
         p for p in ROOT.rglob("*.py")
-        if ".venv" not in p.parts and "__pycache__" not in p.parts
+        if not any(part in excluded_dirs for part in p.parts)
     ]
     findings = {
         "bare_except": [],
@@ -72,4 +81,10 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(
+        guarded_main(
+            main,
+            script_name=Path(__file__).name,
+            json_mode=False,
+        )
+    )

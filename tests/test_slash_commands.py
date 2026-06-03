@@ -85,7 +85,7 @@ class SlashCommandsCatalogTests(unittest.TestCase):
         from mythic_vibe_cli.commands import COMMAND_HANDLERS
 
         DELIBERATELY_EXCLUDED_FROM_SLASH = {"shell", "tui"}
-        SLASH_LOCALS_WITHOUT_ARGPARSE = {"help", "reload", "quit"}
+        SLASH_LOCALS_WITHOUT_ARGPARSE = {"help", "model", "reload", "quit"}
 
         catalog_names = {entry.name for entry in BUILTIN_SLASH_COMMANDS}
         argparse_names = set(COMMAND_HANDLERS) - DELIBERATELY_EXCLUDED_FROM_SLASH

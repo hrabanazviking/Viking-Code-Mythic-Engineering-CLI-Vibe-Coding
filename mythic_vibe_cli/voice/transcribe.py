@@ -25,6 +25,7 @@ Cross-platform: stdlib only on the must-work path.
 
 from __future__ import annotations
 
+import importlib
 import os
 import tempfile
 import wave
@@ -54,6 +55,10 @@ class MissingExtraError(RuntimeError):
         )
         self.extra = extra
         self.install_hint = install_hint
+
+
+def _try_import_package(package_name: str) -> Any:
+    return importlib.import_module(package_name)
 
 
 @dataclass(frozen=True)
@@ -189,14 +194,13 @@ class WhisperTranscriber:
 
     def __post_init__(self) -> None:
         try:
-            import whisper  # type: ignore[import-not-found]
+            self._module = _try_import_package("whisper")
         except ImportError as exc:
             raise MissingExtraError(
                 "openai-whisper",
                 "Install with `pip install openai-whisper`. "
                 "Note: whisper requires ffmpeg on PATH for audio decoding.",
             ) from exc
-        self._module = whisper
 
     def transcribe(self, request: TranscriptionRequest) -> TranscriptionResult:
         if self._module is None:  # pragma: no cover — __post_init__ guards

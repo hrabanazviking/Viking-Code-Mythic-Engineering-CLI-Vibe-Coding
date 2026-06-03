@@ -62,10 +62,10 @@ def build_tool_catalogue() -> list[McpTool]:
     surface.
     """
     from ..commands import COMMAND_HANDLERS
-    from ..runtime.slash_commands import BUILTIN_SLASH_COMMANDS
+    from ..runtime.command_catalog import iter_builtin_slash_commands
 
     descriptions = {
-        entry.name: entry.description for entry in BUILTIN_SLASH_COMMANDS
+        entry.name: entry.description for entry in iter_builtin_slash_commands()
     }
 
     seen: set[str] = set()

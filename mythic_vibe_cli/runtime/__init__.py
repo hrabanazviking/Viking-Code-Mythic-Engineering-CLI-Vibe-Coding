@@ -9,8 +9,21 @@ Currently exposes:
 - ``slash_commands`` — typed catalog of slash commands (no dispatcher).
 - ``source_info`` — provenance type for contributed artifacts.
 - ``exec`` — subprocess execution primitive with timeout and cancel-event.
+- ``paths`` — canonical config, state, cache, log, and project path resolver.
+- ``atomic_write`` — canonical crash-resistant text write helper.
 """
 
+from .atomic_write import atomic_write_text
+from .command_catalog import (
+    ARGPARSE_ONLY_NAMES,
+    CommandCatalogEntry,
+    CommandCatalogValidation,
+    SLASH_LOCAL_NAMES,
+    build_command_catalog,
+    builtin_slash_by_name,
+    iter_builtin_slash_commands,
+    validate_command_catalog,
+)
 from .event_bus import EventBus, EventBusController, create_event_bus
 from .event_log import (
     DEFAULT_EVENT_LOG_FILENAME,
@@ -22,7 +35,7 @@ from .event_log import (
     read_recent,
     resolve_max_entries,
 )
-from .exec import ExecResult, exec_command
+from .exec import ExecResult, exec_command, spawn_process
 from .file_mutation_queue import file_mutation_queue, with_file_mutation_queue
 from .output_guard import (
     flush_raw_stdout,
@@ -31,6 +44,20 @@ from .output_guard import (
     restore_stdout,
     take_over_stdout,
     write_raw_stdout,
+)
+from .paths import (
+    PathOwnershipError,
+    RuntimePaths,
+    cache_root,
+    config_candidates,
+    config_root,
+    crash_reports_root,
+    log_root,
+    paths_for,
+    resolve_within,
+    script_crash_reports_root,
+    state_root,
+    workspace_root,
 )
 from .slash_commands import (
     BUILTIN_SLASH_COMMANDS,
@@ -48,6 +75,7 @@ from .timings import print_timings, record, reset_timings
 
 __all__ = [
     "file_mutation_queue",
+    "atomic_write_text",
     "with_file_mutation_queue",
     "take_over_stdout",
     "restore_stdout",
@@ -78,5 +106,26 @@ __all__ = [
     "SourceScope",
     "synthetic_source_info",
     "exec_command",
+    "spawn_process",
     "ExecResult",
+    "PathOwnershipError",
+    "RuntimePaths",
+    "cache_root",
+    "config_candidates",
+    "config_root",
+    "crash_reports_root",
+    "log_root",
+    "paths_for",
+    "resolve_within",
+    "script_crash_reports_root",
+    "state_root",
+    "workspace_root",
+    "ARGPARSE_ONLY_NAMES",
+    "CommandCatalogEntry",
+    "CommandCatalogValidation",
+    "SLASH_LOCAL_NAMES",
+    "build_command_catalog",
+    "builtin_slash_by_name",
+    "iter_builtin_slash_commands",
+    "validate_command_catalog",
 ]

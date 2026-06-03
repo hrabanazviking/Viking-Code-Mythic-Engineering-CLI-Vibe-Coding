@@ -25,8 +25,8 @@ from textual.widgets import Footer, Header, Input, OptionList, Static
 from textual.widgets.option_list import Option
 
 from ..plugins.dispatcher import PluginHookDispatcher
+from ..runtime.command_catalog import iter_builtin_slash_commands
 from ..runtime.slash_commands import (
-    BUILTIN_SLASH_COMMANDS,
     BuiltinSlashCommand,
     SlashCommandInfo,
 )
@@ -114,7 +114,7 @@ def gather_picker_entries(root: Path) -> list[PickerEntry]:
     ``slash_commands()`` raises are skipped silently per dispatcher contract.
     """
     entries: list[PickerEntry] = [
-        PickerEntry.from_builtin(item) for item in BUILTIN_SLASH_COMMANDS
+        PickerEntry.from_builtin(item) for item in iter_builtin_slash_commands()
     ]
     try:
         with PluginHookDispatcher(root) as dispatcher:
