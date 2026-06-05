@@ -330,11 +330,7 @@ def _handle_test_command(
 def _looks_like_command(stripped: str, main_commands: set[str]) -> bool:
     if stripped.startswith("/"):
         return True
-    try:
-        argv = shlex.split(stripped)
-    except ValueError:
-        return True
-    return bool(argv and argv[0] in main_commands)
+    return False
 
 
 def _known_command_names(_main: Callable[[list[str]], int]) -> set[str]:
@@ -522,7 +518,7 @@ def _answer_with_selected_model(prompt: str, stdout: IO[str], context: ShellCont
 
                 print(f"     [Executing {tool_name}...]", file=stdout)
                 try:
-                    tool_output = execute_tool(tool_name, args)
+                    tool_output = execute_tool(tool_name, args, context.project_root)
                 except Exception as exc:
                     tool_output = f"Tool execution error: {exc}"
                 
@@ -626,10 +622,27 @@ def run_shell(
     last_test_result: dict[str, str] = {}
     _print_banner(out_stream, shell_context)
 
-    while True:
-        print(PROMPT, end="", file=out_stream, flush=True)
+    use_prompt_toolkit = False
+    session = None
+    if hasattr(in_stream, "isatty") and in_stream.isatty():
         try:
-            line = in_stream.readline()
+            from prompt_toolkit import PromptSession
+            from prompt_toolkit.history import InMemoryHistory
+            session = PromptSession(history=InMemoryHistory())
+            use_prompt_toolkit = True
+        except ImportError:
+            pass
+
+    while True:
+        try:
+            if use_prompt_toolkit and session is not None:
+                try:
+                    line = session.prompt(PROMPT) + "\n"
+                except EOFError:
+                    line = ""
+            else:
+                print(PROMPT, end="", file=out_stream, flush=True)
+                line = in_stream.readline()
         except KeyboardInterrupt:
             print("(interrupted; type /quit to exit)", file=out_stream)
             continue
