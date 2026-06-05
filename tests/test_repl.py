@@ -126,12 +126,12 @@ class ReplLoopTests(unittest.TestCase):
         self.assertEqual(len(fake.calls), 1)
         self.assertEqual(fake.calls[0], ["scan", "--path", "."])
 
-    def test_bare_command_dispatches_through_main(self) -> None:
-        """A line without a leading slash is also dispatched."""
+    def test_bare_command_does_not_dispatch_through_main(self) -> None:
+        """A line without a leading slash is NOT dispatched to main."""
         fake = _FakeMain()
         code, _out, _err = self._drive(["status --json\n", "/quit\n"], main=fake)
         self.assertEqual(code, SUCCESS)
-        self.assertEqual(fake.calls, [["status", "--json"]])
+        self.assertEqual(fake.calls, [])
 
     def test_non_zero_exit_code_is_surfaced_but_loop_continues(self) -> None:
         fake = _FakeMain(return_codes=[USER_INPUT_ERROR])
