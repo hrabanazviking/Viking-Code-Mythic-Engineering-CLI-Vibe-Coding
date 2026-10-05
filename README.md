@@ -1,4 +1,3 @@
----
 
 ![https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/development/120329a8-9f29-4177-b10f-56719c134843.png](https://raw.githubusercontent.com/hrabanazviking/Viking-Code-Mythic-Engineering-CLI-Vibe-Coding/refs/heads/development/120329a8-9f29-4177-b10f-56719c134843.png)
 
